@@ -2,8 +2,279 @@
 <ContentPage
     x:Class="PokemonBattleJournal.Views.MainPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:sys="clr-namespace:System;assembly=netstandard"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
+    Title="{Binding WelcomeMsg}"
+    x:DataType="viewmodel:MainPageViewModel">
+    <ScrollView>
+        <Grid
+            Padding="15,15"
+            ColumnDefinitions="Auto,*"
+            ColumnSpacing="10"
+            RowDefinitions="Auto, Auto, *, Auto"
+            RowSpacing="1">
+            <!--  Page Title  -->
+            <Label
+                Grid.ColumnSpan="2"
+                FontSize="Title"
+                HorizontalOptions="Center"
+                SemanticProperties.Description="Create a Match Entry"
+                SemanticProperties.HeadingLevel="Level1"
+                Text="Create a Match Entry" />
+            <!--  Left Side Vertical Column  -->
+            <FlexLayout
+                Grid.Row="1"
+                Grid.RowSpan="2"
+                Grid.Column="0"
+                Direction="Column">
+                <Entry
+                    Placeholder="New Trainer Name"
+                    Text="{Binding NameInput}" />
+                <Button
+                    x:Name="TrainerNameBtn"
+                    Command="{Binding UpdateTrainerNameCommand}"
+                    Text="Update Trainer's Name" />
 
+                <Label
+                    FontFamily="PokemonSolid"
+                    FontSize="Small"
+                    HorizontalTextAlignment="Center"
+                    Text="Select Decks"
+                    VerticalOptions="End" />
+
+                <HorizontalStackLayout HorizontalOptions="Center">
+                    <Picker
+                        Title="Trainer's Deck"
+                        Margin="5"
+                        ItemsSource="{Binding DeckNames}"
+                        SelectedItem="{Binding PlayerSelected}"
+                        WidthRequest="150" />
+                    <Picker
+                        Title="Rival's Deck"
+                        Margin="5"
+                        ItemsSource="{Binding DeckNames}"
+                        SelectedItem="{Binding RivalSelected}"
+                        WidthRequest="150" />
+                </HorizontalStackLayout>
+
+                <HorizontalStackLayout HorizontalOptions="Center">
+                    <Switch
+                        x:Name="BOSwitch"
+                        HorizontalOptions="Center">
+                    </Switch>
+                    <Label
+                        Text="Best of:"
+                        VerticalTextAlignment="Center" />
+                    <Label
+                        Text="1"
+                        VerticalTextAlignment="Center">
+                        <Label.Triggers>
+                            <DataTrigger
+                                Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
+                                TargetType="Label"
+                                Value="False">
+                                <Setter Property="FontAttributes" Value="Bold" />
+                                <Setter Property="FontSize" Value="Medium" />
+                            </DataTrigger>
+                        </Label.Triggers>
+                    </Label>
+                    <Label
+                        Text=" Or "
+                        VerticalTextAlignment="Center" />
+                    <Label
+                        Text="3"
+                        VerticalTextAlignment="Center">
+                        <Label.Triggers>
+                            <DataTrigger
+                                Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
+                                TargetType="Label"
+                                Value="True">
+                                <Setter Property="FontAttributes" Value="Bold" />
+                                <Setter Property="FontSize" Value="Medium" />
+                            </DataTrigger>
+                        </Label.Triggers>
+                    </Label>
+
+                </HorizontalStackLayout>
+
+                <Label
+                    Padding="0,10,0,0"
+                    FontSize="Micro"
+                    HorizontalTextAlignment="Center"
+                    Text="Current Time"
+                    VerticalTextAlignment="End" />
+                <Label
+                    Padding="0,0,0,10"
+                    FontFamily="DotoRoundedBlack"
+                    FontSize="Micro"
+                    HorizontalOptions="Center"
+                    HorizontalTextAlignment="Center"
+                    Text="{Binding CurrentDateTimeDisplay}"
+                    VerticalTextAlignment="Start" />
+
+                <Label
+                    HorizontalOptions="Center"
+                    Text="Battle Start Time:" />
+                <TimePicker
+                    HorizontalOptions="Center"
+                    Time="{Binding StartTime}" />
+
+                <Label
+                    HorizontalOptions="Center"
+                    Text="Battle End Time:" />
+                <TimePicker
+                    HorizontalOptions="Center"
+                    Time="{Binding EndTime}" />
+
+                <HorizontalStackLayout HorizontalOptions="Center">
+                    <Label
+                        HorizontalOptions="Center"
+                        Text="Went first?"
+                        VerticalOptions="Center" />
+                    <CheckBox
+                        HorizontalOptions="Center"
+                        IsChecked="{Binding FirstCheck}"
+                        VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </FlexLayout>
+
+            <!--  Right Side Vertical Column  -->
+            <Picker
+                Title="Win/Lose/Draw"
+                Grid.Row="1"
+                Grid.Column="1"
+                ItemsSource="{Binding PossibleResults}"
+                SelectedItem="{Binding Result}"
+                WidthRequest="120" />
+
+            <VerticalStackLayout
+                Grid.Row="2"
+                Grid.Column="1"
+                IsVisible="True">
+                <CollectionView
+                    x:Name="TagsView"
+                    Grid.Row="3"
+                    Grid.Column="1"
+                    CanReorderItems="True"
+                    ItemSizingStrategy="MeasureAllItems"
+                    ItemsSource="{Binding TagCollection}"
+                    SelectedItems="{Binding TagsSelected, Mode=TwoWay}"
+                    SelectionMode="Multiple">
+
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout
+                            Orientation="Horizontal"
+                            Span="3" />
+                    </CollectionView.ItemsLayout>
+
+                    <CollectionView.Header>
+                        <Label
+                            HorizontalOptions="Center"
+                            HorizontalTextAlignment="Center"
+                            Text="Tags:"
+                            VerticalOptions="Center"
+                            VerticalTextAlignment="Center" />
+                    </CollectionView.Header>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <HorizontalStackLayout>
+                                <Label
+                                    Margin="8,0"
+                                    Padding="16,0"
+                                    x:DataType="sys:String"
+                                    FontAutoScalingEnabled="True"
+                                    HorizontalOptions="Center"
+                                    HorizontalTextAlignment="End"
+                                    Text="{Binding .}"
+                                    VerticalOptions="Center"
+                                    VerticalTextAlignment="Center" />
+                            </HorizontalStackLayout>
+
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+                <Border />
+
+                <FlexLayout
+                    JustifyContent="Center"
+                    Wrap="Wrap">
+                    <HorizontalStackLayout>
+                        <Label
+                            Margin="0,0,4,0"
+                            HorizontalTextAlignment="Center"
+                            Text="Date Played"
+                            VerticalOptions="Center"
+                            VerticalTextAlignment="Center" />
+                        <DatePicker
+                            Margin="0,0,50,0"
+                            Date="{Binding DatePlayed}"
+                            HorizontalOptions="Center"
+                            IsEnabled="True"
+                            VerticalOptions="Center" />
+
+                    </HorizontalStackLayout>
+                    <Label
+                        FontAttributes="Bold"
+                        FontFamily="Charm-Regular.ttf"
+                        FontSize="Large"
+                        Text="Notes:"
+                        VerticalOptions="End" />
+                </FlexLayout>
+
+                <Editor
+                    AutoSize="TextChanges"
+                    HeightRequest="200"
+                    IsSpellCheckEnabled="True"
+                    Placeholder="Write notes here..."
+                    Text="{Binding UserNoteInput}" />
+                <Editor
+                    AutoSize="TextChanges"
+                    HeightRequest="200"
+                    IsSpellCheckEnabled="True"
+                    IsVisible="False"
+                    Placeholder="Write notes here..."
+                    Text="{Binding UserNoteInput}">
+                    <Editor.Triggers>
+                        <DataTrigger
+                            Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
+                            TargetType="Editor"
+                            Value="True">
+                            <Setter Property="IsVisible" Value="True" />
+
+                        </DataTrigger>
+                    </Editor.Triggers>
+                </Editor>
+                <Editor
+                    AutoSize="TextChanges"
+                    HeightRequest="200"
+                    IsSpellCheckEnabled="True"
+                    IsVisible="False"
+                    Placeholder="Write notes here..."
+                    Text="{Binding UserNoteInput}">
+                    <Editor.Triggers>
+                        <DataTrigger
+                            Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
+                            TargetType="Editor"
+                            Value="True">
+                            <Setter Property="IsVisible" Value="True" />
+
+                        </DataTrigger>
+                    </Editor.Triggers>
+                </Editor>
+            </VerticalStackLayout>
+            <Button
+                Grid.Row="3"
+                Grid.ColumnSpan="2"
+                Command="{Binding SaveFileCommand}"
+                HorizontalOptions="Fill"
+                SemanticProperties.Hint="Save your journal entry"
+                Text="{Binding SavedFileDisplay}"
+                VerticalOptions="End" />
+        </Grid>
+    </ScrollView>
+    <!--
     <ScrollView>
         <VerticalStackLayout
             Padding="30,0"
@@ -33,5 +304,6 @@
                 Text="Click me" />
         </VerticalStackLayout>
     </ScrollView>
+    -->
 
 </ContentPage>
