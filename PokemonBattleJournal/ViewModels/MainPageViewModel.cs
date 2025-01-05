@@ -59,7 +59,7 @@ namespace PokemonBattleJournal.ViewModels
         /// <param name="e"></param>
         private void UpdateTime(object? sender, EventArgs e)
         {
-            MainThread.BeginInvokeOnMainThread(() =>
+            MainThreadHelper.BeginInvokeOnMainThread(() =>
             {
                 CurrentDateTimeDisplay = $"{DateTime.Now}";
             });
@@ -70,6 +70,7 @@ namespace PokemonBattleJournal.ViewModels
         [ObservableProperty]
         public partial string? CurrentDateTimeDisplay { get; set; } = DateTime.Now.ToString();
         [ObservableProperty]
+        //Cannot use Preferences raw with unit testing need to create Interface and Dependency Inject it.
         public partial string TrainerName { get; set; } = "Trainer";//Preferences.Default.Get("TrainerName", "Trainer");
         [ObservableProperty]
         public partial string? NameInput { get; set; }
@@ -184,7 +185,7 @@ namespace PokemonBattleJournal.ViewModels
         {
         
             if (NameInput == null) return;
-            //Cannot use raw with unit testing need to create Interface and Dependency Inject it.
+            //Cannot use Preferences raw with unit testing need to create Interface and Dependency Inject it.
             //Preferences.Default.Set("TrainerName", NameInput);
             TrainerName = NameInput;
             NameInput = null;
