@@ -1,24 +1,21 @@
-﻿using PokemonBattleJournal.ViewModels;
-using System;
-using Xunit;
-
-namespace PokemonBattleJournal.Tests.ViewModels
+﻿namespace PokemonBattleJournal.Tests.ViewModels
 {
     public class MainPageViewModelTests
     {
         [Fact]
-        public void UpdateTrainerName_StateUnderTest_ExpectedBehavior()
+        public void MainPageViewmodel_UpdateTrainerName_TrainerNameChanged()
         {
             // Arrange
             var viewModel = new MainPageViewModel();
-            string? trainerName = null;
+            string? nameInput = "TestName";
+            
 
             // Act
-            viewModel.UpdateTrainerName(
-                trainerName);
+            viewModel.NameInput = nameInput;
+            viewModel.UpdateTrainerName();
 
             // Assert
-            Assert.True(false);
+            viewModel.TrainerName.Should().Be(nameInput);
         }
     }
 }

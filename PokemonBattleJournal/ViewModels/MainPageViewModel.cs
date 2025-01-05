@@ -70,7 +70,7 @@ namespace PokemonBattleJournal.ViewModels
         [ObservableProperty]
         public partial string? CurrentDateTimeDisplay { get; set; } = DateTime.Now.ToString();
         [ObservableProperty]
-        public partial string TrainerName { get; set; } = Preferences.Default.Get("TrainerName", "Trainer");
+        public partial string TrainerName { get; set; } = "Trainer";//Preferences.Default.Get("TrainerName", "Trainer");
         [ObservableProperty]
         public partial string? NameInput { get; set; }
         [ObservableProperty]
@@ -182,9 +182,10 @@ namespace PokemonBattleJournal.ViewModels
         [RelayCommand]
         public void UpdateTrainerName()
         {
-
+        
             if (NameInput == null) return;
-            Preferences.Default.Set("TrainerName", NameInput);
+            //Cannot use raw with unit testing need to create Interface and Dependency Inject it.
+            //Preferences.Default.Set("TrainerName", NameInput);
             TrainerName = NameInput;
             NameInput = null;
             WelcomeMsg = $"Welcome {TrainerName}";
