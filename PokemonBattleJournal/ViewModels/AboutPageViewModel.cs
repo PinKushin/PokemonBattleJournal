@@ -7,7 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace PokemonBattleJournal.ViewModels
 {
-    public class AboutPageViewModel : ObservableObject
+    public partial class AboutPageViewModel : ObservableObject
     {
     }
 }
