@@ -29,6 +29,9 @@ namespace PokemonBattleJournal
             builder.Services.AddSingleton<MainPage>();
             builder.Services.AddSingleton<MainPageViewModel>();
 
+            builder.Services.AddSingleton<DeckBuilderPage>();
+            builder.Services.AddSingleton<DeckBuilderPageViewModel>();
+
             builder.Services.AddSingleton<AboutPage>();
             builder.Services.AddSingleton<AboutPageViewModel>();
 

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="PokemonBattleJournal.Views.DeckBuilderPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:model="clr-namespace:PokemonBattleJournal.Models"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
+    x:Name="BasePage"
+    Title="Deck Builder"
+    x:DataType="viewmodel:DeckBuilderPageViewModel">
+    <ContentPage.Behaviors>
+        <toolkit:EventToCommandBehavior
+            BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType={x:Type ContentPage}}"
+            Command="{Binding AppearingCommand}"
+            EventName="Appearing" />
+    </ContentPage.Behaviors>
+    <Grid
+        ColumnDefinitions="*, *"
+        ColumnSpacing="4"
+        RowDefinitions=" Auto, *"
+        RowSpacing="4">
+        <VerticalStackLayout Margin="10">
+            <Label
+                HorizontalOptions="Center"
+                Text="Cards" />
+            <SearchBar
+                x:Name="CardSearch"
+                IsTextPredictionEnabled="True"
+                Placeholder="Search Cards"
+                SearchCommand="{Binding SearchCardsCommand}"
+                SearchCommandParameter="{Binding SearchTerm}"
+                Text="{Binding SearchTerm}"
+                TextTransform="Default">
+                <!--
+            <SearchBar.Behaviors>
+                <toolkit:EventToCommandBehavior
+                    BindingContext="{Binding Path=BindingContext, Source={x:Reference CardSearch}, x:DataType=SearchBar}"
+                    Command="{Binding Source={x:Reference CardCollection}, Path=BindingContext.SearchCardsCommand, x:DataType=CollectionView}"
+                    EventName="TextChanged" />
+            </SearchBar.Behaviors>
+                -->
+
+            </SearchBar>
+        </VerticalStackLayout>
+
+        <CollectionView
+            x:Name="CardCollection"
+            Grid.Row="1"
+            ItemsSource="{Binding CardList}"
+            SelectionMode="Single">
+
+            <CollectionView.ItemsLayout>
+                <GridItemsLayout
+                    Orientation="Vertical"
+                    Span="3" />
+            </CollectionView.ItemsLayout>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="{x:Type model:TcgDexCardBrief}">
+                    <VerticalStackLayout Padding="10">
+                        <Image
+                            MaximumHeightRequest="300"
+                            Source="{Binding Image}" />
+                        <Label
+                            Margin="0,0,0,0"
+                            HorizontalOptions="Center"
+                            Text="{Binding Name}"
+                            VerticalOptions="Start" />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+
+        <Label
+            Grid.Column="1"
+            HorizontalOptions="Center"
+            Text="Deck" />
+        <Label
+            Grid.Row="1"
+            Grid.Column="1"
+            HorizontalOptions="Center"
+            Text="TODO : Create Deck Builder" />
+    </Grid>
+</ContentPage>

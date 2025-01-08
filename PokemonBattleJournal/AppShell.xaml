@@ -28,6 +28,10 @@
         ContentTemplate="{DataTemplate views:MainPage}"
         Route="MainPage" />
     <ShellContent
+        Title="Deck Builder"
+        ContentTemplate="{DataTemplate views:DeckBuilderPage}"
+        Route="DeckBuilderPage" />
+    <ShellContent
         Title="About"
         ContentTemplate="{DataTemplate views:AboutPage}"
         Route="AboutPage" />
