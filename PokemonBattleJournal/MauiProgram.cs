@@ -17,6 +17,8 @@ namespace PokemonBattleJournal
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");  
                     fonts.AddFont("PokemonSolid.ttf", "PokemonSolid");
                     fonts.AddFont("pokemon_tcg_symbols_font_by_icycatelf_dah5i8h.ttf", "PokemonSymbols");
+                    fonts.AddFont("Decotura-ICG-Regular.ttf", "Deco");
+                    fonts.AddFont("PokemonGb-RAeo.ttf", "PokemonGB");
                     fonts.AddFont("FluentSystemIcons-Regular.ttf", FluentUI.FontFamily);
                 });
 
