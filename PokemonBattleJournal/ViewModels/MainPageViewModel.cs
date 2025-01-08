@@ -7,10 +7,8 @@ namespace PokemonBattleJournal.ViewModels
 {
     public partial class MainPageViewModel : ObservableObject
     {
-        //public IFileSaver? fileSaver;
-        //readonly CancellationTokenSource cancellationTokenSource = new();
-
-        public MainPageViewModel(/*IFileSaver fileSaver*/)
+     
+        public MainPageViewModel()
         {
             //this.fileSaver = fileSaver;
             //Timer to update displayed time
