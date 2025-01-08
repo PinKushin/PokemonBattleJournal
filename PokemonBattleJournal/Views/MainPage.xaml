@@ -40,7 +40,6 @@
                 Grid.Column="0"
                 Direction="Column">
                 <Entry
-                    FontFamily="Deco"
                     FontSize="Small"
                     Placeholder="New Trainer Name"
                     Text="{Binding NameInput}" />
@@ -48,13 +47,10 @@
                     x:Name="TrainerNameBtn"
                     Command="{Binding UpdateTrainerNameCommand}"
                     FontAttributes="Bold"
-                    FontFamily="PokemonGB"
                     Text="Update Trainer's Name" />
 
                 <Label
                     FontAttributes="Bold"
-                    FontFamily="PokemonGB"
-                    FontSize="Caption"
                     HorizontalTextAlignment="Center"
                     Text="Select Decks"
                     VerticalOptions="End" />
@@ -69,7 +65,6 @@
                     <Picker
                         Title="Rival's Deck"
                         Margin="5"
-                        FontFamily="SairaBold"
                         ItemsSource="{Binding DeckNames}"
                         SelectedItem="{Binding RivalSelected}"
                         WidthRequest="150" />
@@ -81,7 +76,6 @@
                         HorizontalOptions="Center">
                     </Switch>
                     <Label
-                        FontFamily="SairaBlack"
                         Text="Best of:"
                         VerticalTextAlignment="Center" />
                     <Label
@@ -234,7 +228,6 @@
                     </HorizontalStackLayout>
                     <Label
                         FontAttributes="Bold"
-                        FontFamily="Charm-Regular.ttf"
                         FontSize="Large"
                         Text="Notes:"
                         VerticalOptions="End" />
