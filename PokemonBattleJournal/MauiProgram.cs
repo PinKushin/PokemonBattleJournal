@@ -21,7 +21,7 @@ namespace PokemonBattleJournal
             #if DEBUG
     		builder.Logging.AddDebug();
             builder.Services.AddLogging(configure => configure.AddDebug());
-#endif
+            #endif
             builder.Services.AddSingleton<MainPage>();
             builder.Services.AddSingleton<MainPageViewModel>();
 
