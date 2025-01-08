@@ -59,13 +59,14 @@ namespace PokemonBattleJournal.ViewModels
             });
 
         }
+        static PreferencesHelper Prefs = new();
 
         //Convert date-time to string that can be used in the UI
         [ObservableProperty]
         public partial string? CurrentDateTimeDisplay { get; set; } = DateTime.Now.ToString();
         [ObservableProperty]
         //Cannot use Preferences raw with unit testing need to create Interface and Dependency Inject it.
-        public partial string TrainerName { get; set; } = "Trainer";//Preferences.Default.Get("TrainerName", "Trainer");
+        public partial string TrainerName { get; set; } = Prefs.GetSetting("TrainerName");
         [ObservableProperty]
         public partial string? NameInput { get; set; }
         [ObservableProperty]
@@ -177,10 +178,10 @@ namespace PokemonBattleJournal.ViewModels
         [RelayCommand]
         public void UpdateTrainerName()
         {
-        
+            
             if (NameInput == null) return;
             //Cannot use Preferences raw with unit testing need to create Interface and Dependency Inject it.
-            //Preferences.Default.Set("TrainerName", NameInput);
+            Prefs.SetSetting("TrainerName", NameInput);
             TrainerName = NameInput;
             NameInput = null;
             WelcomeMsg = $"Welcome {TrainerName}";
