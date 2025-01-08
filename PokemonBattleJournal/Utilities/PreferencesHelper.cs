@@ -8,7 +8,7 @@ namespace PokemonBattleJournal.Utilities
 {
     internal class PreferencesHelper
     {
-        public string GetSetting(string key)
+        public static string GetSetting(string key)
         {
             //This is a wrapper for supporting unit tests
             if (DeviceInfo.Platform == DevicePlatform.Unknown)
@@ -18,7 +18,7 @@ namespace PokemonBattleJournal.Utilities
             return Preferences.Get(key, "Trainer");
         }
 
-        public void SetSetting(string key, string value)
+        public static void SetSetting(string key, string value)
         {
             //This is a wrapper for supporting unit tests
             if (DeviceInfo.Platform == DevicePlatform.Unknown)
