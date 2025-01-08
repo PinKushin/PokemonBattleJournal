@@ -78,6 +78,7 @@
                     <Label
                         Text="Best of:"
                         VerticalTextAlignment="Center" />
+
                     <Label
                         Text="1"
                         VerticalTextAlignment="Center">
@@ -92,7 +93,7 @@
                         </Label.Triggers>
                     </Label>
                     <Label
-                        Text=" Or "
+                        Text=" or "
                         VerticalTextAlignment="Center" />
                     <Label
                         Text="3"
@@ -149,131 +150,207 @@
                         IsChecked="{Binding FirstCheck}"
                         VerticalOptions="Center" />
                 </HorizontalStackLayout>
+
+
+                <HorizontalStackLayout HorizontalOptions="Center">
+                    <Label
+                        Margin="0,0,4,0"
+                        HorizontalTextAlignment="Center"
+                        Text="Date Played:"
+                        VerticalOptions="Center"
+                        VerticalTextAlignment="Center" />
+                    <DatePicker
+                        Margin="0,0,50,0"
+                        Date="{Binding DatePlayed}"
+                        HorizontalOptions="Center"
+                        IsEnabled="True"
+                        VerticalOptions="Center" />
+                    <Picker
+                        Title="Win/Lose/Draw"
+                        HorizontalOptions="Center"
+                        ItemsSource="{Binding PossibleResults}"
+                        SelectedItem="{Binding Result}"
+                        WidthRequest="120" />
+
+                </HorizontalStackLayout>
             </FlexLayout>
 
             <!--  Right Side Vertical Column  -->
-            <Picker
-                Title="Win/Lose/Draw"
-                Grid.Row="1"
-                Grid.Column="1"
-                ItemsSource="{Binding PossibleResults}"
-                SelectedItem="{Binding Result}"
-                WidthRequest="120" />
-
-            <VerticalStackLayout
+            <ScrollView
                 Grid.Row="2"
                 Grid.Column="1"
                 IsVisible="True">
-                <CollectionView
-                    x:Name="TagsView"
-                    Grid.Row="3"
-                    Grid.Column="1"
-                    CanReorderItems="True"
-                    ItemSizingStrategy="MeasureAllItems"
-                    ItemsSource="{Binding TagCollection}"
-                    SelectedItems="{Binding TagsSelected, Mode=TwoWay}"
-                    SelectionMode="Multiple">
-
-                    <CollectionView.ItemsLayout>
-                        <GridItemsLayout
-                            Orientation="Horizontal"
-                            Span="3" />
-                    </CollectionView.ItemsLayout>
-
-                    <CollectionView.Header>
-                        <Label
-                            HorizontalOptions="Center"
-                            HorizontalTextAlignment="Center"
-                            Text="Tags:"
-                            VerticalOptions="Center"
-                            VerticalTextAlignment="Center" />
-                    </CollectionView.Header>
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <HorizontalStackLayout>
-                                <Label
-                                    Margin="8,0"
-                                    Padding="16,0"
-                                    x:DataType="sys:String"
-                                    FontAutoScalingEnabled="True"
-                                    HorizontalOptions="Center"
-                                    HorizontalTextAlignment="End"
-                                    Text="{Binding .}"
-                                    VerticalOptions="Center"
-                                    VerticalTextAlignment="Center" />
-                            </HorizontalStackLayout>
-
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-                <Border />
-
-                <FlexLayout
-                    JustifyContent="Center"
-                    Wrap="Wrap">
-                    <HorizontalStackLayout>
-                        <Label
-                            Margin="0,0,4,0"
-                            HorizontalTextAlignment="Center"
-                            Text="Date Played"
-                            VerticalOptions="Center"
-                            VerticalTextAlignment="Center" />
-                        <DatePicker
-                            Margin="0,0,50,0"
-                            Date="{Binding DatePlayed}"
-                            HorizontalOptions="Center"
-                            IsEnabled="True"
-                            VerticalOptions="Center" />
-
-                    </HorizontalStackLayout>
+                <VerticalStackLayout HorizontalOptions="Center">
                     <Label
                         FontAttributes="Bold"
                         FontSize="Large"
-                        Text="Notes:"
+                        HorizontalOptions="Center"
+                        Text="Match Notes:"
                         VerticalOptions="End" />
-                </FlexLayout>
+                    <CollectionView
+                        x:Name="TagsView"
+                        CanReorderItems="True"
+                        ItemSizingStrategy="MeasureAllItems"
+                        ItemsSource="{Binding TagCollection}"
+                        SelectedItems="{Binding TagsSelected, Mode=TwoWay}"
+                        SelectionMode="Multiple">
 
-                <Editor
-                    AutoSize="TextChanges"
-                    HeightRequest="200"
-                    IsSpellCheckEnabled="True"
-                    Placeholder="Write notes here..."
-                    Text="{Binding UserNoteInput}" />
-                <Editor
-                    AutoSize="TextChanges"
-                    HeightRequest="200"
-                    IsSpellCheckEnabled="True"
-                    IsVisible="False"
-                    Placeholder="Write notes here..."
-                    Text="{Binding UserNoteInput}">
-                    <Editor.Triggers>
-                        <DataTrigger
-                            Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
-                            TargetType="Editor"
-                            Value="True">
-                            <Setter Property="IsVisible" Value="True" />
+                        <CollectionView.ItemsLayout>
+                            <GridItemsLayout
+                                Orientation="Horizontal"
+                                Span="2" />
+                        </CollectionView.ItemsLayout>
 
-                        </DataTrigger>
-                    </Editor.Triggers>
-                </Editor>
-                <Editor
-                    AutoSize="TextChanges"
-                    HeightRequest="200"
-                    IsSpellCheckEnabled="True"
-                    IsVisible="False"
-                    Placeholder="Write notes here..."
-                    Text="{Binding UserNoteInput}">
-                    <Editor.Triggers>
-                        <DataTrigger
-                            Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
-                            TargetType="Editor"
-                            Value="True">
-                            <Setter Property="IsVisible" Value="True" />
+                        <CollectionView.Header>
+                            <Label
+                                Margin="0,0,10,0"
+                                HorizontalOptions="Center"
+                                HorizontalTextAlignment="Center"
+                                Text="Tags:"
+                                VerticalOptions="Center"
+                                VerticalTextAlignment="Center" />
+                        </CollectionView.Header>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <HorizontalStackLayout>
+                                    <Label
+                                        Margin="0,0,40,0"
+                                        Padding="10,0,0,0"
+                                        x:DataType="sys:String"
+                                        FontAutoScalingEnabled="True"
+                                        HorizontalOptions="Center"
+                                        HorizontalTextAlignment="End"
+                                        Text="{Binding .}"
+                                        VerticalOptions="Center"
+                                        VerticalTextAlignment="Center" />
+                                </HorizontalStackLayout>
 
-                        </DataTrigger>
-                    </Editor.Triggers>
-                </Editor>
-            </VerticalStackLayout>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <Editor
+                        AutoSize="TextChanges"
+                        HeightRequest="200"
+                        IsSpellCheckEnabled="True"
+                        Placeholder="Write notes here..."
+                        Text="{Binding UserNoteInput}" />
+                    <VerticalStackLayout IsVisible="False">
+                        <VerticalStackLayout.Triggers>
+                            <DataTrigger
+                                Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
+                                TargetType="VerticalStackLayout"
+                                Value="True">
+                                <Setter Property="IsVisible" Value="True" />
+
+                            </DataTrigger>
+
+                        </VerticalStackLayout.Triggers>
+
+                        <CollectionView
+                            CanReorderItems="True"
+                            ItemSizingStrategy="MeasureAllItems"
+                            ItemsSource="{Binding TagCollection}"
+                            SelectedItems="{Binding Match2TagsSelected, Mode=TwoWay}"
+                            SelectionMode="Multiple">
+
+                            <CollectionView.ItemsLayout>
+                                <GridItemsLayout
+                                    Orientation="Horizontal"
+                                    Span="2" />
+                            </CollectionView.ItemsLayout>
+
+                            <CollectionView.Header>
+                                <Label
+                                    Margin="0,0,10,0"
+                                    HorizontalOptions="Center"
+                                    HorizontalTextAlignment="Center"
+                                    Text="Tags:"
+                                    VerticalOptions="Center"
+                                    VerticalTextAlignment="Center" />
+                            </CollectionView.Header>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <HorizontalStackLayout>
+                                        <Label
+                                            Margin="0,0,40,0"
+                                            Padding="10,0,0,0"
+                                            x:DataType="sys:String"
+                                            FontAutoScalingEnabled="True"
+                                            HorizontalOptions="Center"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding .}"
+                                            VerticalOptions="Center"
+                                            VerticalTextAlignment="Center" />
+                                    </HorizontalStackLayout>
+
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                        <Editor
+                            AutoSize="TextChanges"
+                            HeightRequest="200"
+                            IsSpellCheckEnabled="True"
+                            IsVisible="True"
+                            Placeholder="Write notes here..."
+                            Text="{Binding UserNoteInput2}" />
+
+                        <CollectionView
+                            CanReorderItems="True"
+                            ItemSizingStrategy="MeasureAllItems"
+                            ItemsSource="{Binding TagCollection}"
+                            SelectedItems="{Binding Match3TagsSelected, Mode=TwoWay}"
+                            SelectionMode="Multiple">
+
+                            <CollectionView.ItemsLayout>
+                                <GridItemsLayout
+                                    Orientation="Horizontal"
+                                    Span="2" />
+                            </CollectionView.ItemsLayout>
+
+                            <CollectionView.Header>
+                                <Label
+                                    Margin="0,0,10,0"
+                                    HorizontalOptions="Center"
+                                    HorizontalTextAlignment="Center"
+                                    Text="Tags:"
+                                    VerticalOptions="Center"
+                                    VerticalTextAlignment="Center" />
+                            </CollectionView.Header>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <HorizontalStackLayout>
+                                        <Label
+                                            Margin="0,0,40,0"
+                                            Padding="10,0,0,0"
+                                            x:DataType="sys:String"
+                                            FontAutoScalingEnabled="True"
+                                            HorizontalOptions="Center"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding .}"
+                                            VerticalOptions="Center"
+                                            VerticalTextAlignment="Center" />
+                                    </HorizontalStackLayout>
+
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                        <Editor
+                            AutoSize="TextChanges"
+                            HeightRequest="200"
+                            IsSpellCheckEnabled="True"
+                            IsVisible="True"
+                            Placeholder="Write notes here..."
+                            Text="{Binding UserNoteInput3}" />
+
+
+
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+
+
+
+            </ScrollView>
             <Button
                 Grid.Row="3"
                 Grid.ColumnSpan="2"
