@@ -16,13 +16,22 @@
             RowDefinitions="Auto, Auto, *, Auto"
             RowSpacing="1">
             <!--  Page Title  -->
-            <Label
+            <HorizontalStackLayout
                 Grid.ColumnSpan="2"
-                FontSize="Title"
-                HorizontalOptions="Center"
-                SemanticProperties.Description="Create a Match Entry"
-                SemanticProperties.HeadingLevel="Level1"
-                Text="Create a Match Entry" />
+                HorizontalOptions="Center">
+                <Image
+                    Grid.ColumnSpan="2"
+                    SemanticProperties.Description="Poke-Ball Image"
+                    Source="ball_icon.png"
+                    WidthRequest="32" />
+                <Label
+                    Grid.ColumnSpan="2"
+                    FontSize="Title"
+                    SemanticProperties.Description="Create a Match Entry"
+                    SemanticProperties.HeadingLevel="Level1"
+                    Text="Create a Match Entry" />
+            </HorizontalStackLayout>
+
             <!--  Left Side Vertical Column  -->
             <FlexLayout
                 Grid.Row="1"
