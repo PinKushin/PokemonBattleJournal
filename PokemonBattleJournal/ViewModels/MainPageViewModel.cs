@@ -81,6 +81,10 @@ namespace PokemonBattleJournal.ViewModels
         [ObservableProperty]
         public partial string? UserNoteInput { get; set; }
         [ObservableProperty]
+        public partial string? UserNoteInput2 { get; set; }
+        [ObservableProperty]
+        public partial string? UserNoteInput3 { get; set; }
+        [ObservableProperty]
         public partial TimeSpan StartTime { get; set; } = new TimeSpan(0, 0, 0);
         [ObservableProperty]
         public partial TimeSpan EndTime { get; set; } = new TimeSpan(0, 0, 0);
@@ -101,6 +105,12 @@ namespace PokemonBattleJournal.ViewModels
         public partial ObservableCollection<string>? TagCollection { get; set; } = new();
         [ObservableProperty]
         public partial IList<object>? TagsSelected { get; set; }
+        [ObservableProperty]
+        public partial IList<object>? Match2TagsSelected { get; set; }
+        [ObservableProperty]
+        public partial IList<object>? Match3TagsSelected { get; set; }
+        [ObservableProperty]
+        public partial bool? IsToggled { get; set; }
 
         /// <summary>
         /// Verify, Serialize, and Save Match Data
