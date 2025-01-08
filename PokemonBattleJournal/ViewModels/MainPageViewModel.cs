@@ -7,12 +7,9 @@ namespace PokemonBattleJournal.ViewModels
 {
     public partial class MainPageViewModel : ObservableObject
     {
-        //public IFileSaver? fileSaver;
-        //readonly CancellationTokenSource cancellationTokenSource = new();
-
-        public MainPageViewModel(/*IFileSaver fileSaver*/)
+     
+        public MainPageViewModel()
         {
-            //this.fileSaver = fileSaver;
             //Timer to update displayed time
             if (Application.Current != null)
             {
@@ -51,7 +48,7 @@ namespace PokemonBattleJournal.ViewModels
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void UpdateTime(object? sender, EventArgs e)
+        public void UpdateTime(object? sender, EventArgs e)
         {
             MainThreadHelper.BeginInvokeOnMainThread(() =>
             {
