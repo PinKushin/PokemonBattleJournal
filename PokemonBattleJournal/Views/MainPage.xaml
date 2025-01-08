@@ -26,6 +26,7 @@
                     WidthRequest="32" />
                 <Label
                     Grid.ColumnSpan="2"
+                    FontFamily="PokemonSolid"
                     FontSize="Title"
                     SemanticProperties.Description="Create a Match Entry"
                     SemanticProperties.HeadingLevel="Level1"
@@ -39,11 +40,14 @@
                 Grid.Column="0"
                 Direction="Column">
                 <Entry
+                    FontFamily="SairaRegular"
                     Placeholder="New Trainer Name"
                     Text="{Binding NameInput}" />
                 <Button
                     x:Name="TrainerNameBtn"
                     Command="{Binding UpdateTrainerNameCommand}"
+                    FontAttributes="Bold"
+                    FontFamily="SairaBlack"
                     Text="Update Trainer's Name" />
 
                 <Label
@@ -52,17 +56,30 @@
                     HorizontalTextAlignment="Center"
                     Text="Select Decks"
                     VerticalOptions="End" />
-
+                <Label
+                    FontFamily="SairaBold"
+                    FontSize="Small"
+                    HorizontalTextAlignment="Center"
+                    Text="SairaBold"
+                    VerticalOptions="End" />
+                <Label
+                    FontFamily="SairaBlack.ttf"
+                    FontSize="Small"
+                    HorizontalTextAlignment="Center"
+                    Text="SairaBlack"
+                    VerticalOptions="End" />
                 <HorizontalStackLayout HorizontalOptions="Center">
                     <Picker
                         Title="Trainer's Deck"
                         Margin="5"
+                        FontFamily="SairaBold.ttf"
                         ItemsSource="{Binding DeckNames}"
                         SelectedItem="{Binding PlayerSelected}"
                         WidthRequest="150" />
                     <Picker
                         Title="Rival's Deck"
                         Margin="5"
+                        FontFamily="SairaBold"
                         ItemsSource="{Binding DeckNames}"
                         SelectedItem="{Binding RivalSelected}"
                         WidthRequest="150" />
@@ -74,6 +91,7 @@
                         HorizontalOptions="Center">
                     </Switch>
                     <Label
+                        FontFamily="SairaBlack"
                         Text="Best of:"
                         VerticalTextAlignment="Center" />
                     <Label
