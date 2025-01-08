@@ -47,7 +47,7 @@
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\Appicon\appicon.svg"/>
+        <MauiIcon Include="Resources\Appicon\appicon.svg" ForegroundFile="Resources\Appicon\appicon.svg" />
 
 		<!-- Splash Screen -->
         <MauiSplashScreen Include="Resources\Splash\splash_ball.svg" BaseSize="128,128" />
@@ -80,10 +80,6 @@
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Models\" />
 	</ItemGroup>
 
 	<ItemGroup>
