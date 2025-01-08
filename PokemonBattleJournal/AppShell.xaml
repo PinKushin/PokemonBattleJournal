@@ -6,14 +6,30 @@
     xmlns:views="clr-namespace:PokemonBattleJournal.Views"
     Title="PokemonBattleJournal"
     Shell.FlyoutBehavior="Flyout">
+    <Shell.FlyoutHeader>
 
+        <Grid BackgroundColor="{StaticResource PokeBlue}">
+            <Image
+                Aspect="AspectFill"
+                Opacity="0.2"
+                Source="ball_icon.png"
+                WidthRequest="100" />
+            <Label
+                FontAttributes="None"
+                FontSize="Large"
+                HorizontalTextAlignment="Center"
+                Text="PTCG Journal"
+                VerticalTextAlignment="Center" />
+        </Grid>
+
+    </Shell.FlyoutHeader>
     <ShellContent
         Title="Home"
         ContentTemplate="{DataTemplate views:MainPage}"
         Route="MainPage" />
     <ShellContent
-        Title="Home"
+        Title="About"
         ContentTemplate="{DataTemplate views:AboutPage}"
-        Route="MainPage" />
+        Route="AboutPage" />
 
 </Shell>
