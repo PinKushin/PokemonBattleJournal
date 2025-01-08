@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace PokemonBattleJournal.Model
+namespace PokemonBattleJournal.Models
 {
     [JsonObject]
     public class MatchEntry
