@@ -113,71 +113,71 @@ namespace PokemonBattleJournal.ViewModels
         /// <summary>
         /// Verify, Serialize, and Save Match Data
         /// </summary>
-        //[RelayCommand]
-        //public async Task SaveFile()
-        //{
-        //    // get default file path
-        //    var filePath = FileSystem.Current.AppDataDirectory + $"\\{TrainerName}.json";
-        //    // create file if it doesn't exist
-        //    if (!File.Exists(filePath))
-        //    {
-        //        File.Create(filePath);
-        //    }
+        [RelayCommand]
+        public async Task SaveFile()
+        {
+            // get default file path
+            var filePath = FileSystem.Current.AppDataDirectory + $"\\{TrainerName}.json";
+            // create file if it doesn't exist
+            if (!File.Exists(filePath))
+            {
+                File.Create(filePath);
+            }
 
-        //    try
-        //    {
-        //        //create blank match entry
-        //        var matchEntry = new MatchEntry
-        //        {
-        //            //add user inputs to match entry
-        //            PlayerSelected = PlayerSelected,
-        //            RivalSelected = RivalSelected,
-        //            DatePlayed = DatePlayed,
-        //            StartTime = StartTime,
-        //            EndTime = EndTime,
-        //            Result = Result,
-        //            FirstCheck = FirstCheck
-        //        };
-        //        if (TagsSelected != null)
-        //        {
-        //            foreach (var tag in TagsSelected)
-        //            {
-        //                matchEntry.TagsSelected.Add(tag.ToString()!);
-        //            }
-        //        }
-        //        if (UserNoteInput != null) matchEntry.Note = UserNoteInput;
+            try
+            {
+                //create blank match entry
+                var matchEntry = new MatchEntry
+                {
+                    //add user inputs to match entry
+                    PlayerSelected = PlayerSelected,
+                    RivalSelected = RivalSelected,
+                    DatePlayed = DatePlayed,
+                    StartTime = StartTime,
+                    EndTime = EndTime,
+                    Result = Result,
+                    FirstCheck = FirstCheck
+                };
+                if (TagsSelected != null)
+                {
+                    foreach (var tag in TagsSelected)
+                    {
+                        matchEntry.TagsSelected.Add(tag.ToString()!);
+                    }
+                }
+                if (UserNoteInput != null) matchEntry.Note = UserNoteInput;
 
-        //        //Read File from Disk throws error if file doesn't exist so it was created above
-        //        var saveFile = await File.ReadAllTextAsync(filePath);
-        //        //Deserialize file to add the new match or create an empty list of matches if no matches exist
-        //        var matchList = JsonConvert.DeserializeObject<List<MatchEntry>>(saveFile)
-        //            ?? [];
-        //        //add match to list
-        //        matchList.Add(matchEntry);
-        //        //serialize data with the new match appended to memory
-        //        saveFile = JsonConvert.SerializeObject(matchList, Formatting.Indented);
-        //        //write serialized data to file
-        //        await File.WriteAllTextAsync(filePath, saveFile);
+                //Read File from Disk throws error if file doesn't exist so it was created above
+                var saveFile = await File.ReadAllTextAsync(filePath);
+                //Deserialize file to add the new match or create an empty list of matches if no matches exist
+                var matchList = JsonConvert.DeserializeObject<List<MatchEntry>>(saveFile)
+                    ?? [];
+                //add match to list
+                matchList.Add(matchEntry);
+                //serialize data with the new match appended to memory
+                saveFile = JsonConvert.SerializeObject(matchList, Formatting.Indented);
+                //write serialized data to file
+                await File.WriteAllTextAsync(filePath, saveFile);
 
-        //        //Clear Inputs
-        //        SavedFileDisplay = $"Saved: Match at {CurrentDateTimeDisplay}";
-        //        TagsSelected = null;
-        //        FirstCheck = false;
-        //        UserNoteInput = null;
-        //        PlayerSelected = "Other";
-        //        RivalSelected = "Other";
-        //        StartTime = new TimeSpan();
-        //        EndTime = new TimeSpan();
-        //        Result = "";
-        //    }
-        //    catch (Exception)
-        //    {
+                //Clear Inputs
+                SavedFileDisplay = $"Saved: Match at {CurrentDateTimeDisplay}";
+                TagsSelected = null;
+                FirstCheck = false;
+                UserNoteInput = null;
+                PlayerSelected = "Other";
+                RivalSelected = "Other";
+                StartTime = new TimeSpan();
+                EndTime = new TimeSpan();
+                Result = "";
+            }
+            catch (Exception)
+            {
 
-        //        SavedFileDisplay = $"No File Saved";
-        //        return;
-        //    }
+                SavedFileDisplay = $"No File Saved";
+                return;
+            }
 
-        //}
+        }
 
         //Update/Save Trainer Name to preferences and update displays
         [RelayCommand]
