@@ -14,5 +14,8 @@
             HorizontalOptions="Center"
             Text="Created by John 'Pinkushin' Moore"
             VerticalOptions="Center" />
+        <!--<Label
+            HorizontalOptions="Center"
+            Text="Book by QuinX from https://thenounproject.com/browse/icons/term/book/" />-->
     </VerticalStackLayout>
 </ContentPage>
