@@ -17,8 +17,38 @@ namespace PokemonBattleJournal.Services
         public async Task<TcgDexCardBriefCollection?> AllCardsAsync()
         {
             if (HttpClient == null) HttpClient = new();
-            TcgDexCardBriefCollection? json = await HttpClient.GetFromJsonAsync<TcgDexCardBriefCollection>("https://api.tcgdex.net/v2/en/cards");
-            return json;
+            try
+            {
+                TcgDexCardBriefCollection? json = await HttpClient.GetFromJsonAsync<TcgDexCardBriefCollection>("https://api.tcgdex.net/v2/en/cards");
+                return json;
+            }
+            catch (Exception ex)
+            {
+                ModalErrorHandler modalErrorHandler = new ModalErrorHandler();
+                modalErrorHandler.HandleError(ex);
+                return null;
+            }
+        }
+
+        public async Task<TcgDexCard?> GetCardDetailsAsync(string id)
+        {
+            if (HttpClient == null) HttpClient = new();
+            try
+            {
+                string? json = await HttpClient.GetStringAsync($"https://api.tcgdex.net/v2/en/cards/{id}");
+                var tcgDexCard = TcgDexCard.FromJson(json);
+                return tcgDexCard;
+            }
+            catch (Exception ex)
+            {
+
+                ModalErrorHandler modalErrorHandler = new ModalErrorHandler();
+                modalErrorHandler.HandleError(ex);
+                return null;
+
+            }
+            
+           
         }
     }
 }

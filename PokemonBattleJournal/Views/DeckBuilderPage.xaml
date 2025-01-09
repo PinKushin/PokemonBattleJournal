@@ -48,6 +48,8 @@
             x:Name="CardCollection"
             Grid.Row="1"
             ItemsSource="{Binding CardList}"
+            SelectedItem="{Binding SelectedCard}"
+            SelectionChangedCommand="{Binding TapCommand}"
             SelectionMode="Single">
 
             <CollectionView.ItemsLayout>
@@ -59,6 +61,9 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="{x:Type model:TcgDexCardBrief}">
                     <VerticalStackLayout Padding="10">
+                        <!--<VerticalStackLayout.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:DeckBuilderPageViewModel}}, Path=TapCommand}" />
+                        </VerticalStackLayout.GestureRecognizers>-->
                         <Image
                             MaximumHeightRequest="300"
                             Source="{Binding Image}" />

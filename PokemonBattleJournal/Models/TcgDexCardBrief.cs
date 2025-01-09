@@ -23,6 +23,10 @@ namespace PokemonBattleJournal.Models
         [JsonPropertyName("image")]
         public string Image { get; set; } = "card_backside_atomicmonkeytcg.png";
 
-        public TcgDexCardBrief() { }
+        //public TcgDexCardBrief(string id, string name) 
+        //{
+        //    Name = name;
+        //    Id = id;
+        //}
     }
 }

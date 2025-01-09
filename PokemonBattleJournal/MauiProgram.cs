@@ -32,8 +32,24 @@ namespace PokemonBattleJournal
             builder.Services.AddSingleton<DeckBuilderPage>();
             builder.Services.AddSingleton<DeckBuilderPageViewModel>();
 
+            builder.Services.AddTransient<CardDetailsPage>();
+            builder.Services.AddTransient<CardDetailsPageViewModel>();
+
             builder.Services.AddSingleton<AboutPage>();
             builder.Services.AddSingleton<AboutPageViewModel>();
+
+            builder.Services.AddSingleton<TestPage>();
+            builder.Services.AddSingleton<TestPageViewModel>();
+
+#if WINDOWS
+
+            Microsoft.Maui.Controls.Handlers.Items.CollectionViewHandler.Mapper.AppendToMapping("DisableMultiselectCheckbox", 
+            (handler, view) =>
+            {
+                handler.PlatformView.IsMultiSelectCheckBoxEnabled = false;
+            });
+
+#endif
 
             return builder.Build();
         }

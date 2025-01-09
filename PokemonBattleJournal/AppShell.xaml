@@ -35,5 +35,9 @@
         Title="About"
         ContentTemplate="{DataTemplate views:AboutPage}"
         Route="AboutPage" />
+    <ShellContent
+        Title="Dev Test Page"
+        ContentTemplate="{DataTemplate views:TestPage}"
+        Route="TestPage" />
 
 </Shell>

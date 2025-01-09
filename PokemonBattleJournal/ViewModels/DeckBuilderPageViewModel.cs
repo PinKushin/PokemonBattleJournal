@@ -14,6 +14,8 @@ namespace PokemonBattleJournal.ViewModels
     {
         [ObservableProperty]
         public partial ObservableCollection<TcgDexCardBrief>? CardList { get; set; }
+        [ObservableProperty]
+        public partial TcgDexCardBrief? SelectedCard { get; set; }
 
         [ObservableProperty]
         public partial string? SearchTerm { get; set; }
@@ -41,13 +43,13 @@ namespace PokemonBattleJournal.ViewModels
             if (CardList == null) return;
             foreach (var card in CardList)
             {
-                if (card.Image != "card_backside_atomicmonkeytcg.png")
-                {
-                    card.Image += "/high.png";
-                }
-                else if (card.Image == "" || card.Image == null)
+                if (card.Image == "" || card.Image == null)
                 {
                     card.Image = "card_backside_atomicmonkeytcg.png";
+                }
+                else if (card.Image != "card_backside_atomicmonkeytcg.png")
+                {
+                    card.Image += "/high.png";
                 }
             }
         }
@@ -67,8 +69,21 @@ namespace PokemonBattleJournal.ViewModels
                 }
                 CardList = CardList.Where(x => x.Name.StartsWith(filterText, StringComparison.OrdinalIgnoreCase)).ToObservableCollection();
             }
+        }
 
+        [RelayCommand]
+        public async Task Tap()
+        {
+            if (SelectedCard == null) return;
+            Dictionary<string, object> parameters = new Dictionary<string, object>{
+                {"new", true },
+                {"card", SelectedCard },
+                {"name", SelectedCard.Name },
+                {"id", SelectedCard.Id},
 
+            };
+            
+            await Shell.Current.GoToAsync($"{nameof(CardDetailsPage)}", parameters);
         }
     }
 }
