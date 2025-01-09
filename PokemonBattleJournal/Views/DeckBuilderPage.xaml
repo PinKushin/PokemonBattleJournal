@@ -43,7 +43,13 @@
 
             </SearchBar>
         </VerticalStackLayout>
-
+        <ActivityIndicator
+            Grid.Row="1"
+            HorizontalOptions="Center"
+            IsEnabled="True"
+            IsRunning="True"
+            IsVisible="{Binding IsIndicatorVisible}"
+            VerticalOptions="Center" />
         <CollectionView
             x:Name="CardCollection"
             Grid.Row="1"
