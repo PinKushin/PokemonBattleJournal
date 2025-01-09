@@ -19,6 +19,8 @@ namespace PokemonBattleJournal.ViewModels
 
         [ObservableProperty]
         public partial string? SearchTerm { get; set; }
+        [ObservableProperty]
+        public partial bool IsIndicatorVisible { get; set; } = true;
 
         private bool _isInitialized = false;
 
@@ -33,6 +35,8 @@ namespace PokemonBattleJournal.ViewModels
             if (_isInitialized) return;
             _isInitialized = true;
             await GetAllCardsAsync();
+            IsIndicatorVisible = false;
+            
         }
 
         [RelayCommand]
