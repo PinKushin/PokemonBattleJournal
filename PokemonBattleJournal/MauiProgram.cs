@@ -14,11 +14,21 @@ namespace PokemonBattleJournal
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                    fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");  
+                    fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+
+                    fonts.AddFont("Saira-Regular.ttf", "SairaRegular");
+                    fonts.AddFont("Saira-Bold.ttf", "SairaBold");
+                    fonts.AddFont("Saira-Black.ttf", "SairaBlack");
+                  
+                    fonts.AddFont("Charm-Regular.ttf", "CharmRegular");
+                    fonts.AddFont("Charm-Bold.ttf", "CharmBold");
+
+                    fonts.AddFont("Doto_Rounded-Black.ttf", "DotoRoundedBlack");
+
                     fonts.AddFont("PokemonSolid.ttf", "PokemonSolid");
-                    fonts.AddFont("pokemon_tcg_symbols_font_by_icycatelf_dah5i8h.ttf", "PokemonSymbols");
-                    fonts.AddFont("Decotura-ICG-Regular.ttf", "Deco");
                     fonts.AddFont("PokemonGb-RAeo.ttf", "PokemonGB");
+                    fonts.AddFont("pokemon_tcg_symbols_font_by_icycatelf_dah5i8h.ttf", "PokemonSymbols");
+
                     fonts.AddFont("FluentSystemIcons-Regular.ttf", FluentUI.FontFamily);
                 });
 
