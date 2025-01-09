@@ -52,8 +52,10 @@
                 <Label
                     FontAttributes="Bold"
                     HorizontalTextAlignment="Center"
+                    Style="{StaticResource Headline}"
                     Text="Select Decks"
                     VerticalOptions="End" />
+
 
                 <HorizontalStackLayout HorizontalOptions="Center">
                     <Picker
@@ -69,6 +71,7 @@
                         SelectedItem="{Binding RivalSelected}"
                         WidthRequest="150" />
                 </HorizontalStackLayout>
+
 
                 <HorizontalStackLayout HorizontalOptions="Center">
                     <Switch
