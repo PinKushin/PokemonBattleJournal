@@ -3,7 +3,7 @@
     public class MainPageViewModelTests
     {
         [Fact]
-        public void MainPageViewmodel_UpdateTrainerName_TrainerNameChanged()
+        public void MainPageViewModel_UpdateTrainerName_TrainerNameChanged()
         {
             // Arrange
             var viewModel = new MainPageViewModel();
@@ -17,7 +17,7 @@
             viewModel.NameInput.Should().BeNull();
         }
         [Fact]
-        public void MainPageViewmodel_UpdateTrainerName_TrainerNameUnchanged()
+        public void MainPageViewModel_UpdateTrainerName_TrainerNameUnchanged()
         {
             // Arrange
             var viewModel = new MainPageViewModel();
