@@ -169,7 +169,7 @@
                         IsEnabled="True"
                         VerticalOptions="Center" />
                     <Picker
-                        Title="Win/Lose/Draw"
+                        Title="W/L/D"
                         HorizontalOptions="Center"
                         ItemsSource="{Binding PossibleResults}"
                         SelectedItem="{Binding Result}"
