@@ -24,7 +24,7 @@
 
     </Shell.FlyoutHeader>
     <ShellContent
-        Title="Home"
+        Title="Journal Entry"
         ContentTemplate="{DataTemplate views:MainPage}"
         Route="MainPage" />
     <ShellContent
