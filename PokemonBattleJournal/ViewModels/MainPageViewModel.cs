@@ -38,7 +38,7 @@ namespace PokemonBattleJournal.ViewModels
 
             PossibleResults.Add("Win");
             PossibleResults.Add("Lose");
-            PossibleResults.Add("Draw");
+            PossibleResults.Add("Tie");
 
             WelcomeMsg = $"Welcome {TrainerName}";
 
@@ -92,13 +92,25 @@ namespace PokemonBattleJournal.ViewModels
         public partial DateTime DatePlayed { get; set; } = DateTime.Now;
         [ObservableProperty]
         public partial ObservableCollection<string>? DeckNames { get; set; } = new();
+
+
+        [ObservableProperty]
+        public partial bool BO3Toggle { get; set; }
         [ObservableProperty]
         public partial bool FirstCheck { get; set; }
+        [ObservableProperty]
+        public partial bool FirstCheck2 { get; set; }
+        [ObservableProperty]
+        public partial bool FirstCheck3 { get; set; }
 
         [ObservableProperty]
         public partial ObservableCollection<string>? PossibleResults { get; set; } = new();
         [ObservableProperty]
         public partial string Result { get; set; } = "";
+        [ObservableProperty]
+        public partial string Result2 { get; set; } = "";
+        [ObservableProperty]
+        public partial string Result3 { get; set; } = "";
 
         //Tags
         [ObservableProperty]
@@ -119,11 +131,11 @@ namespace PokemonBattleJournal.ViewModels
         public async Task SaveFile()
         {
             // get default file path
-            var filePath = FileSystem.Current.AppDataDirectory + $"\\{TrainerName}.json";
+            var filePath = FileHelper.GetAppDataPath() + $"\\{TrainerName}.json";
             // create file if it doesn't exist
-            if (!File.Exists(filePath))
+            if (!FileHelper.Exists(filePath))
             {
-                File.Create(filePath);
+                FileHelper.CreateFile(filePath);
             }
 
             try
@@ -132,25 +144,122 @@ namespace PokemonBattleJournal.ViewModels
                 var matchEntry = new MatchEntry
                 {
                     //add user inputs to match entry
-                    PlayerSelected = PlayerSelected,
-                    RivalSelected = RivalSelected,
+                    Playing = PlayerSelected,
+                    Against = RivalSelected,
+                    Time = DatePlayed,
                     DatePlayed = DatePlayed,
                     StartTime = StartTime,
-                    EndTime = EndTime,
-                    Result = Result,
-                    FirstCheck = FirstCheck
+                    EndTime = EndTime
                 };
-                if (TagsSelected != null)
+
+                matchEntry.Game1 = new Game();
+                matchEntry.Game1.Result = Result;
+                if (FirstCheck)
                 {
-                    foreach (var tag in TagsSelected)
+                    matchEntry.Game1.Turn = 1;
+                }
+                else
+                {
+                    matchEntry.Game1.Turn = 2;
+                }
+                if (UserNoteInput != null) matchEntry.Game1.Notes = UserNoteInput;
+                if (!BO3Toggle)
+                {
+                    matchEntry.Result = Result;
+                }
+                else
+                {
+                    int _wins = 0;
+                    int _draws = 0;
+                    matchEntry.Game2 = new Game();
+                    matchEntry.Game3 = new Game();
+                    matchEntry.Game2.Result = Result2;
+                    switch (Result2)
                     {
-                        matchEntry.TagsSelected.Add(tag.ToString()!);
+                        case "Win":
+                            _wins++;
+                            break;
+
+                        case "Tie":
+                            _draws++;
+                            break;
+                    }
+                    switch (Result2)
+                    {
+                        case "Win":
+                            _wins++;
+                            break;
+
+                        case "Tie":
+                            _draws++; 
+                            break;
+                    }
+                    matchEntry.Game3.Result = Result3;
+                    switch (Result3)
+                    {
+                        case "Win":
+                            _wins++;
+                            break;
+
+                        case "Tie":
+                            _draws++;
+                            break;
+                    }
+                    
+                    if (_wins >= 2)
+                    {
+                        matchEntry.Result = "Win";
+                    }
+                    else if (_draws >= 2)
+                    {
+                        matchEntry.Result = "Tie";
+                    }
+                    else
+                    {
+                        matchEntry.Result = "Loss";
+                    }
+
+                    if (UserNoteInput2 != null) matchEntry.Game2.Notes = UserNoteInput2;
+                    if (UserNoteInput3 != null) matchEntry.Game3.Notes = UserNoteInput3;
+
+                    if (FirstCheck2)
+                    {
+                        matchEntry.Game2.Turn = 1;
+                    }
+                    else
+                    {
+                        matchEntry.Game2.Turn = 2;
+                    }
+
+                    if (FirstCheck3)
+                    {
+                        matchEntry.Game3.Turn = 1;
+                    }
+                    else
+                    {
+                        matchEntry.Game3.Turn = 2;
+                    }
+
+                    if (Match2TagsSelected != null)
+                    {
+                        matchEntry.Game2.Tags = new();
+                        foreach (var tag in Match2TagsSelected)
+                        {
+                            matchEntry.Game2.Tags.Add(tag.ToString()!);
+                        }
+                    }
+
+                    if (Match3TagsSelected != null)
+                    {
+                        matchEntry.Game3.Tags = new();
+                        foreach (var tag in Match3TagsSelected)
+                        {
+                            matchEntry.Game3.Tags.Add(tag.ToString()!);
+                        }
                     }
                 }
-                if (UserNoteInput != null) matchEntry.Note = UserNoteInput;
-
                 //Read File from Disk throws error if file doesn't exist so it was created above
-                var saveFile = await File.ReadAllTextAsync(filePath);
+                var saveFile = await FileHelper.ReadFileAsync(filePath);
                 //Deserialize file to add the new match or create an empty list of matches if no matches exist
                 var matchList = JsonConvert.DeserializeObject<List<MatchEntry>>(saveFile)
                     ?? [];
@@ -159,18 +268,26 @@ namespace PokemonBattleJournal.ViewModels
                 //serialize data with the new match appended to memory
                 saveFile = JsonConvert.SerializeObject(matchList, Formatting.Indented);
                 //write serialized data to file
-                await File.WriteAllTextAsync(filePath, saveFile);
+                await FileHelper.WriteFileAsync(filePath, saveFile);
 
                 //Clear Inputs
                 SavedFileDisplay = $"Saved: Match at {CurrentDateTimeDisplay}";
                 TagsSelected = null;
+                Match2TagsSelected = null;
+                Match3TagsSelected = null;
                 FirstCheck = false;
+                FirstCheck2 = false;
+                FirstCheck3 = false;
                 UserNoteInput = null;
+                UserNoteInput2 = null;
+                UserNoteInput3 = null;
                 PlayerSelected = "Other";
                 RivalSelected = "Other";
                 StartTime = new TimeSpan();
                 EndTime = new TimeSpan();
                 Result = "";
+                Result2 = "";
+                Result3 = "";
             }
             catch (Exception)
             {

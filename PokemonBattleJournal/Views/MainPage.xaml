@@ -76,7 +76,8 @@
                 <HorizontalStackLayout HorizontalOptions="Center">
                     <Switch
                         x:Name="BOSwitch"
-                        HorizontalOptions="Center">
+                        HorizontalOptions="Center"
+                        IsToggled="{Binding BO3Toggle}">
                     </Switch>
                     <Label
                         Text="Best of:"
@@ -168,12 +169,7 @@
                         HorizontalOptions="Center"
                         IsEnabled="True"
                         VerticalOptions="Center" />
-                    <Picker
-                        Title="W/L/D"
-                        HorizontalOptions="Center"
-                        ItemsSource="{Binding PossibleResults}"
-                        SelectedItem="{Binding Result}"
-                        WidthRequest="120" />
+
 
                 </HorizontalStackLayout>
             </FlexLayout>
@@ -238,6 +234,12 @@
                         IsSpellCheckEnabled="True"
                         Placeholder="Write notes here..."
                         Text="{Binding UserNoteInput}" />
+                    <Picker
+                        Title="W/L/T"
+                        HorizontalOptions="Center"
+                        ItemsSource="{Binding PossibleResults}"
+                        SelectedItem="{Binding Result}"
+                        WidthRequest="120" />
                     <VerticalStackLayout IsVisible="False">
                         <VerticalStackLayout.Triggers>
                             <DataTrigger
@@ -249,6 +251,7 @@
                             </DataTrigger>
 
                         </VerticalStackLayout.Triggers>
+
 
                         <CollectionView
                             CanReorderItems="True"
@@ -297,6 +300,12 @@
                             IsVisible="True"
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput2}" />
+                        <Picker
+                            Title="W/L/T"
+                            HorizontalOptions="Center"
+                            ItemsSource="{Binding PossibleResults}"
+                            SelectedItem="{Binding Result2}"
+                            WidthRequest="120" />
 
                         <CollectionView
                             CanReorderItems="True"
@@ -345,9 +354,12 @@
                             IsVisible="True"
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput3}" />
-
-
-
+                        <Picker
+                            Title="W/L/T"
+                            HorizontalOptions="Center"
+                            ItemsSource="{Binding PossibleResults}"
+                            SelectedItem="{Binding Result3}"
+                            WidthRequest="120" />
                     </VerticalStackLayout>
                 </VerticalStackLayout>
 

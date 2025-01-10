@@ -24,7 +24,7 @@
             <Label Text="{Binding Card.Attacks[0].Name}" />
             <Label Text="{Binding Attack.Damage}" />
             <Label Text="{Binding Card.Attacks[1].Name}" />
-            <Label Text="{Binding Card.Attacks[1].Damage.Integer}" />
+            <Label Text="{Binding Card.Attacks[1].Damage}" />
             <Button
                 Command="{Binding GoBackCommand}"
                 Text="Go Back" />
