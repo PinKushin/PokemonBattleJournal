@@ -288,6 +288,7 @@ namespace PokemonBattleJournal.ViewModels
                 Result = "";
                 Result2 = "";
                 Result3 = "";
+                BO3Toggle = false;
             }
             catch (Exception)
             {
