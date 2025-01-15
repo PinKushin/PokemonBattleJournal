@@ -7,4 +7,5 @@ public partial class CardDetailsPage : ContentPage
 		InitializeComponent();
 		BindingContext = vm;
 	}
+
 }

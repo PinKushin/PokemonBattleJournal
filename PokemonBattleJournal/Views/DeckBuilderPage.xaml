@@ -71,7 +71,7 @@
                             <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:DeckBuilderPageViewModel}}, Path=TapCommand}" />
                         </VerticalStackLayout.GestureRecognizers>
                         <Image
-                            MaximumHeightRequest="300"
+                            HeightRequest="300"
                             Source="{Binding Image}" />
                         <Label
                             Margin="0,0,0,0"

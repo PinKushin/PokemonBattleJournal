@@ -43,7 +43,7 @@ namespace PokemonBattleJournal.Models
         public string Result { get; set; } = "Draw";
 
         [JsonProperty("turn")]
-        [JsonConverter(typeof(ParseStringConverter))]
+        [JsonConverter(typeof(Converter))]
         public long Turn { get; set; } = 1;
 
         [JsonProperty("tags")]

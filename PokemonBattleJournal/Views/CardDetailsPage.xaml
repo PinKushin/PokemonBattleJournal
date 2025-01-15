@@ -21,10 +21,21 @@
             <Image Source="{Binding CardBrief.Image}" />
             <Label Text="{Binding Card.Set.Name}" />
             <Label Text="{Binding Card.Id}" />
-            <Label Text="{Binding Card.Attacks[0].Name}" />
-            <Label Text="{Binding Attack.Damage}" />
-            <Label Text="{Binding Card.Attacks[1].Name}" />
-            <Label Text="{Binding Card.Attacks[1].Damage}" />
+            <Label
+                IsVisible="{Binding Attack1Visible}"
+                Text="{Binding Card.Attacks[0].Name}" />
+            <Label
+                IsVisible="{Binding Attack1Visible}"
+                Text="{Binding Attack1DamageDisplay}" />
+            <Label
+                IsVisible="{Binding Attack2Visible}"
+                Text="{Binding Card.Attacks[1].Name}" />
+            <Label
+                IsVisible="{Binding Attack2Visible}"
+                Text="{Binding Attack2.Damage}" />
+            <Label Text="{Binding Details}" />
+            <Label Text="{Binding Card.RegulationMark}" />
+            <Label Text="{Binding Card.Category}" />
             <Button
                 Command="{Binding GoBackCommand}"
                 Text="Go Back" />

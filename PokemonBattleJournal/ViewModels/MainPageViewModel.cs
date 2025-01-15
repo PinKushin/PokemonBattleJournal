@@ -41,6 +41,13 @@ namespace PokemonBattleJournal.ViewModels
             PossibleResults.Add("Tie");
 
             WelcomeMsg = $"Welcome {TrainerName}";
+            // get default file path
+            var filePath = FileHelper.GetAppDataPath() + $"\\{TrainerName}.json";
+            // create file if it doesn't exist
+            if (!FileHelper.Exists(filePath))
+            {
+                FileHelper.CreateFile(filePath);
+            }
 
         }
         /// <summary>
@@ -131,7 +138,7 @@ namespace PokemonBattleJournal.ViewModels
         public async Task SaveFile()
         {
             // get default file path
-            var filePath = FileHelper.GetAppDataPath() + $"\\{TrainerName}.json";
+            string filePath = FileHelper.GetAppDataPath() + $"\\{TrainerName}.json";
             // create file if it doesn't exist
             if (!FileHelper.Exists(filePath))
             {
@@ -290,10 +297,12 @@ namespace PokemonBattleJournal.ViewModels
                 Result3 = "";
                 BO3Toggle = false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
                 SavedFileDisplay = $"No File Saved";
+                ModalErrorHandler modalErrorHandler = new ModalErrorHandler();
+                modalErrorHandler.HandleError(ex);
                 return;
             }
 

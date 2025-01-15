@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PokemonBattleJournal.Utilities
 {
-    internal class PreferencesHelper
+    public static class PreferencesHelper
     {
         public static string GetSetting(string key)
         {

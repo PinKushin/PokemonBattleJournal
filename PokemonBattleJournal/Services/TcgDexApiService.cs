@@ -14,12 +14,12 @@ namespace PokemonBattleJournal.Services
             HttpClient = new HttpClient();
         }
 
-        public async Task<TcgDexCardBriefCollection?> AllCardsAsync()
+        public async Task<TcgDexCardBriefCollection?> GetAllCardsAsync()
         {
             if (HttpClient == null) HttpClient = new();
             try
             {
-                TcgDexCardBriefCollection? json = await HttpClient.GetFromJsonAsync<TcgDexCardBriefCollection>("https://api.tcgdex.net/v2/en/cards");
+                TcgDexCardBriefCollection? json = await HttpClient.GetFromJsonAsync<TcgDexCardBriefCollection>("https://api.tcgdex.net/v2/en/cards?sort:field=name");
                 return json;
             }
             catch (Exception ex)
@@ -47,8 +47,25 @@ namespace PokemonBattleJournal.Services
                 return null;
 
             }
-            
-           
+        }
+
+        public async Task<TcgDexCardBriefCollection?> GetStandardCardsAsync()
+        {
+            if (HttpClient == null) HttpClient = new();
+            try
+            {
+                //Filter Standard Legal Cards
+                TcgDexCardBriefCollection? json = await HttpClient.GetFromJsonAsync<TcgDexCardBriefCollection>(
+                    "https://api.tcgdex.net/v2/en/cards?legal.standard=true&sort:field=name"
+                    );
+                return json;
+            }
+            catch (Exception ex)
+            {
+                ModalErrorHandler modalErrorHandler = new ModalErrorHandler();
+                modalErrorHandler.HandleError(ex);
+                return null;
+            }
         }
     }
 }

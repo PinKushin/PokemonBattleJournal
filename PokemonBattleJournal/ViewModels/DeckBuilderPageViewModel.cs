@@ -34,16 +34,16 @@ namespace PokemonBattleJournal.ViewModels
         {
             if (_isInitialized) return;
             _isInitialized = true;
-            await GetAllCardsAsync();
+            await GetStandardCardsAsync();
             IsIndicatorVisible = false;
             
         }
 
         [RelayCommand]
-        public async Task GetAllCardsAsync()
+        public async Task GetStandardCardsAsync()
         {
             var tcgDexApiService = new TcgDexApiService();
-            CardList = await tcgDexApiService.AllCardsAsync();
+            CardList = await tcgDexApiService.GetStandardCardsAsync();
             if (CardList == null) return;
             foreach (var card in CardList)
             {
@@ -60,8 +60,8 @@ namespace PokemonBattleJournal.ViewModels
         [RelayCommand]
         public async Task SearchCards(string filterText)
         {
-            if (CardList == null) await GetAllCardsAsync();
-            if (string.IsNullOrEmpty(filterText)) await GetAllCardsAsync();
+            if (CardList == null) await GetStandardCardsAsync();
+            if (string.IsNullOrEmpty(filterText)) await GetStandardCardsAsync();
             var prevList = CardList;
             if (prevList == null) return;
             if (CardList != null)

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="PokemonBattleJournal.Views.ReadJournalPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:model="clr-namespace:PokemonBattleJournal.Models"
+    xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
+    Title="Trainer's Journal"
+    x:DataType="viewmodel:ReadJournalPageViewModel">
+    <ScrollView Margin="20">
+        <Grid
+            ColumnDefinitions="*,*"
+            RowDefinitions="Auto, *, *, *, *, *, Auto">
+            <Image
+                Grid.ColumnSpan="2"
+                HeightRequest="48"
+                HorizontalOptions="Center"
+                Source="{Binding NoteHeaderIconSource}" />
+            <Label
+                Grid.Row="1"
+                Grid.ColumnSpan="2"
+                HorizontalOptions="Center"
+                Text="Welcome to your journal!"
+                VerticalOptions="Center" />
+            <Editor
+                Grid.Row="2"
+                Grid.ColumnSpan="2"
+                HeightRequest="200"
+                IsReadOnly="True"
+                Text="{Binding SelectedNote}" />
+            <Label
+                Grid.Row="3"
+                Text="Pick A Match" />
+
+
+            <CollectionView
+                Grid.Row="4"
+                Grid.ColumnSpan="2"
+                Margin="12"
+                HeightRequest="200"
+                ItemsLayout="VerticalGrid"
+                ItemsSource="{Binding MatchHistory}"
+                ItemsUpdatingScrollMode="KeepItemsInView"
+                SelectedItem="{Binding SelectedMatch}"
+                SelectionChangedCommand="{Binding LoadMatchCommand}"
+                SelectionMode="Single"
+                VerticalOptions="Fill"
+                VerticalScrollBarVisibility="Always">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="{x:Type model:MatchEntry}">
+                        <ScrollView>
+                            <HorizontalStackLayout>
+                                <Label Text="{Binding Playing}" />
+                                <Label Text="{Binding Time}" />
+                            </HorizontalStackLayout>
+
+                        </ScrollView>
+
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </Grid>
+    </ScrollView>
+</ContentPage>

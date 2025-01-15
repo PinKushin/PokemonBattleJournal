@@ -5,30 +5,33 @@
 //    using PokemonBattleJournal.Models;
 //
 //    var tcgDexCard = TcgDexCard.FromJson(jsonString);
+using System;
+using System.Collections.Generic;
+
 using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+
 namespace PokemonBattleJournal.Models
 {
-
+    
 
     public partial class TcgDexCard
     {
         [JsonProperty("category")]
-        public string Category { get; set; }
+        public Category Category { get; set; }
 
         [JsonProperty("id")]
         public string Id { get; set; }
 
-        [JsonProperty("illustrator")]
+        [JsonProperty("illustrator", NullValueHandling = NullValueHandling.Ignore)]
         public string Illustrator { get; set; }
 
         [JsonProperty("image")]
         public Uri Image { get; set; }
 
         [JsonProperty("localId")]
-        [JsonConverter(typeof(ParseStringConverter))]
-        public long LocalId { get; set; }
+        public string LocalId { get; set; }
 
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -42,29 +45,35 @@ namespace PokemonBattleJournal.Models
         [JsonProperty("variants")]
         public Variants Variants { get; set; }
 
-        [JsonProperty("dexId")]
+        [JsonProperty("dexId", NullValueHandling = NullValueHandling.Ignore)]
         public List<long> DexId { get; set; }
 
-        [JsonProperty("hp")]
-        public long Hp { get; set; }
+        [JsonProperty("hp", NullValueHandling = NullValueHandling.Ignore)]
+        public long? Hp { get; set; }
 
-        [JsonProperty("types")]
+        [JsonProperty("types", NullValueHandling = NullValueHandling.Ignore)]
         public List<string> Types { get; set; }
 
-        [JsonProperty("stage")]
+        [JsonProperty("evolveFrom", NullValueHandling = NullValueHandling.Ignore)]
+        public string EvolveFrom { get; set; }
+
+        [JsonProperty("description", NullValueHandling = NullValueHandling.Ignore)]
+        public string Description { get; set; }
+
+        [JsonProperty("stage", NullValueHandling = NullValueHandling.Ignore)]
         public string Stage { get; set; }
 
-        [JsonProperty("abilities", NullValueHandling = NullValueHandling.Ignore)]
-        public List<Ability> Abilities { get; set; }
-
-        [JsonProperty("attacks")]
+        [JsonProperty("attacks", NullValueHandling = NullValueHandling.Ignore)]
         public List<Attack> Attacks { get; set; }
 
-        [JsonProperty("weaknesses")]
-        public List<Resistance> Weaknesses { get; set; }
+        [JsonProperty("weaknesses", NullValueHandling = NullValueHandling.Ignore)]
+        public List<Weakness> Weaknesses { get; set; }
 
-        [JsonProperty("retreat")]
-        public long Retreat { get; set; }
+        [JsonProperty("retreat", NullValueHandling = NullValueHandling.Ignore)]
+        public long? Retreat { get; set; }
+
+        [JsonProperty("regulationMark", NullValueHandling = NullValueHandling.Ignore)]
+        public string RegulationMark { get; set; }
 
         [JsonProperty("legal")]
         public Legal Legal { get; set; }
@@ -72,8 +81,20 @@ namespace PokemonBattleJournal.Models
         [JsonProperty("updated")]
         public DateTimeOffset Updated { get; set; }
 
-        [JsonProperty("resistances", NullValueHandling = NullValueHandling.Ignore)]
-        public List<Resistance> Resistances { get; set; }
+        [JsonProperty("effect", NullValueHandling = NullValueHandling.Ignore)]
+        public string Effect { get; set; }
+
+        [JsonProperty("trainerType", NullValueHandling = NullValueHandling.Ignore)]
+        public string TrainerType { get; set; }
+
+        [JsonProperty("energyType", NullValueHandling = NullValueHandling.Ignore)]
+        public string EnergyType { get; set; }
+
+        [JsonProperty("suffix", NullValueHandling = NullValueHandling.Ignore)]
+        public string Suffix { get; set; }
+
+        [JsonProperty("abilities", NullValueHandling = NullValueHandling.Ignore)]
+        public List<Ability> Abilities { get; set; }
     }
 
     public partial class Ability
@@ -96,11 +117,11 @@ namespace PokemonBattleJournal.Models
         [JsonProperty("name")]
         public string Name { get; set; }
 
-        [JsonProperty("effect")]
+        [JsonProperty("effect", NullValueHandling = NullValueHandling.Ignore)]
         public string Effect { get; set; }
 
-        [JsonProperty("damage")]
-        public Damage Damage { get; set; }
+        [JsonProperty("damage", NullValueHandling = NullValueHandling.Ignore)]
+        public Damage? Damage { get; set; }
     }
 
     public partial class Legal
@@ -112,15 +133,6 @@ namespace PokemonBattleJournal.Models
         public bool Expanded { get; set; }
     }
 
-    public partial class Resistance
-    {
-        [JsonProperty("type")]
-        public string Type { get; set; }
-
-        [JsonProperty("value")]
-        public string Value { get; set; }
-    }
-
     public partial class Set
     {
         [JsonProperty("cardCount")]
@@ -129,13 +141,13 @@ namespace PokemonBattleJournal.Models
         [JsonProperty("id")]
         public string Id { get; set; }
 
-        [JsonProperty("logo")]
+        [JsonProperty("logo", NullValueHandling = NullValueHandling.Ignore)]
         public Uri Logo { get; set; }
 
         [JsonProperty("name")]
         public string Name { get; set; }
 
-        [JsonProperty("symbol")]
+        [JsonProperty("symbol", NullValueHandling = NullValueHandling.Ignore)]
         public Uri Symbol { get; set; }
     }
 
@@ -166,6 +178,17 @@ namespace PokemonBattleJournal.Models
         public bool WPromo { get; set; }
     }
 
+    public partial class Weakness
+    {
+        [JsonProperty("type")]
+        public string Type { get; set; }
+
+        [JsonProperty("value")]
+        public string Value { get; set; }
+    }
+
+    public enum Category { Energy, Pokemon, Trainer };
+
     public partial struct Damage
     {
         public long? Integer;
@@ -177,12 +200,12 @@ namespace PokemonBattleJournal.Models
 
     public partial class TcgDexCard
     {
-        public static TcgDexCard FromJson(string json) => JsonConvert.DeserializeObject<TcgDexCard>(json, Converter.Settings);
+        public static TcgDexCard FromJson(string json) => JsonConvert.DeserializeObject<TcgDexCard>(json, PokemonBattleJournal.Models.Converter.Settings);
     }
 
     public static class Serialize
     {
-        public static string ToJson(this TcgDexCard self) => JsonConvert.SerializeObject(self, Converter.Settings);
+        public static string ToJson(this TcgDexCard self) => JsonConvert.SerializeObject(self, PokemonBattleJournal.Models.Converter.Settings);
     }
 
     internal static class Converter
@@ -194,6 +217,7 @@ namespace PokemonBattleJournal.Models
             Converters =
             {
                 DamageConverter.Singleton,
+                CategoryConverter.Singleton,
                 new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
             },
         };
@@ -237,20 +261,24 @@ namespace PokemonBattleJournal.Models
         public static readonly DamageConverter Singleton = new DamageConverter();
     }
 
-    internal class ParseStringConverter : JsonConverter
+    internal class CategoryConverter : JsonConverter
     {
-        public override bool CanConvert(Type t) => t == typeof(long) || t == typeof(long?);
+        public override bool CanConvert(Type t) => t == typeof(Category) || t == typeof(Category?);
 
         public override object ReadJson(JsonReader reader, Type t, object existingValue, JsonSerializer serializer)
         {
             if (reader.TokenType == JsonToken.Null) return null;
             var value = serializer.Deserialize<string>(reader);
-            long l;
-            if (Int64.TryParse(value, out l))
+            switch (value)
             {
-                return l;
+                case "Energy":
+                    return Category.Energy;
+                case "Pokemon":
+                    return Category.Pokemon;
+                case "Trainer":
+                    return Category.Trainer;
             }
-            throw new Exception("Cannot unmarshal type long");
+            throw new Exception("Cannot unmarshal type Category");
         }
 
         public override void WriteJson(JsonWriter writer, object untypedValue, JsonSerializer serializer)
@@ -260,11 +288,22 @@ namespace PokemonBattleJournal.Models
                 serializer.Serialize(writer, null);
                 return;
             }
-            var value = (long)untypedValue;
-            serializer.Serialize(writer, value.ToString());
-            return;
+            var value = (Category)untypedValue;
+            switch (value)
+            {
+                case Category.Energy:
+                    serializer.Serialize(writer, "Energy");
+                    return;
+                case Category.Pokemon:
+                    serializer.Serialize(writer, "Pokemon");
+                    return;
+                case Category.Trainer:
+                    serializer.Serialize(writer, "Trainer");
+                    return;
+            }
+            throw new Exception("Cannot marshal type Category");
         }
 
-        public static readonly ParseStringConverter Singleton = new ParseStringConverter();
+        public static readonly CategoryConverter Singleton = new CategoryConverter();
     }
 }

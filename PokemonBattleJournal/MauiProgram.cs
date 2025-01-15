@@ -36,21 +36,38 @@ namespace PokemonBattleJournal
     		builder.Logging.AddDebug();
             builder.Services.AddLogging(configure => configure.AddDebug());
             #endif
+            //Link Pages and ViewModels
+            //Main Page
             builder.Services.AddSingleton<MainPage>();
             builder.Services.AddSingleton<MainPageViewModel>();
 
+            //Read Journal Page
+            builder.Services.AddSingleton<ReadJournalPage>();
+            builder.Services.AddSingleton<ReadJournalPageViewModel>();
+
+            //Trainer Page
+            builder.Services.AddSingleton<TrainerPage>();
+            builder.Services.AddSingleton<TrainerPageViewModel>();
+
+            //Deck Builder Page
             builder.Services.AddSingleton<DeckBuilderPage>();
             builder.Services.AddSingleton<DeckBuilderPageViewModel>();
-
             builder.Services.AddTransient<CardDetailsPage>();
             builder.Services.AddTransient<CardDetailsPageViewModel>();
 
+            //Options Page
+            builder.Services.AddSingleton<OptionsPage>();
+            builder.Services.AddSingleton<OptionsPageViewModel>();
+
+            //About Page
             builder.Services.AddSingleton<AboutPage>();
             builder.Services.AddSingleton<AboutPageViewModel>();
 
+#if DEBUG
+            //Developer Test Page
             builder.Services.AddSingleton<TestPage>();
             builder.Services.AddSingleton<TestPageViewModel>();
-
+#endif
 #if WINDOWS
 
             Microsoft.Maui.Controls.Handlers.Items.CollectionViewHandler.Mapper.AppendToMapping("DisableMultiselectCheckbox", 

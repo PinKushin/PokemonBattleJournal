@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="PokemonBattleJournal.Views.OptionsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
+    Title="{Binding Title}"
+    x:DataType="viewmodel:OptionsPageViewModel">
+    <ScrollView>
+        <VerticalStackLayout HorizontalOptions="Center">
+            <Label
+                HorizontalOptions="Center"
+                Style="{StaticResource Headline}"
+                Text="Options"
+                VerticalOptions="Center" />
+            <Entry
+                Placeholder="Input New Trainer Name"
+                Text="{Binding NameInput}" />
+            <Image
+                HeightRequest="64"
+                Source="{Binding SelectedIcon}" />
+            <Picker
+                ItemsSource="{Binding IconCollection}"
+                SelectedItem="{Binding SelectedIcon}" />
+
+            <Entry
+                Placeholder="New Deck Name"
+                Text="{Binding NewDeckName}" />
+
+            <Entry
+                Placeholder="Input New Tag"
+                Text="{Binding TagInput}" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

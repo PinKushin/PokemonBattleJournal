@@ -11,8 +11,9 @@
     <ScrollView>
         <Grid
             Padding="15,15"
-            ColumnDefinitions="Auto,*"
+            ColumnDefinitions="*,*"
             ColumnSpacing="10"
+            HorizontalOptions="Center"
             RowDefinitions="Auto, Auto, *, Auto"
             RowSpacing="1">
             <!--  Page Title  -->
@@ -34,23 +35,15 @@
             </HorizontalStackLayout>
 
             <!--  Left Side Vertical Column  -->
-            <FlexLayout
+            <VerticalStackLayout
                 Grid.Row="1"
                 Grid.RowSpan="2"
                 Grid.Column="0"
-                Direction="Column">
-                <Entry
-                    FontSize="Small"
-                    Placeholder="New Trainer Name"
-                    Text="{Binding NameInput}" />
-                <Button
-                    x:Name="TrainerNameBtn"
-                    Command="{Binding UpdateTrainerNameCommand}"
-                    FontAttributes="Bold"
-                    Text="Update Trainer's Name" />
+                HorizontalOptions="Center">
 
                 <Label
                     FontAttributes="Bold"
+                    HorizontalOptions="Center"
                     HorizontalTextAlignment="Center"
                     Style="{StaticResource Headline}"
                     Text="Select Decks"
@@ -172,12 +165,13 @@
 
 
                 </HorizontalStackLayout>
-            </FlexLayout>
+            </VerticalStackLayout>
 
             <!--  Right Side Vertical Column  -->
-            <ScrollView
+            <VerticalStackLayout
                 Grid.Row="2"
                 Grid.Column="1"
+                HorizontalOptions="Center"
                 IsVisible="True">
                 <VerticalStackLayout HorizontalOptions="Center">
                     <Label
@@ -240,7 +234,9 @@
                         ItemsSource="{Binding PossibleResults}"
                         SelectedItem="{Binding Result}"
                         WidthRequest="120" />
-                    <VerticalStackLayout IsVisible="False">
+                    <VerticalStackLayout
+                        Margin="0,10"
+                        IsVisible="False">
                         <VerticalStackLayout.Triggers>
                             <DataTrigger
                                 Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
@@ -302,6 +298,7 @@
                             Text="{Binding UserNoteInput2}" />
                         <Picker
                             Title="W/L/T"
+                            Margin="0,0,0,10"
                             HorizontalOptions="Center"
                             ItemsSource="{Binding PossibleResults}"
                             SelectedItem="{Binding Result2}"
@@ -356,6 +353,7 @@
                             Text="{Binding UserNoteInput3}" />
                         <Picker
                             Title="W/L/T"
+                            Margin="0,0,0,10"
                             HorizontalOptions="Center"
                             ItemsSource="{Binding PossibleResults}"
                             SelectedItem="{Binding Result3}"
@@ -365,7 +363,7 @@
 
 
 
-            </ScrollView>
+            </VerticalStackLayout>
             <Button
                 Grid.Row="3"
                 Grid.ColumnSpan="2"
@@ -376,36 +374,5 @@
                 VerticalOptions="End" />
         </Grid>
     </ScrollView>
-    <!--
-    <ScrollView>
-        <VerticalStackLayout
-            Padding="30,0"
-            Spacing="25">
-            <Image
-                Aspect="AspectFit"
-                HeightRequest="185"
-                SemanticProperties.Description="dot net bot in a hovercraft number nine"
-                Source="dotnet_bot.png" />
-
-            <Label
-                SemanticProperties.HeadingLevel="Level1"
-                Style="{StaticResource Headline}"
-                Text="Hello, World!" />
-
-            <Label
-                SemanticProperties.Description="Welcome to dot net Multi platform App U I"
-                SemanticProperties.HeadingLevel="Level2"
-                Style="{StaticResource SubHeadline}"
-                Text="Welcome to &#10;.NET Multi-platform App UI" />
-
-            <Button
-                x:Name="CounterBtn"
-                Clicked="OnCounterClicked"
-                HorizontalOptions="Fill"
-                SemanticProperties.Hint="Counts the number of times you click"
-                Text="Click me" />
-        </VerticalStackLayout>
-    </ScrollView>
-    -->
 
 </ContentPage>
