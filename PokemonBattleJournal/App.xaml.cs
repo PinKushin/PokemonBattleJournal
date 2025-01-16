@@ -4,6 +4,8 @@
     {
         public App()
         {
+            //Register Syncfusion license
+            Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("MzY3NjYwMkAzMjM4MmUzMDJlMzBuWkMvdUxhYkNPWERMQndYazNyU1gzWnVoN29Zb2dxU1AxQTk2K0k3aXNFPQ==");
             InitializeComponent();
             
         }
