@@ -1,6 +1,8 @@
-﻿using CommunityToolkit.Maui;
+using Syncfusion.Maui.Core.Hosting;
+using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
 
+using Syncfusion.Maui.Toolkit.Hosting;
 namespace PokemonBattleJournal
 {
     public static class MauiProgram
@@ -9,7 +11,9 @@ namespace PokemonBattleJournal
         {
             var builder = MauiApp.CreateBuilder();
             builder
+				.ConfigureSyncfusionToolkit()
                 .UseMauiApp<App>()
+            .ConfigureSyncfusionCore()
                 .UseMauiCommunityToolkit()
                 .ConfigureFonts(fonts =>
                 {
@@ -31,7 +35,7 @@ namespace PokemonBattleJournal
 
                     fonts.AddFont("FluentSystemIcons-Regular.ttf", FluentUI.FontFamily);
                 });
-
+			
             #if DEBUG
     		builder.Logging.AddDebug();
             builder.Services.AddLogging(configure => configure.AddDebug());
