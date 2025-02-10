@@ -13,7 +13,7 @@ namespace PokemonBattleJournal.ViewModels
             //Timer to update displayed time
             if (Application.Current != null)
             {
-                var timer = Application.Current.Dispatcher.CreateTimer();
+				IDispatcherTimer timer = Application.Current.Dispatcher.CreateTimer();
                 timer.Interval = TimeSpan.FromSeconds(1);
                 timer.Tick += UpdateTime;
                 timer.Start();
@@ -266,10 +266,10 @@ namespace PokemonBattleJournal.ViewModels
                     }
                 }
                 //Read File from Disk throws error if file doesn't exist so it was created above
-                var saveFile = await FileHelper.ReadFileAsync(filePath);
-                //Deserialize file to add the new match or create an empty list of matches if no matches exist
-                var matchList = JsonConvert.DeserializeObject<List<MatchEntry>>(saveFile)
-                    ?? [];
+                string? saveFile = await FileHelper.ReadFileAsync(filePath);
+				//Deserialize file to add the new match or create an empty list of matches if no matches exist
+				List<MatchEntry> matchList = JsonConvert.DeserializeObject<List<MatchEntry>>(saveFile) ?? [];
+
                 //add match to list
                 matchList.Add(matchEntry);
                 //serialize data with the new match appended to memory

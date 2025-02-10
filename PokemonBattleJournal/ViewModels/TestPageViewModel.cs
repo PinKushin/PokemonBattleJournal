@@ -12,7 +12,7 @@ namespace PokemonBattleJournal.ViewModels
     public partial class TestPageViewModel: ObservableObject
     {
         // get default file path
-        private static string filePath = FileHelper.GetAppDataPath() + $"\\{PreferencesHelper.GetSetting("TrainerName")}.json";
+        private static readonly string filePath = $@"{FileHelper.GetAppDataPath()}\{PreferencesHelper.GetSetting("TrainerName")}.json";
         [ObservableProperty]
         public partial string FileSuccessMessage { get; set; } = $"Delete {PreferencesHelper.GetSetting("TrainerName")}'s Trainer File?";
         

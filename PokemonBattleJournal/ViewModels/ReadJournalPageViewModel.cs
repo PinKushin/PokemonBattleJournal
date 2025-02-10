@@ -14,7 +14,7 @@ namespace PokemonBattleJournal.ViewModels
     public partial class ReadJournalPageViewModel : ObservableObject
     {
         // get default file path
-        private static string filePath = FileHelper.GetAppDataPath() + $"\\{PreferencesHelper.GetSetting("TrainerName")}.json";
+        private static readonly string filePath = FileHelper.GetAppDataPath() + $"\\{PreferencesHelper.GetSetting("TrainerName")}.json";
         [ObservableProperty]
         public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
         [ObservableProperty]

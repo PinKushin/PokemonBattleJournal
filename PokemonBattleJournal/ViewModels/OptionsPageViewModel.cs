@@ -81,7 +81,7 @@ namespace PokemonBattleJournal.ViewModels
 
         //Delete trainer's save
         //Get default file path
-        private static string filePath = FileHelper.GetAppDataPath() + $"\\{PreferencesHelper.GetSetting("TrainerName")}.json";
+        private static readonly string filePath = FileHelper.GetAppDataPath() + $"\\{PreferencesHelper.GetSetting("TrainerName")}.json";
         [ObservableProperty]
         public partial string FileConfirmMessage { get; set; } = $"Delete {PreferencesHelper.GetSetting("TrainerName")}'s Trainer File?";
 

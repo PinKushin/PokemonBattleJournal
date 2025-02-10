@@ -11,7 +11,7 @@ namespace PokemonBattleJournal.ViewModels
     public partial class TrainerPageViewModel : ObservableObject
     {
         // get default file path
-        private static string filePath = FileHelper.GetAppDataPath() + $"\\{PreferencesHelper.GetSetting("TrainerName")}.json";
+        private static readonly string filePath = FileHelper.GetAppDataPath() + $"\\{PreferencesHelper.GetSetting("TrainerName")}.json";
         [ObservableProperty]
         public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
         [ObservableProperty]
@@ -28,24 +28,24 @@ namespace PokemonBattleJournal.ViewModels
         public TrainerPageViewModel()
         {
             WelcomeMsg = $"{TrainerName}'s Profile";
-            LoadMatchesAsync();
+            LoadMatchesAsync().RunSynchronously();
         }
 
 
-        private async void LoadMatchesAsync()
+        private async Task LoadMatchesAsync()
         {
             // create file if it doesn't exist
-            if (!File.Exists(filePath))
+            if (!FileHelper.Exists(filePath))
             {
-                File.Create(filePath);
+                FileHelper.CreateFile(filePath);
             }
             //throws error if file doesn't exist so it was created above
-            var saveFile = await File.ReadAllTextAsync(filePath);
-            //deserialize file to add the new match or create an empty list of matches if no matches exist
-            var matchList = JsonConvert.DeserializeObject<List<MatchEntry>>(saveFile)
+            string? saveFile = await File.ReadAllTextAsync(filePath);
+			//deserialize file to add the new match or create an empty list of matches if no matches exist
+			List<MatchEntry> matchList = JsonConvert.DeserializeObject<List<MatchEntry>>(saveFile)
                 ?? [];
             //Tally up the wins, losses, and ties
-            foreach (var match in matchList)
+            foreach (MatchEntry match in matchList)
             {
                 if (match.Result == "Win")
                 {
