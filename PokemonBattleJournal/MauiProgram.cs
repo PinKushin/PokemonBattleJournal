@@ -53,12 +53,6 @@ namespace PokemonBattleJournal
             builder.Services.AddSingleton<TrainerPage>();
             builder.Services.AddSingleton<TrainerPageViewModel>();
 
-            //Deck Builder Page
-            builder.Services.AddSingleton<DeckBuilderPage>();
-            builder.Services.AddSingleton<DeckBuilderPageViewModel>();
-            builder.Services.AddTransient<CardDetailsPage>();
-            builder.Services.AddTransient<CardDetailsPageViewModel>();
-
             //Options Page
             builder.Services.AddSingleton<OptionsPage>();
             builder.Services.AddSingleton<OptionsPageViewModel>();

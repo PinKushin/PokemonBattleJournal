@@ -31,15 +31,11 @@
         Title="Read Journal"
         ContentTemplate="{DataTemplate views:ReadJournalPage}"
         Route="ReadJournalPage" />
-    <ShellContent
-        Title="Trainer's Profile"
-        ContentTemplate="{DataTemplate views:TrainerPage}"
-        Route="TrainerPage" />
-    <ShellContent
-        Title="Deck Builder"
-        ContentTemplate="{DataTemplate views:DeckBuilderPage}"
-        Route="DeckBuilderPage" />
-    <ShellContent
+	<ShellContent
+		Title="Trainer's Profile"
+		ContentTemplate="{DataTemplate views:TrainerPage}"
+		Route="TrainerPage" />
+	<ShellContent
         Title="Options"
         ContentTemplate="{DataTemplate views:OptionsPage}"
         Route="OptionsPage" />
