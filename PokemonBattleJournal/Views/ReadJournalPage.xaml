@@ -1,65 +1,122 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-    x:Class="PokemonBattleJournal.Views.ReadJournalPage"
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:model="clr-namespace:PokemonBattleJournal.Models"
-    xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
-    Title="Trainer's Journal"
-    x:DataType="viewmodel:ReadJournalPageViewModel">
-    <ScrollView Margin="20">
-        <Grid
-            ColumnDefinitions="*,*"
-            RowDefinitions="Auto, *, *, *, *, *, Auto">
-            <Image
-                Grid.ColumnSpan="2"
-                HeightRequest="48"
-                HorizontalOptions="Center"
-                Source="{Binding NoteHeaderIconSource}" />
-            <Label
-                Grid.Row="1"
-                Grid.ColumnSpan="2"
-                HorizontalOptions="Center"
-                Text="Welcome to your journal!"
-                VerticalOptions="Center" />
-            <Editor
-                Grid.Row="2"
-                Grid.ColumnSpan="2"
-                HeightRequest="200"
-                IsReadOnly="True"
-                Text="{Binding SelectedNote}" />
-            <Label
-                Grid.Row="3"
-                Text="Pick A Match" />
+	x:Class="PokemonBattleJournal.Views.ReadJournalPage"
+	xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+	xmlns:model="clr-namespace:PokemonBattleJournal.Models"
+	xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+	xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
+	x:Name="BasePage"
+	Title="Trainer's Journal"
+	x:DataType="viewmodel:ReadJournalPageViewModel">
+	<ContentPage.Behaviors>
+		<toolkit:EventToCommandBehavior
+			BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType=ContentPage}"
+			Command="{Binding AppearingCommand}"
+			EventName="Appearing" />
+	</ContentPage.Behaviors>
+	<ScrollView
+		Margin="20">
+		<Grid
+			ColumnDefinitions="*,*"
+			RowDefinitions="Auto, *, *, *, *, *, Auto">
+			<Label
+				Grid.Row="0"
+				Grid.ColumnSpan="2"
+				HorizontalOptions="Center"
+				Text="Welcome to your journal!"
+				VerticalOptions="Center" />
+			<HorizontalStackLayout
+				Grid.Row="1"
+				Grid.ColumnSpan="2"
+				HorizontalOptions="Center"
+				VerticalOptions="Center">
+				<Label
+					Text="{Binding PlayingName}"
+					VerticalOptions="Center"
+					VerticalTextAlignment="Center" />
+				<Image
+					HeightRequest="48"
+					Source="{Binding PlayingIconSource}" />
+				<Label
+					Text="VS" />
+				<Image
+					HeightRequest="48"
+					Source="{Binding AgainstIconSource}" />
+				<Label
+					Text="{Binding AgainstName}"
+					VerticalOptions="Center"
+					VerticalTextAlignment="Center" />
+			</HorizontalStackLayout>
+			<Editor
+				Grid.Row="2"
+				Grid.ColumnSpan="2"
+				HeightRequest="200"
+				IsReadOnly="True"
+				Text="{Binding SelectedNote}" />
+			<CollectionView
+				Grid.Row="3"
+				Grid.ColumnSpan="2"
+				HorizontalOptions="Center"
+				ItemSizingStrategy="MeasureAllItems"
+				ItemsLayout="HorizontalList"
+				ItemsSource="{Binding TagsSelectedGame1}"
+				ToolTipProperties.Text="Tags for game one" />
+			<CollectionView
+				IsVisible="False"
+				ItemsLayout="HorizontalList"
+				ItemsSource="{Binding TagsSelectedGame2}" />
+			<CollectionView
+				IsVisible="False"
+				ItemsLayout="HorizontalList"
+				ItemsSource="{Binding TagsSelectedGame3}" />
+			<Label
+				Grid.Row="4"
+				Text="Pick A Match" />
 
+			<CollectionView
+				Grid.Row="5"
+				Grid.ColumnSpan="2"
+				Margin="12"
+				HeightRequest="200"
+				ItemsLayout="VerticalGrid"
+				ItemsSource="{Binding MatchHistory}"
+				ItemsUpdatingScrollMode="KeepItemsInView"
+				SelectedItem="{Binding SelectedMatch}"
+				SelectionChangedCommand="{Binding LoadMatchCommand}"
+				SelectionMode="Single"
+				VerticalOptions="Fill"
+				VerticalScrollBarVisibility="Always">
+				<CollectionView.ItemTemplate>
+					<DataTemplate
+						x:DataType="{x:Type model:MatchEntry}">
+						<ScrollView>
+							<HorizontalStackLayout>
+								<Image
+									HeightRequest="32"
+									Source="{Binding Playing.ImagePath}" />
+								<Label
+									Margin="10"
+									HorizontalOptions="Center"
+									HorizontalTextAlignment="Center"
+									Text="{Binding Playing.Name}"
+									VerticalOptions="Center"
+									VerticalTextAlignment="Center" />
 
-            <CollectionView
-                Grid.Row="4"
-                Grid.ColumnSpan="2"
-                Margin="12"
-                HeightRequest="200"
-                ItemsLayout="VerticalGrid"
-                ItemsSource="{Binding MatchHistory}"
-                ItemsUpdatingScrollMode="KeepItemsInView"
-                SelectedItem="{Binding SelectedMatch}"
-                SelectionChangedCommand="{Binding LoadMatchCommand}"
-                SelectionMode="Single"
-                VerticalOptions="Fill"
-                VerticalScrollBarVisibility="Always">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="{x:Type model:MatchEntry}">
-                        <ScrollView>
-                            <HorizontalStackLayout>
-                                <Label Text="{Binding Playing}" />
-                                <Label Text="{Binding Time}" />
-                            </HorizontalStackLayout>
+								<Label
+									HorizontalOptions="Center"
+									HorizontalTextAlignment="Center"
+									Text="{Binding Time.LocalDateTime}"
+									VerticalOptions="Center"
+									VerticalTextAlignment="Center" />
+							</HorizontalStackLayout>
 
-                        </ScrollView>
+						</ScrollView>
 
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+					</DataTemplate>
+				</CollectionView.ItemTemplate>
+			</CollectionView>
 
-        </Grid>
-    </ScrollView>
+		</Grid>
+	</ScrollView>
 </ContentPage>

@@ -13,12 +13,14 @@
     Title="TestPage"
     x:DataType="viewmodel:TestPageViewModel">
     <ScrollView>
-        <VerticalStackLayout HorizontalOptions="Center">
+        <VerticalStackLayout
+            HorizontalOptions="Center">
             <Label
                 HorizontalOptions="Center"
                 Text="Test Page"
                 VerticalOptions="Center" />
-            <Label Text="{Binding FileSuccessMessage}" />
+            <Label
+                Text="{Binding FileSuccessMessage}" />
             <aiAssist:SfAIAssistView
                 x:Name="sfAIAssistView"
                 Background="Black" />
@@ -40,81 +42,38 @@
                     WidthRequest="200" />
             </core:SfEffectsView>
             <cards:SfCardLayout>
-                <cards:SfCardView BackgroundColor="#fa6e67">
-                    <Label Text="Bittersweet" />
+                <cards:SfCardView
+                    BackgroundColor="#fa6e67">
+                    <Label
+                        Text="Bittersweet" />
                 </cards:SfCardView>
-                <cards:SfCardView BackgroundColor="#f6f27b">
-                    <Label Text="Mindaro" />
+                <cards:SfCardView
+                    BackgroundColor="#f6f27b">
+                    <Label
+                        Text="Mindaro" />
                 </cards:SfCardView>
-                <cards:SfCardView BackgroundColor="#7bb955">
-                    <Label Text="Mantis" />
+                <cards:SfCardView
+                    BackgroundColor="#7bb955">
+                    <Label
+                        Text="Mantis" />
                 </cards:SfCardView>
             </cards:SfCardLayout>
-            <charts:SfPolarChart>
 
-                <charts:SfPolarChart.Title>
-                    <Label
-                        HorizontalTextAlignment="Center"
-                        Text="Plant Analysis" />
-                </charts:SfPolarChart.Title>
-
-                <charts:SfPolarChart.Legend>
-                    <charts:ChartLegend />
-                </charts:SfPolarChart.Legend>
-
-                <charts:SfPolarChart.PrimaryAxis>
-                    <charts:CategoryAxis />
-                </charts:SfPolarChart.PrimaryAxis>
-
-                <charts:SfPolarChart.SecondaryAxis>
-                    <charts:NumericalAxis />
-                </charts:SfPolarChart.SecondaryAxis>
-
-                <charts:PolarAreaSeries
-                    EnableTooltip="True"
-                    ItemsSource="{Binding PlantDetails}"
-                    Label="Tree"
-                    ShowDataLabels="True"
-                    XBindingPath="Direction"
-                    YBindingPath="Tree" />
-
-                <charts:PolarAreaSeries
-                    EnableTooltip="True"
-                    ItemsSource="{Binding PlantDetails}"
-                    Label="Weed"
-                    ShowDataLabels="True"
-                    XBindingPath="Direction"
-                    YBindingPath="Weed" />
-
-                <charts:PolarAreaSeries
-                    EnableTooltip="True"
-                    ItemsSource="{Binding PlantDetails}"
-                    Label="Flower"
-                    ShowDataLabels="True"
-                    XBindingPath="Direction"
-                    YBindingPath="Flower" />
-            </charts:SfPolarChart>
-            <charts:SfCircularChart Title="Chart Demo">
-                <charts:SfCircularChart.Legend>
-                    <charts:ChartLegend />
-                </charts:SfCircularChart.Legend>
-                <charts:PieSeries
-                    ItemsSource="{Binding Data}"
-                    XBindingPath="XValue"
-                    YBindingPath="YValue" />
-            </charts:SfCircularChart>
-            <picker:SfDatePicker x:Name="datePicker" />
+            <picker:SfDatePicker
+                x:Name="datePicker" />
             <slider:SfDateTimeRangeSelector
                 Maximum="2018-01-01"
                 Minimum="2010-01-01"
                 RangeEnd="2016-01-01"
                 RangeStart="2012-01-01"
                 WidthRequest="400" />
-            <picker:SfPicker x:Name="picker">
+            <picker:SfPicker
+                x:Name="picker">
                 <picker:SfPicker.Columns>
                     <picker:PickerColumn>
                         <picker:PickerColumn.ItemsSource>
-                            <x:Array Type="{x:Type x:String}">
+                            <x:Array
+                                Type="{x:Type x:String}">
                                 <x:String>1</x:String>
                                 <x:String>2</x:String>
                                 <x:String>3</x:String>

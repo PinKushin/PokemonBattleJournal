@@ -1,36 +1,94 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-    x:Class="PokemonBattleJournal.Views.OptionsPage"
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
-    Title="{Binding Title}"
-    x:DataType="viewmodel:OptionsPageViewModel">
-    <ScrollView>
-        <VerticalStackLayout HorizontalOptions="Center">
-            <Label
-                HorizontalOptions="Center"
-                Style="{StaticResource Headline}"
-                Text="Options"
-                VerticalOptions="Center" />
-            <Entry
-                Placeholder="Input New Trainer Name"
-                Text="{Binding NameInput}" />
-            <Image
-                HeightRequest="64"
-                Source="{Binding SelectedIcon}" />
-            <Picker
-                ItemsSource="{Binding IconCollection}"
-                SelectedItem="{Binding SelectedIcon}" />
+	x:Class="PokemonBattleJournal.Views.OptionsPage"
+	xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+	xmlns:buttons="clr-namespace:Syncfusion.Maui.Toolkit.Buttons;assembly=Syncfusion.Maui.Toolkit"
+	xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
+	xmlns:inputLayout="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
+	xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+	xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
+	x:Name="BasePage"
+	Title="{Binding Title}"
+	x:DataType="viewmodel:OptionsPageViewModel">
+	<ContentPage.Behaviors>
+		<toolkit:EventToCommandBehavior
+			BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType=ContentPage}"
+			Command="{Binding AppearingCommand}"
+			EventName="Appearing" />
+		<!--<toolkit:EventToCommandBehavior
+			Command="{Binding DisappearingCommand}"
+			EventName="Disappearing" />-->
+	</ContentPage.Behaviors>
+	<ScrollView>
+		<VerticalStackLayout
+			HorizontalOptions="Center">
+			<Label
+				HorizontalOptions="Center"
+				Style="{StaticResource Headline}"
+				Text="Options"
+				VerticalOptions="Center" />
+			<inputLayout:SfTextInputLayout
+				ContainerType="Outlined"
+				HelperText="Enter New Trainer Name"
+				Hint="Trainer Name"
+				WidthRequest="200">
+				<Entry
+					Text="{Binding NameInput}" />
+			</inputLayout:SfTextInputLayout>
 
-            <Entry
-                Placeholder="New Deck Name"
-                Text="{Binding NewDeckName}" />
-
-            <Entry
-                Placeholder="Input New Tag"
-                Text="{Binding TagInput}" />
-        </VerticalStackLayout>
-    </ScrollView>
+			<Image
+				HeightRequest="64"
+				Source="{Binding SelectedIcon}" />
+			<inputLayout:SfTextInputLayout
+				ContainerType="Outlined"
+				HelperText="Select New Archetype's Icon"
+				Hint="Archtype Icon"
+				WidthRequest="200">
+				<editors:SfComboBox
+					x:Name="NewArchetypeIcon"
+					DisplayMemberPath="Name"
+					HeightRequest="40"
+					ItemsSource="{Binding IconCollection}"
+					SelectedItem="{Binding SelectedIcon}"
+					TextMemberPath="Name">
+					<editors:SfComboBox.ItemTemplate>
+						<DataTemplate
+							x:DataType="x:String">
+							<ViewCell>
+								<HorizontalStackLayout
+									HorizontalOptions="Start">
+									<Image
+										HeightRequest="30"
+										HorizontalOptions="Center"
+										Source="{Binding .}" />
+									<Label
+										HorizontalTextAlignment="Center"
+										Text="{Binding .}"
+										VerticalTextAlignment="Center" />
+								</HorizontalStackLayout>
+							</ViewCell>
+						</DataTemplate>
+					</editors:SfComboBox.ItemTemplate>
+				</editors:SfComboBox>
+			</inputLayout:SfTextInputLayout>
+			<inputLayout:SfTextInputLayout
+				ContainerType="Outlined"
+				HelperText="Enter New Archetype's Name"
+				Hint="Archtype Name"
+				WidthRequest="200">
+				<Entry
+					Text="{Binding NewDeckName}" />
+			</inputLayout:SfTextInputLayout>
+			<inputLayout:SfTextInputLayout
+				ContainerType="Outlined"
+				HelperText="Enter New Tag"
+				Hint="Tag"
+				WidthRequest="200">
+				<Entry
+					Text="{Binding TagInput}" />
+			</inputLayout:SfTextInputLayout>
+		</VerticalStackLayout>
+	</ScrollView>
 
 </ContentPage>
