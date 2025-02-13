@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using Newtonsoft.Json;
 
 namespace PokemonBattleJournal.ViewModels
@@ -21,18 +16,17 @@ namespace PokemonBattleJournal.ViewModels
         [ObservableProperty]
         public partial int Losses { get; set; } = 0;
         [ObservableProperty]
-        public partial int Draws { get; set; } = 0;
+        public partial int Ties { get; set; } = 0;
         [ObservableProperty]
         public partial double WinAverage { get; set; } = 0;
 
         public TrainerPageViewModel()
         {
             WelcomeMsg = $"{TrainerName}'s Profile";
-            LoadMatchesAsync().RunSynchronously();
+            LoadMatches();
         }
 
-
-        private async Task LoadMatchesAsync()
+		private void LoadMatches()
         {
             // create file if it doesn't exist
             if (!FileHelper.Exists(filePath))
@@ -40,7 +34,7 @@ namespace PokemonBattleJournal.ViewModels
                 FileHelper.CreateFile(filePath);
             }
             //throws error if file doesn't exist so it was created above
-            string? saveFile = await File.ReadAllTextAsync(filePath);
+            string? saveFile = File.ReadAllText(filePath);
 			//deserialize file to add the new match or create an empty list of matches if no matches exist
 			List<MatchEntry> matchList = JsonConvert.DeserializeObject<List<MatchEntry>>(saveFile)
                 ?? [];
@@ -51,22 +45,22 @@ namespace PokemonBattleJournal.ViewModels
                 {
                     Wins++;
                 }
-                else if (match.Result == "Draw")
+                else if (match.Result == "Tie")
                 {
-                    Draws++;
+                    Ties++;
                 }
                 else
                 {
                     Losses++;
                 }
             }
-            if (Wins + Losses + Draws == 0)
+            if (Wins + Losses + Ties == 0)
             {
                 WinAverage = 0;
             }
             else
             {
-                WinAverage = ((Wins + (0.5 * Draws)) / (Wins + Losses + Draws)) * 100;
+                WinAverage = ((Wins + (0.5 * Ties)) / (Wins + Losses + Ties)) * 100;
             }
 
         }
