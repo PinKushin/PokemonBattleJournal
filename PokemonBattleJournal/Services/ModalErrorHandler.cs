@@ -11,7 +11,7 @@ namespace PokemonBattleJournal.Services
     /// </summary>
     public class ModalErrorHandler : IErrorHandler
     {
-        SemaphoreSlim _semaphore = new(1, 1);
+        private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
         /// <summary>
         /// Handle error in UI.
@@ -22,7 +22,7 @@ namespace PokemonBattleJournal.Services
             DisplayAlert(ex).FireAndForgetSafeAsync();
         }
 
-        async Task DisplayAlert(Exception ex)
+        static async Task DisplayAlert(Exception ex)
         {
             try
             {
