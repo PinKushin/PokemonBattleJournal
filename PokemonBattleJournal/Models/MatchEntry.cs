@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using PokemonBattleJournal.Models.Interfaces;
 
 namespace PokemonBattleJournal.Models
 {
@@ -12,38 +8,43 @@ namespace PokemonBattleJournal.Models
     public partial class MatchEntry
     {
         [JsonProperty("playing")]
-        public string Playing { get; set; } = string.Empty;
+        public required Archetype Playing { get; set; }
 
         [JsonProperty("against")]
-        public string Against { get; set; } = string.Empty;
+        public required Archetype Against { get; set; }
 
         [JsonProperty("time")]
         public DateTimeOffset Time { get; set; }
 
         [JsonProperty("result")]
-        public string Result { get; set; } = string.Empty;
+        public string? Result { get; set; }
 
-        [JsonProperty("game1")]
-        public Game Game1 { get; set; } = new();
+		[JsonProperty("game1")]
+		public Game Game1 { get; set; } = new Game();
 
-        [JsonProperty("game2", NullValueHandling = NullValueHandling.Ignore)]
+		[JsonProperty("game2", NullValueHandling = NullValueHandling.Ignore)]
         public Game? Game2 { get; set; }
 
         [JsonProperty("game3", NullValueHandling = NullValueHandling.Ignore)]
         public Game? Game3 { get; set; }
 
-        public TimeSpan? StartTime { get; set; }
-        public TimeSpan? EndTime { get; set; }
-        public DateTime? DatePlayed { get; set; }
+		[JsonProperty("start-time", NullValueHandling = NullValueHandling.Ignore)]
+		public DateTimeOffset? StartTime { get; set; }
 
-    }
+		[JsonProperty("end-time", NullValueHandling = NullValueHandling.Ignore)]
+		public DateTimeOffset? EndTime { get; set; }
+
+		[JsonProperty("date-played", NullValueHandling = NullValueHandling.Ignore)]
+		public DateTimeOffset? DatePlayed { get; set; }
+
+	}
     public partial class Game
     {
-        [JsonProperty("result")]
-        public string Result { get; set; } = "Draw";
+		[JsonProperty("result")]
+		public string Result { get; set; } = "Lose";
 
         [JsonProperty("turn")]
-        [JsonConverter(typeof(Converter<string, long>))]
+        
         public long Turn { get; set; } = 1;
 
         [JsonProperty("tags")]
