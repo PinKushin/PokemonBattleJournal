@@ -32,7 +32,7 @@ namespace PokemonBattleJournal.Utilities
             {
                 return;
             }
-            File.Create(filePath);
+			File.Create(filePath);
         }
 
         public static void DeleteFile(string filePath)
@@ -63,6 +63,7 @@ namespace PokemonBattleJournal.Utilities
             }
             await File.WriteAllTextAsync(filePath, saveFile);
             return;
+			;
         }
 
     }
