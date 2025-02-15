@@ -13,8 +13,9 @@ namespace PokemonBattleJournal.Models
 
 		[JsonProperty("name")]
 		public string Name { get; set; }
+
 		[JsonProperty("imagePath")]
-		public string ImagePath { get; set; } = "ball_icon.png";
+		public string ImagePath { get; set; }
 
 		public override bool Equals(object? obj)
 		{
