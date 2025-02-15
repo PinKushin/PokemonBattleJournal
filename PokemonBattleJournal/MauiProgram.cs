@@ -1,8 +1,8 @@
-using Syncfusion.Maui.Core.Hosting;
 using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
-
+using Syncfusion.Maui.Core.Hosting;
 using Syncfusion.Maui.Toolkit.Hosting;
+
 namespace PokemonBattleJournal
 {
 	public static class MauiProgram
@@ -23,7 +23,7 @@ namespace PokemonBattleJournal
 					fonts.AddFont("Saira-Regular.ttf", "SairaRegular");
 					fonts.AddFont("Saira-Bold.ttf", "SairaBold");
 					fonts.AddFont("Saira-Black.ttf", "SairaBlack");
-				  
+
 					fonts.AddFont("Charm-Regular.ttf", "CharmRegular");
 					fonts.AddFont("Charm-Bold.ttf", "CharmBold");
 
@@ -49,7 +49,7 @@ namespace PokemonBattleJournal
 					options.MaxBreadcrumbs = 300;
 #endif
 				});
-			
+
 #if DEBUG
 			builder.Logging.AddDebug();
 			builder.Services.AddLogging(configure => configure.AddDebug());
@@ -82,7 +82,7 @@ namespace PokemonBattleJournal
 #endif
 #if WINDOWS
 
-			Microsoft.Maui.Controls.Handlers.Items.CollectionViewHandler.Mapper.AppendToMapping("DisableMultiselectCheckbox", 
+			Microsoft.Maui.Controls.Handlers.Items.CollectionViewHandler.Mapper.AppendToMapping("DisableMultiselectCheckbox",
 			(handler, view) =>
 			{
 				handler.PlatformView.IsMultiSelectCheckBoxEnabled = false;
