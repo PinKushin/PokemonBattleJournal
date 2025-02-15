@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PokemonBattleJournal", "Pok
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PokemonBattleJournal.Tests", "PokemonBattleJournal.Tests\PokemonBattleJournal.Tests.csproj", "{476D23B0-B7A6-4968-AEF9-35D00760D848}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PokemonBattleJournal.UI.Tests", "PokemonBattleJournal.UI.Tests\PokemonBattleJournal.UI.Tests.csproj", "{A57A29E9-6952-4FF4-B73D-7C6E53C88724}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,14 +17,21 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{7EA78303-4245-4533-AF6F-232909159DE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7EA78303-4245-4533-AF6F-232909159DE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EA78303-4245-4533-AF6F-232909159DE6}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{7EA78303-4245-4533-AF6F-232909159DE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7EA78303-4245-4533-AF6F-232909159DE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7EA78303-4245-4533-AF6F-232909159DE6}.Release|Any CPU.Deploy.0 = Release|Any CPU
 		{476D23B0-B7A6-4968-AEF9-35D00760D848}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{476D23B0-B7A6-4968-AEF9-35D00760D848}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{476D23B0-B7A6-4968-AEF9-35D00760D848}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{476D23B0-B7A6-4968-AEF9-35D00760D848}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A57A29E9-6952-4FF4-B73D-7C6E53C88724}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A57A29E9-6952-4FF4-B73D-7C6E53C88724}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A57A29E9-6952-4FF4-B73D-7C6E53C88724}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {54E1A8F9-0FA6-461F-AD98-2490D6199371}
 	EndGlobalSection
 EndGlobal
