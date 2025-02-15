@@ -37,11 +37,14 @@
 				HorizontalOptions="Center">
 				<Image
 					Grid.ColumnSpan="2"
+					AutomationId="ball_icon.png"
+					AutomationProperties.Name="ball_icon.png"
 					SemanticProperties.Description="Poke-Ball Image"
 					Source="ball_icon.png"
 					WidthRequest="32" />
 				<Label
 					Grid.ColumnSpan="2"
+					AutomationProperties.Name="PageTitle"
 					FontFamily="PokemonSolid"
 					FontSize="Title"
 					SemanticProperties.Description="Create a Match Entry"
@@ -74,7 +77,9 @@
 						Hint="Played Archetype"
 						WidthRequest="200">
 						<editors:SfComboBox
-							x:Name="PlayerDeck"
+							x:Name="PlayerArchetype"
+							AutomationId="PlayerArchetype"
+							AutomationProperties.Name="PlayerArchetype"
 							DisplayMemberPath="Name"
 							HeightRequest="40"
 							ItemsSource="{Binding Archetypes}"
@@ -106,7 +111,9 @@
 						Hint="Rival's Archetype"
 						WidthRequest="200">
 						<editors:SfComboBox
-							x:Name="RivalDeck"
+							x:Name="RivalArchetype"
+							AutomationId="RivalArchetype"
+							AutomationProperties.Name="RivalArchetype"
 							DisplayMemberPath="Name"
 							ItemsSource="{Binding Archetypes}"
 							SelectedItem="{Binding RivalSelected}"
@@ -136,6 +143,7 @@
 					HorizontalOptions="Center">
 					<Switch
 						x:Name="BOSwitch"
+						AutomationId="BOSwitch"
 						HorizontalOptions="Center"
 						IsToggled="{Binding BO3Toggle}" />
 					<Label
@@ -150,8 +158,12 @@
 								Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
 								TargetType="Label"
 								Value="False">
-								<Setter Property="FontAttributes" Value="Bold" />
-								<Setter Property="FontSize" Value="Medium" />
+								<Setter
+									Property="FontAttributes"
+									Value="Bold" />
+								<Setter
+									Property="FontSize"
+									Value="Medium" />
 							</DataTrigger>
 						</Label.Triggers>
 					</Label>
@@ -166,12 +178,15 @@
 								Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
 								TargetType="Label"
 								Value="True">
-								<Setter Property="FontAttributes" Value="Bold" />
-								<Setter Property="FontSize" Value="Medium" />
+								<Setter
+									Property="FontAttributes"
+									Value="Bold" />
+								<Setter
+									Property="FontSize"
+									Value="Medium" />
 							</DataTrigger>
 						</Label.Triggers>
 					</Label>
-
 				</HorizontalStackLayout>
 
 				<Label
@@ -189,11 +204,13 @@
 					Text="{Binding CurrentDateTimeDisplay}"
 					VerticalTextAlignment="Start" />
 				<buttons:SfButton
+					AutomationId="TimePickerButtom"
 					Clicked="OpenTimePickers"
 					MaximumWidthRequest="300"
 					Text="Input Battle Start and End Time" />
 				<picker:SfTimePicker
 					x:Name="StartTimePicker"
+					AutomationId="StartTimePicker"
 					Format="h_mm_tt"
 					HorizontalOptions="Center"
 					MaximumWidthRequest="300"
@@ -207,6 +224,7 @@
 				</picker:SfTimePicker>
 				<picker:SfTimePicker
 					x:Name="EndTimePicker"
+					AutomationId="EndTimePicker"
 					Format="h_mm_tt"
 					HorizontalOptions="Center"
 					MaximumWidthRequest="300"
@@ -223,6 +241,7 @@
 				<HorizontalStackLayout
 					HorizontalOptions="Center">
 					<buttons:SfButton
+						AutomationId="DatePickerButton"
 						Clicked="OpenDatePlayedPicker"
 						HorizontalOptions="Center"
 						Text="Input Date Played"
@@ -230,6 +249,7 @@
 						WidthRequest="300" />
 					<picker:SfDatePicker
 						x:Name="DatePlayedPicker"
+						AutomationId="DatePlayedPicker"
 						Format="Default"
 						HorizontalOptions="Center"
 						IsEnabled="True"
@@ -262,6 +282,7 @@
 						VerticalOptions="End" />
 					<CollectionView
 						x:Name="TagsView"
+						AutomationId="TagsView"
 						CanReorderItems="True"
 						ItemSizingStrategy="MeasureAllItems"
 						ItemsSource="{Binding TagCollection}"
@@ -297,13 +318,13 @@
 										VerticalOptions="Center"
 										VerticalTextAlignment="Center" />
 								</HorizontalStackLayout>
-
 							</DataTemplate>
 						</CollectionView.ItemTemplate>
 					</CollectionView>
 
 					<Editor
 						AutoSize="TextChanges"
+						AutomationId="UserNoteInput"
 						HeightRequest="200"
 						IsSpellCheckEnabled="True"
 						Placeholder="Write notes here..."
@@ -315,10 +336,12 @@
 							Text="Went first?"
 							VerticalOptions="Center" />
 						<CheckBox
+							AutomationId="FirstCheck"
 							HorizontalOptions="Center"
 							IsChecked="{Binding FirstCheck}"
 							VerticalOptions="Center" />
 						<editors:SfComboBox
+							AutomationId="PossibleResultsPicker"
 							HorizontalOptions="Center"
 							ItemsSource="{Binding PossibleResults}"
 							Placeholder="W/L/T"
@@ -326,23 +349,23 @@
 							WidthRequest="120" />
 					</HorizontalStackLayout>
 
-
 					<VerticalStackLayout
 						Margin="0,10"
+						AutomationId="BO3GamesLayout"
 						IsVisible="False">
 						<VerticalStackLayout.Triggers>
 							<DataTrigger
 								Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
 								TargetType="VerticalStackLayout"
 								Value="True">
-								<Setter Property="IsVisible" Value="True" />
-
+								<Setter
+									Property="IsVisible"
+									Value="True" />
 							</DataTrigger>
-
 						</VerticalStackLayout.Triggers>
 
-
 						<CollectionView
+							AutomationId="Match2Tags"
 							CanReorderItems="True"
 							ItemSizingStrategy="MeasureAllItems"
 							ItemsSource="{Binding TagCollection}"
@@ -378,7 +401,6 @@
 											VerticalOptions="Center"
 											VerticalTextAlignment="Center" />
 									</HorizontalStackLayout>
-
 								</DataTemplate>
 							</CollectionView.ItemTemplate>
 						</CollectionView>
@@ -443,7 +465,6 @@
 											VerticalOptions="Center"
 											VerticalTextAlignment="Center" />
 									</HorizontalStackLayout>
-
 								</DataTemplate>
 							</CollectionView.ItemTemplate>
 						</CollectionView>
@@ -486,5 +507,4 @@
 				VerticalOptions="End" />
 		</Grid>
 	</ScrollView>
-
 </ContentPage>
