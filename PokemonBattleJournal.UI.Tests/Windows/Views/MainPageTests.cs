@@ -2,7 +2,7 @@
 using OpenQA.Selenium.Appium.Windows;
 using Shouldly;
 
-namespace PokemonBattleJournal.UI.Tests.Windows.Views
+namespace PokemonBattleJournal.UI.Tests
 {
 	public class MainPageTests
 	{
@@ -11,7 +11,7 @@ namespace PokemonBattleJournal.UI.Tests.Windows.Views
 
 		public MainPageTests()
 		{
-			var windowsOptions = new AppiumOptions
+			AppiumOptions windowsOptions = new()
 			{
 				AutomationName = "Windows",
 				PlatformName = "Windows",
@@ -20,28 +20,54 @@ namespace PokemonBattleJournal.UI.Tests.Windows.Views
 			};
 
 			_driver = new WindowsDriver(windowsOptions);
-			_driver.ShouldNotBeNull();
 		}
 
 		~MainPageTests()
 		{
 			_driver?.Quit();
-			App.Dispose();
 		}
 
 		[Fact]
-		public void MainPage_BOSwitch_Exists()
+		public void MainPage_UserNoteInput_ShowTextEntry()
 		{
 			// Arrange
-			var id = "UserNoteInput";
-			var element = App.FindElement(MobileBy.AccessibilityId(id));
+			AppiumElement userEntry = App.FindElement(MobileBy.AccessibilityId("UserNoteInput"));
+
 			// Act
-			//var name = element.GetAttribute("Name");
-			element.SendKeys("Hello World");
+			userEntry.SendKeys("Hello World");
+
 			// Assert
-			//name.ShouldBe("ball_icon.png");
-			element.ShouldNotBeNull();
-			element.Text.ShouldBe("Hello World");
+			userEntry.ShouldNotBeNull();
+			userEntry.Text.ShouldBe("Hello World");
+			App.Quit();
+		}
+
+		[Fact]
+		public void MainPage_BOSwitch_DisplayedOnPage()
+		{
+			// Arrange
+			const string id = "BOSwitch";
+			AppiumElement BOSwitch = App.FindElement(MobileBy.AccessibilityId(id));
+
+			// Act
+			BOSwitch.Click();
+			// Assert
+			_ = BOSwitch.ShouldNotBeNull();
+			BOSwitch.Displayed.ShouldBeTrue();
+			BOSwitch.Enabled.ShouldBeTrue();
+			App.Quit();
+		}
+
+		[Fact]
+		public void MainPage_BallIcon_DisplayedOnPage()
+		{
+			// Arrange
+			AppiumElement BallIconPng = App.FindElement(MobileBy.AccessibilityId("ball_icon.png"));
+			// Act
+			// Assert
+			_ = BallIconPng.ShouldNotBeNull();
+			BallIconPng.Displayed.ShouldBeTrue();
+			App.Quit();
 		}
 	}
 }

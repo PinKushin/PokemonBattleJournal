@@ -406,6 +406,8 @@
 						</CollectionView>
 						<Editor
 							AutoSize="TextChanges"
+							AutomationId="UserNoteInput2"
+							AutomationProperties.Name="UserNoteInput2"
 							HeightRequest="200"
 							IsSpellCheckEnabled="True"
 							IsVisible="True"
@@ -430,6 +432,7 @@
 						</HorizontalStackLayout>
 
 						<CollectionView
+							AutomationId="Match3Tags"
 							CanReorderItems="True"
 							ItemSizingStrategy="MeasureAllItems"
 							ItemsSource="{Binding TagCollection}"
@@ -470,6 +473,7 @@
 						</CollectionView>
 						<Editor
 							AutoSize="TextChanges"
+							AutomationId="UserNoteInput3"
 							HeightRequest="200"
 							IsSpellCheckEnabled="True"
 							IsVisible="True"
