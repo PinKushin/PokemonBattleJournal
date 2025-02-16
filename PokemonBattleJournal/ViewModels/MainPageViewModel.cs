@@ -3,8 +3,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using PokemonBattleJournal.Models.Interfaces;
-using System.Linq;
 
 namespace PokemonBattleJournal.ViewModels
 {
@@ -12,6 +10,7 @@ namespace PokemonBattleJournal.ViewModels
 	{
 		private readonly ILogger<MainPageViewModel> _logger;
 		private readonly IDispatcherTimer? _timer;
+
 		public MainPageViewModel(ILogger<MainPageViewModel> logger)
 		{
 			_logger = logger;
@@ -36,8 +35,6 @@ namespace PokemonBattleJournal.ViewModels
 			TagCollection.Add("Punished");
 			//TagCollection = DataPopulationHelper.PopulateTags();
 
-			
-
 			WelcomeMsg = $"Welcome {TrainerName}";
 			// get default file path
 			string? filePath = FileHelper.GetAppDataPath() + $@"\{TrainerName}.json";
@@ -47,6 +44,7 @@ namespace PokemonBattleJournal.ViewModels
 				FileHelper.CreateFile(filePath);
 			}
 		}
+
 		/// <summary>
 		/// Update displayed time on UI
 		/// </summary>
@@ -58,19 +56,20 @@ namespace PokemonBattleJournal.ViewModels
 			{
 				CurrentDateTimeDisplay = $"{DateTime.Now}";
 			});
-
 		}
 
 		[RelayCommand]
 		public void Appearing()
 		{
-			if (_timer is not null) _timer.Start();
+			if (_timer is not null)
+				_timer.Start();
 		}
 
 		[RelayCommand]
 		public void Disappearing()
 		{
-			if (_timer is not null) _timer.Stop();
+			if (_timer is not null)
+				_timer.Stop();
 		}
 
 		//Convert date-time to string that can be used in the UI
@@ -78,61 +77,82 @@ namespace PokemonBattleJournal.ViewModels
 		public partial string? CurrentDateTimeDisplay { get; set; } = DateTime.Now.ToString();
 
 		[ObservableProperty]
-		//Cannot use Preferences raw with unit testing need to create Interface and Dependency Inject it.
 		public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
+
 		[ObservableProperty]
 		public partial string? NameInput { get; set; }
+
 		[ObservableProperty]
 		public partial string WelcomeMsg { get; set; }
+
 		[ObservableProperty]
 		public partial string? SavedTimeDisplay { get; set; } = "Save File";
+
 		[ObservableProperty]
 		public partial string? SavedFileDisplay { get; set; } = "Save File";
 
 		//Match Info and Notes
 		[ObservableProperty]
 		public partial Archetype? PlayerSelected { get; set; }
+
 		[ObservableProperty]
 		public partial Archetype? RivalSelected { get; set; }
+
 		[ObservableProperty]
 		public partial string? UserNoteInput { get; set; }
+
 		[ObservableProperty]
 		public partial string? UserNoteInput2 { get; set; }
+
 		[ObservableProperty]
 		public partial string? UserNoteInput3 { get; set; }
+
 		[ObservableProperty]
 		public partial DateTimeOffset? StartTime { get; set; } = DateTimeOffset.Now;
+
 		[ObservableProperty]
 		public partial DateTimeOffset? EndTime { get; set; } = DateTimeOffset.Now;
+
 		[ObservableProperty]
 		public partial DateTimeOffset DatePlayed { get; set; } = DateTimeOffset.Now;
+
 		[ObservableProperty]
-		public partial ObservableCollection<Archetype> Archetypes { get; set; } = new();
+		public partial ObservableCollection<Archetype> Archetypes { get; set; }
+
 		[ObservableProperty]
 		public partial bool BO3Toggle { get; set; }
+
 		[ObservableProperty]
 		public partial bool FirstCheck { get; set; }
+
 		[ObservableProperty]
 		public partial bool FirstCheck2 { get; set; }
+
 		[ObservableProperty]
 		public partial bool FirstCheck3 { get; set; }
 
 		[ObservableProperty]
 		public partial List<string> PossibleResults { get; set; } = new() { "Win", "Loss", "Tie" };
+
 		[ObservableProperty]
 		public partial string Result { get; set; } = "";
+
 		[ObservableProperty]
 		public partial string Result2 { get; set; } = "";
+
 		[ObservableProperty]
 		public partial string Result3 { get; set; } = "";
 
 		//Tags
 		[ObservableProperty]
 		public partial ObservableCollection<string> TagCollection { get; set; } = new();
+
 		[ObservableProperty]
 		public partial IList<string>? TagsSelected { get; set; }
+
 		[ObservableProperty]
 		public partial IList<string>? Match2TagsSelected { get; set; }
+
 		[ObservableProperty]
 		public partial IList<string>? Match3TagsSelected { get; set; }
 
@@ -168,18 +188,15 @@ namespace PokemonBattleJournal.ViewModels
 				//write serialized data to file
 				await FileHelper.WriteFileAsync(filePath, saveFile);
 				SavedFileDisplay = $"Saved: Match at {DateTimeOffset.Now}";
-
 			}
 			catch (Exception ex)
 			{
-
 				SavedFileDisplay = $"No File Saved";
 				ModalErrorHandler modalErrorHandler = new ModalErrorHandler();
 				modalErrorHandler.HandleError(ex);
 				_logger.LogError(ex, "Error Saving File");
 				return;
 			}
-
 		}
 
 		public MatchEntry CreateMatchEntry()
@@ -207,7 +224,7 @@ namespace PokemonBattleJournal.ViewModels
 			}
 			if (UserNoteInput != null)
 				matchEntry.Game1.Notes = UserNoteInput;
-			if(TagsSelected is not null)
+			if (TagsSelected is not null)
 			{
 				matchEntry.Game1.Tags = new();
 				matchEntry.Game1.Tags.AddRange(from string tag in TagsSelected
@@ -234,6 +251,7 @@ namespace PokemonBattleJournal.ViewModels
 					case "Tie":
 						_draws++;
 						break;
+
 					default:
 						break;
 				}
@@ -246,6 +264,7 @@ namespace PokemonBattleJournal.ViewModels
 					case "Tie":
 						_draws++;
 						break;
+
 					default:
 						break;
 				}
@@ -259,6 +278,7 @@ namespace PokemonBattleJournal.ViewModels
 					case "Tie":
 						_draws++;
 						break;
+
 					default:
 						break;
 				}
@@ -267,7 +287,7 @@ namespace PokemonBattleJournal.ViewModels
 				{
 					matchEntry.Result = "Win";
 				}
-				else if (_draws >= 2 )
+				else if (_draws >= 2)
 				{
 					matchEntry.Result = "Tie";
 				}
@@ -340,4 +360,3 @@ namespace PokemonBattleJournal.ViewModels
 		}
 	}
 }
-
