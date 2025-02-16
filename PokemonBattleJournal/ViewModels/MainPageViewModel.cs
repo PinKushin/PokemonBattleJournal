@@ -14,7 +14,7 @@ namespace PokemonBattleJournal.ViewModels
 		public MainPageViewModel(ILogger<MainPageViewModel> logger)
 		{
 			_logger = logger;
-			//SentrySdk.CaptureMessage("MainPageViewModel Constructing");
+
 			//Timer to update displayed time
 			if (Application.Current != null)
 			{
@@ -33,7 +33,6 @@ namespace PokemonBattleJournal.ViewModels
 			TagCollection.Add("Unlucky");
 			TagCollection.Add("Never Punished");
 			TagCollection.Add("Punished");
-			//TagCollection = DataPopulationHelper.PopulateTags();
 
 			WelcomeMsg = $"Welcome {TrainerName}";
 			// get default file path
@@ -237,8 +236,8 @@ namespace PokemonBattleJournal.ViewModels
 			}
 			else
 			{
-				int _wins = 0;
-				int _draws = 0;
+				uint _wins = 0;
+				uint _draws = 0;
 				matchEntry.Game2 = new Game();
 				matchEntry.Game3 = new Game();
 				matchEntry.Game2.Result = Result2;
