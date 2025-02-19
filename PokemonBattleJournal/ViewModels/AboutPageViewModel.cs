@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
-
-namespace PokemonBattleJournal.ViewModels
+﻿namespace PokemonBattleJournal.ViewModels
 {
-    public partial class AboutPageViewModel : ObservableObject
-    {
-    }
+	public partial class AboutPageViewModel : ObservableObject
+	{
+	}
 }
