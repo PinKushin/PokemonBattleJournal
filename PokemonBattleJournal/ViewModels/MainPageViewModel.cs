@@ -144,16 +144,16 @@ namespace PokemonBattleJournal.ViewModels
 
 		//Tags
 		[ObservableProperty]
-		public partial ObservableCollection<string> TagCollection { get; set; } = new();
+		public partial IList<object>? TagCollection { get; set; }
 
 		[ObservableProperty]
-		public partial List<string>? TagsSelected { get; set; }
+		public partial IList<object>? TagsSelected { get; set; }
 
 		[ObservableProperty]
-		public partial List<string>? Match2TagsSelected { get; set; }
+		public partial IList<object>? Match2TagsSelected { get; set; }
 
 		[ObservableProperty]
-		public partial List<string>? Match3TagsSelected { get; set; }
+		public partial IList<object>? Match3TagsSelected { get; set; }
 
 		[ObservableProperty]
 		public partial bool? IsToggled { get; set; }
@@ -203,6 +203,7 @@ namespace PokemonBattleJournal.ViewModels
 		public MatchEntry CreateMatchEntry()
 		{
 			_logger.LogInformation("Creating Match Entry...");
+			_logger.LogInformation("Tags Selected: {Tags}", TagsSelected);
 			var matchEntry = new MatchEntry
 			{
 				//add user inputs to match entry
@@ -226,12 +227,8 @@ namespace PokemonBattleJournal.ViewModels
 			}
 			if (UserNoteInput != null)
 				matchEntry.Game1.Notes = UserNoteInput;
-			if (TagsSelected is not null)
-			{
-				matchEntry.Game1.Tags = new();
-				matchEntry.Game1.Tags.AddRange(from string tag in TagsSelected
-											   select tag);
-			}
+
+			matchEntry.Game1.Tags =	TagsSelected;
 
 			if (!BO3Toggle)
 			{
@@ -243,7 +240,10 @@ namespace PokemonBattleJournal.ViewModels
 				uint _draws = 0;
 				matchEntry.Game2 = new Game();
 				matchEntry.Game3 = new Game();
+				matchEntry.Game2.Tags = Match2TagsSelected;
+				matchEntry.Game3.Tags = Match3TagsSelected;
 				matchEntry.Game2.Result = Result2;
+				matchEntry.Game3.Result = Result3;
 				switch (Result)
 				{
 					case "Win":
@@ -270,7 +270,6 @@ namespace PokemonBattleJournal.ViewModels
 					default:
 						break;
 				}
-				matchEntry.Game3.Result = Result3;
 				switch (Result3)
 				{
 					case "Win":
@@ -323,20 +322,6 @@ namespace PokemonBattleJournal.ViewModels
 				else
 				{
 					matchEntry.Game3.Turn = 2;
-				}
-
-				if (Match2TagsSelected is not null)
-				{
-					matchEntry.Game2.Tags = new();
-					matchEntry.Game2.Tags.AddRange(from string tag in Match2TagsSelected
-												   select tag);
-				}
-
-				if (Match3TagsSelected != null)
-				{
-					matchEntry.Game3.Tags = new();
-					matchEntry.Game3.Tags.AddRange(from string tag in Match3TagsSelected
-												   select tag);
 				}
 			}
 			//Clear Inputs

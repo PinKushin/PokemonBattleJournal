@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.ObjectModel;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
 namespace PokemonBattleJournal.Models
@@ -46,7 +47,7 @@ namespace PokemonBattleJournal.Models
 		public long Turn { get; set; } = 1;
 
 		[JsonProperty("tags")]
-		public List<string> Tags { get; set; } = new();
+		public IList<object>? Tags { get; set; }
 
 		[JsonProperty("notes")]
 		public string? Notes { get; set; }

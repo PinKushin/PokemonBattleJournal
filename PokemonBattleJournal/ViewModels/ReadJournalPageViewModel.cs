@@ -51,16 +51,16 @@ namespace PokemonBattleJournal.ViewModels
 		public partial string? AgainstIconSource { get; set; } = "ball_icon.png";
 
 		[ObservableProperty]
-		public partial List<string>? TagsSelectedGame1 { get; set; }
+		public partial IList<object>? TagsSelectedGame1 { get; set; }
 
 		[ObservableProperty]
-		public partial List<string>? TagsSelectedGame2 { get; set; }
+		public partial IList<object>? TagsSelectedGame2 { get; set; }
 
 		[ObservableProperty]
-		public partial List<string>? TagsSelectedGame3 { get; set; }
+		public partial IList<object>? TagsSelectedGame3 { get; set; }
 
 		[ObservableProperty]
-		public partial ObservableCollection<MatchEntry> MatchHistory { get; set; } = new();
+		public partial ObservableCollection<MatchEntry>? MatchHistory { get; set; }
 
 		public ReadJournalPageViewModel()
 		{
@@ -100,19 +100,26 @@ namespace PokemonBattleJournal.ViewModels
 			ResultGame1 = SelectedMatch.Game1.Result;
 			SelectedNote = SelectedMatch.Game1.Notes;
 			TagsSelectedGame1 = SelectedMatch.Game1.Tags;
-
-			if (SelectedMatch.Game2 != null)
+			if (SelectedMatch.Game2 is not null)
 			{
 				ResultGame2 = SelectedMatch.Game2.Result;
 				SelectedNote2 = SelectedMatch.Game2.Notes;
 				TagsSelectedGame2 = SelectedMatch.Game2.Tags;
 			}
-
-			if (SelectedMatch.Game3 != null)
+			else
 			{
-				ResultGame2 = SelectedMatch.Game3.Result;
-				SelectedNote2 = SelectedMatch.Game3.Notes;
-				TagsSelectedGame2 = SelectedMatch.Game3.Tags;
+				TagsSelectedGame2 = null;
+			}
+
+			if (SelectedMatch.Game3 is not null)
+			{
+				ResultGame3 = SelectedMatch.Game3.Result;
+				SelectedNote3 = SelectedMatch.Game3.Notes;
+				TagsSelectedGame3 = SelectedMatch.Game3.Tags;
+			}
+			else
+			{
+				TagsSelectedGame3 = null;
 			}
 			PlayingName = SelectedMatch.Playing?.Name;
 			AgainstName = SelectedMatch.Against?.Name;

@@ -36,9 +36,9 @@ namespace PokemonBattleJournal.Utilities
 			}
 		}
 
-		public static async Task<ObservableCollection<string>> PopulateTagsAsync()
+		public static async Task<IList<object>> PopulateTagsAsync()
 		{
-			ObservableCollection<string> tagCollection = [];
+			IList<object> tagCollection = [];
 			string filePath = FileHelper.GetAppDataPath() + "\\Tags.json";
 			if (!FileHelper.Exists(filePath))
 			{
@@ -57,7 +57,7 @@ namespace PokemonBattleJournal.Utilities
 			else
 			{
 				string savedTags = await FileHelper.ReadFileAsync(filePath);
-				tagCollection = JsonConvert.DeserializeObject<ObservableCollection<string>>(savedTags) ?? [];
+				tagCollection = JsonConvert.DeserializeObject<IList<object>>(savedTags) ?? [];
 			}
 			return tagCollection;
 		}

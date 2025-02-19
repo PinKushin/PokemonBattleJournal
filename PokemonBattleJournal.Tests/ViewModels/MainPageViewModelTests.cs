@@ -1,4 +1,6 @@
-﻿namespace PokemonBattleJournal.Tests.ViewModels
+﻿using System.Collections.ObjectModel;
+
+namespace PokemonBattleJournal.Tests.ViewModels
 {
 	public class MainPageViewModelTests
 	{
@@ -41,9 +43,9 @@
 			_viewModel.PlayerSelected = new("Other", "ball_icon.png");
 			_viewModel.RivalSelected = new("Other", "ball_icon.png");
 			_viewModel.DatePlayed = DateTime.Now;
-			_viewModel.TagsSelected = new List<string>() { "Early Start" };
-			_viewModel.Match2TagsSelected = new List<string>() { "Behind Early" };
-			_viewModel.Match3TagsSelected = new List<string>() { "Donked Rival", "Early Start" };
+			_viewModel.TagsSelected = new ObservableCollection<object>() { "Early Start" };
+			_viewModel.Match2TagsSelected = new ObservableCollection<object>() { "Behind Early" };
+			_viewModel.Match3TagsSelected = new ObservableCollection<object>() { "Donked Rival", "Early Start" };
 			_viewModel.Result = "Win";
 			_viewModel.Result2 = "Loss";
 			_viewModel.Result3 = "Win";
@@ -66,10 +68,10 @@
 			matchentry.Game1.Turn.ShouldBe(1);
 			matchentry.Game2.Turn.ShouldBe(2);
 			matchentry.Game3.Turn.ShouldBe(1);
-			matchentry.Game1.Tags.ShouldContain("Early Start");
-			matchentry.Game2.Tags.ShouldContain("Behind Early");
-			matchentry.Game3.Tags.ShouldContain("Donked Rival");
-			matchentry.Game3.Tags.ShouldContain("Early Start");
+			matchentry.Game1.Tags?.ShouldContain("Early Start");
+			matchentry.Game2.Tags?.ShouldContain("Behind Early");
+			matchentry.Game3.Tags?.ShouldContain("Donked Rival");
+			matchentry.Game3.Tags?.ShouldContain("Early Start");
 			matchentry.Result.ShouldBe("Win");
 			_viewModel.BO3Toggle.ShouldBe(false);
 			_viewModel.Result.ShouldBe("");
