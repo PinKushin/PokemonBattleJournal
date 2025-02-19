@@ -1,31 +1,39 @@
-namespace PokemonBattleJournal.ViewModels
+﻿namespace PokemonBattleJournal.ViewModels
 {
 	public partial class OptionsPageViewModel : ObservableObject
 	{
 		[ObservableProperty]
 		public partial string Title { get; set; } = $"{PreferencesHelper.GetSetting("Trainer Name")}'s Options";
+
 		[ObservableProperty]
 		public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("Trainer Name");
+
 		[ObservableProperty]
 		public partial string? NameInput { get; set; }
+
 		[ObservableProperty]
 		public partial string? TagInput { get; set; }
+
 		[ObservableProperty]
 		public partial string? NewDeckName { get; set; }
+
 		[ObservableProperty]
 		public partial string? NewDeckIcon { get; set; }
+
 		[ObservableProperty]
 		public partial List<string> IconCollection { get; set; } = new List<string>();
+
 		[ObservableProperty]
 		public partial string SelectedIcon { get; set; } = "ball_icon.png";
+
 		[ObservableProperty]
 		public partial string FileConfirmMessage { get; set; } = $"Delete {PreferencesHelper.GetSetting("TrainerName")}'s Trainer File?";
+
 		private static readonly string filePath = FileHelper.GetAppDataPath() + $@"\{PreferencesHelper.GetSetting("TrainerName")}.json";
 		private bool _initialized = false;
 
 		public OptionsPageViewModel()
 		{
-			
 		}
 
 		[RelayCommand]
@@ -42,8 +50,9 @@ namespace PokemonBattleJournal.ViewModels
 		[RelayCommand]
 		public void UpdateTrainerName()
 		{
-			if (NameInput == null) return;
-			
+			if (NameInput == null)
+				return;
+
 			TrainerName = NameInput;
 			PreferencesHelper.SetSetting("TrainerName", NameInput);
 			NameInput = null;
@@ -51,14 +60,12 @@ namespace PokemonBattleJournal.ViewModels
 		}
 
 		//Update Tags
-		
 
 		//TODO: Create a way to save a new tag to tag list
 
 		//Update Decks
-		
 
-		private async Task<List<string>> PopulateIconCollectionAsync()
+		private static async Task<List<string>> PopulateIconCollectionAsync()
 		{
 			string? imageName;
 			List<string> iconCollection = new List<string>();
@@ -72,7 +79,6 @@ namespace PokemonBattleJournal.ViewModels
 					iconCollection.Add(imageName!);
 				}
 				return iconCollection;
-
 			}
 			catch (Exception ex)
 			{
@@ -80,7 +86,6 @@ namespace PokemonBattleJournal.ViewModels
 				modalErrorHandler.HandleError(ex);
 				return iconCollection;
 			}
-			
 		}
 
 		//TODO: Create a way to save a new deck for selection on MainPage
@@ -88,7 +93,6 @@ namespace PokemonBattleJournal.ViewModels
 		[RelayCommand]
 		public void DeleteFile()
 		{
-
 			// Delete Trainer Match file if it exists
 			if (FileHelper.Exists(filePath))
 			{
@@ -100,6 +104,5 @@ namespace PokemonBattleJournal.ViewModels
 				FileConfirmMessage = "File Not Found";
 			}
 		}
-
 	}
 }

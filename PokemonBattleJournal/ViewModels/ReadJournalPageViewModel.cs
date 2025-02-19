@@ -65,7 +65,6 @@ namespace PokemonBattleJournal.ViewModels
 		public ReadJournalPageViewModel()
 		{
 			WelcomeMsg = $"{TrainerName}'s Journal";
-			//MatchHistory = LoadMatchHistory();
 		}
 
 		[RelayCommand]
@@ -115,10 +114,10 @@ namespace PokemonBattleJournal.ViewModels
 				SelectedNote2 = SelectedMatch.Game3.Notes;
 				TagsSelectedGame2 = SelectedMatch.Game3.Tags;
 			}
-			PlayingName = SelectedMatch.Playing.Name;
-			AgainstName = SelectedMatch.Against.Name;
-			PlayingIconSource = SelectedMatch.Playing.ImagePath;
-			AgainstIconSource = SelectedMatch.Against.ImagePath;
+			PlayingName = SelectedMatch.Playing?.Name;
+			AgainstName = SelectedMatch.Against?.Name;
+			PlayingIconSource = SelectedMatch.Playing?.ImagePath;
+			AgainstIconSource = SelectedMatch.Against?.ImagePath;
 		}
 	}
 }

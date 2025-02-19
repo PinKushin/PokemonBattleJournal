@@ -21,17 +21,7 @@ namespace PokemonBattleJournal.ViewModels
 				_timer.Tick += UpdateTime;
 			}
 
-			Archetypes = DataPopulationHelper.PopulateArchetypes();
-
-			TagCollection.Add("Early Start");
-			TagCollection.Add("Behind Early");
-			TagCollection.Add("Donked Rival");
-			TagCollection.Add("Got Donked");
-			TagCollection.Add("Lucky");
-			TagCollection.Add("Unlucky");
-			TagCollection.Add("Never Punished");
-			TagCollection.Add("Punished");
-
+			_logger.LogDebug("Created ViewModel");
 			WelcomeMsg = $"Welcome {TrainerName}";
 			// get default file path
 			string? filePath = FileHelper.GetAppDataPath() + $@"\{TrainerName}.json";
@@ -51,27 +41,39 @@ namespace PokemonBattleJournal.ViewModels
 		{
 			MainThreadHelper.BeginInvokeOnMainThread(() =>
 			{
-				CurrentDateTimeDisplay = $"{DateTime.Now}";
+				CurrentDateTimeDisplay = $"{DateTime.Now.ToLocalTime()}";
 			});
 		}
 
 		[RelayCommand]
-		public void Appearing()
+		public async Task AppearingAsync()
 		{
-			if (_timer is not null)
-				_timer.Start();
+			_logger.LogInformation("Appearing: {Time}", DateTime.Now);
+			try
+			{
+				_timer?.Start();
+				Archetypes = await DataPopulationHelper.PopulateArchetypesAsync();
+				TagCollection = await DataPopulationHelper.PopulateTagsAsync();
+				_logger.LogInformation("{@ArcheTypes}", Archetypes);
+			}
+			catch (Exception ex)
+			{
+				ModalErrorHandler modalErrorHandler = new ModalErrorHandler();
+				modalErrorHandler.HandleError(ex);
+				_logger.LogError(ex, "Error Loading ViewModel");
+			}
 		}
 
 		[RelayCommand]
 		public void Disappearing()
 		{
-			if (_timer is not null)
-				_timer.Stop();
+			_logger.LogInformation("Disappering: {Time}", DateTime.Now);
+			_timer?.Stop();
 		}
 
 		//Convert date-time to string that can be used in the UI
 		[ObservableProperty]
-		public partial string? CurrentDateTimeDisplay { get; set; } = DateTime.Now.ToString();
+		public partial string? CurrentDateTimeDisplay { get; set; } = DateTime.Now.ToLocalTime().ToString();
 
 		[ObservableProperty]
 		public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
@@ -105,16 +107,16 @@ namespace PokemonBattleJournal.ViewModels
 		public partial string? UserNoteInput3 { get; set; }
 
 		[ObservableProperty]
-		public partial DateTimeOffset? StartTime { get; set; } = DateTimeOffset.Now;
+		public partial DateTime StartTime { get; set; } = DateTime.Now.ToLocalTime();
 
 		[ObservableProperty]
-		public partial DateTimeOffset? EndTime { get; set; } = DateTimeOffset.Now;
+		public partial DateTime EndTime { get; set; } = DateTime.Now.ToLocalTime();
 
 		[ObservableProperty]
-		public partial DateTimeOffset DatePlayed { get; set; } = DateTimeOffset.Now;
+		public partial DateTime DatePlayed { get; set; } = DateTime.Now.ToLocalTime();
 
 		[ObservableProperty]
-		public partial ObservableCollection<Archetype> Archetypes { get; set; }
+		public partial ObservableCollection<Archetype>? Archetypes { get; set; }
 
 		[ObservableProperty]
 		public partial bool BO3Toggle { get; set; }
@@ -145,13 +147,13 @@ namespace PokemonBattleJournal.ViewModels
 		public partial ObservableCollection<string> TagCollection { get; set; } = new();
 
 		[ObservableProperty]
-		public partial IList<string>? TagsSelected { get; set; }
+		public partial List<string>? TagsSelected { get; set; }
 
 		[ObservableProperty]
-		public partial IList<string>? Match2TagsSelected { get; set; }
+		public partial List<string>? Match2TagsSelected { get; set; }
 
 		[ObservableProperty]
-		public partial IList<string>? Match3TagsSelected { get; set; }
+		public partial List<string>? Match3TagsSelected { get; set; }
 
 		[ObservableProperty]
 		public partial bool? IsToggled { get; set; }
@@ -160,14 +162,16 @@ namespace PokemonBattleJournal.ViewModels
 		/// Verify, Serialize, and Save Match Data
 		/// </summary>
 		[RelayCommand]
-		public async Task SaveFile()
+		public async Task SaveFileAsync()
 		{
 			// get default file path
 			string filePath = FileHelper.GetAppDataPath() + $@"\{TrainerName}.json";
+			_logger.LogInformation("FilePath: {FilePath}", filePath);
 			// create file if it doesn't exist
 			if (!FileHelper.Exists(filePath))
 			{
 				FileHelper.CreateFile(filePath);
+				_logger.LogInformation("File Created: {FilePath}", filePath);
 			}
 
 			try
@@ -177,7 +181,6 @@ namespace PokemonBattleJournal.ViewModels
 				string? saveFile = await FileHelper.ReadFileAsync(filePath);
 				//Deserialize file to add the new match or create an empty list of matches if no matches exist
 				List<MatchEntry> matchList = JsonConvert.DeserializeObject<List<MatchEntry>>(saveFile) ?? [];
-
 				//add match to list
 				matchList.Add(matchEntry);
 				//serialize data with the new match appended to memory
@@ -185,19 +188,21 @@ namespace PokemonBattleJournal.ViewModels
 				//write serialized data to file
 				await FileHelper.WriteFileAsync(filePath, saveFile);
 				SavedFileDisplay = $"Saved: Match at {DateTimeOffset.Now}";
+				_logger.LogInformation("Saved file: {@SaveFile} at {FilePath}", saveFile, filePath);
 			}
 			catch (Exception ex)
 			{
 				SavedFileDisplay = $"No File Saved";
 				ModalErrorHandler modalErrorHandler = new ModalErrorHandler();
 				modalErrorHandler.HandleError(ex);
-				_logger.LogError(ex, "Error Saving File");
+				_logger.LogError(ex, "Error Saving File at {FilePath}", filePath);
 				return;
 			}
 		}
 
 		public MatchEntry CreateMatchEntry()
 		{
+			_logger.LogInformation("Creating Match Entry...");
 			var matchEntry = new MatchEntry
 			{
 				//add user inputs to match entry
@@ -346,13 +351,14 @@ namespace PokemonBattleJournal.ViewModels
 			UserNoteInput3 = null;
 			PlayerSelected = null;
 			RivalSelected = null;
-			StartTime = new();
-			EndTime = new();
-			DatePlayed = new();
+			StartTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
+			EndTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
+			DatePlayed = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
 			Result = "";
 			Result2 = "";
 			Result3 = "";
 			BO3Toggle = false;
+			_logger.LogInformation("Match Creation Complete");
 			return matchEntry;
 		}
 	}
