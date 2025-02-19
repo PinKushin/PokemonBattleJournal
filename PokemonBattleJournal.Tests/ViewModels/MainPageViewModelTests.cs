@@ -3,6 +3,7 @@
 	public class MainPageViewModelTests
 	{
 		private readonly MainPageViewModel _viewModel;
+
 		public MainPageViewModelTests()
 		{
 			// Create a mock logger
@@ -34,13 +35,13 @@
 		}
 
 		[Fact]
-		public void MainPageViewModel_CreateMatchEntry_BO3MatchEntryCreated() 
+		public void MainPageViewModel_CreateMatchEntry_BO3MatchEntryCreated()
 		{
 			// Arrange
 			_viewModel.PlayerSelected = new("Other", "ball_icon.png");
 			_viewModel.RivalSelected = new("Other", "ball_icon.png");
-			_viewModel.DatePlayed = DateTimeOffset.Now;
-			_viewModel.TagsSelected = new List<string>() { "Early Start"};
+			_viewModel.DatePlayed = DateTime.Now;
+			_viewModel.TagsSelected = new List<string>() { "Early Start" };
 			_viewModel.Match2TagsSelected = new List<string>() { "Behind Early" };
 			_viewModel.Match3TagsSelected = new List<string>() { "Donked Rival", "Early Start" };
 			_viewModel.Result = "Win";
@@ -85,7 +86,6 @@
 			_viewModel.FirstCheck3.ShouldBe(false);
 			_viewModel.PlayerSelected.ShouldBeNull();
 			_viewModel.RivalSelected.ShouldBeNull();
-
 		}
 	}
 }
