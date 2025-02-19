@@ -1,5 +1,6 @@
 using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
+using Serilog;
 using Syncfusion.Maui.Core.Hosting;
 using Syncfusion.Maui.Toolkit.Hosting;
 
@@ -52,9 +53,17 @@ namespace PokemonBattleJournal
 
 #if DEBUG
 			builder.Logging.AddDebug();
-			builder.Services.AddLogging(configure => configure.AddDebug());
+
 #endif
+			builder.Services.AddSerilog(new LoggerConfiguration()
+				.WriteTo.Debug()
+				.WriteTo.File(Path.Combine(FileHelper.GetAppDataPath(), "log.txt"), rollingInterval: RollingInterval.Day)
+				.CreateLogger());
 			//Link Pages and ViewModels
+			//First Start Page
+			//Trainer Page
+			builder.Services.AddTransient<FirstStartPage>();
+			builder.Services.AddTransient<FirstStartPageViewModel>();
 			//Main Page
 			builder.Services.AddSingleton<MainPage>();
 			builder.Services.AddSingleton<MainPageViewModel>();

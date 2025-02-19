@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+	x:Class="PokemonBattleJournal.Views.FirstStartPage"
+	xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+	xmlns:buttons="clr-namespace:Syncfusion.Maui.Toolkit.Buttons;assembly=Syncfusion.Maui.Toolkit"
+	xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
+	xmlns:inputLayout="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
+	xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
+	Title="Welcome"
+	x:DataType="viewmodel:FirstStartPageViewModel">
+	<ScrollView>
+		<VerticalStackLayout>
+			<Image
+				Source="ball_icon.png"
+				WidthRequest="100" />
+			<Label
+				FontSize="Header"
+				HorizontalOptions="Center"
+				Text="Welcome to Pokemon TCG Battle Journal"
+				VerticalOptions="Center" />
+			<HorizontalStackLayout
+				HorizontalOptions="Center"
+				VerticalOptions="Center">
+				<inputLayout:SfTextInputLayout
+					EnableHintAnimation="True"
+					HelperText="Enter your name"
+					Hint="Trainer Name"
+					WidthRequest="300">
+					<Entry
+						x:Name="TrainerNameInput"
+						AutomationId="TrainerNameInput"
+						Text="{Binding TrainerNameInput}" />
+				</inputLayout:SfTextInputLayout>
+
+				<buttons:SfButton
+					x:Name="InputButton"
+					Command="{Binding SaveTrainerNameCommand}"
+					HeightRequest="50"
+					ImageSource="ball_icon.png"
+					ShowIcon="True"
+					Text="Save Trainer Name" />
+			</HorizontalStackLayout>
+		</VerticalStackLayout>
+	</ScrollView>
+</ContentPage>
