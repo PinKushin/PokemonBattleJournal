@@ -501,7 +501,7 @@
 					</VerticalStackLayout>
 				</VerticalStackLayout>
 			</VerticalStackLayout>
-			<Button
+			<buttons:SfButton
 				Grid.Row="3"
 				Grid.ColumnSpan="2"
 				Command="{Binding SaveFileCommand}"
