@@ -20,9 +20,7 @@
 			{
 				return true;
 			}
-			if (!File.Exists(filePath))
-				return false;
-			return true;
+			return File.Exists(filePath);
 		}
 
 		public static void CreateFile(string filePath)
@@ -32,7 +30,7 @@
 			{
 				return;
 			}
-			File.Create(filePath);
+			using var _ = File.Create(filePath);
 		}
 
 		public static void DeleteFile(string filePath)
