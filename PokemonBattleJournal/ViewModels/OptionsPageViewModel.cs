@@ -1,6 +1,3 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-
 namespace PokemonBattleJournal.ViewModels
 {
 	public partial class OptionsPageViewModel : ObservableObject
