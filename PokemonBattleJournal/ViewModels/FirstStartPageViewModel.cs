@@ -1,4 +1,6 @@
-﻿namespace PokemonBattleJournal.ViewModels
+﻿using Microsoft.Extensions.Logging;
+
+namespace PokemonBattleJournal.ViewModels
 {
 	public partial class FirstStartPageViewModel : ObservableObject
 	{
@@ -11,6 +13,8 @@
 		[RelayCommand]
 		public void SaveTrainerName()
 		{
+			var logger = new Logger<FirstStartPageViewModel>(new LoggerFactory());
+			logger.LogInformation("Created Trainer: {Name}", TrainerNameInput);
 			if (TrainerNameInput != null && Application.Current != null)
 			{
 				PreferencesHelper.SetSetting("FirstStart", "false");

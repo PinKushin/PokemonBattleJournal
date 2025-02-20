@@ -21,7 +21,7 @@ namespace PokemonBattleJournal.ViewModels
 				_timer.Tick += UpdateTime;
 			}
 
-			_logger.LogDebug("Created ViewModel");
+			_logger.LogInformation("Created ViewModel");
 			WelcomeMsg = $"Welcome {TrainerName}";
 			// get default file path
 			string? filePath = FileHelper.GetAppDataPath() + $@"\{TrainerName}.json";
@@ -177,14 +177,17 @@ namespace PokemonBattleJournal.ViewModels
 			try
 			{
 				MatchEntry matchEntry = CreateMatchEntry();
+				_logger.LogInformation("Match Created: {@Match}", matchEntry);
 				//Read File from Disk throws error if file doesn't exist so it was created above
 				string? saveFile = await FileHelper.ReadFileAsync(filePath);
+				_logger.LogInformation("Read Save File: {@Save}", saveFile);
 				//Deserialize file to add the new match or create an empty list of matches if no matches exist
 				List<MatchEntry> matchList = JsonConvert.DeserializeObject<List<MatchEntry>>(saveFile) ?? [];
 				//add match to list
 				matchList.Add(matchEntry);
 				//serialize data with the new match appended to memory
 				saveFile = JsonConvert.SerializeObject(matchList, Formatting.Indented);
+				_logger.LogInformation("Save File Updated: {@Save}", saveFile);
 				//write serialized data to file
 				await FileHelper.WriteFileAsync(filePath, saveFile);
 				SavedFileDisplay = $"Saved: Match at {DateTimeOffset.Now}";
