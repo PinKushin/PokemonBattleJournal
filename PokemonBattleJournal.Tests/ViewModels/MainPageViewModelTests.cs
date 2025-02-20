@@ -1,5 +1,5 @@
 ﻿using System.Collections.ObjectModel;
-
+#pragma warning disable IDE0058 // Expression value is never used
 namespace PokemonBattleJournal.Tests.ViewModels
 {
 	public class MainPageViewModelTests
@@ -18,6 +18,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 		public void MainPageViewModel_WhenConstructed_ShouldNotBeNull()
 		{
 			// Assert
+
 			_viewModel.ShouldNotBeNull();
 			_viewModel.Archetypes.ShouldNotBeNull();
 			_viewModel.TagCollection.ShouldNotBeNull();

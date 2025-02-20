@@ -75,7 +75,7 @@ namespace PokemonBattleJournal.ViewModels
 
 		private static async Task<ObservableCollection<MatchEntry>> LoadMatchHistoryAsync()
 		{
-			ObservableCollection<MatchEntry> matchHistory = new();
+			ObservableCollection<MatchEntry> matchHistory = [];
 			if (FileHelper.Exists(filePath))
 			{
 				//Read File from Disk throws error if file doesn't exist so it was checked above

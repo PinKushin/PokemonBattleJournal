@@ -204,7 +204,7 @@ namespace PokemonBattleJournal.ViewModels
 		{
 			_logger.LogInformation("Creating Match Entry...");
 			_logger.LogInformation("Tags Selected: {Tags}", TagsSelected);
-			var matchEntry = new MatchEntry
+			MatchEntry matchEntry = new()
 			{
 				//add user inputs to match entry
 				Playing = PlayerSelected ?? new("Other", "ball_icon.png"),
@@ -212,10 +212,9 @@ namespace PokemonBattleJournal.ViewModels
 				Time = DatePlayed,
 				DatePlayed = DatePlayed,
 				StartTime = StartTime,
-				EndTime = EndTime
+				EndTime = EndTime,
+				Game1 = new Game()
 			};
-
-			matchEntry.Game1 = new Game();
 			matchEntry.Game1.Result = Result;
 			if (FirstCheck)
 			{
@@ -228,7 +227,7 @@ namespace PokemonBattleJournal.ViewModels
 			if (UserNoteInput != null)
 				matchEntry.Game1.Notes = UserNoteInput;
 
-			matchEntry.Game1.Tags =	TagsSelected;
+			matchEntry.Game1.Tags = TagsSelected;
 
 			if (!BO3Toggle)
 			{

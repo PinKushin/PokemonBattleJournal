@@ -13,7 +13,7 @@ namespace PokemonBattleJournal.Utilities
 				return [];
 			}
 			string filePath = FileHelper.GetAppDataPath() + "\\Archetypes.json";
-			ObservableCollection<Archetype>? archetypes = new();
+			ObservableCollection<Archetype>? archetypes = [];
 			if (FileHelper.Exists(filePath))
 			{
 				string? saveFile = await FileHelper.ReadFileAsync(filePath);

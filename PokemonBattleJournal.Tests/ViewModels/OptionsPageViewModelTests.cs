@@ -1,5 +1,6 @@
 ﻿namespace PokemonBattleJournal.Tests.ViewModels
 {
+#pragma warning disable IDE0058 // Expression value is never used
 	public class OptionsPageViewModelTests
 	{
 		private readonly OptionsPageViewModel _viewModel;

@@ -7,7 +7,7 @@
 			//This is a wrapper for supporting unit tests
 			if (DeviceInfo.Platform == DevicePlatform.Unknown)
 			{
-				Task.Run(action);
+				_ = Task.Run(action);
 				return;
 			}
 			MainThread.BeginInvokeOnMainThread(action);

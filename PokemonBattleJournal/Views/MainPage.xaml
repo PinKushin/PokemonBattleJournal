@@ -38,13 +38,11 @@
 				<Image
 					Grid.ColumnSpan="2"
 					AutomationId="ball_icon.png"
-					AutomationProperties.Name="ball_icon.png"
 					SemanticProperties.Description="Poke-Ball Image"
 					Source="ball_icon.png"
 					WidthRequest="32" />
 				<Label
 					Grid.ColumnSpan="2"
-					AutomationProperties.Name="PageTitle"
 					FontFamily="PokemonSolid"
 					FontSize="Title"
 					SemanticProperties.Description="Create a Match Entry"
@@ -69,8 +67,7 @@
 					Text="Select Decks"
 					VerticalOptions="End" />
 
-				<HorizontalStackLayout
-					HorizontalOptions="Center">
+				<HorizontalStackLayout HorizontalOptions="Center">
 					<inputLayout:SfTextInputLayout
 						ContainerType="Outlined"
 						HelperText="Select Your Archetype"
@@ -79,18 +76,15 @@
 						<editors:SfComboBox
 							x:Name="PlayerArchetype"
 							AutomationId="PlayerArchetype"
-							AutomationProperties.Name="PlayerArchetype"
 							DisplayMemberPath="Name"
 							HeightRequest="40"
 							ItemsSource="{Binding Archetypes}"
 							SelectedItem="{Binding PlayerSelected}"
 							TextMemberPath="Name">
 							<editors:SfComboBox.ItemTemplate>
-								<DataTemplate
-									x:DataType="models:Archetype">
+								<DataTemplate x:DataType="models:Archetype">
 									<ViewCell>
-										<HorizontalStackLayout
-											HorizontalOptions="Start">
+										<HorizontalStackLayout HorizontalOptions="Start">
 											<Image
 												HeightRequest="30"
 												HorizontalOptions="Center"
@@ -113,17 +107,14 @@
 						<editors:SfComboBox
 							x:Name="RivalArchetype"
 							AutomationId="RivalArchetype"
-							AutomationProperties.Name="RivalArchetype"
 							DisplayMemberPath="Name"
 							ItemsSource="{Binding Archetypes}"
 							SelectedItem="{Binding RivalSelected}"
 							TextMemberPath="Name">
 							<editors:SfComboBox.ItemTemplate>
-								<DataTemplate
-									x:DataType="models:Archetype">
+								<DataTemplate x:DataType="models:Archetype">
 									<ViewCell>
-										<HorizontalStackLayout
-											HorizontalOptions="Start">
+										<HorizontalStackLayout HorizontalOptions="Start">
 											<Image
 												HeightRequest="30"
 												HorizontalOptions="Center"
@@ -139,8 +130,7 @@
 						</editors:SfComboBox>
 					</inputLayout:SfTextInputLayout>
 				</HorizontalStackLayout>
-				<HorizontalStackLayout
-					HorizontalOptions="Center">
+				<HorizontalStackLayout HorizontalOptions="Center">
 					<Switch
 						x:Name="BOSwitch"
 						AutomationId="BOSwitch"
@@ -158,12 +148,8 @@
 								Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
 								TargetType="Label"
 								Value="False">
-								<Setter
-									Property="FontAttributes"
-									Value="Bold" />
-								<Setter
-									Property="FontSize"
-									Value="Medium" />
+								<Setter Property="FontAttributes" Value="Bold" />
+								<Setter Property="FontSize" Value="Medium" />
 							</DataTrigger>
 						</Label.Triggers>
 					</Label>
@@ -178,12 +164,8 @@
 								Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
 								TargetType="Label"
 								Value="True">
-								<Setter
-									Property="FontAttributes"
-									Value="Bold" />
-								<Setter
-									Property="FontSize"
-									Value="Medium" />
+								<Setter Property="FontAttributes" Value="Bold" />
+								<Setter Property="FontSize" Value="Medium" />
 							</DataTrigger>
 						</Label.Triggers>
 					</Label>
@@ -238,8 +220,7 @@
 					</picker:SfTimePicker.HeaderView>
 				</picker:SfTimePicker>
 
-				<HorizontalStackLayout
-					HorizontalOptions="Center">
+				<HorizontalStackLayout HorizontalOptions="Center">
 					<buttons:SfButton
 						AutomationId="DatePickerButton"
 						Clicked="OpenDatePlayedPicker"
@@ -272,8 +253,7 @@
 				Grid.Column="1"
 				HorizontalOptions="Center"
 				IsVisible="True">
-				<VerticalStackLayout
-					HorizontalOptions="Center">
+				<VerticalStackLayout HorizontalOptions="Center">
 					<Label
 						FontAttributes="Bold"
 						FontSize="Large"
@@ -329,8 +309,7 @@
 						IsSpellCheckEnabled="True"
 						Placeholder="Write notes here..."
 						Text="{Binding UserNoteInput}" />
-					<HorizontalStackLayout
-						HorizontalOptions="Center">
+					<HorizontalStackLayout HorizontalOptions="Center">
 						<Label
 							HorizontalOptions="Center"
 							Text="Went first?"
@@ -358,9 +337,7 @@
 								Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
 								TargetType="VerticalStackLayout"
 								Value="True">
-								<Setter
-									Property="IsVisible"
-									Value="True" />
+								<Setter Property="IsVisible" Value="True" />
 							</DataTrigger>
 						</VerticalStackLayout.Triggers>
 
@@ -407,14 +384,12 @@
 						<Editor
 							AutoSize="TextChanges"
 							AutomationId="UserNoteInput2"
-							AutomationProperties.Name="UserNoteInput2"
 							HeightRequest="200"
 							IsSpellCheckEnabled="True"
 							IsVisible="True"
 							Placeholder="Write notes here..."
 							Text="{Binding UserNoteInput2}" />
-						<HorizontalStackLayout
-							HorizontalOptions="Center">
+						<HorizontalStackLayout HorizontalOptions="Center">
 							<Label
 								HorizontalOptions="Center"
 								Text="Went first?"
@@ -479,8 +454,7 @@
 							IsVisible="True"
 							Placeholder="Write notes here..."
 							Text="{Binding UserNoteInput3}" />
-						<HorizontalStackLayout
-							HorizontalOptions="Center">
+						<HorizontalStackLayout HorizontalOptions="Center">
 							<Label
 								HorizontalOptions="Center"
 								Text="Went first?"

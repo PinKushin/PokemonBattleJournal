@@ -30,7 +30,7 @@
 		public partial string FileConfirmMessage { get; set; } = $"Delete {PreferencesHelper.GetSetting("TrainerName")}'s Trainer File?";
 
 		private static readonly string filePath = FileHelper.GetAppDataPath() + $@"\{PreferencesHelper.GetSetting("TrainerName")}.json";
-		private bool _initialized = false;
+		private bool _initialized;
 
 		public OptionsPageViewModel()
 		{
@@ -68,11 +68,11 @@
 		private static async Task<List<string>> PopulateIconCollectionAsync()
 		{
 			string? imageName;
-			List<string> iconCollection = new List<string>();
+			List<string> iconCollection = [];
 			try
 			{
 				using Stream fileStream = await FileSystem.Current.OpenAppPackageFileAsync("icon_file_names.txt");
-				using StreamReader reader = new StreamReader(fileStream);
+				using StreamReader reader = new(fileStream);
 				while (!reader.EndOfStream)
 				{
 					imageName = await reader.ReadLineAsync();
@@ -82,7 +82,7 @@
 			}
 			catch (Exception ex)
 			{
-				ModalErrorHandler modalErrorHandler = new ModalErrorHandler();
+				ModalErrorHandler modalErrorHandler = new();
 				modalErrorHandler.HandleError(ex);
 				return iconCollection;
 			}
