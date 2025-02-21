@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -24,7 +25,7 @@ namespace PokemonBattleJournal.ViewModels
 			_logger.LogInformation("Created ViewModel");
 			WelcomeMsg = $"Welcome {TrainerName}";
 			// get default file path
-			string? filePath = FileHelper.GetAppDataPath() + $@"\{TrainerName}.json";
+			string filePath = $@"{FileHelper.GetAppDataPath()}\{TrainerName}.json";
 			// create file if it doesn't exist
 			if (!FileHelper.Exists(filePath))
 			{
@@ -37,7 +38,7 @@ namespace PokemonBattleJournal.ViewModels
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
-		public void UpdateTime(object? sender, EventArgs e)
+		private void UpdateTime(object? sender, EventArgs e)
 		{
 			MainThreadHelper.BeginInvokeOnMainThread(() =>
 			{
@@ -46,7 +47,7 @@ namespace PokemonBattleJournal.ViewModels
 		}
 
 		[RelayCommand]
-		public async Task AppearingAsync()
+		private async Task AppearingAsync()
 		{
 			_logger.LogInformation("Appearing: {Time}", DateTime.Now);
 			try
@@ -54,7 +55,7 @@ namespace PokemonBattleJournal.ViewModels
 				_timer?.Start();
 				Archetypes = await DataPopulationHelper.PopulateArchetypesAsync();
 				TagCollection = await DataPopulationHelper.PopulateTagsAsync();
-				_logger.LogInformation("{@ArcheTypes}", Archetypes);
+				_logger.LogInformation("{@Archetypes}", Archetypes);
 			}
 			catch (Exception ex)
 			{
@@ -65,18 +66,18 @@ namespace PokemonBattleJournal.ViewModels
 		}
 
 		[RelayCommand]
-		public void Disappearing()
+		private void Disappearing()
 		{
-			_logger.LogInformation("Disappering: {Time}", DateTime.Now);
+			_logger.LogInformation("Disappearing: {Time}", DateTime.Now);
 			_timer?.Stop();
 		}
 
 		//Convert date-time to string that can be used in the UI
 		[ObservableProperty]
-		public partial string? CurrentDateTimeDisplay { get; set; } = DateTime.Now.ToLocalTime().ToString();
+		public partial string CurrentDateTimeDisplay { get; set; } = DateTime.Now.ToLocalTime().ToString("t", CultureInfo.InvariantCulture);
 
 		[ObservableProperty]
-		public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
+		private partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
 
 		[ObservableProperty]
 		public partial string? NameInput { get; set; }
@@ -162,7 +163,7 @@ namespace PokemonBattleJournal.ViewModels
 		/// Verify, Serialize, and Save Match Data
 		/// </summary>
 		[RelayCommand]
-		public async Task SaveFileAsync()
+		private async Task SaveFileAsync()
 		{
 			// get default file path
 			string filePath = FileHelper.GetAppDataPath() + $@"\{TrainerName}.json";
@@ -179,7 +180,7 @@ namespace PokemonBattleJournal.ViewModels
 				MatchEntry matchEntry = CreateMatchEntry();
 				_logger.LogInformation("Match Created: {@Match}", matchEntry);
 				//Read File from Disk throws error if file doesn't exist so it was created above
-				string? saveFile = await FileHelper.ReadFileAsync(filePath);
+				string saveFile = await FileHelper.ReadFileAsync(filePath);
 				_logger.LogInformation("Read Save File: {@Save}", saveFile);
 				//Deserialize file to add the new match or create an empty list of matches if no matches exist
 				List<MatchEntry> matchList = JsonConvert.DeserializeObject<List<MatchEntry>>(saveFile) ?? [];
@@ -199,7 +200,7 @@ namespace PokemonBattleJournal.ViewModels
 				ModalErrorHandler modalErrorHandler = new ModalErrorHandler();
 				modalErrorHandler.HandleError(ex);
 				_logger.LogError(ex, "Error Saving File at {FilePath}", filePath);
-				return;
+				
 			}
 		}
 
@@ -210,8 +211,8 @@ namespace PokemonBattleJournal.ViewModels
 			MatchEntry matchEntry = new()
 			{
 				//add user inputs to match entry
-				Playing = PlayerSelected ?? new("Other", "ball_icon.png"),
-				Against = RivalSelected ?? new("Other", "ball_icon.png"),
+				Playing = PlayerSelected,
+				Against = RivalSelected,
 				Time = DatePlayed,
 				DatePlayed = DatePlayed,
 				StartTime = StartTime,
@@ -238,8 +239,8 @@ namespace PokemonBattleJournal.ViewModels
 			}
 			else
 			{
-				uint _wins = 0;
-				uint _draws = 0;
+				uint wins = 0;
+				uint draws = 0;
 				matchEntry.Game2 = new Game();
 				matchEntry.Game3 = new Game();
 				matchEntry.Game2.Tags = Match2TagsSelected;
@@ -249,58 +250,58 @@ namespace PokemonBattleJournal.ViewModels
 				switch (Result)
 				{
 					case "Win":
-						_wins++;
+						wins++;
 						break;
 
 					case "Tie":
-						_draws++;
+						draws++;
 						break;
 
-					default:
-						break;
+					
 				}
 				switch (Result2)
 				{
 					case "Win":
-						_wins++;
+						wins++;
 						break;
 
 					case "Tie":
-						_draws++;
+						draws++;
 						break;
-
-					default:
-						break;
+					
 				}
 				switch (Result3)
 				{
 					case "Win":
-						_wins++;
+						wins++;
 						break;
 
 					case "Tie":
-						_draws++;
+						draws++;
 						break;
 
+					
+				}
+
+				switch (wins)
+				{
+					case >= 2:
+						matchEntry.Result = "Win";
+						break;
 					default:
+					{
+						switch (draws)
+						{
+							case >= 2:
+							case 1 when wins == 1:
+								matchEntry.Result = "Tie";
+								break;
+							default:
+								matchEntry.Result = "Loss";
+								break;
+						}
 						break;
-				}
-
-				if (_wins >= 2)
-				{
-					matchEntry.Result = "Win";
-				}
-				else if (_draws >= 2)
-				{
-					matchEntry.Result = "Tie";
-				}
-				else if (_draws == 1 && _wins == 1)
-				{
-					matchEntry.Result = "Tie";
-				}
-				else
-				{
-					matchEntry.Result = "Loss";
+					}
 				}
 
 				if (UserNoteInput2 != null)
