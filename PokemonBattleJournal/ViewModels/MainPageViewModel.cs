@@ -174,44 +174,6 @@ public partial class MainPageViewModel : ObservableObject
 
         try
         {
-            //Game game1 = new()
-            //{
-            //    Turn = (uint) (FirstCheck ? 1 : 2),
-            //    Result = Result,
-            //    Notes = UserNoteInput,
-            //    Tags = TagsSelected as List<Tags>
-            //};
-            //await _connection.SaveGameAsync(game1);
-
-            //Game game2 = new()
-            //{
-            //    Turn = (uint) (FirstCheck2 ? 1 : 2),
-            //    Result = Result2,
-            //    Notes = UserNoteInput2,
-            //    Tags = Match2TagsSelected as List<Tags>
-            //};
-            //await _connection.SaveGameAsync(game2);
-            //Game game3 = new()
-            //{
-            //    Turn = (uint) (FirstCheck3 ? 1 : 2),
-            //    Result = Result3,
-            //    Notes = UserNoteInput3,
-            //    Tags = Match3TagsSelected as List<Tags>
-            //};
-            //await _connection.SaveGameAsync(game3);
-
-            //MatchEntry matchEntry = new() {
-            //    TrainerId = trainer!.Id,
-            //    PlayingId = PlayerSelected!.Id,
-            //    Playing = PlayerSelected,
-            //    AgainstId = RivalSelected!.Id,
-            //    Against = RivalSelected,
-            //    DatePlayed = DatePlayed,
-            //    StartTime = StartTime,
-            //    EndTime = EndTime,
-            //    Game1Id = game1.Id,
-            //    Game1 = game1,
-            //};
             var matchEntry = await CreateMatchEntryAsync();
             await _connection.SaveMatchEntryAsync(matchEntry);
             _logger.LogInformation("Match Created: {@Match}", matchEntry);
