@@ -76,6 +76,8 @@ namespace PokemonBattleJournal.ViewModels
         public async Task AppearingAsync()
         {
             var trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+            if (trainer == null)
+                return;
             MatchHistory = await _connection.GetMatchEntriesByTrainerIdAsync(trainer.Id);
         }
 
