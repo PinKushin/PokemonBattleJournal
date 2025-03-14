@@ -8,7 +8,7 @@ public partial class MainPageViewModel : ObservableObject
     private readonly ILogger<MainPageViewModel> _logger;
     private readonly IDispatcherTimer? _timer;
     private readonly SqliteConnectionFactory _connection;
-    //private readonly Trainer _trainer;
+    private static Trainer? _trainer;
 
     public MainPageViewModel(ILogger<MainPageViewModel> logger, SqliteConnectionFactory connection)
     {
@@ -113,7 +113,6 @@ public partial class MainPageViewModel : ObservableObject
     [ObservableProperty]
     public partial bool? IsToggled { get; set; }
 
-    private Trainer? trainer;
     /// <summary>
     ///     Update displayed time on UI
     /// </summary>
@@ -140,11 +139,11 @@ public partial class MainPageViewModel : ObservableObject
         _logger.LogInformation("Appearing: {Time}", DateTime.Now);
         try
         {
-            trainer = await _connection.GetTrainerByNameAsync(TrainerName);
-            if (trainer == null)
+            _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+            if (_trainer == null)
             {
                 await _connection.SaveTrainerAsync(new Trainer() { Name = TrainerName });
-                trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+                _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
             }
             Archetypes = await _connection.GetArchetypesAsync();
             //TagCollection = await _connection.GetTagsAsync();
@@ -193,8 +192,8 @@ public partial class MainPageViewModel : ObservableObject
     {
         _logger.LogInformation("Creating Match Entry...");
         _logger.LogInformation("Tags Selected: {Tags}", TagsSelected);
-        var trainer = await _connection.GetTrainerByNameAsync(TrainerName);
-        if (PlayerSelected == null || RivalSelected == null || TrainerName == null || trainer == null)
+        _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+        if (PlayerSelected == null || RivalSelected == null || TrainerName == null || _trainer == null)
         {
             throw new InvalidOperationException("Required fields are missing.");
         }
@@ -202,7 +201,7 @@ public partial class MainPageViewModel : ObservableObject
         MatchEntry matchEntry = new()
         {
             // Add user inputs to match entry
-            TrainerId = trainer.Id,
+            TrainerId = _trainer.Id,
             PlayingId = PlayerSelected!.Id,
             Playing = PlayerSelected,
             AgainstId = RivalSelected!.Id,
@@ -323,25 +322,25 @@ public partial class MainPageViewModel : ObservableObject
         finally
         {
             // Clear Inputs
-            TagsSelected = null;
-            Match2TagsSelected = null;
-            Match3TagsSelected = null;
-            FirstCheck = false;
-            FirstCheck2 = false;
-            FirstCheck3 = false;
-            UserNoteInput = null;
-            UserNoteInput2 = null;
-            UserNoteInput3 = null;
-            PlayerSelected = null;
-            RivalSelected = null;
-            StartTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
-            EndTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
-            DatePlayed = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
-            Result = MatchResult.Tie;
-            Result2 = MatchResult.Tie;
-            Result3 = MatchResult.Tie;
-            BO3Toggle = false;
-            _logger.LogInformation("Cleared Inputs");
+            //TagsSelected = null;
+            //Match2TagsSelected = null;
+            //Match3TagsSelected = null;
+            //FirstCheck = false;
+            //FirstCheck2 = false;
+            //FirstCheck3 = false;
+            //UserNoteInput = null;
+            //UserNoteInput2 = null;
+            //UserNoteInput3 = null;
+            //PlayerSelected = null;
+            //RivalSelected = null;
+            //StartTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
+            //EndTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
+            //DatePlayed = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
+            //Result = MatchResult.Tie;
+            //Result2 = MatchResult.Tie;
+            //Result3 = MatchResult.Tie;
+            //BO3Toggle = false;
+            //_logger.LogInformation("Cleared Inputs");
         }
         _logger.LogInformation("Match Creation Complete");
         return matchEntry;
