@@ -8,7 +8,10 @@ public partial class MainPageViewModel : ObservableObject
     private readonly ILogger<MainPageViewModel> _logger;
     private readonly IDispatcherTimer? _timer;
     private readonly SqliteConnectionFactory _connection;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly object _lock = new();
     private static Trainer? _trainer;
+
 
     public MainPageViewModel(ILogger<MainPageViewModel> logger, SqliteConnectionFactory connection)
     {
@@ -25,10 +28,13 @@ public partial class MainPageViewModel : ObservableObject
 
         _logger.LogInformation("Created Main Page ViewModel{this}", this);
         WelcomeMsg = $"Welcome {TrainerName}";
-        connection.GetTagsAsync().ContinueWith(tags =>
+        lock (_lock)
         {
-            TagCollection = tags.Result;
-        });
+            connection.GetTagsAsync().ContinueWith(tags =>
+            {
+                TagCollection = tags.Result;
+            });
+        }
     }
 
     //Convert date-time to string that can be used in the UI
@@ -133,10 +139,9 @@ public partial class MainPageViewModel : ObservableObject
     [RelayCommand]
     private async Task AppearingAsync()
     {
-        //await _connection.SaveArchetypeAsync(new Archetype() { Name = "Regidrago", ImagePath = "regidrago.png" });
-        //await DataPopulationHelper.PopulateArchetypesAsync(_connection);
         _timer?.Start();
         _logger.LogInformation("Appearing: {Time}", DateTime.Now);
+        await _semaphore.WaitAsync();
         try
         {
             _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
@@ -154,6 +159,10 @@ public partial class MainPageViewModel : ObservableObject
             modalErrorHandler.HandleError(ex);
             _logger.LogError(ex, "Error Loading ViewModel");
         }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     [RelayCommand]
@@ -167,17 +176,80 @@ public partial class MainPageViewModel : ObservableObject
     ///     Verify, Serialize, and Save Match Data
     /// </summary>
     [RelayCommand]
-    private async Task SaveMatchAsync()
+    private async Task<int> SaveMatchAsync()
     {
         _logger.LogInformation("Saving File...");
+        _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+        if (PlayerSelected == null || RivalSelected == null || TrainerName == null || _trainer == null)
+        {
+            throw new InvalidOperationException("Required fields are missing.");
+        }
 
+        await _semaphore.WaitAsync();
         try
         {
-            var matchEntry = await CreateMatchEntryAsync();
-            await _connection.SaveMatchEntryAsync(matchEntry);
-            _logger.LogInformation("Match Created: {@Match}", matchEntry);
-            SavedFileDisplay = $"Saved: Match at {DateTimeOffset.Now}";
-            _logger.LogInformation("{SavedFileDisplay}", SavedFileDisplay);
+            var matchEntry = new MatchEntry()
+            {
+                // Add user inputs to match entry
+                TrainerId = _trainer.Id,
+                PlayingId = PlayerSelected.Id,
+                Playing = PlayerSelected,
+                AgainstId = RivalSelected.Id,
+                Against = RivalSelected,
+                DatePlayed = DatePlayed,
+                StartTime = StartTime,
+                EndTime = EndTime,
+            };
+
+            var games = new List<Game>();
+            var game1 = new Game()
+            {
+                Result = Result,
+                Tags = TagsSelected?.Cast<Tags>().ToList(),
+                Turn = FirstCheck ? 1u : 2u,
+                Notes = UserNoteInput
+            };
+            games.Add(game1);
+
+
+            if (BO3Toggle)
+            {
+                var game2 = new Game
+                {
+                    Result = Result2,
+                    Tags = Match2TagsSelected?.Cast<Tags>().ToList(),
+                    Turn = FirstCheck2 ? 1u : 2u,
+                    Notes = UserNoteInput2
+                };
+                games.Add(game2);
+
+                var game3 = new Game
+                {
+                    Result = Result3,
+                    Tags = Match3TagsSelected?.Cast<Tags>().ToList(),
+                    Turn = FirstCheck3 ? 1u : 2u,
+                    Notes = UserNoteInput3
+                };
+                games.Add(game3);
+
+                matchEntry.Result = CalculateOverallResult(Result, Result2, Result3);
+            }
+            else
+            {
+                matchEntry.Result = Result;
+            }
+
+            var result = await _connection.SaveMatchEntryAsync(matchEntry, games);
+            if (result > 0)
+            {
+                SavedFileDisplay = $"Saved: Match at {DateTimeOffset.Now}";
+                _logger.LogInformation("Match Created: {@Match}", matchEntry);
+                return result;
+            }
+
+            SavedFileDisplay = "Failed to save match";
+            _logger.LogInformation("Failed Saving Match with no exceptions");
+            return 0;
         }
         catch (Exception ex)
         {
@@ -185,164 +257,190 @@ public partial class MainPageViewModel : ObservableObject
             ModalErrorHandler modalErrorHandler = new();
             modalErrorHandler.HandleError(ex);
             _logger.LogError(ex, "Error Saving Match");
-        }
-    }
-
-    public async Task<MatchEntry> CreateMatchEntryAsync()
-    {
-        _logger.LogInformation("Creating Match Entry...");
-        _logger.LogInformation("Tags Selected: {Tags}", TagsSelected);
-        _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
-        if (PlayerSelected == null || RivalSelected == null || TrainerName == null || _trainer == null)
-        {
-            throw new InvalidOperationException("Required fields are missing.");
-        }
-
-        MatchEntry matchEntry = new()
-        {
-            // Add user inputs to match entry
-            TrainerId = _trainer.Id,
-            PlayingId = PlayerSelected!.Id,
-            Playing = PlayerSelected,
-            AgainstId = RivalSelected!.Id,
-            Against = RivalSelected,
-            DatePlayed = DatePlayed,
-            StartTime = StartTime,
-            EndTime = EndTime,
-            Game1 = new Game() { Result = Result },
-        };
-        matchEntry.Game1.MatchEntryId = matchEntry.Id;
-        try
-        {
-            await Task.Run(() =>
-            {
-                if (FirstCheck)
-                    matchEntry.Game1.Turn = 1;
-                else
-                    matchEntry.Game1.Turn = 2;
-                if (UserNoteInput != null)
-                    matchEntry.Game1.Notes = UserNoteInput;
-
-                matchEntry.Game1.Tags = TagsSelected as List<Tags>;
-
-                if (!BO3Toggle)
-                {
-                    matchEntry.Result = Result;
-                }
-                else
-                {
-                    uint wins = 0;
-                    uint draws = 0;
-                    matchEntry.Game2 = new Game()
-                    {
-                        Result = Result2,
-                        MatchEntryId = matchEntry.Id
-                    };
-                    matchEntry.Game3 = new Game()
-                    {
-                        Result = Result3,
-                        MatchEntryId = matchEntry.Id
-                    };
-                    switch (Result)
-                    {
-                        case MatchResult.Win:
-                            wins++;
-                            break;
-
-                        case MatchResult.Tie:
-                            draws++;
-                            break;
-                    }
-
-                    switch (Result2)
-                    {
-                        case MatchResult.Win:
-                            wins++;
-                            break;
-
-                        case MatchResult.Tie:
-                            draws++;
-                            break;
-                    }
-
-                    switch (Result3)
-                    {
-                        case MatchResult.Win:
-                            wins++;
-                            break;
-
-                        case MatchResult.Tie:
-                            draws++;
-                            break;
-                    }
-
-                    switch (wins)
-                    {
-                        case >= 2:
-                            matchEntry.Result = MatchResult.Win;
-                            break;
-                        default:
-                            switch (draws)
-                            {
-                                case >= 2:
-                                case 1 when wins == 1:
-                                    matchEntry.Result = MatchResult.Tie;
-                                    break;
-                                default:
-                                    matchEntry.Result = MatchResult.Loss;
-                                    break;
-                            }
-
-                            break;
-                    }
-
-                    if (UserNoteInput2 != null)
-                        matchEntry.Game2.Notes = UserNoteInput2;
-                    if (UserNoteInput3 != null)
-                        matchEntry.Game3.Notes = UserNoteInput3;
-
-                    if (FirstCheck2)
-                        matchEntry.Game2.Turn = 1;
-                    else
-                        matchEntry.Game2.Turn = 2;
-
-                    if (FirstCheck3)
-                        matchEntry.Game3.Turn = 1;
-                    else
-                        matchEntry.Game3.Turn = 2;
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            ModalErrorHandler modalErrorHandler = new();
-            modalErrorHandler.HandleError(ex);
-            _logger.LogError(ex, "Error Creating Match Entry");
+            return 0;
         }
         finally
         {
-            // Clear Inputs
-            //TagsSelected = null;
-            //Match2TagsSelected = null;
-            //Match3TagsSelected = null;
-            //FirstCheck = false;
-            //FirstCheck2 = false;
-            //FirstCheck3 = false;
-            //UserNoteInput = null;
-            //UserNoteInput2 = null;
-            //UserNoteInput3 = null;
-            //PlayerSelected = null;
-            //RivalSelected = null;
-            //StartTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
-            //EndTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
-            //DatePlayed = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
-            //Result = MatchResult.Tie;
-            //Result2 = MatchResult.Tie;
-            //Result3 = MatchResult.Tie;
-            //BO3Toggle = false;
-            //_logger.LogInformation("Cleared Inputs");
+            _semaphore.Release();
         }
-        _logger.LogInformation("Match Creation Complete");
-        return matchEntry;
     }
+
+    private MatchResult CalculateOverallResult(MatchResult? result1, MatchResult? result2, MatchResult? result3)
+    {
+        uint wins = 0;
+        uint draws = 0;
+
+        foreach (var result in new[] { result1, result2, result3 })
+        {
+            if (result == MatchResult.Win)
+                wins++;
+            else if (result == MatchResult.Tie)
+                draws++;
+        }
+
+        if (wins >= 2)
+            return MatchResult.Win;
+        if (draws >= 2 || (draws == 1 && wins == 1))
+            return MatchResult.Tie;
+        return MatchResult.Loss;
+    }
+
+    //public async Task<MatchEntry> CreateMatchEntryAsync()
+    //{
+    //    _logger.LogInformation("Creating Match Entry...");
+    //    _logger.LogInformation("Tags Selected: {Tags}", TagsSelected);
+    //    _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+    //    if (PlayerSelected == null || RivalSelected == null || TrainerName == null || _trainer == null)
+    //    {
+    //        throw new InvalidOperationException("Required fields are missing.");
+    //    }
+
+    //    MatchEntry matchEntry = new()
+    //    {
+    //        // Add user inputs to match entry
+    //        TrainerId = _trainer.Id,
+    //        PlayingId = PlayerSelected!.Id,
+    //        Playing = PlayerSelected,
+    //        AgainstId = RivalSelected!.Id,
+    //        Against = RivalSelected,
+    //        DatePlayed = DatePlayed,
+    //        StartTime = StartTime,
+    //        EndTime = EndTime,
+    //        Game1 = new Game() { Result = Result },
+    //    };
+    //    matchEntry.Game1.MatchEntryId = matchEntry.Id;
+    //    try
+    //    {
+    //        await Task.Run(() =>
+    //        {
+    //            if (FirstCheck)
+    //                matchEntry.Game1.Turn = 1;
+    //            else
+    //                matchEntry.Game1.Turn = 2;
+    //            if (UserNoteInput != null)
+    //                matchEntry.Game1.Notes = UserNoteInput;
+
+    //            matchEntry.Game1.Tags = TagsSelected as List<Tags>;
+
+    //            if (!BO3Toggle)
+    //            {
+    //                matchEntry.Result = Result;
+    //            }
+    //            else
+    //            {
+    //                uint wins = 0;
+    //                uint draws = 0;
+    //                matchEntry.Game2 = new Game()
+    //                {
+    //                    Result = Result2,
+    //                    MatchEntryId = matchEntry.Id
+    //                };
+    //                matchEntry.Game3 = new Game()
+    //                {
+    //                    Result = Result3,
+    //                    MatchEntryId = matchEntry.Id
+    //                };
+    //                switch (Result)
+    //                {
+    //                    case MatchResult.Win:
+    //                        wins++;
+    //                        break;
+
+    //                    case MatchResult.Tie:
+    //                        draws++;
+    //                        break;
+    //                }
+
+    //                switch (Result2)
+    //                {
+    //                    case MatchResult.Win:
+    //                        wins++;
+    //                        break;
+
+    //                    case MatchResult.Tie:
+    //                        draws++;
+    //                        break;
+    //                }
+
+    //                switch (Result3)
+    //                {
+    //                    case MatchResult.Win:
+    //                        wins++;
+    //                        break;
+
+    //                    case MatchResult.Tie:
+    //                        draws++;
+    //                        break;
+    //                }
+
+    //                switch (wins)
+    //                {
+    //                    case >= 2:
+    //                        matchEntry.Result = MatchResult.Win;
+    //                        break;
+    //                    default:
+    //                        switch (draws)
+    //                        {
+    //                            case >= 2:
+    //                            case 1 when wins == 1:
+    //                                matchEntry.Result = MatchResult.Tie;
+    //                                break;
+    //                            default:
+    //                                matchEntry.Result = MatchResult.Loss;
+    //                                break;
+    //                        }
+
+    //                        break;
+    //                }
+
+    //                if (UserNoteInput2 != null)
+    //                    matchEntry.Game2.Notes = UserNoteInput2;
+    //                if (UserNoteInput3 != null)
+    //                    matchEntry.Game3.Notes = UserNoteInput3;
+
+    //                if (FirstCheck2)
+    //                    matchEntry.Game2.Turn = 1;
+    //                else
+    //                    matchEntry.Game2.Turn = 2;
+
+    //                if (FirstCheck3)
+    //                    matchEntry.Game3.Turn = 1;
+    //                else
+    //                    matchEntry.Game3.Turn = 2;
+    //            }
+    //        });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        ModalErrorHandler modalErrorHandler = new();
+    //        modalErrorHandler.HandleError(ex);
+    //        _logger.LogError(ex, "Error Creating Match Entry");
+    //    }
+    //    finally
+    //    {
+    //        // Clear Inputs
+    //        //TagsSelected = null;
+    //        //Match2TagsSelected = null;
+    //        //Match3TagsSelected = null;
+    //        //FirstCheck = false;
+    //        //FirstCheck2 = false;
+    //        //FirstCheck3 = false;
+    //        //UserNoteInput = null;
+    //        //UserNoteInput2 = null;
+    //        //UserNoteInput3 = null;
+    //        //PlayerSelected = null;
+    //        //RivalSelected = null;
+    //        //StartTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
+    //        //EndTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
+    //        //DatePlayed = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
+    //        //Result = MatchResult.Tie;
+    //        //Result2 = MatchResult.Tie;
+    //        //Result3 = MatchResult.Tie;
+    //        //BO3Toggle = false;
+    //        //_logger.LogInformation("Cleared Inputs");
+    //    }
+    //    _logger.LogInformation("Match Creation Complete");
+    //    return matchEntry;
+    //}
+    //}
 }
