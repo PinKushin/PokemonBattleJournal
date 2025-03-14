@@ -1,41 +1,14 @@
-﻿using Newtonsoft.Json;
-using PokemonBattleJournal.Models.Interfaces;
+﻿using SQLite;
 
 namespace PokemonBattleJournal.Models
 {
-	public class Archetype : IArchetype
-	{
-		public Archetype(string name, string imagePath = "ball_icon.png")
-		{
-			Name = name;
-			ImagePath = imagePath;
-		}
+    public class Archetype
+    {
+        [PrimaryKey, AutoIncrement]
+        public uint Id { get; set; }
 
-		[JsonProperty("name")]
-		public string Name { get; set; }
-
-		[JsonProperty("image_path")]
-		public string ImagePath { get; set; }
-
-		public override bool Equals(object? obj)
-		{
-			return obj is IArchetype archetype &&
-				   Name == archetype.Name;
-		}
-
-		public override int GetHashCode()
-		{
-			return HashCode.Combine(Name);
-		}
-
-		public static bool operator ==(Archetype? left, Archetype? right)
-		{
-			return EqualityComparer<Archetype>.Default.Equals(left, right);
-		}
-
-		public static bool operator !=(Archetype? left, Archetype? right)
-		{
-			return !(left == right);
-		}
-	}
+        [Unique]
+        public string Name { get; set; }
+        public string? ImagePath { get; set; }
+    }
 }
