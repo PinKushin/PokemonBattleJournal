@@ -1,4 +1,5 @@
 ﻿using SQLite;
+using SQLiteNetExtensionsAsync.Extensions;
 
 namespace PokemonBattleJournal.Services;
 
@@ -147,152 +148,6 @@ public class SqliteConnectionFactory
             await _database.RunInTransactionAsync(tran =>
             {
                 del = tran.Delete(trainer);
-            });
-            return del;
-        }
-        catch (Exception ex)
-        {
-            // Log the error
-            ModalErrorHandler errorHandler = new ModalErrorHandler();
-            errorHandler.HandleError(ex);
-            return 0;
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
-
-    /// <summary>
-    /// Saves a match entry to the database. If the match entry has an ID, it updates the existing record; otherwise, it inserts a new record.
-    /// </summary>
-    /// <param name="matchEntry">The match entry to save.</param>
-    /// <returns>The number of rows affected.</returns>
-    public virtual async Task<int> SaveMatchEntryAsync(MatchEntry matchEntry)
-    {
-        await InitAsync();
-        await _semaphore.WaitAsync();
-        try
-        {
-            int saved = 0;
-            await _database.RunInTransactionAsync(tran =>
-            {
-                if (matchEntry.Id != 0)
-                {
-                    saved = tran.Update(matchEntry);
-                }
-                else
-                {
-                    saved = tran.Insert(matchEntry);
-                }
-            });
-            return saved;
-        }
-        catch (Exception ex)
-        {
-            // Log the error
-            ModalErrorHandler errorHandler = new ModalErrorHandler();
-            errorHandler.HandleError(ex);
-            return 0;
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
-
-    /// <summary>
-    /// Retrieves a list of all match entries from the database.
-    /// </summary>
-    /// <returns>A list of match entries.</returns>
-    public virtual async Task<List<MatchEntry>> GetMatchEntriesAsync()
-    {
-        await InitAsync();
-        await _semaphore.WaitAsync();
-        try
-        {
-            return await _database.Table<MatchEntry>().ToListAsync();
-        }
-        catch (Exception ex)
-        {
-            // Log the error
-            ModalErrorHandler errorHandler = new ModalErrorHandler();
-            errorHandler.HandleError(ex);
-            return new List<MatchEntry>(); // Return an empty list in case of an error
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
-
-    /// <summary>
-    /// Retrieves a list of match entries by trainer ID from the database.
-    /// </summary>
-    /// <param name="trainerId">The ID of the trainer.</param>
-    /// <returns>A list of match entries for the specified trainer.</returns>
-    public virtual async Task<List<MatchEntry>> GetMatchEntriesByTrainerIdAsync(uint trainerId)
-    {
-        await InitAsync();
-        await _semaphore.WaitAsync();
-        try
-        {
-            return await _database.Table<MatchEntry>().Where(i => i.TrainerId == trainerId).ToListAsync();
-        }
-        catch (Exception ex)
-        {
-            // Log the error
-            ModalErrorHandler errorHandler = new ModalErrorHandler();
-            errorHandler.HandleError(ex);
-            return new List<MatchEntry>(); // Return an empty list in case of an error
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
-
-    /// <summary>
-    /// Retrieves a match entry by ID from the database.
-    /// </summary>
-    /// <param name="id">The ID of the match entry.</param>
-    /// <returns>The match entry with the specified ID, or null if not found.</returns>
-    public virtual async Task<MatchEntry?> GetMatchEntryByIdAsync(uint id)
-    {
-        await InitAsync();
-        await _semaphore.WaitAsync();
-        try
-        {
-            return await _database.Table<MatchEntry>().Where(i => i.Id == id).FirstOrDefaultAsync();
-        }
-        catch (Exception ex)
-        {
-            // Log the error
-            ModalErrorHandler errorHandler = new ModalErrorHandler();
-            errorHandler.HandleError(ex);
-            return null;
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
-
-    /// <summary>
-    /// Deletes a match entry from the database.
-    /// </summary>
-    /// <param name="matchEntry">The match entry to delete.</param>
-    /// <returns>The number of rows affected.</returns>
-    public virtual async Task<int> DeleteMatchEntryAsync(MatchEntry matchEntry)
-    {
-        await InitAsync();
-        await _semaphore.WaitAsync();
-        try
-        {
-            int del = 0;
-            await _database.RunInTransactionAsync(tran =>
-            {
-                del = tran.Delete(matchEntry);
             });
             return del;
         }
@@ -697,47 +552,201 @@ public class SqliteConnectionFactory
     /// </summary>
     /// <param name="matchEntry">The match entry to save.</param>
     /// <param name="games">The list of games associated with the match entry.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public virtual async Task SaveMatchEntryWithGamesAsync(MatchEntry matchEntry, List<Game> games)
+    /// <returns>The number of rows affected, or 0 if the operation failed.</returns>
+    public virtual async Task<int> SaveMatchEntryAsync(MatchEntry matchEntry, List<Game> games)
     {
         await InitAsync();
         await _semaphore.WaitAsync();
         try
         {
+            int affected = 0;
             await _database.RunInTransactionAsync(tran =>
             {
                 if (matchEntry.Id != 0)
                 {
-                    tran.Update(matchEntry);
+                    affected += tran.Update(matchEntry);
                 }
                 else
                 {
-                    tran.Insert(matchEntry);
+                    affected += tran.Insert(matchEntry);
                 }
 
+                // Update game relationships with the match entry
                 foreach (var game in games)
                 {
+                    game.MatchEntryId = matchEntry.Id;
                     if (game.Id != 0)
                     {
-                        tran.Update(game);
+                        affected += tran.Update(game);
                     }
                     else
                     {
-                        tran.Insert(game);
+                        affected += tran.Insert(game);
                     }
                 }
+
+                // Update match entry relationships with games
+                if (games.Count > 0)
+                {
+                    matchEntry.Game1Id = games[0].Id;
+                    if (games.Count > 1)
+                        matchEntry.Game2Id = games[1].Id;
+                    if (games.Count > 2)
+                        matchEntry.Game3Id = games[2].Id;
+                    affected += tran.Update(matchEntry);
+                }
             });
+            return affected;
         }
         catch (Exception ex)
         {
             // Log the error
             ModalErrorHandler errorHandler = new ModalErrorHandler();
             errorHandler.HandleError(ex);
+            return 0;
         }
         finally
         {
             _semaphore.Release();
         }
     }
+
+    /// <summary>
+    /// Retrieves a match entry with all its related data (games, archetypes, etc.) by ID.
+    /// </summary>
+    /// <param name="id">The ID of the match entry.</param>
+    /// <returns>The match entry with all related data, or null if not found.</returns>
+    public virtual async Task<MatchEntry?> GetMatchEntryByIdAsync(uint id)
+    {
+        await InitAsync();
+        await _semaphore.WaitAsync();
+        try
+        {
+            var matchEntry = await _database.GetWithChildrenAsync<MatchEntry>(id, recursive: true);
+            if (matchEntry != null)
+            {
+                // Load related archetypes
+                matchEntry.Playing = await GetArchetypeByIdAsync(matchEntry.PlayingId);
+                matchEntry.Against = await GetArchetypeByIdAsync(matchEntry.AgainstId);
+
+                // Load related games
+                if (matchEntry.Game1Id.HasValue)
+                    matchEntry.Game1 = await GetGameByIdAsync(matchEntry.Game1Id.Value);
+                if (matchEntry.Game2Id != 0)
+                    matchEntry.Game2 = await GetGameByIdAsync(matchEntry.Game2Id);
+                if (matchEntry.Game3Id != 0)
+                    matchEntry.Game3 = await GetGameByIdAsync(matchEntry.Game3Id);
+            }
+            return matchEntry;
+        }
+        catch (Exception ex)
+        {
+            ModalErrorHandler errorHandler = new();
+            errorHandler.HandleError(ex);
+            return null;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Retrieves a list of all match entries from the database.
+    /// </summary>
+    /// <returns>A list of match entries.</returns>
+    public virtual async Task<List<MatchEntry>> GetMatchEntriesAsync()
+    {
+        await InitAsync();
+        await _semaphore.WaitAsync();
+        try
+        {
+            return await _database.Table<MatchEntry>().ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            // Log the error
+            ModalErrorHandler errorHandler = new ModalErrorHandler();
+            errorHandler.HandleError(ex);
+            return new List<MatchEntry>(); // Return an empty list in case of an error
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Retrieves a list of match entries by trainer ID from the database.
+    /// </summary>
+    /// <param name="trainerId">The ID of the trainer.</param>
+    /// <returns>A list of match entries for the specified trainer.</returns>
+    public virtual async Task<List<MatchEntry>> GetMatchEntriesByTrainerIdAsync(uint trainerId)
+    {
+        await InitAsync();
+        await _semaphore.WaitAsync();
+        try
+        {
+            var entries = await _database.GetAllWithChildrenAsync<MatchEntry>(recursive: true);
+            entries = entries.Where(e => e.TrainerId == trainerId).ToList();
+
+            foreach (var entry in entries)
+            {
+                entry.Playing = await GetArchetypeByIdAsync(entry.PlayingId);
+                entry.Against = await GetArchetypeByIdAsync(entry.AgainstId);
+
+                if (entry.Game1Id.HasValue)
+                    entry.Game1 = await _database.GetWithChildrenAsync<Game>(entry.Game1Id.Value);
+                if (entry.Game2Id != 0)
+                    entry.Game2 = await _database.GetWithChildrenAsync<Game>(entry.Game2Id);
+                if (entry.Game3Id != 0)
+                    entry.Game3 = await _database.GetWithChildrenAsync<Game>(entry.Game3Id);
+            }
+
+            return entries;
+        }
+        catch (Exception ex)
+        {
+            ModalErrorHandler errorHandler = new();
+            errorHandler.HandleError(ex);
+            return new List<MatchEntry>();
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Deletes a match entry from the database.
+    /// </summary>
+    /// <param name="matchEntry">The match entry to delete.</param>
+    /// <returns>The number of rows affected.</returns>
+    public virtual async Task<int> DeleteMatchEntryAsync(MatchEntry matchEntry)
+    {
+        await InitAsync();
+        await _semaphore.WaitAsync();
+        try
+        {
+            int del = 0;
+            await _database.RunInTransactionAsync(tran =>
+            {
+                del = tran.Delete(matchEntry);
+            });
+            return del;
+        }
+        catch (Exception ex)
+        {
+            // Log the error
+            ModalErrorHandler errorHandler = new ModalErrorHandler();
+            errorHandler.HandleError(ex);
+            return 0;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
 }
 
