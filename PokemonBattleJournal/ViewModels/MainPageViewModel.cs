@@ -14,12 +14,6 @@ public partial class MainPageViewModel : ObservableObject
     {
         _logger = logger;
         _connection = connection;
-        //_trainer = _connection.GetTrainerByNameAsync(TrainerName).Result;
-        //if (_trainer == null)
-        //{
-        //    _connection.SaveTrainerAsync(new Trainer() { Name = TrainerName }).RunSynchronously();
-        //    _trainer = _connection.GetTrainerByNameAsync(TrainerName).Result;
-        //}
 
         //Timer to update displayed time
         if (Application.Current != null)
@@ -35,10 +29,6 @@ public partial class MainPageViewModel : ObservableObject
         {
             TagCollection = tags.Result;
         });
-        //connection.GetArchetypesAsync().ContinueWith(archetypes =>
-        //{
-        //    Archetypes = archetypes.Result;
-        //});
     }
 
     //Convert date-time to string that can be used in the UI
