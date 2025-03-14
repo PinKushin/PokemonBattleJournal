@@ -1,11 +1,18 @@
 ﻿using SQLite;
 
 namespace PokemonBattleJournal.Services;
+
+/// <summary>
+/// Provides methods for interacting with the SQLite database.
+/// </summary>
 public class SqliteConnectionFactory
 {
     private static SQLiteAsyncConnection _database;
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
+    /// <summary>
+    /// Initializes the SQLite database connection and creates tables if they do not exist.
+    /// </summary>
     static async Task InitAsync()
     {
         if (_database is not null)
@@ -36,6 +43,10 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Retrieves a list of all trainers from the database.
+    /// </summary>
+    /// <returns>A list of trainers.</returns>
     public virtual async Task<List<Trainer>> GetTrainersAsync()
     {
         await InitAsync();
@@ -57,6 +68,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Retrieves a trainer by name from the database.
+    /// </summary>
+    /// <param name="name">The name of the trainer.</param>
+    /// <returns>The trainer with the specified name, or null if not found.</returns>
     public virtual async Task<Trainer?> GetTrainerByNameAsync(string name)
     {
         await InitAsync();
@@ -78,6 +94,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Saves a trainer to the database. If the trainer has an ID, it updates the existing record; otherwise, it inserts a new record.
+    /// </summary>
+    /// <param name="trainer">The trainer to save.</param>
+    /// <returns>The number of rows affected.</returns>
     public virtual async Task<int> SaveTrainerAsync(Trainer trainer)
     {
         await InitAsync();
@@ -111,6 +132,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Deletes a trainer from the database.
+    /// </summary>
+    /// <param name="trainer">The trainer to delete.</param>
+    /// <returns>The number of rows affected.</returns>
     public virtual async Task<int> DeleteTrainerAsync(Trainer trainer)
     {
         await InitAsync();
@@ -137,6 +163,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Saves a match entry to the database. If the match entry has an ID, it updates the existing record; otherwise, it inserts a new record.
+    /// </summary>
+    /// <param name="matchEntry">The match entry to save.</param>
+    /// <returns>The number of rows affected.</returns>
     public virtual async Task<int> SaveMatchEntryAsync(MatchEntry matchEntry)
     {
         await InitAsync();
@@ -170,6 +201,10 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Retrieves a list of all match entries from the database.
+    /// </summary>
+    /// <returns>A list of match entries.</returns>
     public virtual async Task<List<MatchEntry>> GetMatchEntriesAsync()
     {
         await InitAsync();
@@ -191,6 +226,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Retrieves a list of match entries by trainer ID from the database.
+    /// </summary>
+    /// <param name="trainerId">The ID of the trainer.</param>
+    /// <returns>A list of match entries for the specified trainer.</returns>
     public virtual async Task<List<MatchEntry>> GetMatchEntriesByTrainerIdAsync(uint trainerId)
     {
         await InitAsync();
@@ -212,6 +252,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Retrieves a match entry by ID from the database.
+    /// </summary>
+    /// <param name="id">The ID of the match entry.</param>
+    /// <returns>The match entry with the specified ID, or null if not found.</returns>
     public virtual async Task<MatchEntry?> GetMatchEntryByIdAsync(uint id)
     {
         await InitAsync();
@@ -233,6 +278,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Deletes a match entry from the database.
+    /// </summary>
+    /// <param name="matchEntry">The match entry to delete.</param>
+    /// <returns>The number of rows affected.</returns>
     public virtual async Task<int> DeleteMatchEntryAsync(MatchEntry matchEntry)
     {
         await InitAsync();
@@ -259,6 +309,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Saves an archetype to the database. If the archetype has an ID, it updates the existing record; otherwise, it inserts a new record.
+    /// </summary>
+    /// <param name="archetype">The archetype to save.</param>
+    /// <returns>The number of rows affected.</returns>
     public virtual async Task<int> SaveArchetypeAsync(Archetype archetype)
     {
         await InitAsync();
@@ -292,6 +347,10 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Retrieves a list of all archetypes from the database.
+    /// </summary>
+    /// <returns>A list of archetypes.</returns>
     public virtual async Task<List<Archetype>> GetArchetypesAsync()
     {
         await InitAsync();
@@ -327,6 +386,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Retrieves an archetype by ID from the database.
+    /// </summary>
+    /// <param name="id">The ID of the archetype.</param>
+    /// <returns>The archetype with the specified ID, or null if not found.</returns>
     public virtual async Task<Archetype?> GetArchetypeByIdAsync(uint id)
     {
         await InitAsync();
@@ -348,6 +412,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Deletes an archetype from the database.
+    /// </summary>
+    /// <param name="archetype">The archetype to delete.</param>
+    /// <returns>The number of rows affected.</returns>
     public virtual async Task<int> DeleteArchetypeAsync(Archetype archetype)
     {
         await InitAsync();
@@ -373,6 +442,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Saves a tag to the database. If the tag has an ID, it updates the existing record; otherwise, it inserts a new record.
+    /// </summary>
+    /// <param name="tag">The tag to save.</param>
+    /// <returns>The number of rows affected.</returns>
     public virtual async Task<int> SaveTagAsync(Tags tag)
     {
         await InitAsync();
@@ -406,6 +480,10 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Retrieves a list of all tags from the database.
+    /// </summary>
+    /// <returns>A list of tags.</returns>
     public virtual async Task<List<Tags>> GetTagsAsync()
     {
         await InitAsync();
@@ -441,6 +519,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Retrieves a tag by ID from the database.
+    /// </summary>
+    /// <param name="id">The ID of the tag.</param>
+    /// <returns>The tag with the specified ID, or null if not found.</returns>
     public virtual async Task<Tags?> GetTagByIdAsync(uint id)
     {
         await InitAsync();
@@ -462,6 +545,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Deletes a tag from the database.
+    /// </summary>
+    /// <param name="tag">The tag to delete.</param>
+    /// <returns>The number of rows affected.</returns>
     public virtual async Task<int> DeleteTagAsync(Tags tag)
     {
         await InitAsync();
@@ -487,6 +575,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Saves a game to the database. If the game has an ID, it updates the existing record; otherwise, it inserts a new record.
+    /// </summary>
+    /// <param name="game">The game to save.</param>
+    /// <returns>The number of rows affected.</returns>
     public virtual async Task<int> SaveGameAsync(Game game)
     {
         await InitAsync();
@@ -520,6 +613,10 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Retrieves a list of all games from the database.
+    /// </summary>
+    /// <returns>A list of games.</returns>
     public virtual async Task<List<Game>> GetGamesAsync()
     {
         await InitAsync();
@@ -540,6 +637,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Retrieves a game by ID from the database.
+    /// </summary>
+    /// <param name="id">The ID of the game.</param>
+    /// <returns>The game with the specified ID, or null if not found.</returns>
     public virtual async Task<Game?> GetGameByIdAsync(uint id)
     {
         await InitAsync();
@@ -560,6 +662,11 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Deletes a game from the database.
+    /// </summary>
+    /// <param name="game">The game to delete.</param>
+    /// <returns>The number of rows affected.</returns>
     public virtual async Task<int> DeleteGameAsync(Game game)
     {
         await InitAsync();
@@ -585,6 +692,12 @@ public class SqliteConnectionFactory
         }
     }
 
+    /// <summary>
+    /// Saves a match entry and its associated games to the database in a single transaction.
+    /// </summary>
+    /// <param name="matchEntry">The match entry to save.</param>
+    /// <param name="games">The list of games associated with the match entry.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public virtual async Task SaveMatchEntryWithGamesAsync(MatchEntry matchEntry, List<Game> games)
     {
         await InitAsync();
