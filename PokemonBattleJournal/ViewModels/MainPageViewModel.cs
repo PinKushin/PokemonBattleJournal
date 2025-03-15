@@ -9,7 +9,7 @@ public partial class MainPageViewModel : ObservableObject
     private readonly IDispatcherTimer? _timer;
     private readonly SqliteConnectionFactory _connection;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private static Trainer? _trainer;
 
 
@@ -265,7 +265,7 @@ public partial class MainPageViewModel : ObservableObject
         }
     }
 
-    private MatchResult CalculateOverallResult(MatchResult? result1, MatchResult? result2, MatchResult? result3)
+    private static MatchResult CalculateOverallResult(MatchResult? result1, MatchResult? result2, MatchResult? result3)
     {
         uint wins = 0;
         uint draws = 0;
