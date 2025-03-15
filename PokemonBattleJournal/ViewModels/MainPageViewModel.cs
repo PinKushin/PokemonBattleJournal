@@ -232,7 +232,7 @@ public partial class MainPageViewModel : ObservableObject
                 };
                 games.Add(game3);
 
-                matchEntry.Result = CalculateOverallResult(Result, Result2, Result3);
+                matchEntry.Result = Calculations.CalculateOverallResult(Result, Result2, Result3);
             }
             else
             {
@@ -263,26 +263,6 @@ public partial class MainPageViewModel : ObservableObject
         {
             _semaphore.Release();
         }
-    }
-
-    private static MatchResult CalculateOverallResult(MatchResult? result1, MatchResult? result2, MatchResult? result3)
-    {
-        uint wins = 0;
-        uint draws = 0;
-
-        foreach (var result in new[] { result1, result2, result3 })
-        {
-            if (result == MatchResult.Win)
-                wins++;
-            else if (result == MatchResult.Tie)
-                draws++;
-        }
-
-        if (wins >= 2)
-            return MatchResult.Win;
-        if (draws >= 2 || (draws == 1 && wins == 1))
-            return MatchResult.Tie;
-        return MatchResult.Loss;
     }
 
     //public async Task<MatchEntry> CreateMatchEntryAsync()
