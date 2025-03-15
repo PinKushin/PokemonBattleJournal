@@ -72,25 +72,25 @@ namespace PokemonBattleJournal
             builder.Services.AddSingleton<MainPageViewModel>();
 
             //Read Journal Page
-            builder.Services.AddSingleton<ReadJournalPage>();
-            builder.Services.AddSingleton<ReadJournalPageViewModel>();
+            builder.Services.AddTransient<ReadJournalPage>();
+            builder.Services.AddTransient<ReadJournalPageViewModel>();
 
             //Trainer Page
             builder.Services.AddTransient<TrainerPage>();
             builder.Services.AddTransient<TrainerPageViewModel>();
 
             //Options Page
-            builder.Services.AddSingleton<OptionsPage>();
-            builder.Services.AddSingleton<OptionsPageViewModel>();
+            builder.Services.AddTransient<OptionsPage>();
+            builder.Services.AddTransient<OptionsPageViewModel>();
 
             //About Page
-            builder.Services.AddSingleton<AboutPage>();
-            builder.Services.AddSingleton<AboutPageViewModel>();
+            builder.Services.AddTransient<AboutPage>();
+            builder.Services.AddTransient<AboutPageViewModel>();
 
 #if DEBUG
             //Developer Test Page
-            builder.Services.AddSingleton<TestPage>();
-            builder.Services.AddSingleton<TestPageViewModel>();
+            builder.Services.AddTransient<TestPage>();
+            builder.Services.AddTransient<TestPageViewModel>();
 #endif
 #if WINDOWS
 
