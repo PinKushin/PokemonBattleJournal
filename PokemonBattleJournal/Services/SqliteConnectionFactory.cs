@@ -560,7 +560,7 @@ public class SqliteConnectionFactory
         try
         {
             int affected = 0;
-            await _database.RunInTransactionAsync(tran =>
+            await _database.RunInTransactionAsync(async tran =>
             {
                 if (matchEntry.Id != 0)
                 {
@@ -575,14 +575,7 @@ public class SqliteConnectionFactory
                 foreach (var game in games)
                 {
                     game.MatchEntryId = matchEntry.Id;
-                    if (game.Id != 0)
-                    {
-                        affected += tran.Update(game);
-                    }
-                    else
-                    {
-                        affected += tran.Insert(game);
-                    }
+                    affected += await SaveGameAsync(game);
                 }
 
                 // Update match entry relationships with games
@@ -625,9 +618,7 @@ public class SqliteConnectionFactory
             var matchEntry = await _database.GetWithChildrenAsync<MatchEntry>(id, recursive: true);
             if (matchEntry != null)
             {
-                // Load related archetypes
-                matchEntry.Playing = await GetArchetypeByIdAsync(matchEntry.PlayingId);
-                matchEntry.Against = await GetArchetypeByIdAsync(matchEntry.AgainstId);
+
 
                 // Load related games
                 if (matchEntry.Game1Id.HasValue)
@@ -692,8 +683,6 @@ public class SqliteConnectionFactory
 
             foreach (var entry in entries)
             {
-                entry.Playing = await GetArchetypeByIdAsync(entry.PlayingId);
-                entry.Against = await GetArchetypeByIdAsync(entry.AgainstId);
 
                 if (entry.Game1Id.HasValue)
                     entry.Game1 = await _database.GetWithChildrenAsync<Game>(entry.Game1Id.Value);
