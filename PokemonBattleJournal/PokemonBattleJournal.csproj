@@ -41,9 +41,9 @@
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
-        <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.19041.0</SupportedOSPlatformVersion>
+        <!--<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.19041.0</TargetPlatformMinVersion> -->
+
         <NuGetAuditMode>All</NuGetAuditMode>
     </PropertyGroup>
 
@@ -83,8 +83,8 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="Sentry.Maui" Version="5.3.0" />
         <PackageReference Include="Sentry.Serilog" Version="5.3.0" />
-        <PackageReference Include="Serilog" Version="4.2.1-dev-02340" />
-        <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.1-dev-02307" />
+        <PackageReference Include="Serilog" Version="4.2.0" />
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
         <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
         <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
@@ -99,7 +99,7 @@
         <PackageReference Include="Syncfusion.Maui.DataForm" Version="28.2.11" />
         <PackageReference Include="Syncfusion.Maui.Picker" Version="28.2.11" />
         <PackageReference Include="Syncfusion.Maui.Sliders" Version="28.2.11" />
-        <PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.3" />
+        <PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.4" />
     </ItemGroup>
 
     <ItemGroup>
