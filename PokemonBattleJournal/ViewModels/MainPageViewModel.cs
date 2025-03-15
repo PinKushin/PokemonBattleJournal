@@ -141,9 +141,10 @@ public partial class MainPageViewModel : ObservableObject
     {
         _timer?.Start();
         _logger.LogInformation("Appearing: {Time}", DateTime.Now);
-        await _semaphore.WaitAsync();
+
         try
         {
+            await _semaphore.WaitAsync();
             _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
             if (_trainer == null)
             {
@@ -151,7 +152,7 @@ public partial class MainPageViewModel : ObservableObject
                 _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
             }
             Archetypes = await _connection.GetArchetypesAsync();
-            //TagCollection = await _connection.GetTagsAsync();
+
         }
         catch (Exception ex)
         {
@@ -185,9 +186,9 @@ public partial class MainPageViewModel : ObservableObject
             throw new InvalidOperationException("Required fields are missing.");
         }
 
-        await _semaphore.WaitAsync();
         try
         {
+            await _semaphore.WaitAsync();
             var matchEntry = new MatchEntry()
             {
                 // Add user inputs to match entry
@@ -244,6 +245,13 @@ public partial class MainPageViewModel : ObservableObject
             {
                 SavedFileDisplay = $"Saved: Match at {DateTimeOffset.Now}";
                 _logger.LogInformation("Match Created: {@Match}", matchEntry);
+                _logger.LogInformation("Playing: {Playing} Against: {Against}", matchEntry.Playing, matchEntry.Against);
+                _logger.LogInformation("{@Count} - Games Created", games.Count);
+                _logger.LogInformation("{@Game1}", games[0]);
+                if (games.Count > 1)
+                {
+                    _logger.LogInformation("{@Game2}/n{Game3}", games[1], games[2]);
+                }
                 return result;
             }
 
