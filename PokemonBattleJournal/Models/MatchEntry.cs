@@ -20,7 +20,6 @@ namespace PokemonBattleJournal.Models
         [ManyToOne]
         public Archetype? Against { get; set; }
 
-        [ManyToOne]
         public MatchResult? Result { get; set; }
 
         [ForeignKey(typeof(Game))]
@@ -53,7 +52,6 @@ namespace PokemonBattleJournal.Models
         [ForeignKey(typeof(MatchEntry))]
         public uint MatchEntryId { get; set; }
 
-        [ManyToOne]
         public MatchResult? Result { get; set; }
 
         public uint Turn { get; set; } = 1;
