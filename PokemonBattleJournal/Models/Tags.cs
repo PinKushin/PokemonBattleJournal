@@ -13,5 +13,8 @@ namespace PokemonBattleJournal.Models
         //trainer foreign key for profile
         [Column("trainer_id"), ForeignKey(typeof(Trainer))]
         public uint? TrainerId { get; set; }
+
+        [Column("game_id"), ForeignKey(typeof(Game))]
+        public uint? GameId { get; set; }
     }
 }
