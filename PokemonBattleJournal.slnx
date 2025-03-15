@@ -1,0 +1,11 @@
+<Solution>
+  <Project Path="PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj">
+    <Build Solution="Release|*" Project="false" />
+  </Project>
+  <Project Path="PokemonBattleJournal.UI.Tests/PokemonBattleJournal.UI.Tests.csproj">
+    <Build Solution="Release|*" Project="false" />
+  </Project>
+  <Project Path="PokemonBattleJournal/PokemonBattleJournal.csproj">
+    <Deploy />
+  </Project>
+</Solution>
