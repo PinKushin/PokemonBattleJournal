@@ -9,6 +9,9 @@ namespace PokemonBattleJournal.UI.Tests
 {
     public class MainPageTests : IDisposable
     {
+        /// <summary>
+        /// The AppiumDriver instance. You need to install Appium from npm and Windows Application Driver to run these tests.
+        /// </summary>
         private static AppiumDriver? _driver;
         public static AppiumDriver App => _driver ?? throw new NullReferenceException("AppiumDriver is not initialized.");
 
@@ -19,7 +22,7 @@ namespace PokemonBattleJournal.UI.Tests
                 AutomationName = "Windows",
                 PlatformName = "Windows",
                 DeviceName = "WindowsPC",
-                App = "C:\\Users\\pinku\\source\\repos\\PinKushin\\PokemonBattleJournal\\PokemonBattleJournal\\bin\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\PokemonBattleJournal.exe"
+                App = "D:\\source\\PinKushin\\PokemonBattleJournal\\PokemonBattleJournal\\bin\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\PokemonBattleJournal.exe" //Always update the path on new machine or repartition of OS
             };
 
             _driver = new WindowsDriver(windowsOptions);
