@@ -27,7 +27,7 @@
         {
             WelcomeMsg = $"{TrainerName}'s Profile";
             //LoadMatches();
-            //CalculateWinRateAsync([]);
+            //CalculateWinRate([]);
         }
 
         /// <summary>
@@ -35,44 +35,42 @@
         /// using ((Wins + (0.5 * Ties)) / TotalGames * 100
         /// </summary>
         /// <param name="matchList">List of Matches</param>
-        public async Task<double> CalculateWinRateAsync(List<MatchEntry> matchList)
+        public double CalculateWinRate(List<MatchEntry> matchList)
         {
             uint wins = 0;
             uint losses = 0;
             uint ties = 0;
             double winRate = 0;
 
-            await Task.Run(() =>
+            foreach (MatchEntry match in matchList)
             {
-                foreach (MatchEntry match in matchList)
+                switch (match.Result)
                 {
-                    switch (match.Result)
-                    {
-                        case MatchResult.Win:
-                            wins++;
-                            break;
-                        case MatchResult.Tie:
-                            ties++;
-                            break;
-                        case null:
-                            break;
-                        default:
-                            losses++;
-                            break;
-                    }
+                    case MatchResult.Win:
+                        wins++;
+                        break;
+                    case MatchResult.Tie:
+                        ties++;
+                        break;
+                    case null:
+                        break;
+                    default:
+                        losses++;
+                        break;
                 }
-                Wins = wins;
-                Losses = losses;
-                Ties = ties;
-                if (wins + losses + ties == 0)
-                {
-                    winRate = 0;
-                }
-                else
-                {
-                    winRate = ((wins + (0.5 * ties)) / (wins + losses + ties)) * 100;
-                }
-            });
+            }
+            Wins = wins;
+            Losses = losses;
+            Ties = ties;
+            if (wins + losses + ties == 0)
+            {
+                winRate = 0;
+            }
+            else
+            {
+                winRate = ((wins + (0.5 * ties)) / (wins + losses + ties)) * 100;
+            }
+
             return winRate;
         }
     }
