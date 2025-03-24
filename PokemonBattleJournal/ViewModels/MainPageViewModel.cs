@@ -120,7 +120,7 @@ public partial class MainPageViewModel : ObservableObject
     public partial bool? IsToggled { get; set; }
 
     /// <summary>
-    ///     Update displayed time on UI
+    /// Update displayed time on UI
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
@@ -174,7 +174,7 @@ public partial class MainPageViewModel : ObservableObject
     }
 
     /// <summary>
-    ///     Verify, Serialize, and Save Match Data
+    /// Verify, Serialize, and Save Match Data
     /// </summary>
     [RelayCommand]
     private async Task<int> SaveMatchAsync()
