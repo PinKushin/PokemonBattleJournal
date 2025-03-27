@@ -20,9 +20,7 @@
             BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType=ContentPage}"
             Command="{Binding AppearingCommand}"
             EventName="Appearing" />
-        <toolkit:EventToCommandBehavior
-            Command="{Binding DisappearingCommand}"
-            EventName="Disappearing" />
+        <toolkit:EventToCommandBehavior Command="{Binding DisappearingCommand}" EventName="Disappearing" />
     </ContentPage.Behaviors>
     <ScrollView>
         <Grid
@@ -33,9 +31,7 @@
             RowDefinitions="Auto, Auto, *, Auto, Auto"
             RowSpacing="1">
             <!--#region Page Title Bar-->
-            <HorizontalStackLayout
-                Grid.ColumnSpan="2"
-                HorizontalOptions="Center">
+            <HorizontalStackLayout Grid.ColumnSpan="2" HorizontalOptions="Center">
                 <Image
                     Margin="10"
                     AutomationId="ball_icon.png"
@@ -69,10 +65,7 @@
                     Style="{StaticResource Headline}"
                     Text="Select Decks"
                     VerticalOptions="End" />
-                <StackLayout
-                    HorizontalOptions="Center"
-                    Orientation="{OnIdiom Default=Horizontal,
-                                          Phone=Vertical}">
+                <StackLayout HorizontalOptions="Center" Orientation="{OnIdiom Default=Horizontal, Phone=Vertical}">
                     <!--#region Player Archetype-->
                     <inputLayout:SfTextInputLayout
                         Margin="5,0"
@@ -82,9 +75,7 @@
                         Stroke="{StaticResource PokeYellow}"
                         WidthRequest="200">
                         <inputLayout:SfTextInputLayout.HintLabelStyle>
-                            <inputLayout:LabelStyle
-                                FontSize="16"
-                                TextColor="{StaticResource PokeYellow}" />
+                            <inputLayout:LabelStyle FontSize="16" TextColor="{StaticResource PokeYellow}" />
                         </inputLayout:SfTextInputLayout.HintLabelStyle>
                         <inputLayout:SfTextInputLayout.HelperLabelStyle>
                             <inputLayout:LabelStyle TextColor="{StaticResource PokeGold}" />
@@ -131,9 +122,7 @@
                         Stroke="{StaticResource PokeYellow}"
                         WidthRequest="200">
                         <inputLayout:SfTextInputLayout.HintLabelStyle>
-                            <inputLayout:LabelStyle
-                                FontSize="16"
-                                TextColor="{StaticResource PokeYellow}" />
+                            <inputLayout:LabelStyle FontSize="16" TextColor="{StaticResource PokeYellow}" />
                         </inputLayout:SfTextInputLayout.HintLabelStyle>
                         <inputLayout:SfTextInputLayout.HelperLabelStyle>
                             <inputLayout:LabelStyle TextColor="{StaticResource PokeGold}" />
@@ -177,13 +166,9 @@
                         AutomationId="BOSwitch"
                         HorizontalOptions="Center"
                         IsToggled="{Binding BO3Toggle}" />
-                    <Label
-                        Text="Best of:"
-                        VerticalTextAlignment="Center" />
+                    <Label Text="Best of:" VerticalTextAlignment="Center" />
 
-                    <Label
-                        Text="1"
-                        VerticalTextAlignment="Center">
+                    <Label Text="1" VerticalTextAlignment="Center">
                         <Label.Triggers>
                             <DataTrigger
                                 Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
@@ -194,12 +179,8 @@
                             </DataTrigger>
                         </Label.Triggers>
                     </Label>
-                    <Label
-                        Text=" or "
-                        VerticalTextAlignment="Center" />
-                    <Label
-                        Text="3"
-                        VerticalTextAlignment="Center">
+                    <Label Text=" or " VerticalTextAlignment="Center" />
+                    <Label Text="3" VerticalTextAlignment="Center">
                         <Label.Triggers>
                             <DataTrigger
                                 Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
@@ -244,9 +225,7 @@
                     Mode="Dialog"
                     SelectedTime="{Binding StartTime}">
                     <picker:SfTimePicker.HeaderView>
-                        <picker:PickerHeaderView
-                            Height="32"
-                            Text="Battle Start Time" />
+                        <picker:PickerHeaderView Height="32" Text="Battle Start Time" />
                     </picker:SfTimePicker.HeaderView>
                 </picker:SfTimePicker>
                 <picker:SfTimePicker
@@ -259,9 +238,7 @@
                     Mode="Dialog"
                     SelectedTime="{Binding EndTime}">
                     <picker:SfTimePicker.HeaderView>
-                        <picker:PickerHeaderView
-                            Height="32"
-                            Text="Battle End Time" />
+                        <picker:PickerHeaderView Height="32" Text="Battle End Time" />
                     </picker:SfTimePicker.HeaderView>
                 </picker:SfTimePicker>
                 <!--#endregion-->
@@ -285,9 +262,7 @@
                         SelectedDate="{Binding DatePlayed}"
                         VerticalOptions="Center">
                         <picker:SfDatePicker.HeaderView>
-                            <picker:PickerHeaderView
-                                Height="32"
-                                Text="Date Played" />
+                            <picker:PickerHeaderView Height="32" Text="Date Played" />
                         </picker:SfDatePicker.HeaderView>
                     </picker:SfDatePicker>
                 </HorizontalStackLayout>
@@ -322,9 +297,7 @@
                     SelectionMode="Multiple">
 
                     <CollectionView.ItemsLayout>
-                        <GridItemsLayout
-                            Orientation="Horizontal"
-                            Span="2" />
+                        <GridItemsLayout Orientation="Horizontal" Span="2" />
                     </CollectionView.ItemsLayout>
 
                     <CollectionView.Header>
@@ -420,9 +393,7 @@
                         SelectionMode="Multiple">
 
                         <CollectionView.ItemsLayout>
-                            <GridItemsLayout
-                                Orientation="Horizontal"
-                                Span="2" />
+                            <GridItemsLayout Orientation="Horizontal" Span="2" />
                         </CollectionView.ItemsLayout>
 
                         <CollectionView.Header>
@@ -492,9 +463,7 @@
                         SelectionMode="Multiple">
 
                         <CollectionView.ItemsLayout>
-                            <GridItemsLayout
-                                Orientation="Horizontal"
-                                Span="2" />
+                            <GridItemsLayout Orientation="Horizontal" Span="2" />
                         </CollectionView.ItemsLayout>
 
                         <CollectionView.Header>
