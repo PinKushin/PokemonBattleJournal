@@ -2,6 +2,16 @@
 {
     public partial class OptionsPageViewModel : ObservableObject
     {
+        private readonly SqliteConnectionFactory _connection;
+        private static readonly SemaphoreSlim _semaphore = new(1, 1);
+        private Trainer? _trainer;
+        public OptionsPageViewModel(SqliteConnectionFactory connection)
+        {
+            _connection = connection;
+            //PopulateIconCollectionAsync().ContinueWith(icons => IconCollection = icons.Result);
+            //_connection.GetTrainerByNameAsync(TrainerName).ContinueWith(trainer => _trainer = trainer.Result);
+        }
+
         [ObservableProperty]
         public partial string Title { get; set; } = $"{PreferencesHelper.GetSetting("Trainer Name")}'s Options";
 
@@ -29,13 +39,7 @@
         [ObservableProperty]
         public partial string FileConfirmMessage { get; set; } = $"Delete {PreferencesHelper.GetSetting("TrainerName")}'s Trainer File?";
 
-        //private static readonly string filePath = FileHelper.GetAppDataPath() + $@"\{PreferencesHelper.GetSetting("TrainerName")}.json";
         private bool _initialized;
-
-        public OptionsPageViewModel()
-        {
-        }
-
         [RelayCommand]
         public async Task AppearingAsync()
         {
@@ -44,27 +48,64 @@
                 IconCollection = await PopulateIconCollectionAsync();
                 _initialized = true;
             }
+            _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
         }
 
-        //Update/Save Trainer Name to preferences and update displays
         [RelayCommand]
-        public void UpdateTrainerName()
+        public async Task SaveTrainerAsync()
         {
-            if (NameInput == null)
+            if (NameInput is null)
                 return;
 
             TrainerName = NameInput;
             PreferencesHelper.SetSetting("TrainerName", NameInput);
+            await _connection.SaveTrainerAsync(NameInput);
+            _trainer = await _connection.GetTrainerByNameAsync(NameInput);
             NameInput = null;
             Title = $"{TrainerName}'s Options";
         }
 
-        //Update Tags
+        [RelayCommand]
+        public async Task SaveTagAsync()
+        {
+            if (TagInput is null)
+                return;
+            if (_trainer is null)
+            {
+                return;
+            }
+            await _connection.SaveTagAsync(TagInput, _trainer.Id);
+            TagInput = null;
+        }
 
-        //TODO: Create a way to save a new tag to tag list
+        [RelayCommand]
+        public async Task SaveArchetypeAsync()
+        {
+            if (NewDeckName is null || NewDeckIcon is null || _trainer is null)
+                return;
+            await _connection.SaveArchetypeAsync(NewDeckName, NewDeckIcon, _trainer.Id);
+            NewDeckName = null;
+            NewDeckIcon = null;
+        }
 
-        //Update Decks
+        [RelayCommand]
+        public async Task SaveAllAsync()
+        {
+            await SaveTrainerAsync();
+            await SaveTagAsync();
+            await SaveArchetypeAsync();
+        }
+        //TODO: create method to delete trainer file
+        public async Task DeleteTrainerFileAsync()
+        {
+            if (_trainer is null)
+            {
+                return;
+            }
+            await _connection.DeleteTrainerAsync(_trainer);
+        }
 
+        //Icon Collection File Reader
         private static async Task<List<string>> PopulateIconCollectionAsync()
         {
             string? imageName;
@@ -87,22 +128,5 @@
                 return iconCollection;
             }
         }
-
-        //TODO: Create a way to save a new deck for selection on MainPage
-        //TODO: create method to save all options at once
-        //[RelayCommand]
-        //public void DeleteFile()
-        //{
-        //    // Delete Trainer Match file if it exists
-        //    if (FileHelper.Exists(filePath))
-        //    {
-        //        FileHelper.DeleteFile(filePath);
-        //        FileConfirmMessage = "File Deleted";
-        //    }
-        //    else
-        //    {
-        //        FileConfirmMessage = "File Not Found";
-        //    }
-        //}
     }
 }
