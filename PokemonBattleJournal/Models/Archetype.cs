@@ -1,4 +1,5 @@
 ﻿using SQLite;
+using SQLiteNetExtensions.Attributes;
 
 namespace PokemonBattleJournal.Models
 {
@@ -8,7 +9,10 @@ namespace PokemonBattleJournal.Models
         public uint Id { get; set; }
 
         [Unique]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public string? ImagePath { get; set; }
+
+        [Column("trainer_id"), ForeignKey(typeof(Trainer))]
+        public uint TrainerId { get; set; }
     }
 }
