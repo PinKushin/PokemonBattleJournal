@@ -711,8 +711,7 @@ public class SqliteConnectionFactory
         await _semaphore.WaitAsync();
         try
         {
-            var entries = await _database.GetAllWithChildrenAsync<MatchEntry>(recursive: true);
-            entries = entries.Where(e => e.TrainerId == trainerId).ToList();
+            var entries = await _database.GetAllWithChildrenAsync<MatchEntry>(e => e.TrainerId == trainerId, true);
 
             foreach (var entry in entries)
             {
