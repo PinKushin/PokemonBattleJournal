@@ -1,4 +1,5 @@
-﻿using SQLite;
+﻿using Microsoft.Extensions.Logging;
+using SQLite;
 using SQLiteNetExtensionsAsync.Extensions;
 
 namespace PokemonBattleJournal.Services;
@@ -10,6 +11,12 @@ public class SqliteConnectionFactory
 {
     private static SQLiteAsyncConnection _database;
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly ILogger<SqliteConnectionFactory> _logger;
+
+    public SqliteConnectionFactory(ILogger<SqliteConnectionFactory> logger)
+    {
+        _logger = logger;
+    }
 
     /// <summary>
     /// Initializes the SQLite database connection and creates tables if they do not exist.
