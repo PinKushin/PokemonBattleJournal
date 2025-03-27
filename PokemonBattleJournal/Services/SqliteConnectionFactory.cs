@@ -175,12 +175,15 @@ public class SqliteConnectionFactory
     /// <summary>
     /// Saves an archetype to the database. If the archetype has an ID, it updates the existing record; otherwise, it inserts a new record.
     /// </summary>
-    /// <param name="archetype">The archetype to save.</param>
+    /// <param name="name">The name of the archetype to save.</param>
+    /// <param name="imgPath">The image path of the archetype to save.</param>
+    /// <param name="trainerId">The ID of the trainer who created the archetype.</param>
     /// <returns>The number of rows affected.</returns>
-    public virtual async Task<int> SaveArchetypeAsync(Archetype archetype)
+    public virtual async Task<int> SaveArchetypeAsync(string name, string imgPath, uint trainerId)
     {
         await InitAsync();
         await _semaphore.WaitAsync();
+        Archetype archetype = new() { Name = name, ImagePath = imgPath, TrainerId = trainerId };
         try
         {
             int saved = 0;
