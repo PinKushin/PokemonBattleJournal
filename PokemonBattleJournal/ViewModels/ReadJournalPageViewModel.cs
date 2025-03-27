@@ -102,6 +102,7 @@ namespace PokemonBattleJournal.ViewModels
                 }
                 _logger.LogInformation("Loading matches for trainer: {TrainerId} {TrainerName}", trainer.Id, trainer.Name);
                 var matches = await _connection.GetMatchEntriesByTrainerIdAsync(trainer.Id);
+
                 if (matches.Count < 1 || matches is null)
                 {
                     _logger.LogInformation("No matches found for trainer: {TrainerId} {TrainerName}", trainer.Id, trainer.Name);
@@ -111,8 +112,8 @@ namespace PokemonBattleJournal.ViewModels
 #if DEBUG
                 foreach (var match in matches)
                 {
-                    _logger.LogInformation("Match loaded: ID={Id}, Playing={Playing}, Against={Against}",
-                        match.Id, match.Playing?.Name, match.Against?.Name);
+                    _logger.LogInformation("Match loaded: ID={Id}, Playing={@Playing}, Against={@Against}",
+                        match.Id, match.Playing, match.Against);
                 }
 #endif
 
@@ -147,7 +148,7 @@ namespace PokemonBattleJournal.ViewModels
                     return;
                 }
 
-                _logger.LogInformation("Loading match: {MatchId}", SelectedMatch.Id);
+                _logger.LogInformation("Loading match: {@SelectedMatch}", SelectedMatch);
 
                 OverallResult = SelectedMatch.Result;
                 PlayingName = SelectedMatch.Playing?.Name ?? "Unknown";
