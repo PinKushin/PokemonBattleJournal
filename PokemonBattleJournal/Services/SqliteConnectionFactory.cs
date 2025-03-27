@@ -648,7 +648,7 @@ public class SqliteConnectionFactory
         await _semaphore.WaitAsync();
         try
         {
-            var matchEntry = await _database.GetWithChildrenAsync<MatchEntry>(id, recursive: true);
+            var matchEntry = await _database.GetWithChildrenAsync<MatchEntry>(id, true);
             if (matchEntry != null)
             {
 
