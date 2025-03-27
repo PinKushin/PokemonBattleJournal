@@ -8,7 +8,7 @@ public partial class MainPageViewModel : ObservableObject
     private readonly ILogger<MainPageViewModel> _logger;
     private readonly IDispatcherTimer? _timer;
     private readonly SqliteConnectionFactory _connection;
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private static readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly Lock _lock = new();
     private static Trainer? _trainer;
 
@@ -30,7 +30,7 @@ public partial class MainPageViewModel : ObservableObject
         WelcomeMsg = $"Welcome {TrainerName}";
         lock (_lock)
         {
-            connection.GetTagsAsync().ContinueWith(tags =>
+            _connection.GetTagsAsync().ContinueWith(tags =>
             {
                 TagCollection = tags.Result;
             });
@@ -148,7 +148,7 @@ public partial class MainPageViewModel : ObservableObject
             _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
             if (_trainer == null)
             {
-                await _connection.SaveTrainerAsync(new Trainer() { Name = TrainerName });
+                await _connection.SaveTrainerAsync(TrainerName);
                 _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
             }
             Archetypes = await _connection.GetArchetypesAsync();
@@ -245,7 +245,7 @@ public partial class MainPageViewModel : ObservableObject
             {
                 SavedFileDisplay = $"Saved: Match at {DateTimeOffset.Now}";
                 _logger.LogInformation("Match Created: {@Match}", matchEntry);
-                _logger.LogInformation("Playing: {Playing} Against: {Against}", matchEntry.Playing, matchEntry.Against);
+                _logger.LogInformation("Playing: {Playing} Against: {Against}", matchEntry.Playing.Name, matchEntry.Against.Name);
                 _logger.LogInformation("{@Count} - Games Created", games.Count);
                 _logger.LogInformation("{@Game1}", games[0]);
                 if (games.Count > 1)
