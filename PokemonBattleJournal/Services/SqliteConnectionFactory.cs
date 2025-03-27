@@ -29,9 +29,6 @@ public class SqliteConnectionFactory
         await _semaphore.WaitAsync();
         try
         {
-            if (_database is not null)
-                return;
-
             _database = new SQLiteAsyncConnection(Constants.DatabasePath, Constants.Flags);
             await _database.CreateTableAsync<Trainer>();
             await _database.CreateTableAsync<Archetype>();
@@ -715,19 +712,42 @@ public class SqliteConnectionFactory
 
             foreach (var entry in entries)
             {
+                // Load related archetypes
+                if (entry.PlayingId is not 0)
+                {
+                    entry.Playing = await _database.GetAsync<Archetype>(entry.PlayingId);
+                }
+                if (entry.AgainstId is not 0)
+                {
+                    entry.Against = await _database.GetAsync<Archetype>(entry.AgainstId);
+                }
 
+                // Load related games and their tags
                 if (entry.Game1Id.HasValue)
+                {
                     entry.Game1 = await _database.GetWithChildrenAsync<Game>(entry.Game1Id.Value);
+                    if (entry.Game1 != null)
+                        entry.Game1.Tags = await _database.Table<Tags>().Where(t => t.GameId == entry.Game1.Id).ToListAsync();
+                }
                 if (entry.Game2Id != 0)
+                {
                     entry.Game2 = await _database.GetWithChildrenAsync<Game>(entry.Game2Id);
+                    if (entry.Game2 != null)
+                        entry.Game2.Tags = await _database.Table<Tags>().Where(t => t.GameId == entry.Game2.Id).ToListAsync();
+                }
                 if (entry.Game3Id != 0)
+                {
                     entry.Game3 = await _database.GetWithChildrenAsync<Game>(entry.Game3Id);
+                    if (entry.Game3 != null)
+                        entry.Game3.Tags = await _database.Table<Tags>().Where(t => t.GameId == entry.Game3.Id).ToListAsync();
+                }
             }
-
+            _logger.LogInformation("Loaded {Count} match entries with games and tags", entries.Count);
             return entries;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error getting match entries for trainer {TrainerId}", trainerId);
             ModalErrorHandler errorHandler = new();
             errorHandler.HandleError(ex);
             return new List<MatchEntry>();
