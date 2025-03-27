@@ -105,12 +105,13 @@ public class SqliteConnectionFactory
     /// <summary>
     /// Saves a trainer to the database. If the trainer has an ID, it updates the existing record; otherwise, it inserts a new record.
     /// </summary>
-    /// <param name="trainer">The trainer to save.</param>
+    /// <param name="trainerName">The name of a trainer to save.</param>
     /// <returns>The number of rows affected.</returns>
-    public virtual async Task<int> SaveTrainerAsync(Trainer trainer)
+    public virtual async Task<int> SaveTrainerAsync(string trainerName)
     {
         await InitAsync();
         await _semaphore.WaitAsync();
+        Trainer trainer = new() { Name = trainerName };
         try
         {
             int saved = 0;
