@@ -577,16 +577,29 @@ public class SqliteConnectionFactory
             {
                 if (matchEntry.Id != 0)
                 {
+                    _logger.LogInformation("Updating match entry: {MatchEntryId}", matchEntry.Id);
                     affected += tran.Update(matchEntry);
                 }
                 else
                 {
+                    _logger.LogInformation
+                    (
+                        "Inserting match entry: {@MatchEntry}",
+                        matchEntry
+                    );
+                    _logger.LogInformation
+                    (
+                        "Playing: {PlayingName} \nAgainst: {AgainstName}",
+                        matchEntry.Playing?.Name,
+                        matchEntry.Against?.Name
+                    );
                     affected += tran.Insert(matchEntry);
                 }
 
                 // Update game relationships with the match entry
                 foreach (var game in games)
                 {
+                    _logger.LogInformation("Creating game: {@Game}", game);
                     game.MatchEntryId = matchEntry.Id;
                     affected += await SaveGameAsync(game);
                 }
@@ -595,10 +608,17 @@ public class SqliteConnectionFactory
                 if (games.Count > 0)
                 {
                     matchEntry.Game1Id = games[0].Id;
+                    _logger.LogInformation("Update Match Game Ids: \nGame1Id: {Game1Id}", matchEntry.Game1Id);
                     if (games.Count > 1)
+                    {
+                        _logger.LogInformation("{Game2Id}", matchEntry.Game2Id);
                         matchEntry.Game2Id = games[1].Id;
+                    }
                     if (games.Count > 2)
+                    {
+                        _logger.LogInformation("{Game3Id}", matchEntry.Game3Id);
                         matchEntry.Game3Id = games[2].Id;
+                    }
                     affected += tran.Update(matchEntry);
                 }
             });
