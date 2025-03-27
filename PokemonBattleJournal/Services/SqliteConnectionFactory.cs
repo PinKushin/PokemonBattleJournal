@@ -311,11 +311,13 @@ public class SqliteConnectionFactory
     /// <summary>
     /// Saves a tag to the database. If the tag has an ID, it updates the existing record; otherwise, it inserts a new record.
     /// </summary>
-    /// <param name="tag">The tag to save.</param>
+    /// <param name="tagTxt">The tag to save.</param>
+    /// <param name="trainerId">The ID of the trainer who created with the tag.</param>
     /// <returns>The number of rows affected.</returns>
-    public virtual async Task<int> SaveTagAsync(Tags tag)
+    public virtual async Task<int> SaveTagAsync(string tagTxt, uint trainerId)
     {
         await InitAsync();
+        Tags tag = new() { Name = tagTxt, TrainerId = trainerId };
         await _semaphore.WaitAsync();
         try
         {
