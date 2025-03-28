@@ -5,11 +5,11 @@
         private readonly SqliteConnectionFactory _connection;
         private static readonly SemaphoreSlim _semaphore = new(1, 1);
         private Trainer? _trainer;
-        public OptionsPageViewModel(SqliteConnectionFactory connection)
+        private readonly ILogger<OptionsPageViewModel> _logger;
+        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, SqliteConnectionFactory connection)
         {
             _connection = connection;
-            //PopulateIconCollectionAsync().ContinueWith(icons => IconCollection = icons.Result);
-            //_connection.GetTrainerByNameAsync(TrainerName).ContinueWith(trainer => _trainer = trainer.Result);
+            _logger = logger;
         }
 
         [ObservableProperty]
@@ -39,16 +39,34 @@
         [ObservableProperty]
         public partial string FileConfirmMessage { get; set; } = $"Delete {PreferencesHelper.GetSetting("TrainerName")}'s Trainer File?";
 
-        private bool _initialized;
+        private static bool _initialized;
         [RelayCommand]
         public async Task AppearingAsync()
         {
-            if (!_initialized)
+            _logger.LogInformation("OptionsPageViewModel appearing");
+            try
             {
-                IconCollection = await PopulateIconCollectionAsync();
-                _initialized = true;
+                await _semaphore.WaitAsync();
+                if (!_initialized)
+                {
+                    _logger.LogInformation("OptionsPageViewModel initializing");
+                    IconCollection = await PopulateIconCollectionAsync();
+                    _initialized = true;
+                }
+                _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+                _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
             }
-            _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading ViewModel: {TrainerName} {@IconCollection}", TrainerName, IconCollection);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+            }
+            finally
+            {
+                _ = _semaphore.Release();
+
+            }
         }
 
         [RelayCommand]
@@ -59,23 +77,68 @@
 
             TrainerName = NameInput;
             PreferencesHelper.SetSetting("TrainerName", NameInput);
-            await _connection.SaveTrainerAsync(NameInput);
-            _trainer = await _connection.GetTrainerByNameAsync(NameInput);
-            NameInput = null;
-            Title = $"{TrainerName}'s Options";
+            try
+            {
+                await _semaphore.WaitAsync();
+                var affected = await _connection.SaveTrainerAsync(NameInput);
+                if (affected == 0)
+                {
+                    _logger.LogInformation("Trainer not saved: {TrainerName}", TrainerName);
+                    return;
+                }
+                _logger.LogInformation("Trainer saved: {TrainerName}", TrainerName);
+                _trainer = await _connection.GetTrainerByNameAsync(NameInput);
+                if (_trainer is null)
+                {
+                    _logger.LogInformation("Trainer not found immediately after save: {TrainerName}", TrainerName);
+                    return;
+                }
+                _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving Trainer: {TrainerName}", TrainerName);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+            }
+            finally
+            {
+                _ = _semaphore.Release();
+                NameInput = null;
+                Title = $"{TrainerName}'s Options";
+            }
         }
 
         [RelayCommand]
         public async Task SaveTagAsync()
         {
-            if (TagInput is null)
+            if (TagInput is null || _trainer is null)
                 return;
-            if (_trainer is null)
+
+
+            try
             {
-                return;
+                await _semaphore.WaitAsync();
+                int affected = await _connection.SaveTagAsync(TagInput, _trainer.Id);
+                if (affected == 0)
+                {
+                    _logger.LogInformation("Tag not saved: {TagInput}", TagInput);
+                    return;
+                }
+                _logger.LogInformation("Tag saved: {TagInput}", TagInput);
             }
-            await _connection.SaveTagAsync(TagInput, _trainer.Id);
-            TagInput = null;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving Tag: {TagInput}", TagInput);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+            }
+            finally
+            {
+                _ = _semaphore.Release();
+                TagInput = null;
+            }
         }
 
         [RelayCommand]
@@ -83,35 +146,87 @@
         {
             if (NewDeckName is null || NewDeckIcon is null || _trainer is null)
                 return;
-            await _connection.SaveArchetypeAsync(NewDeckName, NewDeckIcon, _trainer.Id);
-            NewDeckName = null;
-            NewDeckIcon = null;
+
+            try
+            {
+                await _semaphore.WaitAsync();
+                int affected = await _connection.SaveArchetypeAsync(NewDeckName, NewDeckIcon, _trainer.Id);
+                if (affected == 0)
+                {
+                    _logger.LogInformation("Archetype not saved: {DeckName} {DeckIcon}", NewDeckName, NewDeckIcon);
+                    return;
+                }
+                _logger.LogInformation("Archetype saved: {DeckName} {DeckIcon}", NewDeckName, NewDeckIcon);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving Archetype: {DeckName} {DeckIcon}", NewDeckName, NewDeckIcon);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+            }
+            finally
+            {
+                NewDeckName = null;
+                NewDeckIcon = null;
+                _ = _semaphore.Release();
+            }
         }
 
         [RelayCommand]
         public async Task SaveAllAsync()
         {
-            await SaveTrainerAsync();
-            await SaveTagAsync();
-            await SaveArchetypeAsync();
+            try
+            {
+                await _semaphore.WaitAsync();
+                await SaveTrainerAsync();
+                await SaveTagAsync();
+                await SaveArchetypeAsync();
+                _logger.LogInformation("All saved");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving all");
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+            }
+            finally
+            {
+                _ = _semaphore.Release();
+            }
         }
-        //TODO: create method to delete trainer file
+
+        [RelayCommand]
         public async Task DeleteTrainerFileAsync()
         {
             if (_trainer is null)
             {
                 return;
             }
-            await _connection.DeleteTrainerAsync(_trainer);
+            try
+            {
+                await _semaphore.WaitAsync();
+                await _connection.DeleteTrainerAsync(_trainer);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting Trainer: {TrainerName}", TrainerName);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+            }
+            finally
+            {
+                _ = _semaphore.Release();
+            }
         }
 
-        //Icon Collection File Reader
+        //Icon name collection file reader
         private static async Task<List<string>> PopulateIconCollectionAsync()
         {
             string? imageName;
             List<string> iconCollection = [];
             try
             {
+                await _semaphore.WaitAsync();
                 using Stream fileStream = await FileSystem.Current.OpenAppPackageFileAsync("icon_file_names.txt");
                 using StreamReader reader = new(fileStream);
                 while (!reader.EndOfStream)
@@ -126,6 +241,10 @@
                 ModalErrorHandler modalErrorHandler = new();
                 modalErrorHandler.HandleError(ex);
                 return iconCollection;
+            }
+            finally
+            {
+                _ = _semaphore.Release();
             }
         }
     }
