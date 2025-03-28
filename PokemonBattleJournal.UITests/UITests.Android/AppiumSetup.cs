@@ -47,6 +47,7 @@ namespace UITests
             // Note there are many more options that you can use to influence the app under test according to your needs
 
             driver = new AndroidDriver(androidOptions);
+            Task.Delay(2000).Wait(); // Wait for the app to load
         }
 
         public void Dispose()
