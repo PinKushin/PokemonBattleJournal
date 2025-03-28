@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace PokemonBattleJournal
+﻿namespace PokemonBattleJournal
 {
 
     public partial class App : Application
@@ -14,7 +12,7 @@ namespace PokemonBattleJournal
                 .Licensing
                 .SyncfusionLicenseProvider
                 .RegisterLicense(
-                "MzY3NjYwMkAzMjM4MmUzMDJlMzBuWkMvdUxhYkNPWERMQndYazNyU1gzWnVoN29Zb2dxU1AxQTk2K0k3aXNFPQ=="
+                "Ngo9BigBOggjHTQxAR8/V1NNaF5cXmBCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdmWXxceHVSRGZdVE11VkRWYUA="
                 );
             _logger = logger;
             InitializeComponent();
