@@ -1,20 +1,18 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace PokemonBattleJournal.ViewModels
+﻿namespace PokemonBattleJournal.ViewModels
 {
     public partial class ReadJournalPageViewModel : ObservableObject
     {
         private readonly ILogger<ReadJournalPageViewModel> _logger;
         private readonly SqliteConnectionFactory _connection;
-        private readonly SemaphoreSlim _semaphore = new(1, 1);
-        //private readonly Trainer _trainer;
+        private static readonly SemaphoreSlim _semaphore = new(1, 1);
+
         public ReadJournalPageViewModel(ILogger<ReadJournalPageViewModel> logger, SqliteConnectionFactory connection)
         {
             WelcomeMsg = $"{TrainerName}'s Journal";
             _logger = logger;
             _connection = connection;
             _logger.LogInformation("ReadJournalPageViewModel created");
-            //_trainer = _connection.GetTrainerByNameAsync(TrainerName).Result;
+
         }
 
 
@@ -90,10 +88,9 @@ namespace PokemonBattleJournal.ViewModels
         public async Task AppearingAsync()
         {
             _logger.LogInformation("ReadJournalPageViewModel appearing");
-
-            await _semaphore.WaitAsync();
             try
             {
+                await _semaphore.WaitAsync();
                 var trainer = await _connection.GetTrainerByNameAsync(TrainerName);
                 if (trainer == null)
                 {
