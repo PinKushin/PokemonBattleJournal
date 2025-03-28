@@ -37,7 +37,7 @@
         /// <param name="Wins">Reference to Win property for display</param>
         /// <param name="Losses">Reference to Losses property for display</param>
         /// <param name="Ties">Reference to Ties property for display</param>
-        public static double CalculateWinRate(List<MatchEntry> matchList, out uint? Wins, out uint? Losses, out uint? Ties)
+        public static double CalculateWinRate(List<MatchEntry> matchList, out uint Wins, out uint Losses, out uint Ties)
         {
             uint wins = 0;
             uint losses = 0;
