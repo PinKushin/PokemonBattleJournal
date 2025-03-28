@@ -9,6 +9,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Android\**" />
+    <Compile Remove="Shared\**" />
+    <EmbeddedResource Remove="Android\**" />
+    <EmbeddedResource Remove="Shared\**" />
+    <MauiCss Remove="Android\**" />
+    <MauiCss Remove="Shared\**" />
+    <MauiXaml Remove="Android\**" />
+    <MauiXaml Remove="Shared\**" />
+    <None Remove="Android\**" />
+    <None Remove="Shared\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Appium.WebDriver" Version="7.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="Shouldly" Version="4.3.0" />
@@ -22,11 +35,6 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Android\" />
-    <Folder Include="Shared\" />
   </ItemGroup>
 
 </Project>
