@@ -2,8 +2,16 @@
 {
     public partial class TrainerPageViewModel : ObservableObject
     {
-        // get default file path
-        //private static readonly string filePath = FileHelper.GetAppDataPath() + $"\\{PreferencesHelper.GetSetting("TrainerName")}.json";
+        private readonly SqliteConnectionFactory _connection;
+        private readonly ILogger<TrainerPageViewModel> _logger;
+        private static readonly SemaphoreSlim _semaphore = new(1, 1);
+
+        public TrainerPageViewModel(ILogger<TrainerPageViewModel> logger, SqliteConnectionFactory connection)
+        {
+            WelcomeMsg = $"{TrainerName}'s Profile";
+            _logger = logger;
+            _connection = connection;
+        }
 
         [ObservableProperty]
         public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
@@ -23,55 +31,38 @@
         [ObservableProperty]
         public partial double WinAverage { get; set; } = 0;
 
-        public TrainerPageViewModel()
+        [RelayCommand]
+        public async Task AppearingAsync()
         {
-            WelcomeMsg = $"{TrainerName}'s Profile";
-            //LoadMatches();
-            //CalculateWinRate([]);
-        }
-
-        /// <summary>
-        /// Calculate the average win rate of the trainer
-        /// using ((Wins + (0.5 * Ties)) / TotalGames * 100
-        /// </summary>
-        /// <param name="matchList">List of Matches</param>
-        public double CalculateWinRate(List<MatchEntry> matchList)
-        {
-            uint wins = 0;
-            uint losses = 0;
-            uint ties = 0;
-            double winRate = 0;
-
-            foreach (MatchEntry match in matchList)
+            try
             {
-                switch (match.Result)
+                await _semaphore.WaitAsync();
+                var trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+                if (trainer == null)
                 {
-                    case MatchResult.Win:
-                        wins++;
-                        break;
-                    case MatchResult.Tie:
-                        ties++;
-                        break;
-                    case null:
-                        break;
-                    default:
-                        losses++;
-                        break;
+                    _logger.LogWarning("Trainer not found");
+                    return;
                 }
+                var matchList = await _connection.GetMatchEntriesByTrainerIdAsync(trainer.Id);
+                if (matchList.Count < 1 || matchList is null)
+                {
+                    _logger.LogWarning("No matches found for trainer");
+                    return;
+                }
+                uint wins, losses, ties;
+                WinAverage = Calculations.CalculateWinRate(matchList, out wins, out losses, out ties);
+                Wins = wins;
+                Losses = losses;
+                Ties = ties;
             }
-            Wins = wins;
-            Losses = losses;
-            Ties = ties;
-            if (wins + losses + ties == 0)
+            catch (Exception ex)
             {
-                winRate = 0;
+                _logger.LogError(ex, "Error loading Trainer Page");
             }
-            else
+            finally
             {
-                winRate = ((wins + (0.5 * ties)) / (wins + losses + ties)) * 100;
+                _semaphore.Release();
             }
-
-            return winRate;
         }
     }
 }
