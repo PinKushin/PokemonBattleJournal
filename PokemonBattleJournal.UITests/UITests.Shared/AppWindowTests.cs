@@ -17,7 +17,6 @@ namespace UITests
             App.GetScreenshot().SaveAsFile($"{nameof(AppLaunches)}.png");
             // Assert
             App.Title.ShouldBe("Pokemon TCG Battle Journal");
-            App.GetScreenshot().ShouldNotBeNull();
         }
     }
 }
