@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using Microsoft.Extensions.Logging;
 
 namespace PokemonBattleJournal.ViewModels;
 
@@ -257,7 +256,7 @@ public partial class MainPageViewModel : ObservableObject
 
             SavedFileDisplay = "Failed to save match";
             _logger.LogInformation("Failed Saving Match with no exceptions");
-            return 0;
+            return result;
         }
         catch (Exception ex)
         {
