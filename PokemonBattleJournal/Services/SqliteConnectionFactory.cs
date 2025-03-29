@@ -595,7 +595,7 @@ public class SqliteConnectionFactory
         {
             int affected = 0;
             await _semaphore.WaitAsync();
-            await _database.RunInTransactionAsync(async tran =>
+            await _database.RunInTransactionAsync(tran =>
             {
                 // Delete associated tags first
                 if (game.Tags != null)
