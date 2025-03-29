@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using SQLite;
+﻿using SQLite;
 using SQLiteNetExtensionsAsync.Extensions;
 
 namespace PokemonBattleJournal.Services;
@@ -26,9 +25,9 @@ public class SqliteConnectionFactory
         if (_database is not null)
             return;
 
-        await _semaphore.WaitAsync();
         try
         {
+            await _semaphore.WaitAsync();
             _database = new SQLiteAsyncConnection(Constants.DatabasePath, Constants.Flags);
             await _database.CreateTableAsync<Trainer>();
             await _database.CreateTableAsync<Archetype>();
@@ -55,9 +54,9 @@ public class SqliteConnectionFactory
     public virtual async Task<List<Trainer>> GetTrainersAsync()
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
+            await _semaphore.WaitAsync();
             return await _database.Table<Trainer>().ToListAsync();
         }
         catch (Exception ex)
@@ -81,9 +80,9 @@ public class SqliteConnectionFactory
     public virtual async Task<Trainer?> GetTrainerByNameAsync(string name)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
+            await _semaphore.WaitAsync();
             return await _database.Table<Trainer>().Where(i => i.Name == name).FirstOrDefaultAsync();
         }
         catch (Exception ex)
@@ -107,23 +106,23 @@ public class SqliteConnectionFactory
     public virtual async Task<int> SaveTrainerAsync(string trainerName)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         Trainer trainer = new() { Name = trainerName };
         try
         {
-            int saved = 0;
+            int affected = 0;
+            await _semaphore.WaitAsync();
             await _database.RunInTransactionAsync(tran =>
             {
                 if (trainer.Id != 0)
                 {
-                    saved = tran.Update(trainer);
+                    affected = tran.Update(trainer);
                 }
                 else
                 {
-                    saved = tran.Insert(trainer);
+                    affected = tran.Insert(trainer);
                 }
             });
-            return saved;
+            return affected;
         }
         catch (Exception ex)
         {
@@ -146,20 +145,50 @@ public class SqliteConnectionFactory
     public virtual async Task<int> DeleteTrainerAsync(Trainer trainer)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
-            int del = 0;
-            await _database.RunInTransactionAsync(tran =>
+            int affected = 0;
+            await _semaphore.WaitAsync();
+            await _database.RunInTransactionAsync(async tran =>
             {
-                del = tran.Delete(trainer);
+                // Load all matches for this trainer
+                var matches = await _database.Table<MatchEntry>()
+                    .Where(m => m.TrainerId == trainer.Id)
+                    .ToListAsync();
+
+                // Delete each match and its related records
+                foreach (var match in matches)
+                {
+                    affected += await DeleteMatchEntryAsync(match);
+                }
+
+                // Delete archetypes
+                var archetypes = await _database.Table<Archetype>()
+                    .Where(a => a.TrainerId == trainer.Id)
+                    .ToListAsync();
+                foreach (var archetype in archetypes)
+                {
+                    affected += tran.Delete(archetype);
+                }
+
+                // Delete trainer tags
+                var tags = await _database.Table<Tags>()
+                    .Where(t => t.TrainerId == trainer.Id)
+                    .ToListAsync();
+                foreach (var tag in tags)
+                {
+                    affected += tran.Delete(tag);
+                }
+
+                // Finally delete the trainer
+                affected += tran.Delete(trainer);
             });
-            return del;
+            return affected;
         }
         catch (Exception ex)
         {
-            // Log the error
-            ModalErrorHandler errorHandler = new ModalErrorHandler();
+            _logger.LogError(ex, "Error deleting trainer and related records");
+            ModalErrorHandler errorHandler = new();
             errorHandler.HandleError(ex);
             return 0;
         }
@@ -179,23 +208,23 @@ public class SqliteConnectionFactory
     public virtual async Task<int> SaveArchetypeAsync(string name, string imgPath, uint trainerId)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         Archetype archetype = new() { Name = name, ImagePath = imgPath, TrainerId = trainerId };
         try
         {
-            int saved = 0;
+            await _semaphore.WaitAsync();
+            int affected = 0;
             await _database.RunInTransactionAsync(tran =>
             {
                 if (archetype.Id != 0)
                 {
-                    saved = tran.Update(archetype);
+                    affected = tran.Update(archetype);
                 }
                 else
                 {
-                    saved = tran.Insert(archetype);
+                    affected = tran.Insert(archetype);
                 }
             });
-            return saved;
+            return affected;
         }
         catch (Exception ex)
         {
@@ -217,9 +246,9 @@ public class SqliteConnectionFactory
     public virtual async Task<List<Archetype>> GetArchetypesAsync()
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
+            await _semaphore.WaitAsync();
             if (_database.Table<Archetype>().CountAsync().Result == 0)
             {
                 await _database.InsertAllAsync(new List<Archetype>
@@ -257,9 +286,9 @@ public class SqliteConnectionFactory
     public virtual async Task<Archetype?> GetArchetypeByIdAsync(uint id)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
+            await _semaphore.WaitAsync();
             return await _database.Table<Archetype>().Where(i => i.Id == id).FirstOrDefaultAsync();
         }
         catch (Exception ex)
@@ -283,9 +312,9 @@ public class SqliteConnectionFactory
     public virtual async Task<int> DeleteArchetypeAsync(Archetype archetype)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
+            await _semaphore.WaitAsync();
             await _database.RunInTransactionAsync(tran =>
             {
                 tran.Delete(archetype);
@@ -315,22 +344,22 @@ public class SqliteConnectionFactory
     {
         await InitAsync();
         Tags tag = new() { Name = tagTxt, TrainerId = trainerId };
-        await _semaphore.WaitAsync();
         try
         {
-            int saved = 0;
+            int affected = 0;
+            await _semaphore.WaitAsync();
             await _database.RunInTransactionAsync(tran =>
             {
                 if (tag.Id != 0)
                 {
-                    saved = tran.Update(tag);
+                    affected = tran.Update(tag);
                 }
                 else
                 {
-                    saved = tran.Insert(tag);
+                    affected = tran.Insert(tag);
                 }
             });
-            return saved;
+            return affected;
         }
         catch (Exception ex)
         {
@@ -352,9 +381,9 @@ public class SqliteConnectionFactory
     public virtual async Task<List<Tags>> GetTagsAsync()
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
+            await _semaphore.WaitAsync();
             if (_database.Table<Tags>().CountAsync().Result == 0)
             {
                 await _database.InsertAllAsync(new List<Tags>
@@ -392,9 +421,9 @@ public class SqliteConnectionFactory
     public virtual async Task<Tags?> GetTagByIdAsync(uint id)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
+            await _semaphore.WaitAsync();
             return await _database.Table<Tags>().Where(i => i.Id == id).FirstOrDefaultAsync();
         }
         catch (Exception ex)
@@ -418,10 +447,10 @@ public class SqliteConnectionFactory
     public virtual async Task<int> DeleteTagAsync(Tags tag)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
             int del = 0;
+            await _semaphore.WaitAsync();
             await _database.RunInTransactionAsync(tran =>
             {
                 del = tran.Delete(tag);
@@ -448,22 +477,40 @@ public class SqliteConnectionFactory
     public virtual async Task<int> SaveGameAsync(Game game)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
-            int saved = 0;
+            int affected = 0;
+            await _semaphore.WaitAsync();
             await _database.RunInTransactionAsync(tran =>
             {
+                // Save the game first
                 if (game.Id != 0)
                 {
-                    saved = tran.Update(game);
+                    affected = tran.Update(game);
                 }
                 else
                 {
-                    saved = tran.Insert(game);
+                    affected = tran.Insert(game);
+                }
+
+                // Now handle the tags
+                if (game.Tags != null)
+                {
+                    foreach (var tag in game.Tags)
+                    {
+                        tag.GameId = game.Id;
+                        if (tag.Id != 0)
+                        {
+                            affected += tran.Update(tag);
+                        }
+                        else
+                        {
+                            affected += tran.Insert(tag);
+                        }
+                    }
                 }
             });
-            return saved;
+            return affected;
         }
         catch (Exception ex)
         {
@@ -485,9 +532,9 @@ public class SqliteConnectionFactory
     public virtual async Task<List<Game>> GetGamesAsync()
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
+            await _semaphore.WaitAsync();
             return await _database.Table<Game>().ToListAsync();
         }
         catch (Exception ex)
@@ -510,13 +557,22 @@ public class SqliteConnectionFactory
     public virtual async Task<Game?> GetGameByIdAsync(uint id)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
-            return await _database.Table<Game>().Where(i => i.Id == id).FirstOrDefaultAsync();
+            await _semaphore.WaitAsync();
+            var game = await _database.GetWithChildrenAsync<Game>(id, true);
+            if (game != null)
+            {
+                // Explicitly load tags
+                game.Tags = await _database.Table<Tags>()
+                    .Where(t => t.GameId == game.Id)
+                    .ToListAsync();
+            }
+            return game;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error loading game and tags");
             ModalErrorHandler errorHandler = new();
             errorHandler.HandleError(ex);
             return null;
@@ -535,18 +591,28 @@ public class SqliteConnectionFactory
     public virtual async Task<int> DeleteGameAsync(Game game)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
-            int del = 0;
-            await _database.RunInTransactionAsync(tran =>
+            int affected = 0;
+            await _semaphore.WaitAsync();
+            await _database.RunInTransactionAsync(async tran =>
             {
-                del = tran.Delete(game);
+                // Delete associated tags first
+                if (game.Tags != null)
+                {
+                    foreach (var tag in game.Tags)
+                    {
+                        affected += tran.Delete(tag);
+                    }
+                }
+                // Then delete the game
+                affected += tran.Delete(game);
             });
-            return del;
+            return affected;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error deleting game and tags");
             ModalErrorHandler errorHandler = new();
             errorHandler.HandleError(ex);
             return 0;
@@ -566,10 +632,10 @@ public class SqliteConnectionFactory
     public virtual async Task<int> SaveMatchEntryAsync(MatchEntry matchEntry, List<Game> games)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
             int affected = 0;
+            await _semaphore.WaitAsync();
             await _database.RunInTransactionAsync(async tran =>
             {
                 if (matchEntry.Id != 0)
@@ -579,17 +645,8 @@ public class SqliteConnectionFactory
                 }
                 else
                 {
-                    _logger.LogInformation
-                    (
-                        "Inserting match entry: {@MatchEntry}",
-                        matchEntry
-                    );
-                    _logger.LogInformation
-                    (
-                        "Playing: {PlayingName} \nAgainst: {AgainstName}",
-                        matchEntry.Playing?.Name,
-                        matchEntry.Against?.Name
-                    );
+                    _logger.LogInformation("Inserting match entry: {@MatchEntry}", matchEntry);
+                    _logger.LogInformation("Playing: {PlayingName} \nAgainst: {AgainstName}", matchEntry.Playing?.Name, matchEntry.Against?.Name);
                     affected += tran.Insert(matchEntry);
                 }
 
@@ -727,19 +784,34 @@ public class SqliteConnectionFactory
                 {
                     entry.Game1 = await _database.GetWithChildrenAsync<Game>(entry.Game1Id.Value);
                     if (entry.Game1 != null)
-                        entry.Game1.Tags = await _database.Table<Tags>().Where(t => t.GameId == entry.Game1.Id).ToListAsync();
+                    {
+                        entry.Game1.Tags = await _database.Table<Tags>()
+                            .Where(t => t.GameId == entry.Game1.Id)
+                            .ToListAsync();
+                        _logger.LogDebug("Game1 Tags loaded: {@Tags}", entry.Game1.Tags);
+                    }
                 }
                 if (entry.Game2Id != 0)
                 {
                     entry.Game2 = await _database.GetWithChildrenAsync<Game>(entry.Game2Id);
                     if (entry.Game2 != null)
-                        entry.Game2.Tags = await _database.Table<Tags>().Where(t => t.GameId == entry.Game2.Id).ToListAsync();
+                    {
+                        entry.Game2.Tags = await _database.Table<Tags>()
+                            .Where(t => t.GameId == entry.Game2.Id)
+                            .ToListAsync();
+                        _logger.LogDebug("Game2 Tags loaded: {@Tags}", entry.Game2.Tags);
+                    }
                 }
                 if (entry.Game3Id != 0)
                 {
                     entry.Game3 = await _database.GetWithChildrenAsync<Game>(entry.Game3Id);
                     if (entry.Game3 != null)
-                        entry.Game3.Tags = await _database.Table<Tags>().Where(t => t.GameId == entry.Game3.Id).ToListAsync();
+                    {
+                        entry.Game3.Tags = await _database.Table<Tags>()
+                            .Where(t => t.GameId == entry.Game3.Id)
+                            .ToListAsync();
+                        _logger.LogDebug("Game3 Tags loaded: {@Tags}", entry.Game3.Tags);
+                    }
                 }
             }
             _logger.LogInformation("Loaded {Count} match entries with games and tags", entries.Count);
@@ -766,20 +838,29 @@ public class SqliteConnectionFactory
     public virtual async Task<int> DeleteMatchEntryAsync(MatchEntry matchEntry)
     {
         await InitAsync();
-        await _semaphore.WaitAsync();
         try
         {
-            int del = 0;
-            await _database.RunInTransactionAsync(tran =>
+            int affected = 0;
+            await _semaphore.WaitAsync();
+            await _database.RunInTransactionAsync(async tran =>
             {
-                del = tran.Delete(matchEntry);
+                // Delete associated games and their tags
+                if (matchEntry.Game1 != null)
+                    affected += await DeleteGameAsync(matchEntry.Game1);
+                if (matchEntry.Game2 != null)
+                    affected += await DeleteGameAsync(matchEntry.Game2);
+                if (matchEntry.Game3 != null)
+                    affected += await DeleteGameAsync(matchEntry.Game3);
+
+                // Then delete the match entry
+                affected += tran.Delete(matchEntry);
             });
-            return del;
+            return affected;
         }
         catch (Exception ex)
         {
-            // Log the error
-            ModalErrorHandler errorHandler = new ModalErrorHandler();
+            _logger.LogError(ex, "Error deleting match entry and related records");
+            ModalErrorHandler errorHandler = new();
             errorHandler.HandleError(ex);
             return 0;
         }
