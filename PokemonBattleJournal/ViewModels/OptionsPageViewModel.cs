@@ -13,10 +13,10 @@
         }
 
         [ObservableProperty]
-        public partial string Title { get; set; } = $"{PreferencesHelper.GetSetting("Trainer Name")}'s Options";
+        public partial string Title { get; set; } = $"{PreferencesHelper.GetSetting("TrainerName")}'s Options";
 
         [ObservableProperty]
-        public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("Trainer Name");
+        public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
 
         [ObservableProperty]
         public partial string? NameInput { get; set; }
@@ -44,15 +44,16 @@
         public async Task AppearingAsync()
         {
             _logger.LogInformation("OptionsPageViewModel appearing");
+            _logger.LogInformation("Current Trainer Name: {TrainerName}", TrainerName);
             try
             {
-                await _semaphore.WaitAsync();
                 if (!_initialized)
                 {
                     _logger.LogInformation("OptionsPageViewModel initializing");
                     IconCollection = await PopulateIconCollectionAsync();
                     _initialized = true;
                 }
+                _logger.LogInformation("Initialized: {Init}", _initialized);
                 _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
                 _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
             }
@@ -61,11 +62,6 @@
                 _logger.LogError(ex, "Error loading ViewModel: {TrainerName} {@IconCollection}", TrainerName, IconCollection);
                 ModalErrorHandler modalErrorHandler = new();
                 modalErrorHandler.HandleError(ex);
-            }
-            finally
-            {
-                _ = _semaphore.Release();
-
             }
         }
 
