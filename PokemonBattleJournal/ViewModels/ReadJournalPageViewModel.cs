@@ -173,7 +173,14 @@
                 ResultGame1 = SelectedMatch.Game1.Result;
                 SelectedNote = SelectedMatch.Game1.Notes;
                 TagsSelectedGame1 = SelectedMatch.Game1.Tags;
-                _logger.LogDebug("Game 1 loaded: {Result}", ResultGame1);
+                _logger.LogDebug("Game 1 loaded: {Result}, Tags: {@Tags}", ResultGame1, TagsSelectedGame1);
+            }
+            else
+            {
+                ResultGame1 = null;
+                SelectedNote = null;
+                TagsSelectedGame1 = null;
+                _logger.LogDebug("Game 1 is null, no details to load");
             }
 
             if (SelectedMatch?.Game2 != null)
@@ -181,13 +188,14 @@
                 ResultGame2 = SelectedMatch.Game2.Result;
                 SelectedNote2 = SelectedMatch.Game2.Notes;
                 TagsSelectedGame2 = SelectedMatch.Game2.Tags;
-                _logger.LogDebug("Game 2 loaded: {Result}", ResultGame2);
+                _logger.LogDebug("Game 2 loaded: {Result}, Tags: {@Tags}", ResultGame2, TagsSelectedGame2);
             }
             else
             {
                 ResultGame2 = null;
                 SelectedNote2 = null;
                 TagsSelectedGame2 = null;
+                _logger.LogDebug("Game 2 is null, no details to load");
             }
 
             if (SelectedMatch?.Game3 != null)
@@ -195,13 +203,14 @@
                 ResultGame3 = SelectedMatch.Game3.Result;
                 SelectedNote3 = SelectedMatch.Game3.Notes;
                 TagsSelectedGame3 = SelectedMatch.Game3.Tags;
-                _logger.LogDebug("Game 3 loaded: {Result}", ResultGame3);
+                _logger.LogDebug("Game 3 loaded: {Result}, Tags: {@Tags}", ResultGame3, TagsSelectedGame3);
             }
             else
             {
                 ResultGame3 = null;
                 SelectedNote3 = null;
                 TagsSelectedGame3 = null;
+                _logger.LogDebug("Game 3 is null, no details to load");
             }
         }
 
