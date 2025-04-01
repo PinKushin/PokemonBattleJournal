@@ -39,7 +39,6 @@
         [ObservableProperty]
         public partial string FileConfirmMessage { get; set; } = $"Delete {PreferencesHelper.GetSetting("TrainerName")}'s Trainer File?";
 
-        private static bool _initialized;
         [RelayCommand]
         public async Task AppearingAsync()
         {
@@ -47,13 +46,7 @@
             _logger.LogInformation("Current Trainer Name: {TrainerName}", TrainerName);
             try
             {
-                if (!_initialized)
-                {
-                    _logger.LogInformation("OptionsPageViewModel initializing");
-                    IconCollection = await PopulateIconCollectionAsync();
-                    _initialized = true;
-                }
-                _logger.LogInformation("Initialized: {Init}", _initialized);
+                IconCollection = await PopulateIconCollectionAsync();
                 _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
                 _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
             }
