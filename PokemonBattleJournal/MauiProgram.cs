@@ -1,5 +1,4 @@
 using CommunityToolkit.Maui;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using Syncfusion.Maui.Core.Hosting;
 using Syncfusion.Maui.Toolkit.Hosting;
@@ -86,12 +85,6 @@ namespace PokemonBattleJournal
             //About Page
             builder.Services.AddTransient<AboutPage>();
             builder.Services.AddTransient<AboutPageViewModel>();
-
-#if DEBUG
-            //Developer Test Page
-            builder.Services.AddTransient<TestPage>();
-            builder.Services.AddTransient<TestPageViewModel>();
-#endif
 #if WINDOWS
 
             Microsoft.Maui.Controls.Handlers.Items.CollectionViewHandler.Mapper.AppendToMapping("DisableMultiselectCheckbox",

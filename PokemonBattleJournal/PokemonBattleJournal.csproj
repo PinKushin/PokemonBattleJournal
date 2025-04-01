@@ -114,9 +114,6 @@
         <MauiXaml Update="Views\ReadJournalPage.xaml">
             <Generator>MSBuild:Compile</Generator>
         </MauiXaml>
-        <MauiXaml Update="Views\TestPage.xaml">
-            <Generator>MSBuild:Compile</Generator>
-        </MauiXaml>
         <MauiXaml Update="Views\TrainerPage.xaml">
             <Generator>MSBuild:Compile</Generator>
         </MauiXaml>

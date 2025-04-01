@@ -1,54 +1,56 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Shell
-	x:Class="PokemonBattleJournal.AppShell"
-	xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-	xmlns:views="clr-namespace:PokemonBattleJournal.Views"
-	Title="Pokemon TCG Battle Journal"
-	Shell.FlyoutBehavior="Flyout">
-	<Shell.FlyoutHeader>
+    x:Class="PokemonBattleJournal.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:PokemonBattleJournal.Views"
+    Title="Pokemon TCG Battle Journal"
+    Shell.FlyoutBehavior="Flyout">
+    <Shell.FlyoutHeader>
 
-		<Grid
-			BackgroundColor="{StaticResource PokeBlue}"
-			HeightRequest="{OnIdiom Phone=55,
-			                        Default=100}">
-			<Image
-				Aspect="AspectFill"
-				Opacity="0.2"
-				Source="ball_icon.png" />
-			<Label
-				FontAttributes="None"
-				FontSize="Large"
-				HorizontalTextAlignment="Center"
-				Text="PTCG Journal"
-				VerticalTextAlignment="Center" />
-		</Grid>
+        <Grid BackgroundColor="{StaticResource PokeBlue}" HeightRequest="{OnIdiom Phone=55, Default=100}">
+            <Image
+                Aspect="AspectFill"
+                Opacity="0.2"
+                Source="ball_icon.png" />
+            <Label
+                FontAttributes="None"
+                FontSize="Large"
+                HorizontalTextAlignment="Center"
+                Text="PTCG Journal"
+                VerticalTextAlignment="Center" />
+        </Grid>
 
-	</Shell.FlyoutHeader>
-	<ShellContent
-		Title="Journal Entry"
-		ContentTemplate="{DataTemplate views:MainPage}"
-		Route="MainPage" />
-	<ShellContent
-		Title="Read Journal"
-		ContentTemplate="{DataTemplate views:ReadJournalPage}"
-		Route="ReadJournalPage" />
-	<ShellContent
-		Title="Trainer's Profile"
-		ContentTemplate="{DataTemplate views:TrainerPage}"
-		Route="TrainerPage" />
-	<ShellContent
-		Title="Options"
-		ContentTemplate="{DataTemplate views:OptionsPage}"
-		Route="OptionsPage" />
-	<ShellContent
-		Title="About"
-		ContentTemplate="{DataTemplate views:AboutPage}"
-		Route="AboutPage" />
-
-	<ShellContent
-		Title="Dev Test Page"
-		ContentTemplate="{DataTemplate views:TestPage}"
-		Route="TestPage" />
-
+    </Shell.FlyoutHeader>
+    <ShellContent
+        Title="Journal Entry"
+        ContentTemplate="{DataTemplate views:MainPage}"
+        Route="MainPage" />
+    <ShellContent
+        Title="Read Journal"
+        ContentTemplate="{DataTemplate views:ReadJournalPage}"
+        Route="ReadJournalPage" />
+    <ShellContent
+        Title="Trainer's Profile"
+        ContentTemplate="{DataTemplate views:TrainerPage}"
+        Route="TrainerPage" />
+    <ShellContent
+        Title="Options"
+        ContentTemplate="{DataTemplate views:OptionsPage}"
+        Route="OptionsPage" />
+    <ShellContent
+        Title="About"
+        ContentTemplate="{DataTemplate views:AboutPage}"
+        Route="AboutPage" />
+    <Shell.FlyoutFooter>
+        <Grid BackgroundColor="{StaticResource PokeBlue}" HeightRequest="50">
+            <!--  Footer content, typically used for copyright or additional links  -->
+            <Label
+                FontSize="Small"
+                HorizontalTextAlignment="Center"
+                Text="© The Unlicense"
+                TextColor="{StaticResource PokeYellow}"
+                VerticalTextAlignment="Center" />
+        </Grid>
+    </Shell.FlyoutFooter>
 </Shell>
