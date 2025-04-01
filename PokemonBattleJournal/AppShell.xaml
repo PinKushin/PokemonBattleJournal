@@ -8,12 +8,11 @@
     Shell.FlyoutBehavior="Flyout">
     <Shell.FlyoutHeader>
 
-        <Grid BackgroundColor="{StaticResource PokeBlue}">
+        <Grid BackgroundColor="{StaticResource PokeBlue}" HeightRequest="{OnIdiom Phone=55, Default=100}">
             <Image
                 Aspect="AspectFill"
                 Opacity="0.2"
-                Source="ball_icon.png"
-                WidthRequest="100" />
+                Source="ball_icon.png" />
             <Label
                 FontAttributes="None"
                 FontSize="Large"
@@ -31,11 +30,11 @@
         Title="Read Journal"
         ContentTemplate="{DataTemplate views:ReadJournalPage}"
         Route="ReadJournalPage" />
-	<ShellContent
-		Title="Trainer's Profile"
-		ContentTemplate="{DataTemplate views:TrainerPage}"
-		Route="TrainerPage" />
-	<ShellContent
+    <ShellContent
+        Title="Trainer's Profile"
+        ContentTemplate="{DataTemplate views:TrainerPage}"
+        Route="TrainerPage" />
+    <ShellContent
         Title="Options"
         ContentTemplate="{DataTemplate views:OptionsPage}"
         Route="OptionsPage" />
@@ -43,10 +42,15 @@
         Title="About"
         ContentTemplate="{DataTemplate views:AboutPage}"
         Route="AboutPage" />
-
-    <ShellContent
-        Title="Dev Test Page"
-        ContentTemplate="{DataTemplate views:TestPage}"
-        Route="TestPage" />
-
+    <Shell.FlyoutFooter>
+        <Grid BackgroundColor="{StaticResource PokeBlue}" HeightRequest="50">
+            <!--  Footer content, typically used for copyright or additional links  -->
+            <Label
+                FontSize="Small"
+                HorizontalTextAlignment="Center"
+                Text="© The Unlicense"
+                TextColor="{StaticResource PokeYellow}"
+                VerticalTextAlignment="Center" />
+        </Grid>
+    </Shell.FlyoutFooter>
 </Shell>

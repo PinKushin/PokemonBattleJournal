@@ -1,352 +1,433 @@
-﻿using System.Collections.ObjectModel;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+﻿using System.Globalization;
 
-namespace PokemonBattleJournal.ViewModels
+namespace PokemonBattleJournal.ViewModels;
+
+public partial class MainPageViewModel : ObservableObject
 {
-	public partial class MainPageViewModel : ObservableObject
-	{
-		private readonly ILogger<MainPageViewModel> _logger;
-		private readonly IDispatcherTimer? _timer;
+    private readonly ILogger<MainPageViewModel> _logger;
+    private readonly IDispatcherTimer? _timer;
+    private readonly SqliteConnectionFactory _connection;
+    private static readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly Lock _lock = new();
+    private static Trainer? _trainer;
 
-		public MainPageViewModel(ILogger<MainPageViewModel> logger)
-		{
-			_logger = logger;
 
-			//Timer to update displayed time
-			if (Application.Current != null)
-			{
-				_timer = Application.Current.Dispatcher.CreateTimer();
-				_timer.Interval = TimeSpan.FromSeconds(1);
-				_timer.Tick += UpdateTime;
-			}
+    public MainPageViewModel(ILogger<MainPageViewModel> logger, SqliteConnectionFactory connection)
+    {
+        _logger = logger;
+        _connection = connection;
 
-			_logger.LogInformation("Created ViewModel");
-			WelcomeMsg = $"Welcome {TrainerName}";
-			// get default file path
-			string? filePath = FileHelper.GetAppDataPath() + $@"\{TrainerName}.json";
-			// create file if it doesn't exist
-			if (!FileHelper.Exists(filePath))
-			{
-				FileHelper.CreateFile(filePath);
-			}
-		}
+        //Timer to update displayed time
+        if (Application.Current != null)
+        {
+            _timer = Application.Current.Dispatcher.CreateTimer();
+            _timer.Interval = TimeSpan.FromSeconds(1);
+            _timer.Tick += UpdateTime;
+        }
 
-		/// <summary>
-		/// Update displayed time on UI
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		public void UpdateTime(object? sender, EventArgs e)
-		{
-			MainThreadHelper.BeginInvokeOnMainThread(() =>
-			{
-				CurrentDateTimeDisplay = $"{DateTime.Now.ToLocalTime()}";
-			});
-		}
+        _logger.LogInformation("Created Main Page ViewModel{this}", this);
+        WelcomeMsg = $"Welcome {TrainerName}";
+        lock (_lock)
+        {
+            _connection.GetTagsAsync().ContinueWith(tags =>
+            {
+                TagCollection = tags.Result;
+            });
+        }
+    }
 
-		[RelayCommand]
-		public async Task AppearingAsync()
-		{
-			_logger.LogInformation("Appearing: {Time}", DateTime.Now);
-			try
-			{
-				_timer?.Start();
-				Archetypes = await DataPopulationHelper.PopulateArchetypesAsync();
-				TagCollection = await DataPopulationHelper.PopulateTagsAsync();
-				_logger.LogInformation("{@ArcheTypes}", Archetypes);
-			}
-			catch (Exception ex)
-			{
-				ModalErrorHandler modalErrorHandler = new ModalErrorHandler();
-				modalErrorHandler.HandleError(ex);
-				_logger.LogError(ex, "Error Loading ViewModel");
-			}
-		}
+    //Convert date-time to string that can be used in the UI
+    [ObservableProperty]
+    public partial string CurrentDateTimeDisplay { get; set; } =
+        DateTime.Now.ToLocalTime().ToString("T", CultureInfo.InvariantCulture);
 
-		[RelayCommand]
-		public void Disappearing()
-		{
-			_logger.LogInformation("Disappering: {Time}", DateTime.Now);
-			_timer?.Stop();
-		}
+    [ObservableProperty]
+    private partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
 
-		//Convert date-time to string that can be used in the UI
-		[ObservableProperty]
-		public partial string? CurrentDateTimeDisplay { get; set; } = DateTime.Now.ToLocalTime().ToString();
+    [ObservableProperty]
+    public partial string WelcomeMsg { get; set; }
 
-		[ObservableProperty]
-		public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
+    [ObservableProperty]
+    public partial string? SavedFileDisplay { get; set; } = "Save File";
 
-		[ObservableProperty]
-		public partial string? NameInput { get; set; }
+    //Match Info and Notes
+    [ObservableProperty]
+    public partial Archetype? PlayerSelected { get; set; }
 
-		[ObservableProperty]
-		public partial string WelcomeMsg { get; set; }
+    [ObservableProperty]
+    public partial Archetype? RivalSelected { get; set; }
 
-		[ObservableProperty]
-		public partial string? SavedTimeDisplay { get; set; } = "Save File";
+    [ObservableProperty]
+    public partial string? UserNoteInput { get; set; }
 
-		[ObservableProperty]
-		public partial string? SavedFileDisplay { get; set; } = "Save File";
+    [ObservableProperty]
+    public partial string? UserNoteInput2 { get; set; }
 
-		//Match Info and Notes
-		[ObservableProperty]
-		public partial Archetype? PlayerSelected { get; set; }
+    [ObservableProperty]
+    public partial string? UserNoteInput3 { get; set; }
 
-		[ObservableProperty]
-		public partial Archetype? RivalSelected { get; set; }
+    [ObservableProperty]
+    public partial DateTime StartTime { get; set; } = DateTime.Now.ToLocalTime();
 
-		[ObservableProperty]
-		public partial string? UserNoteInput { get; set; }
+    [ObservableProperty]
+    public partial DateTime EndTime { get; set; } = DateTime.Now.ToLocalTime();
 
-		[ObservableProperty]
-		public partial string? UserNoteInput2 { get; set; }
+    [ObservableProperty]
+    public partial DateTime DatePlayed { get; set; } = DateTime.Now.ToLocalTime();
 
-		[ObservableProperty]
-		public partial string? UserNoteInput3 { get; set; }
+    [ObservableProperty]
+    public partial List<Archetype>? Archetypes { get; set; }
 
-		[ObservableProperty]
-		public partial DateTime StartTime { get; set; } = DateTime.Now.ToLocalTime();
+    [ObservableProperty]
+    public partial bool BO3Toggle { get; set; }
 
-		[ObservableProperty]
-		public partial DateTime EndTime { get; set; } = DateTime.Now.ToLocalTime();
+    [ObservableProperty]
+    public partial bool FirstCheck { get; set; }
 
-		[ObservableProperty]
-		public partial DateTime DatePlayed { get; set; } = DateTime.Now.ToLocalTime();
+    [ObservableProperty]
+    public partial bool FirstCheck2 { get; set; }
 
-		[ObservableProperty]
-		public partial ObservableCollection<Archetype>? Archetypes { get; set; }
+    [ObservableProperty]
+    public partial bool FirstCheck3 { get; set; }
 
-		[ObservableProperty]
-		public partial bool BO3Toggle { get; set; }
+    [ObservableProperty]
+    public partial List<MatchResult> PossibleResults { get; set; } = [.. Enum.GetValues<MatchResult>().Cast<MatchResult>()];
 
-		[ObservableProperty]
-		public partial bool FirstCheck { get; set; }
+    [ObservableProperty]
+    public partial MatchResult? Result { get; set; }
 
-		[ObservableProperty]
-		public partial bool FirstCheck2 { get; set; }
+    [ObservableProperty]
+    public partial MatchResult? Result2 { get; set; }
 
-		[ObservableProperty]
-		public partial bool FirstCheck3 { get; set; }
+    [ObservableProperty]
+    public partial MatchResult? Result3 { get; set; }
 
-		[ObservableProperty]
-		public partial List<string> PossibleResults { get; set; } = new() { "Win", "Loss", "Tie" };
+    //Tags
+    [ObservableProperty]
+    public partial List<Tags>? TagCollection { get; set; }
 
-		[ObservableProperty]
-		public partial string Result { get; set; } = "";
+    [ObservableProperty]
+    public partial IList<object>? TagsSelected { get; set; }
 
-		[ObservableProperty]
-		public partial string Result2 { get; set; } = "";
+    [ObservableProperty]
+    public partial IList<object>? Match2TagsSelected { get; set; }
 
-		[ObservableProperty]
-		public partial string Result3 { get; set; } = "";
+    [ObservableProperty]
+    public partial IList<object>? Match3TagsSelected { get; set; }
 
-		//Tags
-		[ObservableProperty]
-		public partial IList<object>? TagCollection { get; set; }
+    [ObservableProperty]
+    public partial bool? IsToggled { get; set; }
 
-		[ObservableProperty]
-		public partial IList<object>? TagsSelected { get; set; }
+    /// <summary>
+    /// Update displayed time on UI
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void UpdateTime(object? sender, EventArgs e)
+    {
+        MainThreadHelper.BeginInvokeOnMainThread(() =>
+        {
+            CurrentDateTimeDisplay = $"{DateTime.Now.ToLocalTime().ToString("T", CultureInfo.InvariantCulture)}";
+        });
+    }
 
-		[ObservableProperty]
-		public partial IList<object>? Match2TagsSelected { get; set; }
+    /// <summary>
+    /// Load Archetypes and Tags when page appears
+    /// </summary>
+    /// <returns></returns>
+    [RelayCommand]
+    private async Task AppearingAsync()
+    {
+        _timer?.Start();
+        _logger.LogInformation("Appearing: {Time}", DateTime.Now);
 
-		[ObservableProperty]
-		public partial IList<object>? Match3TagsSelected { get; set; }
+        try
+        {
+            await _semaphore.WaitAsync();
+            _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+            if (_trainer == null)
+            {
+                await _connection.SaveTrainerAsync(TrainerName);
+                _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+            }
+            Archetypes = await _connection.GetArchetypesAsync();
 
-		[ObservableProperty]
-		public partial bool? IsToggled { get; set; }
+        }
+        catch (Exception ex)
+        {
+            ModalErrorHandler modalErrorHandler = new();
+            modalErrorHandler.HandleError(ex);
+            _logger.LogError(ex, "Error Loading ViewModel");
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
 
-		/// <summary>
-		/// Verify, Serialize, and Save Match Data
-		/// </summary>
-		[RelayCommand]
-		public async Task SaveFileAsync()
-		{
-			// get default file path
-			string filePath = FileHelper.GetAppDataPath() + $@"\{TrainerName}.json";
-			_logger.LogInformation("FilePath: {FilePath}", filePath);
-			// create file if it doesn't exist
-			if (!FileHelper.Exists(filePath))
-			{
-				FileHelper.CreateFile(filePath);
-				_logger.LogInformation("File Created: {FilePath}", filePath);
-			}
+    [RelayCommand]
+    private void Disappearing()
+    {
+        _logger.LogInformation("Disappearing: {Time}", DateTime.Now);
+        _timer?.Stop();
+    }
 
-			try
-			{
-				MatchEntry matchEntry = CreateMatchEntry();
-				_logger.LogInformation("Match Created: {@Match}", matchEntry);
-				//Read File from Disk throws error if file doesn't exist so it was created above
-				string? saveFile = await FileHelper.ReadFileAsync(filePath);
-				_logger.LogInformation("Read Save File: {@Save}", saveFile);
-				//Deserialize file to add the new match or create an empty list of matches if no matches exist
-				List<MatchEntry> matchList = JsonConvert.DeserializeObject<List<MatchEntry>>(saveFile) ?? [];
-				//add match to list
-				matchList.Add(matchEntry);
-				//serialize data with the new match appended to memory
-				saveFile = JsonConvert.SerializeObject(matchList, Formatting.Indented);
-				_logger.LogInformation("Save File Updated: {@Save}", saveFile);
-				//write serialized data to file
-				await FileHelper.WriteFileAsync(filePath, saveFile);
-				SavedFileDisplay = $"Saved: Match at {DateTimeOffset.Now}";
-				_logger.LogInformation("Saved file: {@SaveFile} at {FilePath}", saveFile, filePath);
-			}
-			catch (Exception ex)
-			{
-				SavedFileDisplay = $"No File Saved";
-				ModalErrorHandler modalErrorHandler = new ModalErrorHandler();
-				modalErrorHandler.HandleError(ex);
-				_logger.LogError(ex, "Error Saving File at {FilePath}", filePath);
-				return;
-			}
-		}
+    /// <summary>
+    /// Verify, Serialize, and Save Match Data
+    /// </summary>
+    [RelayCommand]
+    private async Task<int> SaveMatchAsync()
+    {
+        _logger.LogInformation("Saving File...");
+        _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+        if (PlayerSelected == null || RivalSelected == null || TrainerName == null || _trainer == null)
+        {
+            throw new InvalidOperationException("Required fields are missing.");
+        }
 
-		public MatchEntry CreateMatchEntry()
-		{
-			_logger.LogInformation("Creating Match Entry...");
-			_logger.LogInformation("Tags Selected: {Tags}", TagsSelected);
-			MatchEntry matchEntry = new()
-			{
-				//add user inputs to match entry
-				Playing = PlayerSelected ?? new("Other", "ball_icon.png"),
-				Against = RivalSelected ?? new("Other", "ball_icon.png"),
-				Time = DatePlayed,
-				DatePlayed = DatePlayed,
-				StartTime = StartTime,
-				EndTime = EndTime,
-				Game1 = new Game()
-			};
-			matchEntry.Game1.Result = Result;
-			if (FirstCheck)
-			{
-				matchEntry.Game1.Turn = 1;
-			}
-			else
-			{
-				matchEntry.Game1.Turn = 2;
-			}
-			if (UserNoteInput != null)
-				matchEntry.Game1.Notes = UserNoteInput;
+        try
+        {
+            await _semaphore.WaitAsync();
+            var matchEntry = new MatchEntry()
+            {
+                // Add user inputs to match entry
+                TrainerId = _trainer.Id,
+                PlayingId = PlayerSelected.Id,
+                Playing = PlayerSelected,
+                AgainstId = RivalSelected.Id,
+                Against = RivalSelected,
+                DatePlayed = DatePlayed,
+                StartTime = StartTime,
+                EndTime = EndTime,
+            };
 
-			matchEntry.Game1.Tags = TagsSelected;
+            var games = new List<Game>();
+            var game1 = new Game()
+            {
+                Result = Result,
+                Tags = TagsSelected?.Cast<Tags>().ToList(),
+                Turn = FirstCheck ? 1u : 2u,
+                Notes = UserNoteInput
+            };
+            games.Add(game1);
 
-			if (!BO3Toggle)
-			{
-				matchEntry.Result = Result;
-			}
-			else
-			{
-				uint _wins = 0;
-				uint _draws = 0;
-				matchEntry.Game2 = new Game();
-				matchEntry.Game3 = new Game();
-				matchEntry.Game2.Tags = Match2TagsSelected;
-				matchEntry.Game3.Tags = Match3TagsSelected;
-				matchEntry.Game2.Result = Result2;
-				matchEntry.Game3.Result = Result3;
-				switch (Result)
-				{
-					case "Win":
-						_wins++;
-						break;
 
-					case "Tie":
-						_draws++;
-						break;
+            if (BO3Toggle)
+            {
+                var game2 = new Game
+                {
+                    Result = Result2,
+                    Tags = Match2TagsSelected?.Cast<Tags>().ToList(),
+                    Turn = FirstCheck2 ? 1u : 2u,
+                    Notes = UserNoteInput2
+                };
+                games.Add(game2);
 
-					default:
-						break;
-				}
-				switch (Result2)
-				{
-					case "Win":
-						_wins++;
-						break;
+                var game3 = new Game
+                {
+                    Result = Result3,
+                    Tags = Match3TagsSelected?.Cast<Tags>().ToList(),
+                    Turn = FirstCheck3 ? 1u : 2u,
+                    Notes = UserNoteInput3
+                };
+                games.Add(game3);
 
-					case "Tie":
-						_draws++;
-						break;
+                matchEntry.Result = Calculations.CalculateOverallResult(Result, Result2, Result3);
+            }
+            else
+            {
+                matchEntry.Result = Result;
+            }
 
-					default:
-						break;
-				}
-				switch (Result3)
-				{
-					case "Win":
-						_wins++;
-						break;
+            var result = await _connection.SaveMatchEntryAsync(matchEntry, games);
+            if (result > 0)
+            {
+                SavedFileDisplay = $"Saved: Match at {DateTimeOffset.Now}";
+                _logger.LogInformation("Match Created: {@Match}", matchEntry);
+                _logger.LogInformation("Playing: {Playing} Against: {Against}", matchEntry.Playing.Name, matchEntry.Against.Name);
+                _logger.LogInformation("{@Count} - Games Created", games.Count);
+                _logger.LogInformation("{@Game1}", games[0]);
+                if (games.Count > 1)
+                {
+                    _logger.LogInformation("{@Game2}/n{Game3}", games[1], games[2]);
+                }
+                return result;
+            }
 
-					case "Tie":
-						_draws++;
-						break;
+            SavedFileDisplay = "Failed to save match";
+            _logger.LogInformation("Failed Saving Match with no exceptions");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            SavedFileDisplay = "No File Saved";
+            ModalErrorHandler modalErrorHandler = new();
+            modalErrorHandler.HandleError(ex);
+            _logger.LogError(ex, "Error Saving Match");
+            return 0;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
 
-					default:
-						break;
-				}
+    //public async Task<MatchEntry> CreateMatchEntryAsync()
+    //{
+    //    _logger.LogInformation("Creating Match Entry...");
+    //    _logger.LogInformation("Tags Selected: {Tags}", TagsSelected);
+    //    _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+    //    if (PlayerSelected == null || RivalSelected == null || TrainerName == null || _trainer == null)
+    //    {
+    //        throw new InvalidOperationException("Required fields are missing.");
+    //    }
 
-				if (_wins >= 2)
-				{
-					matchEntry.Result = "Win";
-				}
-				else if (_draws >= 2)
-				{
-					matchEntry.Result = "Tie";
-				}
-				else if (_draws == 1 && _wins == 1)
-				{
-					matchEntry.Result = "Tie";
-				}
-				else
-				{
-					matchEntry.Result = "Loss";
-				}
+    //    MatchEntry matchEntry = new()
+    //    {
+    //        // Add user inputs to match entry
+    //        TrainerId = _trainer.Id,
+    //        PlayingId = PlayerSelected!.Id,
+    //        Playing = PlayerSelected,
+    //        AgainstId = RivalSelected!.Id,
+    //        Against = RivalSelected,
+    //        DatePlayed = DatePlayed,
+    //        StartTime = StartTime,
+    //        EndTime = EndTime,
+    //        Game1 = new Game() { Result = Result },
+    //    };
+    //    matchEntry.Game1.MatchEntryId = matchEntry.Id;
+    //    try
+    //    {
+    //        await Task.Run(() =>
+    //        {
+    //            if (FirstCheck)
+    //                matchEntry.Game1.Turn = 1;
+    //            else
+    //                matchEntry.Game1.Turn = 2;
+    //            if (UserNoteInput != null)
+    //                matchEntry.Game1.Notes = UserNoteInput;
 
-				if (UserNoteInput2 != null)
-					matchEntry.Game2.Notes = UserNoteInput2;
-				if (UserNoteInput3 != null)
-					matchEntry.Game3.Notes = UserNoteInput3;
+    //            matchEntry.Game1.Tags = TagsSelected as List<Tags>;
 
-				if (FirstCheck2)
-				{
-					matchEntry.Game2.Turn = 1;
-				}
-				else
-				{
-					matchEntry.Game2.Turn = 2;
-				}
+    //            if (!BO3Toggle)
+    //            {
+    //                matchEntry.Result = Result;
+    //            }
+    //            else
+    //            {
+    //                uint wins = 0;
+    //                uint draws = 0;
+    //                matchEntry.Game2 = new Game()
+    //                {
+    //                    Result = Result2,
+    //                    MatchEntryId = matchEntry.Id
+    //                };
+    //                matchEntry.Game3 = new Game()
+    //                {
+    //                    Result = Result3,
+    //                    MatchEntryId = matchEntry.Id
+    //                };
+    //                switch (Result)
+    //                {
+    //                    case MatchResult.Win:
+    //                        wins++;
+    //                        break;
 
-				if (FirstCheck3)
-				{
-					matchEntry.Game3.Turn = 1;
-				}
-				else
-				{
-					matchEntry.Game3.Turn = 2;
-				}
-			}
-			//Clear Inputs
-			TagsSelected = null;
-			Match2TagsSelected = null;
-			Match3TagsSelected = null;
-			FirstCheck = false;
-			FirstCheck2 = false;
-			FirstCheck3 = false;
-			UserNoteInput = null;
-			UserNoteInput2 = null;
-			UserNoteInput3 = null;
-			PlayerSelected = null;
-			RivalSelected = null;
-			StartTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
-			EndTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
-			DatePlayed = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
-			Result = "";
-			Result2 = "";
-			Result3 = "";
-			BO3Toggle = false;
-			_logger.LogInformation("Match Creation Complete");
-			return matchEntry;
-		}
-	}
+    //                    case MatchResult.Tie:
+    //                        draws++;
+    //                        break;
+    //                }
+
+    //                switch (Result2)
+    //                {
+    //                    case MatchResult.Win:
+    //                        wins++;
+    //                        break;
+
+    //                    case MatchResult.Tie:
+    //                        draws++;
+    //                        break;
+    //                }
+
+    //                switch (Result3)
+    //                {
+    //                    case MatchResult.Win:
+    //                        wins++;
+    //                        break;
+
+    //                    case MatchResult.Tie:
+    //                        draws++;
+    //                        break;
+    //                }
+
+    //                switch (wins)
+    //                {
+    //                    case >= 2:
+    //                        matchEntry.Result = MatchResult.Win;
+    //                        break;
+    //                    default:
+    //                        switch (draws)
+    //                        {
+    //                            case >= 2:
+    //                            case 1 when wins == 1:
+    //                                matchEntry.Result = MatchResult.Tie;
+    //                                break;
+    //                            default:
+    //                                matchEntry.Result = MatchResult.Loss;
+    //                                break;
+    //                        }
+
+    //                        break;
+    //                }
+
+    //                if (UserNoteInput2 != null)
+    //                    matchEntry.Game2.Notes = UserNoteInput2;
+    //                if (UserNoteInput3 != null)
+    //                    matchEntry.Game3.Notes = UserNoteInput3;
+
+    //                if (FirstCheck2)
+    //                    matchEntry.Game2.Turn = 1;
+    //                else
+    //                    matchEntry.Game2.Turn = 2;
+
+    //                if (FirstCheck3)
+    //                    matchEntry.Game3.Turn = 1;
+    //                else
+    //                    matchEntry.Game3.Turn = 2;
+    //            }
+    //        });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        ModalErrorHandler modalErrorHandler = new();
+    //        modalErrorHandler.HandleError(ex);
+    //        _logger.LogError(ex, "Error Creating Match Entry");
+    //    }
+    //    finally
+    //    {
+    //        // Clear Inputs
+    //        //TagsSelected = null;
+    //        //Match2TagsSelected = null;
+    //        //Match3TagsSelected = null;
+    //        //FirstCheck = false;
+    //        //FirstCheck2 = false;
+    //        //FirstCheck3 = false;
+    //        //UserNoteInput = null;
+    //        //UserNoteInput2 = null;
+    //        //UserNoteInput3 = null;
+    //        //PlayerSelected = null;
+    //        //RivalSelected = null;
+    //        //StartTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
+    //        //EndTime = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
+    //        //DatePlayed = new DateTime(DateTime.Now.Ticks, DateTimeKind.Local);
+    //        //Result = MatchResult.Tie;
+    //        //Result2 = MatchResult.Tie;
+    //        //Result3 = MatchResult.Tie;
+    //        //BO3Toggle = false;
+    //        //_logger.LogInformation("Cleared Inputs");
+    //    }
+    //    _logger.LogInformation("Match Creation Complete");
+    //    return matchEntry;
+    //}
+    //}
 }

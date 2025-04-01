@@ -1,128 +1,122 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFrameworks>net9.0-android;net9.0-ios;net9.0-maccatalyst;net9.0</TargetFrameworks>
-		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
-		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
-		<!-- <TargetFrameworks>$(TargetFrameworks);net9.0-tizen</TargetFrameworks> -->
+    <PropertyGroup>
+        <TargetFrameworks>net9.0-android;net9.0-ios;net9.0-maccatalyst;net9.0</TargetFrameworks>
+        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+        <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
+        <!-- <TargetFrameworks>$(TargetFrameworks);net9.0-tizen</TargetFrameworks> -->
 
-		<!-- Note for MacCatalyst:
+        <!-- Note for MacCatalyst:
 		The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.
 		When specifying both architectures, use the plural <RuntimeIdentifiers> instead of the singular <RuntimeIdentifier>.
 		The Mac App Store will NOT accept apps with ONLY maccatalyst-arm64 indicated;
 		either BOTH runtimes must be indicated or ONLY macatalyst-x64. -->
-		<!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
+        <!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
 
-		<OutputType Condition="'$(TargetFramework)' != 'net9.0'">Exe</OutputType>
-		<RootNamespace>PokemonBattleJournal</RootNamespace>
-		<UseMaui>true</UseMaui>
-		<SingleProject>true</SingleProject>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
+        <OutputType Condition="'$(TargetFramework)' != 'net9.0'">Exe</OutputType>
+        <RootNamespace>PokemonBattleJournal</RootNamespace>
+        <UseMaui>true</UseMaui>
+        <SingleProject>true</SingleProject>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
         <LangVersion>preview</LangVersion>
         <!-- https://github.com/CommunityToolkit/Maui/issues/2205 -->
         <NoWarn>XC0103</NoWarn>
         <MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-		<!-- Display name -->
-		<ApplicationTitle>Pokemon Battle Journal</ApplicationTitle>
+        <!-- Display name -->
+        <ApplicationTitle>Pokemon Battle Journal</ApplicationTitle>
 
-		<!-- App Identifier -->
-		<ApplicationId>com.PinKushin.PokemonBattleJournal</ApplicationId>
+        <!-- App Identifier -->
+        <ApplicationId>com.PinKushin.PokemonBattleJournal</ApplicationId>
 
-		<!-- Versions -->
-		<ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
-		<ApplicationVersion>1</ApplicationVersion>
+        <!-- Versions -->
+        <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
+        <ApplicationVersion>1</ApplicationVersion>
 
-		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
-		<WindowsPackageType>None</WindowsPackageType>
+        <!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
+        <WindowsPackageType>None</WindowsPackageType>
 
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
-		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
-		<NuGetAuditMode>All</NuGetAuditMode>
-	</PropertyGroup>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.19041.0</SupportedOSPlatformVersion>
+        <!--<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.19041.0</TargetPlatformMinVersion> -->
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
-	  <RunAOTCompilation>False</RunAOTCompilation>
-	  <PublishTrimmed>False</PublishTrimmed>
-	</PropertyGroup>
+        <NuGetAuditMode>All</NuGetAuditMode>
+    </PropertyGroup>
 
-	<ItemGroup>
-		<!-- App Icon -->
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
+        <RunAOTCompilation>False</RunAOTCompilation>
+        <PublishTrimmed>False</PublishTrimmed>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- App Icon -->
         <MauiIcon Include="Resources\Appicon\appicon.svg" ForegroundFile="Resources\Appicon\appicon.svg" />
 
-		<!-- Splash Screen -->
+        <!-- Splash Screen -->
         <MauiSplashScreen Include="Resources\Splash\splash_ball.svg" BaseSize="128,128" />
 
-		<!-- Images -->
-		<MauiImage Include="Resources\Images\*" />
+        <!-- Images -->
+        <MauiImage Include="Resources\Images\*" />
         <MauiImage Include="Resources\Images\PokemonSprites\*" />
 
-		<!-- Custom Fonts -->
-		<MauiFont Include="Resources\Fonts\*" />
+        <!-- Custom Fonts -->
+        <MauiFont Include="Resources\Fonts\*" />
 
-		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
-		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
-	</ItemGroup>
+        <!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
+        <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="CommunityToolkit.Maui" Version="11.1.0" />
-		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-		<PackageReference Include="coverlet.collector" Version="6.0.4">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-		<PackageReference Include="Microsoft.CodeCoverage" Version="17.13.0" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.50" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.3" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="Sentry.Maui" Version="5.4.0" />
-		<PackageReference Include="Sentry.Serilog" Version="5.4.0" />
-		<PackageReference Include="Serilog" Version="4.2.0" />
-		<PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
-		<PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
-		<PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
-		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
-		<PackageReference Include="Syncfusion.Maui.AIAssistView" Version="28.2.12" />
-		<PackageReference Include="Syncfusion.Maui.Buttons" Version="28.2.12" />
-		<PackageReference Include="Syncfusion.Maui.Cards" Version="28.2.12" />
-		<PackageReference Include="Syncfusion.Maui.Charts" Version="28.2.12" />
-		<PackageReference Include="Syncfusion.Maui.Core" Version="28.2.12" />
-		<PackageReference Include="Syncfusion.Maui.DataForm" Version="28.2.12" />
-		<PackageReference Include="Syncfusion.Maui.Picker" Version="28.2.12" />
-		<PackageReference Include="Syncfusion.Maui.Sliders" Version="28.2.12" />
-		<PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.4" />
-		<PackageReference Include="xunit" Version="2.9.3" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-	</ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Maui" Version="11.2.0" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+        <PackageReference Include="coverlet.collector" Version="6.0.4">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.CodeCoverage" Version="17.13.0" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.50" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.3" />
+        <PackageReference Include="Sentry.Maui" Version="5.4.0" />
+        <PackageReference Include="Sentry.Serilog" Version="5.4.0" />
+        <PackageReference Include="Serilog" Version="4.2.0" />
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+        <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
+        <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+        <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+        <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+        <PackageReference Include="SQLite.Net.Extensions.Async" Version="3.0.1" />
+        <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
+        <PackageReference Include="Syncfusion.Maui.AIAssistView" Version="29.1.35" />
+        <PackageReference Include="Syncfusion.Maui.Buttons" Version="29.1.35" />
+        <PackageReference Include="Syncfusion.Maui.Cards" Version="29.1.35" />
+        <PackageReference Include="Syncfusion.Maui.Charts" Version="29.1.35" />
+        <PackageReference Include="Syncfusion.Maui.Core" Version="29.1.35" />
+        <PackageReference Include="Syncfusion.Maui.DataForm" Version="29.1.35" />
+        <PackageReference Include="Syncfusion.Maui.Picker" Version="29.1.35" />
+        <PackageReference Include="Syncfusion.Maui.Sliders" Version="29.1.35" />
+        <PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.4" />
+    </ItemGroup>
 
-	<ItemGroup>
-	  <MauiXaml Update="Views\AboutPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\FirstStartPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\OptionsPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\ReadJournalPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\TestPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\TrainerPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	</ItemGroup>
+    <ItemGroup>
+        <MauiXaml Update="Views\AboutPage.xaml">
+            <Generator>MSBuild:Compile</Generator>
+        </MauiXaml>
+        <MauiXaml Update="Views\FirstStartPage.xaml">
+            <Generator>MSBuild:Compile</Generator>
+        </MauiXaml>
+        <MauiXaml Update="Views\OptionsPage.xaml">
+            <Generator>MSBuild:Compile</Generator>
+        </MauiXaml>
+        <MauiXaml Update="Views\ReadJournalPage.xaml">
+            <Generator>MSBuild:Compile</Generator>
+        </MauiXaml>
+        <MauiXaml Update="Views\TrainerPage.xaml">
+            <Generator>MSBuild:Compile</Generator>
+        </MauiXaml>
+    </ItemGroup>
 
 </Project>

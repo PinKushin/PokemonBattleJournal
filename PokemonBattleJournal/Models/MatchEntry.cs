@@ -1,55 +1,64 @@
-﻿using System.Collections.ObjectModel;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+﻿using SQLite;
+using SQLiteNetExtensions.Attributes;
 
 namespace PokemonBattleJournal.Models
 {
-	[JsonObject]
-	public partial class MatchEntry
-	{
-		[JsonProperty("playing")]
-		public Archetype? Playing { get; set; }
+    public partial class MatchEntry
+    {
+        [PrimaryKey, AutoIncrement]
+        public uint Id { get; set; }
+        [ForeignKey(typeof(Trainer))]
+        public uint TrainerId { get; set; }
 
-		[JsonProperty("against")]
-		public Archetype? Against { get; set; }
+        [ForeignKey(typeof(Archetype))]
+        public uint PlayingId { get; set; }
+        [ManyToOne]
+        public Archetype? Playing { get; set; }
 
-		[JsonProperty("time")]
-		public DateTime Time { get; set; }
+        [ForeignKey(typeof(Archetype))]
+        public uint AgainstId { get; set; }
+        [ManyToOne]
+        public Archetype? Against { get; set; }
 
-		[JsonProperty("result")]
-		public string? Result { get; set; }
+        public MatchResult? Result { get; set; }
 
-		[JsonProperty("game1")]
-		public Game Game1 { get; set; } = new Game();
+        [ForeignKey(typeof(Game))]
+        public uint? Game1Id { get; set; }
+        [OneToOne]
+        public Game? Game1 { get; set; }
 
-		[JsonProperty("game2", NullValueHandling = NullValueHandling.Ignore)]
-		public Game? Game2 { get; set; }
+        [ForeignKey(typeof(Game))]
+        public uint Game2Id { get; set; }
+        [OneToOne]
+        public Game? Game2 { get; set; }
 
-		[JsonProperty("game3", NullValueHandling = NullValueHandling.Ignore)]
-		public Game? Game3 { get; set; }
+        [ForeignKey(typeof(Game))]
+        public uint Game3Id { get; set; }
+        [OneToOne]
+        public Game? Game3 { get; set; }
 
-		[JsonProperty("start-time", NullValueHandling = NullValueHandling.Ignore)]
-		public DateTime StartTime { get; set; }
+        public DateTime StartTime { get; set; }
 
-		[JsonProperty("end-time", NullValueHandling = NullValueHandling.Ignore)]
-		public DateTime EndTime { get; set; }
+        public DateTime EndTime { get; set; }
 
-		[JsonProperty("date-played", NullValueHandling = NullValueHandling.Ignore)]
-		public DateTime DatePlayed { get; set; }
-	}
+        public DateTime DatePlayed { get; set; }
+    }
 
-	public partial class Game
-	{
-		[JsonProperty("result")]
-		public string Result { get; set; } = "Lose";
+    public partial class Game
+    {
+        [PrimaryKey, AutoIncrement]
+        public uint Id { get; set; }
 
-		[JsonProperty("turn")]
-		public long Turn { get; set; } = 1;
+        [ForeignKey(typeof(MatchEntry))]
+        public uint MatchEntryId { get; set; }
 
-		[JsonProperty("tags")]
-		public IList<object>? Tags { get; set; }
+        public MatchResult? Result { get; set; }
 
-		[JsonProperty("notes")]
-		public string? Notes { get; set; }
-	}
+        public uint Turn { get; set; } = 1;
+
+        [OneToMany(CascadeOperations = CascadeOperation.All)]
+        public List<Tags>? Tags { get; set; }
+
+        public string? Notes { get; set; }
+    }
 }

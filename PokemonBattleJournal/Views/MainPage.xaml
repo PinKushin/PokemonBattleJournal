@@ -1,488 +1,545 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
+
 <ContentPage
-	x:Class="PokemonBattleJournal.Views.MainPage"
-	xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-	xmlns:buttons="clr-namespace:Syncfusion.Maui.Toolkit.Buttons;assembly=Syncfusion.Maui.Toolkit"
-	xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
-	xmlns:inputLayout="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
-	xmlns:models="clr-namespace:PokemonBattleJournal.Models"
-	xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
-	xmlns:sys="clr-namespace:System;assembly=netstandard"
-	xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
-	xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
-	x:Name="BasePage"
-	Title="{Binding WelcomeMsg}"
-	x:DataType="viewmodel:MainPageViewModel">
-	<ContentPage.Behaviors>
-		<toolkit:EventToCommandBehavior
-			BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType=ContentPage}"
-			Command="{Binding AppearingCommand}"
-			EventName="Appearing" />
-		<toolkit:EventToCommandBehavior
-			Command="{Binding DisappearingCommand}"
-			EventName="Disappearing" />
-	</ContentPage.Behaviors>
-	<ScrollView>
-		<Grid
-			Padding="15,15"
-			ColumnDefinitions="*,*"
-			ColumnSpacing="10"
-			HorizontalOptions="Center"
-			RowDefinitions="Auto, Auto, *, Auto"
-			RowSpacing="1">
-			<!--  Page Title  -->
-			<HorizontalStackLayout
-				Grid.ColumnSpan="2"
-				HorizontalOptions="Center">
-				<Image
-					Grid.ColumnSpan="2"
-					AutomationId="ball_icon.png"
-					SemanticProperties.Description="Poke-Ball Image"
-					Source="ball_icon.png"
-					WidthRequest="32" />
-				<Label
-					Grid.ColumnSpan="2"
-					FontFamily="PokemonSolid"
-					FontSize="Title"
-					SemanticProperties.Description="Create a Match Entry"
-					SemanticProperties.HeadingLevel="Level1"
-					Text="Create a Match Entry" />
-			</HorizontalStackLayout>
+    x:Class="PokemonBattleJournal.Views.MainPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:buttons="clr-namespace:Syncfusion.Maui.Toolkit.Buttons;assembly=Syncfusion.Maui.Toolkit"
+    xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
+    xmlns:inputLayout="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
+    xmlns:models="clr-namespace:PokemonBattleJournal.Models"
+    xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
+    xmlns:sys="clr-namespace:System;assembly=netstandard"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
+    x:Name="BasePage"
+    Title="{Binding WelcomeMsg}"
+    x:DataType="viewmodel:MainPageViewModel">
+    <ContentPage.Behaviors>
+        <toolkit:EventToCommandBehavior
+            BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType=ContentPage}"
+            Command="{Binding AppearingCommand}"
+            EventName="Appearing" />
+        <toolkit:EventToCommandBehavior Command="{Binding DisappearingCommand}" EventName="Disappearing" />
+    </ContentPage.Behaviors>
+    <ScrollView>
+        <Grid
+            Padding="15,15"
+            ColumnDefinitions="*,Auto"
+            ColumnSpacing="10"
+            HorizontalOptions="Center"
+            RowDefinitions="Auto, Auto, *, Auto, Auto"
+            RowSpacing="1">
+            <!--#region Page Title Bar-->
+            <HorizontalStackLayout Grid.ColumnSpan="2" HorizontalOptions="Center">
+                <Image
+                    Margin="10"
+                    AutomationId="ball_icon.png"
+                    SemanticProperties.Description="Poke-Ball Image"
+                    Source="ball_icon.png"
+                    WidthRequest="{OnIdiom Default=32,
+                                           Phone=24}" />
+                <Label
+                    FontFamily="PokemonSolid"
+                    FontSize="Title"
+                    SemanticProperties.Description="Create a Match Entry"
+                    SemanticProperties.HeadingLevel="Level1"
+                    Text="Create a Match Entry" />
+            </HorizontalStackLayout>
+            <!--#endregion-->
 
-			<!--  Left Side Vertical Column  -->
-			<VerticalStackLayout
-				x:Name="LeftColumn"
-				Grid.Row="1"
-				Grid.RowSpan="2"
-				Grid.Column="0"
-				HorizontalOptions="Center"
-				Spacing="10">
+            <!--#region Match Archetypes, Time, BO3-->
+            <VerticalStackLayout
+                x:Name="LeftColumn"
+                Grid.Row="1"
+                Grid.RowSpan="2"
+                Grid.Column="0"
+                HorizontalOptions="Center"
+                Spacing="10">
 
-				<Label
-					FontAttributes="Bold"
-					HorizontalOptions="Center"
-					HorizontalTextAlignment="Center"
-					Style="{StaticResource Headline}"
-					Text="Select Decks"
-					VerticalOptions="End" />
+                <!--#region Archetype Pickers-->
+                <Label
+                    FontAttributes="Bold"
+                    HorizontalOptions="Center"
+                    HorizontalTextAlignment="Center"
+                    Style="{StaticResource Headline}"
+                    Text="Select Decks"
+                    VerticalOptions="End" />
+                <StackLayout HorizontalOptions="Center" Orientation="{OnIdiom Default=Horizontal, Phone=Vertical}">
+                    <!--#region Player Archetype-->
+                    <inputLayout:SfTextInputLayout
+                        Margin="5,0"
+                        ContainerType="None"
+                        HelperText="Select Your Archetype"
+                        Hint="Played Archetype"
+                        Stroke="{StaticResource PokeYellow}"
+                        WidthRequest="200">
+                        <inputLayout:SfTextInputLayout.HintLabelStyle>
+                            <inputLayout:LabelStyle FontSize="16" TextColor="{StaticResource PokeYellow}" />
+                        </inputLayout:SfTextInputLayout.HintLabelStyle>
+                        <inputLayout:SfTextInputLayout.HelperLabelStyle>
+                            <inputLayout:LabelStyle TextColor="{StaticResource PokeGold}" />
+                        </inputLayout:SfTextInputLayout.HelperLabelStyle>
+                        <editors:SfComboBox
+                            x:Name="PlayerArchetype"
+                            AutomationId="PlayerArchetype"
+                            ClearButtonIconColor="{StaticResource PokeRed}"
+                            DisplayMemberPath="Name"
+                            DropDownBackground="{StaticResource OffBlack}"
+                            DropDownIconColor="{StaticResource PokeBlue}"
+                            DropDownStroke="{StaticResource PokeBlue}"
+                            HeightRequest="40"
+                            ItemsSource="{Binding Archetypes}"
+                            SelectedItem="{Binding PlayerSelected}"
+                            TextMemberPath="Name">
+                            <editors:SfComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:Archetype">
+                                    <ViewCell>
+                                        <HorizontalStackLayout HorizontalOptions="Start">
+                                            <Image
+                                                Margin="10,0,10,0"
+                                                HeightRequest="30"
+                                                HorizontalOptions="Center"
+                                                Source="{Binding ImagePath}" />
+                                            <Label
+                                                HorizontalTextAlignment="Center"
+                                                Text="{Binding Name}"
+                                                VerticalTextAlignment="Center" />
+                                        </HorizontalStackLayout>
+                                    </ViewCell>
+                                </DataTemplate>
+                            </editors:SfComboBox.ItemTemplate>
+                        </editors:SfComboBox>
+                    </inputLayout:SfTextInputLayout>
+                    <!--#endregion-->
+                    <!--#region Rival Archetype-->
+                    <inputLayout:SfTextInputLayout
+                        Margin="5,0"
+                        ContainerBackground="Transparent"
+                        ContainerType="None"
+                        HelperText="Select Rival's Archetype"
+                        Hint="Rival's Archetype"
+                        Stroke="{StaticResource PokeYellow}"
+                        WidthRequest="200">
+                        <inputLayout:SfTextInputLayout.HintLabelStyle>
+                            <inputLayout:LabelStyle FontSize="16" TextColor="{StaticResource PokeYellow}" />
+                        </inputLayout:SfTextInputLayout.HintLabelStyle>
+                        <inputLayout:SfTextInputLayout.HelperLabelStyle>
+                            <inputLayout:LabelStyle TextColor="{StaticResource PokeGold}" />
+                        </inputLayout:SfTextInputLayout.HelperLabelStyle>
+                        <editors:SfComboBox
+                            x:Name="RivalArchetype"
+                            AutomationId="RivalArchetype"
+                            DisplayMemberPath="Name"
+                            DropDownBackground="{StaticResource OffBlack}"
+                            DropDownIconColor="{StaticResource PokeBlue}"
+                            DropDownStroke="{StaticResource PokeRed}"
+                            ItemsSource="{Binding Archetypes}"
+                            SelectedItem="{Binding RivalSelected}"
+                            TextMemberPath="Name">
+                            <editors:SfComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:Archetype">
+                                    <ViewCell>
+                                        <HorizontalStackLayout HorizontalOptions="Start">
+                                            <Image
+                                                Margin="10,0,10,0"
+                                                HeightRequest="30"
+                                                HorizontalOptions="Center"
+                                                Source="{Binding ImagePath}" />
+                                            <Label
+                                                HorizontalTextAlignment="Center"
+                                                Text="{Binding Name}"
+                                                VerticalTextAlignment="Center" />
+                                        </HorizontalStackLayout>
+                                    </ViewCell>
+                                </DataTemplate>
+                            </editors:SfComboBox.ItemTemplate>
+                        </editors:SfComboBox>
+                    </inputLayout:SfTextInputLayout>
+                    <!--#endregion-->
+                </StackLayout>
+                <!--#endregion-->
+                <!--#region BO3 Switch & Display-->
+                <HorizontalStackLayout HorizontalOptions="Center">
+                    <Switch
+                        x:Name="BOSwitch"
+                        AutomationId="BOSwitch"
+                        HorizontalOptions="Center"
+                        IsToggled="{Binding BO3Toggle}" />
+                    <Label Text="Best of:" VerticalTextAlignment="Center" />
 
-				<HorizontalStackLayout HorizontalOptions="Center">
-					<inputLayout:SfTextInputLayout
-						ContainerType="Outlined"
-						HelperText="Select Your Archetype"
-						Hint="Played Archetype"
-						WidthRequest="200">
-						<editors:SfComboBox
-							x:Name="PlayerArchetype"
-							AutomationId="PlayerArchetype"
-							DisplayMemberPath="Name"
-							HeightRequest="40"
-							ItemsSource="{Binding Archetypes}"
-							SelectedItem="{Binding PlayerSelected}"
-							TextMemberPath="Name">
-							<editors:SfComboBox.ItemTemplate>
-								<DataTemplate x:DataType="models:Archetype">
-									<ViewCell>
-										<HorizontalStackLayout HorizontalOptions="Start">
-											<Image
-												HeightRequest="30"
-												HorizontalOptions="Center"
-												Source="{Binding ImagePath}" />
-											<Label
-												HorizontalTextAlignment="Center"
-												Text="{Binding Name}"
-												VerticalTextAlignment="Center" />
-										</HorizontalStackLayout>
-									</ViewCell>
-								</DataTemplate>
-							</editors:SfComboBox.ItemTemplate>
-						</editors:SfComboBox>
-					</inputLayout:SfTextInputLayout>
-					<inputLayout:SfTextInputLayout
-						ContainerType="Outlined"
-						HelperText="Select Rival's Archetype"
-						Hint="Rival's Archetype"
-						WidthRequest="200">
-						<editors:SfComboBox
-							x:Name="RivalArchetype"
-							AutomationId="RivalArchetype"
-							DisplayMemberPath="Name"
-							ItemsSource="{Binding Archetypes}"
-							SelectedItem="{Binding RivalSelected}"
-							TextMemberPath="Name">
-							<editors:SfComboBox.ItemTemplate>
-								<DataTemplate x:DataType="models:Archetype">
-									<ViewCell>
-										<HorizontalStackLayout HorizontalOptions="Start">
-											<Image
-												HeightRequest="30"
-												HorizontalOptions="Center"
-												Source="{Binding ImagePath}" />
-											<Label
-												HorizontalTextAlignment="Center"
-												Text="{Binding Name}"
-												VerticalTextAlignment="Center" />
-										</HorizontalStackLayout>
-									</ViewCell>
-								</DataTemplate>
-							</editors:SfComboBox.ItemTemplate>
-						</editors:SfComboBox>
-					</inputLayout:SfTextInputLayout>
-				</HorizontalStackLayout>
-				<HorizontalStackLayout HorizontalOptions="Center">
-					<Switch
-						x:Name="BOSwitch"
-						AutomationId="BOSwitch"
-						HorizontalOptions="Center"
-						IsToggled="{Binding BO3Toggle}" />
-					<Label
-						Text="Best of:"
-						VerticalTextAlignment="Center" />
+                    <Label Text="1" VerticalTextAlignment="Center">
+                        <Label.Triggers>
+                            <DataTrigger
+                                Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
+                                TargetType="Label"
+                                Value="False">
+                                <Setter Property="FontAttributes" Value="Bold" />
+                                <Setter Property="FontSize" Value="Medium" />
+                            </DataTrigger>
+                        </Label.Triggers>
+                    </Label>
+                    <Label Text=" or " VerticalTextAlignment="Center" />
+                    <Label Text="3" VerticalTextAlignment="Center">
+                        <Label.Triggers>
+                            <DataTrigger
+                                Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
+                                TargetType="Label"
+                                Value="True">
+                                <Setter Property="FontAttributes" Value="Bold" />
+                                <Setter Property="FontSize" Value="Medium" />
+                            </DataTrigger>
+                        </Label.Triggers>
+                    </Label>
+                </HorizontalStackLayout>
+                <!--#endregion-->
+                <!--#region Current Time Display-->
+                <Label
+                    Padding="0,10,0,0"
+                    FontSize="Micro"
+                    HorizontalTextAlignment="Center"
+                    Text="Current Time"
+                    VerticalTextAlignment="End" />
+                <Label
+                    Padding="0,0,0,10"
+                    FontFamily="DotoRoundedBlack"
+                    FontSize="Micro"
+                    HorizontalOptions="Center"
+                    HorizontalTextAlignment="Center"
+                    Text="{Binding CurrentDateTimeDisplay}"
+                    VerticalTextAlignment="Start" />
+                <!--#endregion-->
+                <!--#region Start and End Time Pickers-->
+                <buttons:SfButton
+                    AutomationId="TimePickerButton"
+                    Background="{StaticResource PokeBlue}"
+                    Clicked="OpenTimePickers"
+                    MaximumWidthRequest="300"
+                    Text="Input Battle Start and End Time" />
+                <picker:SfTimePicker
+                    x:Name="StartTimePicker"
+                    AutomationId="StartTimePicker"
+                    Format="h_mm_tt"
+                    HorizontalOptions="Center"
+                    MaximumWidthRequest="300"
+                    Mode="Dialog"
+                    SelectedTime="{Binding StartTime}">
+                    <picker:SfTimePicker.HeaderView>
+                        <picker:PickerHeaderView Height="32" Text="Battle Start Time" />
+                    </picker:SfTimePicker.HeaderView>
+                </picker:SfTimePicker>
+                <picker:SfTimePicker
+                    x:Name="EndTimePicker"
+                    AutomationId="EndTimePicker"
+                    Format="h_mm_tt"
+                    HorizontalOptions="Center"
+                    MaximumWidthRequest="300"
+                    MinimumTime="{Binding StartTime}"
+                    Mode="Dialog"
+                    SelectedTime="{Binding EndTime}">
+                    <picker:SfTimePicker.HeaderView>
+                        <picker:PickerHeaderView Height="32" Text="Battle End Time" />
+                    </picker:SfTimePicker.HeaderView>
+                </picker:SfTimePicker>
+                <!--#endregion-->
+                <!--#region Date Played Picker-->
+                <HorizontalStackLayout HorizontalOptions="Center">
+                    <buttons:SfButton
+                        AutomationId="DatePickerButton"
+                        Background="{StaticResource PokeBlue}"
+                        Clicked="OpenDatePlayedPicker"
+                        HorizontalOptions="Center"
+                        Text="Input Date Played"
+                        VerticalOptions="Center"
+                        WidthRequest="300" />
+                    <picker:SfDatePicker
+                        x:Name="DatePlayedPicker"
+                        AutomationId="DatePlayedPicker"
+                        Format="Default"
+                        HorizontalOptions="Center"
+                        IsEnabled="True"
+                        Mode="Dialog"
+                        SelectedDate="{Binding DatePlayed}"
+                        VerticalOptions="Center">
+                        <picker:SfDatePicker.HeaderView>
+                            <picker:PickerHeaderView Height="32" Text="Date Played" />
+                        </picker:SfDatePicker.HeaderView>
+                    </picker:SfDatePicker>
+                </HorizontalStackLayout>
+                <!--#endregion-->
+            </VerticalStackLayout>
+            <!--#endregion-->
+            <!--#region Match Notes, Tags, Results-->
+            <VerticalStackLayout
+                x:Name="RightColumn"
+                Grid.Row="{OnIdiom Default=2,
+                                   Phone=3}"
+                Grid.Column="{OnIdiom Default=1,
+                                      Phone=0}"
+                HorizontalOptions="Center"
+                IsVisible="True">
+                <Label
+                    FontAttributes="Bold"
+                    FontSize="Large"
+                    HorizontalOptions="Center"
+                    Text="Match Tags:"
+                    VerticalOptions="End" />
+                <!--#region Match1 Tags-->
+                <CollectionView
+                    x:Name="TagsView"
+                    AutomationId="TagsView"
+                    CanReorderItems="True"
+                    ItemSizingStrategy="MeasureAllItems"
+                    ItemsSource="{Binding TagCollection}"
+                    MaximumWidthRequest="600"
+                    MinimumHeightRequest="100"
+                    SelectedItems="{Binding TagsSelected, Mode=TwoWay}"
+                    SelectionMode="Multiple">
 
-					<Label
-						Text="1"
-						VerticalTextAlignment="Center">
-						<Label.Triggers>
-							<DataTrigger
-								Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
-								TargetType="Label"
-								Value="False">
-								<Setter Property="FontAttributes" Value="Bold" />
-								<Setter Property="FontSize" Value="Medium" />
-							</DataTrigger>
-						</Label.Triggers>
-					</Label>
-					<Label
-						Text=" or "
-						VerticalTextAlignment="Center" />
-					<Label
-						Text="3"
-						VerticalTextAlignment="Center">
-						<Label.Triggers>
-							<DataTrigger
-								Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
-								TargetType="Label"
-								Value="True">
-								<Setter Property="FontAttributes" Value="Bold" />
-								<Setter Property="FontSize" Value="Medium" />
-							</DataTrigger>
-						</Label.Triggers>
-					</Label>
-				</HorizontalStackLayout>
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout Orientation="Horizontal" Span="2" />
+                    </CollectionView.ItemsLayout>
 
-				<Label
-					Padding="0,10,0,0"
-					FontSize="Micro"
-					HorizontalTextAlignment="Center"
-					Text="Current Time"
-					VerticalTextAlignment="End" />
-				<Label
-					Padding="0,0,0,10"
-					FontFamily="DotoRoundedBlack"
-					FontSize="Micro"
-					HorizontalOptions="Center"
-					HorizontalTextAlignment="Center"
-					Text="{Binding CurrentDateTimeDisplay}"
-					VerticalTextAlignment="Start" />
-				<buttons:SfButton
-					AutomationId="TimePickerButtom"
-					Clicked="OpenTimePickers"
-					MaximumWidthRequest="300"
-					Text="Input Battle Start and End Time" />
-				<picker:SfTimePicker
-					x:Name="StartTimePicker"
-					AutomationId="StartTimePicker"
-					Format="h_mm_tt"
-					HorizontalOptions="Center"
-					MaximumWidthRequest="300"
-					Mode="Dialog"
-					SelectedTime="{Binding StartTime}">
-					<picker:SfTimePicker.HeaderView>
-						<picker:PickerHeaderView
-							Height="32"
-							Text="Battle Start Time" />
-					</picker:SfTimePicker.HeaderView>
-				</picker:SfTimePicker>
-				<picker:SfTimePicker
-					x:Name="EndTimePicker"
-					AutomationId="EndTimePicker"
-					Format="h_mm_tt"
-					HorizontalOptions="Center"
-					MaximumWidthRequest="300"
-					MinimumTime="{Binding StartTime}"
-					Mode="Dialog"
-					SelectedTime="{Binding EndTime}">
-					<picker:SfTimePicker.HeaderView>
-						<picker:PickerHeaderView
-							Height="32"
-							Text="Battle End Time" />
-					</picker:SfTimePicker.HeaderView>
-				</picker:SfTimePicker>
+                    <CollectionView.Header>
+                        <Label
+                            Margin="0,0,10,0"
+                            HorizontalOptions="Center"
+                            HorizontalTextAlignment="Center"
+                            Text="Tags:"
+                            VerticalOptions="Center"
+                            VerticalTextAlignment="Center" />
+                    </CollectionView.Header>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <HorizontalStackLayout>
+                                <Label
+                                    Margin="0,0,40,0"
+                                    Padding="10,0,0,0"
+                                    x:DataType="models:Tags"
+                                    FontAutoScalingEnabled="True"
+                                    HorizontalOptions="Center"
+                                    HorizontalTextAlignment="End"
+                                    Text="{Binding Name}"
+                                    VerticalOptions="Center"
+                                    VerticalTextAlignment="Center" />
+                            </HorizontalStackLayout>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+                <!--#endregion-->
+                <!--#region Match1 NoteInput Editor-->
+                <Editor
+                    AutoSize="TextChanges"
+                    AutomationId="UserNoteInput"
+                    HeightRequest="200"
+                    IsSpellCheckEnabled="True"
+                    MinimumWidthRequest="350"
+                    Placeholder="Write notes here..."
+                    Text="{Binding UserNoteInput}" />
+                <!--#endregion-->
+                <!--#region Match1 FirstCheck & Results-->
+                <HorizontalStackLayout HorizontalOptions="Center">
+                    <Label
+                        HorizontalOptions="Center"
+                        Text="Went First"
+                        VerticalOptions="Center" />
+                    <CheckBox
+                        AutomationId="FirstCheck"
+                        HorizontalOptions="Center"
+                        IsChecked="{Binding FirstCheck}"
+                        VerticalOptions="Center"
+                        Color="{StaticResource PokeBlue}" />
+                    <editors:SfComboBox
+                        Margin="5"
+                        AutomationId="PossibleResultsPicker"
+                        BackgroundColor="Transparent"
+                        ClearButtonIconColor="{StaticResource PokeRed}"
+                        DropDownBackground="{StaticResource OffBlack}"
+                        DropDownIconColor="{StaticResource PokeBlue}"
+                        DropDownItemTextColor="{StaticResource PokeYellow}"
+                        DropDownStroke="{StaticResource PokeYellow}"
+                        HorizontalOptions="Center"
+                        ItemsSource="{Binding PossibleResults}"
+                        Placeholder="W/L/T"
+                        PlaceholderColor="{StaticResource PokeYellow}"
+                        SelectedItem="{Binding Result}"
+                        ShowBorder="False"
+                        TextColor="{StaticResource PokeYellow}"
+                        WidthRequest="100" />
+                </HorizontalStackLayout>
+                <!--#endregion-->
 
-				<HorizontalStackLayout HorizontalOptions="Center">
-					<buttons:SfButton
-						AutomationId="DatePickerButton"
-						Clicked="OpenDatePlayedPicker"
-						HorizontalOptions="Center"
-						Text="Input Date Played"
-						VerticalOptions="Center"
-						WidthRequest="300" />
-					<picker:SfDatePicker
-						x:Name="DatePlayedPicker"
-						AutomationId="DatePlayedPicker"
-						Format="Default"
-						HorizontalOptions="Center"
-						IsEnabled="True"
-						Mode="Dialog"
-						SelectedDate="{Binding DatePlayed}"
-						VerticalOptions="Center">
-						<picker:SfDatePicker.HeaderView>
-							<picker:PickerHeaderView
-								Height="32"
-								Text="Date Played" />
-						</picker:SfDatePicker.HeaderView>
-					</picker:SfDatePicker>
-				</HorizontalStackLayout>
-			</VerticalStackLayout>
+                <!--#region BO3 Notes, Tags, FirstCheck & Results-->
+                <VerticalStackLayout
+                    Margin="0,10"
+                    AutomationId="BO3GamesLayout"
+                    IsVisible="False">
+                    <VerticalStackLayout.Triggers>
+                        <DataTrigger
+                            Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
+                            TargetType="VerticalStackLayout"
+                            Value="True">
+                            <Setter Property="IsVisible" Value="True" />
+                        </DataTrigger>
+                    </VerticalStackLayout.Triggers>
 
-			<!--  Right Side Vertical Column  -->
-			<VerticalStackLayout
-				x:Name="RightColumn"
-				Grid.Row="2"
-				Grid.Column="1"
-				HorizontalOptions="Center"
-				IsVisible="True">
-				<VerticalStackLayout HorizontalOptions="Center">
-					<Label
-						FontAttributes="Bold"
-						FontSize="Large"
-						HorizontalOptions="Center"
-						Text="Match Notes:"
-						VerticalOptions="End" />
-					<CollectionView
-						x:Name="TagsView"
-						AutomationId="TagsView"
-						CanReorderItems="True"
-						ItemSizingStrategy="MeasureAllItems"
-						ItemsSource="{Binding TagCollection}"
-						SelectedItems="{Binding TagsSelected, Mode=TwoWay}"
-						SelectionMode="Multiple">
+                    <!--#region Match2 Tags-->
+                    <CollectionView
+                        AutomationId="Match2Tags"
+                        CanReorderItems="True"
+                        ItemSizingStrategy="MeasureAllItems"
+                        ItemsSource="{Binding TagCollection}"
+                        SelectedItems="{Binding Match2TagsSelected, Mode=TwoWay}"
+                        SelectionMode="Multiple">
 
-						<CollectionView.ItemsLayout>
-							<GridItemsLayout
-								Orientation="Horizontal"
-								Span="2" />
-						</CollectionView.ItemsLayout>
+                        <CollectionView.ItemsLayout>
+                            <GridItemsLayout Orientation="Horizontal" Span="2" />
+                        </CollectionView.ItemsLayout>
 
-						<CollectionView.Header>
-							<Label
-								Margin="0,0,10,0"
-								HorizontalOptions="Center"
-								HorizontalTextAlignment="Center"
-								Text="Tags:"
-								VerticalOptions="Center"
-								VerticalTextAlignment="Center" />
-						</CollectionView.Header>
-						<CollectionView.ItemTemplate>
-							<DataTemplate>
-								<HorizontalStackLayout>
-									<Label
-										Margin="0,0,40,0"
-										Padding="10,0,0,0"
-										x:DataType="sys:String"
-										FontAutoScalingEnabled="True"
-										HorizontalOptions="Center"
-										HorizontalTextAlignment="End"
-										Text="{Binding .}"
-										VerticalOptions="Center"
-										VerticalTextAlignment="Center" />
-								</HorizontalStackLayout>
-							</DataTemplate>
-						</CollectionView.ItemTemplate>
-					</CollectionView>
+                        <CollectionView.Header>
+                            <Label
+                                Margin="0,0,10,0"
+                                HorizontalOptions="Center"
+                                HorizontalTextAlignment="Center"
+                                Text="Tags:"
+                                VerticalOptions="Center"
+                                VerticalTextAlignment="Center" />
+                        </CollectionView.Header>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <HorizontalStackLayout>
+                                    <Label
+                                        Margin="0,0,40,0"
+                                        Padding="10,0,0,0"
+                                        x:DataType="models:Tags"
+                                        FontAutoScalingEnabled="True"
+                                        HorizontalOptions="Center"
+                                        HorizontalTextAlignment="End"
+                                        Text="{Binding Name}"
+                                        VerticalOptions="Center"
+                                        VerticalTextAlignment="Center" />
+                                </HorizontalStackLayout>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    <!--#endregion-->
+                    <!--#region Match2 NoteInput Editor-->
+                    <Editor
+                        AutoSize="TextChanges"
+                        AutomationId="UserNoteInput2"
+                        HeightRequest="200"
+                        IsSpellCheckEnabled="True"
+                        IsVisible="True"
+                        MinimumWidthRequest="350"
+                        Placeholder="Write notes here..."
+                        Text="{Binding UserNoteInput2}" />
+                    <!--#endregion-->
+                    <!--#region Match2 FirstCheck & Results-->
+                    <HorizontalStackLayout HorizontalOptions="Center">
+                        <Label
+                            HorizontalOptions="Center"
+                            Text="Went first?"
+                            VerticalOptions="Center" />
+                        <CheckBox
+                            HorizontalOptions="Center"
+                            IsChecked="{Binding FirstCheck2}"
+                            VerticalOptions="Center" />
+                        <editors:SfComboBox
+                            HorizontalOptions="Center"
+                            ItemsSource="{Binding PossibleResults}"
+                            Placeholder="W/L/T"
+                            SelectedItem="{Binding Result2}"
+                            WidthRequest="120" />
+                    </HorizontalStackLayout>
+                    <!--#endregion-->
 
-					<Editor
-						AutoSize="TextChanges"
-						AutomationId="UserNoteInput"
-						HeightRequest="200"
-						IsSpellCheckEnabled="True"
-						Placeholder="Write notes here..."
-						Text="{Binding UserNoteInput}" />
-					<HorizontalStackLayout HorizontalOptions="Center">
-						<Label
-							HorizontalOptions="Center"
-							Text="Went first?"
-							VerticalOptions="Center" />
-						<CheckBox
-							AutomationId="FirstCheck"
-							HorizontalOptions="Center"
-							IsChecked="{Binding FirstCheck}"
-							VerticalOptions="Center" />
-						<editors:SfComboBox
-							AutomationId="PossibleResultsPicker"
-							HorizontalOptions="Center"
-							ItemsSource="{Binding PossibleResults}"
-							Placeholder="W/L/T"
-							SelectedItem="{Binding Result}"
-							WidthRequest="120" />
-					</HorizontalStackLayout>
+                    <!--#region Match3 Tags-->
+                    <CollectionView
+                        AutomationId="Match3Tags"
+                        CanReorderItems="True"
+                        ItemSizingStrategy="MeasureAllItems"
+                        ItemsSource="{Binding TagCollection}"
+                        SelectedItems="{Binding Match3TagsSelected, Mode=TwoWay}"
+                        SelectionMode="Multiple">
 
-					<VerticalStackLayout
-						Margin="0,10"
-						AutomationId="BO3GamesLayout"
-						IsVisible="False">
-						<VerticalStackLayout.Triggers>
-							<DataTrigger
-								Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
-								TargetType="VerticalStackLayout"
-								Value="True">
-								<Setter Property="IsVisible" Value="True" />
-							</DataTrigger>
-						</VerticalStackLayout.Triggers>
+                        <CollectionView.ItemsLayout>
+                            <GridItemsLayout Orientation="Horizontal" Span="2" />
+                        </CollectionView.ItemsLayout>
 
-						<CollectionView
-							AutomationId="Match2Tags"
-							CanReorderItems="True"
-							ItemSizingStrategy="MeasureAllItems"
-							ItemsSource="{Binding TagCollection}"
-							SelectedItems="{Binding Match2TagsSelected, Mode=TwoWay}"
-							SelectionMode="Multiple">
+                        <CollectionView.Header>
+                            <Label
+                                Margin="0,0,10,0"
+                                HorizontalOptions="Center"
+                                HorizontalTextAlignment="Center"
+                                Text="Tags:"
+                                VerticalOptions="Center"
+                                VerticalTextAlignment="Center" />
+                        </CollectionView.Header>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <HorizontalStackLayout>
+                                    <Label
+                                        Margin="0,0,40,0"
+                                        Padding="10,0,0,0"
+                                        x:DataType="models:Tags"
+                                        FontAutoScalingEnabled="True"
+                                        HorizontalOptions="Center"
+                                        HorizontalTextAlignment="End"
+                                        Text="{Binding Name}"
+                                        VerticalOptions="Center"
+                                        VerticalTextAlignment="Center" />
+                                </HorizontalStackLayout>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    <!--#endregion-->
+                    <!--#region Match3 NoteInput Editor-->
+                    <Editor
+                        AutoSize="TextChanges"
+                        AutomationId="UserNoteInput3"
+                        HeightRequest="200"
+                        IsSpellCheckEnabled="True"
+                        IsVisible="True"
+                        MinimumWidthRequest="350"
+                        Placeholder="Write notes here..."
+                        Text="{Binding UserNoteInput3}" />
+                    <!--#endregion-->
+                    <!--#region Match3 FirstCheck & Result-->
+                    <HorizontalStackLayout HorizontalOptions="Center">
+                        <Label
+                            HorizontalOptions="Center"
+                            Text="Went first?"
+                            VerticalOptions="Center" />
+                        <CheckBox
+                            HorizontalOptions="Center"
+                            IsChecked="{Binding FirstCheck3}"
+                            VerticalOptions="Center" />
+                        <editors:SfComboBox
+                            HorizontalOptions="Center"
+                            ItemsSource="{Binding PossibleResults}"
+                            Placeholder="W/L/T"
+                            SelectedItem="{Binding Result3}"
+                            SemanticProperties.Description="Results for third game."
+                            SemanticProperties.Hint="Pick a result, win, lose, or tie."
+                            WidthRequest="120" />
+                    </HorizontalStackLayout>
+                    <!--#endregion-->
+                </VerticalStackLayout>
+                <!--#endregion-->
+            </VerticalStackLayout>
+            <!--#endregion-->
 
-							<CollectionView.ItemsLayout>
-								<GridItemsLayout
-									Orientation="Horizontal"
-									Span="2" />
-							</CollectionView.ItemsLayout>
-
-							<CollectionView.Header>
-								<Label
-									Margin="0,0,10,0"
-									HorizontalOptions="Center"
-									HorizontalTextAlignment="Center"
-									Text="Tags:"
-									VerticalOptions="Center"
-									VerticalTextAlignment="Center" />
-							</CollectionView.Header>
-							<CollectionView.ItemTemplate>
-								<DataTemplate>
-									<HorizontalStackLayout>
-										<Label
-											Margin="0,0,40,0"
-											Padding="10,0,0,0"
-											x:DataType="sys:String"
-											FontAutoScalingEnabled="True"
-											HorizontalOptions="Center"
-											HorizontalTextAlignment="End"
-											Text="{Binding .}"
-											VerticalOptions="Center"
-											VerticalTextAlignment="Center" />
-									</HorizontalStackLayout>
-								</DataTemplate>
-							</CollectionView.ItemTemplate>
-						</CollectionView>
-						<Editor
-							AutoSize="TextChanges"
-							AutomationId="UserNoteInput2"
-							HeightRequest="200"
-							IsSpellCheckEnabled="True"
-							IsVisible="True"
-							Placeholder="Write notes here..."
-							Text="{Binding UserNoteInput2}" />
-						<HorizontalStackLayout HorizontalOptions="Center">
-							<Label
-								HorizontalOptions="Center"
-								Text="Went first?"
-								VerticalOptions="Center" />
-							<CheckBox
-								HorizontalOptions="Center"
-								IsChecked="{Binding FirstCheck2}"
-								VerticalOptions="Center" />
-							<editors:SfComboBox
-								HorizontalOptions="Center"
-								ItemsSource="{Binding PossibleResults}"
-								Placeholder="W/L/T"
-								SelectedItem="{Binding Result2}"
-								WidthRequest="120" />
-						</HorizontalStackLayout>
-
-						<CollectionView
-							AutomationId="Match3Tags"
-							CanReorderItems="True"
-							ItemSizingStrategy="MeasureAllItems"
-							ItemsSource="{Binding TagCollection}"
-							SelectedItems="{Binding Match3TagsSelected, Mode=TwoWay}"
-							SelectionMode="Multiple">
-
-							<CollectionView.ItemsLayout>
-								<GridItemsLayout
-									Orientation="Horizontal"
-									Span="2" />
-							</CollectionView.ItemsLayout>
-
-							<CollectionView.Header>
-								<Label
-									Margin="0,0,10,0"
-									HorizontalOptions="Center"
-									HorizontalTextAlignment="Center"
-									Text="Tags:"
-									VerticalOptions="Center"
-									VerticalTextAlignment="Center" />
-							</CollectionView.Header>
-							<CollectionView.ItemTemplate>
-								<DataTemplate>
-									<HorizontalStackLayout>
-										<Label
-											Margin="0,0,40,0"
-											Padding="10,0,0,0"
-											x:DataType="sys:String"
-											FontAutoScalingEnabled="True"
-											HorizontalOptions="Center"
-											HorizontalTextAlignment="End"
-											Text="{Binding .}"
-											VerticalOptions="Center"
-											VerticalTextAlignment="Center" />
-									</HorizontalStackLayout>
-								</DataTemplate>
-							</CollectionView.ItemTemplate>
-						</CollectionView>
-						<Editor
-							AutoSize="TextChanges"
-							AutomationId="UserNoteInput3"
-							HeightRequest="200"
-							IsSpellCheckEnabled="True"
-							IsVisible="True"
-							Placeholder="Write notes here..."
-							Text="{Binding UserNoteInput3}" />
-						<HorizontalStackLayout HorizontalOptions="Center">
-							<Label
-								HorizontalOptions="Center"
-								Text="Went first?"
-								VerticalOptions="Center" />
-							<CheckBox
-								HorizontalOptions="Center"
-								IsChecked="{Binding FirstCheck3}"
-								VerticalOptions="Center" />
-							<editors:SfComboBox
-								HorizontalOptions="Center"
-								ItemsSource="{Binding PossibleResults}"
-								Placeholder="W/L/T"
-								SelectedItem="{Binding Result3}"
-								SemanticProperties.Description="Results for third game."
-								SemanticProperties.Hint="Pick a result, win, lose, or tie."
-								WidthRequest="120" />
-						</HorizontalStackLayout>
-					</VerticalStackLayout>
-				</VerticalStackLayout>
-			</VerticalStackLayout>
-			<buttons:SfButton
-				Grid.Row="3"
-				Grid.ColumnSpan="2"
-				Command="{Binding SaveFileCommand}"
-				HorizontalOptions="Fill"
-				SemanticProperties.Hint="Save your journal entry"
-				Text="{Binding SavedFileDisplay}"
-				VerticalOptions="End" />
-		</Grid>
-	</ScrollView>
+            <!--#region Save Button-->
+            <buttons:SfButton
+                Grid.Row="4"
+                Grid.ColumnSpan="2"
+                Background="{StaticResource PokeBlue}"
+                Command="{Binding SaveMatchCommand}"
+                HorizontalOptions="Fill"
+                SemanticProperties.Hint="Save your journal entry"
+                Text="{Binding SavedFileDisplay}"
+                VerticalOptions="End" />
+            <!--#endregion-->
+        </Grid>
+    </ScrollView>
 </ContentPage>

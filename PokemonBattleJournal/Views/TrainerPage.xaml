@@ -13,9 +13,7 @@
             BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType=ContentPage}"
             Command="{Binding AppearingCommand}"
             EventName="Appearing" />
-        <toolkit:EventToCommandBehavior
-            Command="{Binding DisappearingCommand}"
-            EventName="Disappearing" />
+
     </ContentPage.Behaviors>
     <ScrollView>
         <VerticalStackLayout>
@@ -23,28 +21,17 @@
                 HorizontalOptions="Center"
                 Text="Welcome Pokemon Trainer! TODO: Build and display Trainer Profile"
                 VerticalOptions="Center" />
-            <HorizontalStackLayout
-                HorizontalOptions="Center">
-                <Label
-                    Text="Win/Lose/Draw Record:" />
-                <Label
-                    Text="{Binding Wins}" />
-                <Label
-                    Text="/" />
-                <Label
-                    Text="{Binding Losses}" />
-                <Label
-                    Text="/" />
-                <Label
-                    Text="{Binding Ties}" />
+            <HorizontalStackLayout HorizontalOptions="Center">
+                <Label Text="Win/Lose/Draw Record:" />
+                <Label Text="{Binding Wins}" />
+                <Label Text="/" />
+                <Label Text="{Binding Losses}" />
+                <Label Text="/" />
+                <Label Text="{Binding Ties}" />
             </HorizontalStackLayout>
-            <HorizontalStackLayout
-                HorizontalOptions="Center">
-                <Label
-                    Text="Win Percentage:"
-                    ToolTipProperties.Text="Formula used:&#x0d;&#x0a; Wins + (0.5 Draws)/Total Games" />
-                <Label
-                    Text="{Binding WinAverage, StringFormat='{0:N2}%'}" />
+            <HorizontalStackLayout HorizontalOptions="Center">
+                <Label Text="Win Percentage:" ToolTipProperties.Text="Formula used:&#x0d;&#x0a; Wins + (0.5 Draws)/Total Games" />
+                <Label Text="{Binding WinAverage, StringFormat='{0:N2}%'}" />
             </HorizontalStackLayout>
         </VerticalStackLayout>
     </ScrollView>

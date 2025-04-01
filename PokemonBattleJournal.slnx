@@ -1,0 +1,11 @@
+<Solution>
+  <Project Path="PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj">
+    <Build Solution="Release|*" Project="false" />
+  </Project>
+  <Project Path="PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj" Id="46ef2711-705f-4f37-8c3b-d9b5cbe940c2" />
+  <Project Path="PokemonBattleJournal.UITests/UITests.Shared/UITests.Shared.csproj" Id="341ba9a7-c2a0-4649-b4fc-f5b59d3db30a" />
+  <Project Path="PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj" Id="8d842878-4313-4e69-a549-022443291289" />
+  <Project Path="PokemonBattleJournal/PokemonBattleJournal.csproj">
+    <Deploy />
+  </Project>
+</Solution>
