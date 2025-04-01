@@ -135,6 +135,11 @@
                 Text="Save All"
                 VerticalOptions="Center"
                 WidthRequest="200" />
+            <buttons:SfButton
+                x:Name="DeleteTrainer"
+                AutomationId="DeleteTrainer"
+                Command="{Binding DeleteTrainerFileCommand}"
+                Text="Delete Current Trainer" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>
