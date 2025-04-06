@@ -2,11 +2,11 @@
 {
     public partial class TrainerPageViewModel : ObservableObject
     {
-        private readonly SqliteConnectionFactory _connection;
+        private readonly ISqliteConnectionFactory _connection;
         private readonly ILogger<TrainerPageViewModel> _logger;
         private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
-        public TrainerPageViewModel(ILogger<TrainerPageViewModel> logger, SqliteConnectionFactory connection)
+        public TrainerPageViewModel(ILogger<TrainerPageViewModel> logger, ISqliteConnectionFactory connection)
         {
             WelcomeMsg = $"{TrainerName}'s Profile";
             _logger = logger;
@@ -37,13 +37,13 @@
             try
             {
                 await _semaphore.WaitAsync();
-                var trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+                var trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
                 if (trainer == null)
                 {
                     _logger.LogWarning("Trainer not found");
                     return;
                 }
-                var matchList = await _connection.GetMatchEntriesByTrainerIdAsync(trainer.Id);
+                var matchList = await _connection.Matches.GetByTrainerIdAsync(trainer.Id);
                 if (matchList.Count < 1 || matchList is null)
                 {
                     _logger.LogWarning("No matches found for trainer");

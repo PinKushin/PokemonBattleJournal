@@ -2,11 +2,11 @@
 {
     public partial class OptionsPageViewModel : ObservableObject
     {
-        private readonly SqliteConnectionFactory _connection;
+        private readonly ISqliteConnectionFactory _connection;
         private static readonly SemaphoreSlim _semaphore = new(1, 1);
         private Trainer? _trainer;
         private readonly ILogger<OptionsPageViewModel> _logger;
-        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, SqliteConnectionFactory connection)
+        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection)
         {
             _connection = connection;
             _logger = logger;
@@ -47,7 +47,7 @@
             try
             {
                 IconCollection = await PopulateIconCollectionAsync();
-                _trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+                _trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
                 _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
             }
             catch (Exception ex)
@@ -69,14 +69,14 @@
             try
             {
                 await _semaphore.WaitAsync();
-                var affected = await _connection.SaveTrainerAsync(NameInput);
+                var affected = await _connection.Trainers.SaveAsync(NameInput);
                 if (affected == 0)
                 {
                     _logger.LogInformation("Trainer not saved: {TrainerName}", TrainerName);
                     return;
                 }
                 _logger.LogInformation("Trainer saved: {TrainerName}", TrainerName);
-                _trainer = await _connection.GetTrainerByNameAsync(NameInput);
+                _trainer = await _connection.Trainers.GetByNameAsync(NameInput);
                 if (_trainer is null)
                 {
                     _logger.LogInformation("Trainer not found immediately after save: {TrainerName}", TrainerName);
@@ -109,7 +109,7 @@
             try
             {
                 await _semaphore.WaitAsync();
-                int affected = await _connection.SaveTagAsync(TagInput, _trainer.Id);
+                int affected = 0; // await _connection.SaveTagAsync(TagInput, _trainer.Id);
                 if (affected == 0)
                 {
                     _logger.LogInformation("Tag not saved: {TagInput}", TagInput);
@@ -139,7 +139,7 @@
             try
             {
                 await _semaphore.WaitAsync();
-                int affected = await _connection.SaveArchetypeAsync(NewDeckName, NewDeckIcon, _trainer.Id);
+                int affected = 0;// await _connection.SaveArchetypeAsync(NewDeckName, NewDeckIcon, _trainer.Id);
                 if (affected == 0)
                 {
                     _logger.LogInformation("Archetype not saved: {DeckName} {DeckIcon}", NewDeckName, NewDeckIcon);
@@ -194,7 +194,7 @@
             try
             {
                 await _semaphore.WaitAsync();
-                await _connection.DeleteTrainerAsync(_trainer);
+                await _connection.Trainers.DeleteAsync(_trainer);
             }
             catch (Exception ex)
             {
@@ -216,7 +216,7 @@
             try
             {
                 await _semaphore.WaitAsync();
-                using Stream fileStream = await FileSystem.Current.OpenAppPackageFileAsync("icon_file_names.txt");
+                await using Stream fileStream = await FileSystem.Current.OpenAppPackageFileAsync("icon_file_names.txt");
                 using StreamReader reader = new(fileStream);
                 while (!reader.EndOfStream)
                 {

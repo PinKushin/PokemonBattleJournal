@@ -1,21 +1,30 @@
 ﻿#pragma warning disable IDE0058 // Expression value is never used
+using PokemonBattleJournal.Interfaces;
+
 namespace PokemonBattleJournal.Tests.ViewModels
 {
     public class MainPageViewModelTests
     {
         private readonly MainPageViewModel _viewModel;
-        private readonly SqliteConnectionFactory _mockConnectionFactory;
+        private readonly ISqliteConnectionFactory _mockConnectionFactory;
         private readonly ILogger<MainPageViewModel> _mockLogger;
-        private readonly ILogger<SqliteConnectionFactory> _mockFactoryLogger;
+        //private readonly ILogger<SqliteConnectionFactory> _mockFactoryLogger;
+        private readonly ITrainerOperations _mockTrainerOps;
+        private readonly IMatchOperations _mockMatchOps;
 
         public MainPageViewModelTests()
         {
             // Mocks
             _mockLogger = Substitute.For<ILogger<MainPageViewModel>>();
-            _mockFactoryLogger = Substitute.For<ILogger<SqliteConnectionFactory>>();
-            _mockConnectionFactory = Substitute.For<SqliteConnectionFactory>(_mockFactoryLogger);
-            _mockConnectionFactory.GetTrainerByNameAsync(Arg.Any<string>())
-                .Returns(Task.FromResult<Trainer?>(new Trainer() { Id = 1, Name = "Test Trainer" }));
+            _mockTrainerOps = Substitute.For<ITrainerOperations>();
+            _mockMatchOps = Substitute.For<IMatchOperations>();
+            _mockConnectionFactory = Substitute.For<ISqliteConnectionFactory>();
+
+            _mockConnectionFactory.Trainers.Returns(_mockTrainerOps);
+            _mockConnectionFactory.Matches.Returns(_mockMatchOps);
+
+            _mockTrainerOps.GetByNameAsync(Arg.Any<string>())
+                .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
             // SUT
             _viewModel = new MainPageViewModel(_mockLogger, _mockConnectionFactory);
         }
@@ -30,4 +39,5 @@ namespace PokemonBattleJournal.Tests.ViewModels
         }
 
     }
+
 }

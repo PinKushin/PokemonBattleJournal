@@ -3,10 +3,10 @@
     public partial class ReadJournalPageViewModel : ObservableObject
     {
         private readonly ILogger<ReadJournalPageViewModel> _logger;
-        private readonly SqliteConnectionFactory _connection;
+        private readonly ISqliteConnectionFactory _connection;
         private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
-        public ReadJournalPageViewModel(ILogger<ReadJournalPageViewModel> logger, SqliteConnectionFactory connection)
+        public ReadJournalPageViewModel(ILogger<ReadJournalPageViewModel> logger, ISqliteConnectionFactory connection)
         {
             WelcomeMsg = $"{TrainerName}'s Journal";
             _logger = logger;
@@ -91,14 +91,14 @@
             try
             {
                 await _semaphore.WaitAsync();
-                var trainer = await _connection.GetTrainerByNameAsync(TrainerName);
+                var trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
                 if (trainer == null)
                 {
                     _logger.LogInformation("Trainer not found: {TrainerName}", TrainerName);
                     return;
                 }
                 _logger.LogInformation("Loading matches for trainer: {TrainerId} {TrainerName}", trainer.Id, trainer.Name);
-                var matches = await _connection.GetMatchEntriesByTrainerIdAsync(trainer.Id);
+                var matches = await _connection.Matches.GetByTrainerIdAsync(trainer.Id);
 
                 if (matches.Count < 1 || matches is null)
                 {
