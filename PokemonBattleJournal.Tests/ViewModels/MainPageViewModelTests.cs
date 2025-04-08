@@ -11,6 +11,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         //private readonly ILogger<SqliteConnectionFactory> _mockFactoryLogger;
         private readonly ITrainerOperations _mockTrainerOps;
         private readonly IMatchOperations _mockMatchOps;
+        private readonly IMatchResultsCalculatorFactory _mockCalculatorFactory;
 
         public MainPageViewModelTests()
         {
@@ -19,6 +20,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _mockTrainerOps = Substitute.For<ITrainerOperations>();
             _mockMatchOps = Substitute.For<IMatchOperations>();
             _mockConnectionFactory = Substitute.For<ISqliteConnectionFactory>();
+            _mockCalculatorFactory = Substitute.For<IMatchResultsCalculatorFactory>();
 
             _mockConnectionFactory.Trainers.Returns(_mockTrainerOps);
             _mockConnectionFactory.Matches.Returns(_mockMatchOps);
@@ -26,7 +28,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _mockTrainerOps.GetByNameAsync(Arg.Any<string>())
                 .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
             // SUT
-            _viewModel = new MainPageViewModel(_mockLogger, _mockConnectionFactory);
+            _viewModel = new MainPageViewModel(_mockLogger, _mockConnectionFactory, _mockCalculatorFactory);
         }
 
         [Fact]
@@ -36,6 +38,16 @@ namespace PokemonBattleJournal.Tests.ViewModels
             // Act
             // Assert
             _viewModel.ShouldNotBeNull();
+        }
+        [Fact]
+        public void MainPageViewModel_WhenViewModelConstructed_ViewModelShouldFindTrainerName()
+        {
+            // Arrange
+            // Act
+            // Assert
+            _viewModel.ShouldNotBeNull();
+            _viewModel.TrainerName.ShouldNotBeNullOrEmpty();
+            _viewModel.TrainerName.ShouldBe("Test");
         }
 
     }

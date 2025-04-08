@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="PokemonBattleJournal.Benchmarks/PokemonBattleJournal.Benchmarking.csproj" Id="f3b2904d-4e0a-466f-98c7-f83d96fb12a0" />
   <Project Path="PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj">
     <Build Solution="Release|*" Project="false" />
   </Project>

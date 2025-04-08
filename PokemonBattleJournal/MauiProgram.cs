@@ -66,6 +66,7 @@ namespace PokemonBattleJournal
                 var logger = loggerFactory.CreateLogger<SqliteConnectionFactory>();
                 return new SqliteConnectionFactory(logger);
             });
+            builder.Services.AddSingleton<IMatchResultsCalculatorFactory, MatchResultCalculatorFactory>();
 
             //Link Pages and ViewModels
             //First Start Page
