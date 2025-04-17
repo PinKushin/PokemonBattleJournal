@@ -19,9 +19,9 @@
             MatchResult? result3 = null;
 
             // Act & Assert
-            Should.Throw<ArgumentNullException>(() =>
+            _ = Should.Throw<ArgumentNullException>(() =>
             {
-                _bO3ResultCalculator.CalculateResult(result1, result2, result3);
+                _ = _bO3ResultCalculator.CalculateResult(result1, result2, result3);
             });
         }
 
@@ -34,9 +34,9 @@
             MatchResult? result3 = null;
 
             // Act & Assert
-            Should.Throw<ArgumentNullException>(() =>
+            _ = Should.Throw<ArgumentNullException>(() =>
             {
-                _bO3ResultCalculator.CalculateResult(result1, result2, result3);
+                _ = _bO3ResultCalculator.CalculateResult(result1, result2, result3);
             });
         }
 
@@ -49,13 +49,13 @@
             MatchResult? result3 = null;
 
             // Act
-            var result = _bO3ResultCalculator.CalculateResult(
+            MatchResult result = _bO3ResultCalculator.CalculateResult(
                 result1,
                 result2,
                 result3);
 
             // Assert
-            result.ShouldBeOfType<MatchResult>();
+            _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Win);
         }
 
@@ -68,13 +68,13 @@
             MatchResult? result3 = MatchResult.Loss;
 
             // Act
-            var result = _bO3ResultCalculator.CalculateResult(
+            MatchResult result = _bO3ResultCalculator.CalculateResult(
                 result1,
                 result2,
                 result3);
 
             // Assert
-            result.ShouldBeOfType<MatchResult>();
+            _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Tie);
         }
         [Fact]
@@ -86,13 +86,13 @@
             MatchResult? result3 = MatchResult.Loss;
 
             // Act
-            var result = _bO3ResultCalculator.CalculateResult(
+            MatchResult result = _bO3ResultCalculator.CalculateResult(
                 result1,
                 result2,
                 result3);
 
             // Assert
-            result.ShouldBeOfType<MatchResult>();
+            _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Loss);
         }
         [Fact]
@@ -103,12 +103,12 @@
             MatchResult? result2 = MatchResult.Tie;
             MatchResult? result3 = MatchResult.Loss;
             // Act
-            var result = _bO3ResultCalculator.CalculateResult(
+            MatchResult result = _bO3ResultCalculator.CalculateResult(
                 result1,
                 result2,
                 result3);
             // Assert
-            result.ShouldBeOfType<MatchResult>();
+            _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Loss);
         }
         [Fact]
@@ -119,12 +119,12 @@
             MatchResult? result2 = MatchResult.Tie;
             MatchResult? result3 = null;
             // Act
-            var result = _bO3ResultCalculator.CalculateResult(
+            MatchResult result = _bO3ResultCalculator.CalculateResult(
                 result1,
                 result2,
                 result3);
             // Assert
-            result.ShouldBeOfType<MatchResult>();
+            _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Tie);
         }
         [Fact]
@@ -135,12 +135,12 @@
             MatchResult? result2 = MatchResult.Loss;
             MatchResult? result3 = null;
             // Act
-            var result = _bO3ResultCalculator.CalculateResult(
+            MatchResult result = _bO3ResultCalculator.CalculateResult(
                 result1,
                 result2,
                 result3);
             // Assert
-            result.ShouldBeOfType<MatchResult>();
+            _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Tie);
         }
         [Fact]
@@ -152,7 +152,7 @@
             MatchResult? result3 = MatchResult.Win;
 
             // Act
-            var result = _bO3ResultCalculator.CalculateResult(result1, result2, result3);
+            MatchResult result = _bO3ResultCalculator.CalculateResult(result1, result2, result3);
 
             // Assert
             result.ShouldBe(MatchResult.Win);
@@ -166,7 +166,7 @@
             MatchResult? result3 = MatchResult.Tie;
 
             // Act
-            var result = _bO3ResultCalculator.CalculateResult(result1, result2, result3);
+            MatchResult result = _bO3ResultCalculator.CalculateResult(result1, result2, result3);
 
             // Assert
             result.ShouldBe(MatchResult.Win);

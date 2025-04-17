@@ -1,5 +1,5 @@
-﻿using Android.App;
-using Android.Runtime;
+﻿using global::Android.App;
+using global::Android.Runtime;
 
 namespace PokemonBattleJournal.Platforms.Android
 {
@@ -11,6 +11,9 @@ namespace PokemonBattleJournal.Platforms.Android
         {
         }
 
-        protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
+        protected override MauiApp CreateMauiApp()
+        {
+            return MauiProgram.CreateMauiApp();
+        }
     }
 }

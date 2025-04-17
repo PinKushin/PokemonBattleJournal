@@ -13,7 +13,7 @@
             await Task.Delay(500).WaitAsync(cancellationToken);
 
             // Assert
-            userEntry.ShouldNotBeNull();
+            _ = userEntry.ShouldNotBeNull();
             userEntry.Text.ShouldBe("Hello World");
 
         }
@@ -26,7 +26,7 @@
             // Act
             // Assert
 
-            BallIconPng.ShouldNotBeNull();
+            _ = BallIconPng.ShouldNotBeNull();
             BallIconPng.Displayed.ShouldBeTrue();
             BallIconPng.Enabled.ShouldBeTrue();
         }

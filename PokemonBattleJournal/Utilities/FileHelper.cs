@@ -13,7 +13,7 @@
             {
                 return "Test Response";
             }
-            var filePath = FileSystem.Current.AppDataDirectory;
+            string filePath = FileSystem.Current.AppDataDirectory;
             return filePath;
         }
 
@@ -43,7 +43,7 @@
             {
                 return;
             }
-            using var _ = File.Create(filePath);
+            using FileStream _ = File.Create(filePath);
         }
 
         /// <summary>

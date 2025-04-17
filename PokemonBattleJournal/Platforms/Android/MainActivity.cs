@@ -1,6 +1,6 @@
-﻿using Android.App;
-using Android.Content.PM;
-using Android.Runtime;
+﻿using global::Android.App;
+using global::Android.Content.PM;
+using global::Android.Runtime;
 
 namespace PokemonBattleJournal.Platforms.Android
 {

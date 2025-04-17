@@ -3,6 +3,8 @@
     x:Class="PokemonBattleJournal.Views.TrainerPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:models="clr-namespace:PokemonBattleJournal.Models"
+    xmlns:sfchart="clr-namespace:Syncfusion.Maui.Charts;assembly=Syncfusion.Maui.Charts"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
     x:Name="BasePage"
@@ -13,26 +15,215 @@
             BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType=ContentPage}"
             Command="{Binding AppearingCommand}"
             EventName="Appearing" />
-
     </ContentPage.Behaviors>
+
     <ScrollView>
-        <VerticalStackLayout>
+        <StackLayout>
             <Label
+                FontSize="24"
                 HorizontalOptions="Center"
-                Text="Welcome Pokemon Trainer! TODO: Build and display Trainer Profile"
-                VerticalOptions="Center" />
-            <HorizontalStackLayout HorizontalOptions="Center">
-                <Label Text="Win/Lose/Draw Record:" />
-                <Label Text="{Binding Wins}" />
-                <Label Text="/" />
-                <Label Text="{Binding Losses}" />
-                <Label Text="/" />
-                <Label Text="{Binding Ties}" />
-            </HorizontalStackLayout>
-            <HorizontalStackLayout HorizontalOptions="Center">
-                <Label Text="Win Percentage:" ToolTipProperties.Text="Formula used:&#x0d;&#x0a; Wins + (0.5 Draws)/Total Games" />
-                <Label Text="{Binding WinAverage, StringFormat='{0:N2}%'}" />
-            </HorizontalStackLayout>
-        </VerticalStackLayout>
+                Text="{Binding WelcomeMsg}" />
+            <Label
+                FontSize="18"
+                Text="Win Rate:" />
+            <Label
+                FontSize="18"
+                Text="{Binding WinAverage, StringFormat='{0:F2}%'}" />
+            <Label
+                FontSize="18"
+                Text="Wins:" />
+            <Label
+                FontSize="18"
+                Text="{Binding Wins}" />
+            <Label
+                FontSize="18"
+                Text="Losses:" />
+            <Label
+                FontSize="18"
+                Text="{Binding Losses}" />
+            <Label
+                FontSize="18"
+                Text="Ties:" />
+            <Label
+                FontSize="18"
+                Text="{Binding Ties}" />
+            <Label
+                FontSize="18"
+                Text="Most Played Archetypes:" />
+
+            <CollectionView
+                ItemsSource="{Binding MostPlayedArchetypes}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate
+                        x:DataType="models:ChartDataPoint">
+                        <StackLayout
+                            Orientation="Horizontal">
+                            <Label
+                                FontSize="16"
+                                Text="{Binding Label}" />
+                            <Label
+                                FontSize="16"
+                                Text="{Binding Value}" />
+                        </StackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!--  Win Rate Over Time Chart  -->
+            <sfchart:SfCartesianChart
+                HeightRequest="300">
+                <sfchart:SfCartesianChart.Title>
+                    <Label
+                        FontSize="24"
+                        HorizontalOptions="Center"
+                        Text="Win Rate Over Time" />
+                </sfchart:SfCartesianChart.Title>
+                <sfchart:SfCartesianChart.XAxes>
+                    <sfchart:DateTimeAxis />
+                </sfchart:SfCartesianChart.XAxes>
+                <sfchart:SfCartesianChart.YAxes>
+                    <sfchart:NumericalAxis />
+                </sfchart:SfCartesianChart.YAxes>
+                <sfchart:SfCartesianChart.Series>
+                    <sfchart:LineSeries
+                        ItemsSource="{Binding WinRateOverTime}"
+                        ShowDataLabels="True"
+                        XBindingPath="Date"
+                        YBindingPath="Value">
+                        <sfchart:LineSeries.DataLabelSettings>
+                            <sfchart:CartesianDataLabelSettings />
+                        </sfchart:LineSeries.DataLabelSettings>
+                    </sfchart:LineSeries>
+                </sfchart:SfCartesianChart.Series>
+            </sfchart:SfCartesianChart>
+
+            <!--  Archetype Win Rates Chart  -->
+            <sfchart:SfCircularChart
+                HeightRequest="300">
+                <sfchart:SfCircularChart.Title>
+                    <Label
+                        FontSize="24"
+                        HorizontalOptions="Center"
+                        Text="Archetype Win Rates" />
+                </sfchart:SfCircularChart.Title>
+                <sfchart:SfCircularChart.Series>
+                    <sfchart:PieSeries
+                        ItemsSource="{Binding ArchetypeWinRates}"
+                        ShowDataLabels="True"
+                        XBindingPath="Label"
+                        YBindingPath="Value">
+                        <sfchart:PieSeries.DataLabelSettings>
+                            <sfchart:CircularDataLabelSettings
+                                LabelPosition="Inside" />
+                        </sfchart:PieSeries.DataLabelSettings>
+                    </sfchart:PieSeries>
+                </sfchart:SfCircularChart.Series>
+            </sfchart:SfCircularChart>
+
+            <!--  Tag Usage Chart  -->
+            <sfchart:SfCartesianChart
+                HeightRequest="300">
+                <sfchart:SfCartesianChart.Title>
+                    <Label
+                        FontSize="24"
+                        HorizontalOptions="Center"
+                        Text="Tag Usage" />
+                </sfchart:SfCartesianChart.Title>
+                <sfchart:SfCartesianChart.XAxes>
+                    <sfchart:CategoryAxis />
+                </sfchart:SfCartesianChart.XAxes>
+                <sfchart:SfCartesianChart.YAxes>
+                    <sfchart:NumericalAxis />
+                </sfchart:SfCartesianChart.YAxes>
+                <sfchart:SfCartesianChart.Series>
+                    <sfchart:ColumnSeries
+                        ItemsSource="{Binding TagUsage}"
+                        ShowDataLabels="True"
+                        XBindingPath="Label"
+                        YBindingPath="Value">
+                        <sfchart:ColumnSeries.DataLabelSettings>
+                            <sfchart:CartesianDataLabelSettings />
+                        </sfchart:ColumnSeries.DataLabelSettings>
+                    </sfchart:ColumnSeries>
+                </sfchart:SfCartesianChart.Series>
+            </sfchart:SfCartesianChart>
+            <!--  Performance Against Opponents  -->
+            <sfchart:SfCartesianChart
+                HeightRequest="300">
+                <sfchart:SfCartesianChart.Title>
+                    <Label
+                        FontSize="24"
+                        HorizontalOptions="Center"
+                        Text="Performance vs Opponents" />
+                </sfchart:SfCartesianChart.Title>
+                <sfchart:SfCartesianChart.XAxes>
+                    <sfchart:CategoryAxis />
+                </sfchart:SfCartesianChart.XAxes>
+                <sfchart:SfCartesianChart.YAxes>
+                    <sfchart:NumericalAxis />
+                </sfchart:SfCartesianChart.YAxes>
+                <sfchart:SfCartesianChart.Series>
+                    <sfchart:ColumnSeries
+                        ItemsSource="{Binding OpponentPerformance}"
+                        ShowDataLabels="True"
+                        XBindingPath="Label"
+                        YBindingPath="Value" />
+                </sfchart:SfCartesianChart.Series>
+            </sfchart:SfCartesianChart>
+
+            <!--  Win Rate by Match Length  -->
+            <sfchart:SfCircularChart
+                HeightRequest="300">
+                <sfchart:SfCircularChart.Title>
+                    <Label
+                        FontSize="24"
+                        HorizontalOptions="Center"
+                        Text="Win Rate by Match Length" />
+                </sfchart:SfCircularChart.Title>
+                <sfchart:SfCircularChart.Series>
+                    <sfchart:PieSeries
+                        ItemsSource="{Binding WinRateByMatchLength}"
+                        ShowDataLabels="True"
+                        XBindingPath="Label"
+                        YBindingPath="Value" />
+                </sfchart:SfCircularChart.Series>
+            </sfchart:SfCircularChart>
+
+            <!--  First Turn Advantage  -->
+            <sfchart:SfCartesianChart
+                HeightRequest="300">
+                <sfchart:SfCartesianChart.Title>
+                    <Label
+                        FontSize="24"
+                        HorizontalOptions="Center"
+                        Text="First Turn Advantage" />
+                </sfchart:SfCartesianChart.Title>
+                <sfchart:SfCartesianChart.XAxes>
+                    <sfchart:CategoryAxis />
+                </sfchart:SfCartesianChart.XAxes>
+                <sfchart:SfCartesianChart.YAxes>
+                    <sfchart:NumericalAxis />
+                </sfchart:SfCartesianChart.YAxes>
+                <sfchart:SfCartesianChart.Series>
+                    <sfchart:ColumnSeries
+                        ItemsSource="{Binding FirstTurnAdvantage}"
+                        ShowDataLabels="True"
+                        XBindingPath="Label"
+                        YBindingPath="Value" />
+                </sfchart:SfCartesianChart.Series>
+            </sfchart:SfCartesianChart>
+
+            <!--  Additional Stats  -->
+            <StackLayout
+                Padding="20">
+                <Label
+                    FontSize="20"
+                    Text="Additional Statistics" />
+                <Label
+                    Text="{Binding AverageMatchDuration, StringFormat='Average Match Duration: {0:hh\\:mm\\:ss}'}" />
+                <Label
+                    Text="{Binding StreakInfo}" />
+            </StackLayout>
+        </StackLayout>
     </ScrollView>
 </ContentPage>

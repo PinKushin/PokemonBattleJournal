@@ -16,13 +16,13 @@
         /// </summary>
         public async Task<List<Archetype>> GetAllAsync()
         {
-            var db = await _factory.GetDatabaseAsync();
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
                 await _factory.GetLock().WaitAsync();
                 if (await db.Table<Archetype>().CountAsync() == 0)
                 {
-                    await db.InsertAllAsync(new List<Archetype>
+                    _ = await db.InsertAllAsync(new List<Archetype>
                     {
                         new() { Name = "Regidrago", ImagePath = "regidrago.png" },
                         new() { Name = "Charizard", ImagePath = "charizard.png" },
@@ -41,11 +41,11 @@
                 _logger.LogError(ex, "Error getting archetypes");
                 ModalErrorHandler modalErrorHandler = new();
                 modalErrorHandler.HandleError(ex);
-                return new List<Archetype>();
+                return [];
             }
             finally
             {
-                _factory.GetLock().Release();
+                _ = _factory.GetLock().Release();
             }
         }
 
@@ -54,7 +54,7 @@
         /// </summary>
         public async Task<Archetype?> GetByIdAsync(uint id)
         {
-            var db = await _factory.GetDatabaseAsync();
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
                 await _factory.GetLock().WaitAsync();
@@ -71,7 +71,7 @@
             }
             finally
             {
-                _factory.GetLock().Release();
+                _ = _factory.GetLock().Release();
             }
         }
 
@@ -80,8 +80,23 @@
         /// </summary>
         public async Task<int> SaveAsync(string name, string imgPath, uint trainerId)
         {
-            var db = await _factory.GetDatabaseAsync();
-            var archetype = new Archetype
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException("Archetype name is required", nameof(name));
+            }
+
+            if (string.IsNullOrWhiteSpace(imgPath))
+            {
+                throw new ArgumentException("Archetype image path is required", nameof(imgPath));
+            }
+
+            if (trainerId == 0)
+            {
+                throw new ArgumentException("Trainer ID is required", nameof(trainerId));
+            }
+
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+            Archetype archetype = new()
             {
                 Name = name,
                 ImagePath = imgPath,
@@ -105,16 +120,30 @@
                 });
                 return affected;
             }
+            catch (ArgumentException ex)
+            {
+                _logger.LogError(ex, "Invalid data when saving archetype: {Message}", ex.Message);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+                return 0;
+            }
+            catch (SQLiteException ex)
+            {
+                _logger.LogError(ex, "Database error when saving archetype: {Message}", ex.Message);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+                return 0;
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving archetype: {Name}", name);
+                _logger.LogError(ex, "Error saving archetype: {Name} - {Message}", name, ex.Message);
                 ModalErrorHandler modalErrorHandler = new();
                 modalErrorHandler.HandleError(ex);
                 return 0;
             }
             finally
             {
-                _factory.GetLock().Release();
+                _ = _factory.GetLock().Release();
             }
         }
 
@@ -123,27 +152,84 @@
         /// </summary>
         public async Task<int> DeleteAsync(Archetype archetype)
         {
-            var db = await _factory.GetDatabaseAsync();
+            if (archetype == null)
+            {
+                throw new ArgumentNullException(nameof(archetype), "Archetype cannot be null");
+            }
+
+            if (archetype.Id == 0)
+            {
+                throw new ArgumentException("Archetype ID is required", nameof(archetype));
+            }
+
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
                 await _factory.GetLock().WaitAsync();
+
+                // Check if this archetype is used in any matches first
+                int matchCount = await db.ExecuteScalarAsync<int>(
+                    "SELECT COUNT(*) FROM MatchEntry WHERE PlayingId = ? OR AgainstId = ?",
+                    archetype.Id, archetype.Id);
+
+                if (matchCount > 0)
+                {
+                    _logger.LogWarning("Archetype {ArchetypeId} ({ArchetypeName}) is used in {Count} matches",
+                        archetype.Id, archetype.Name, matchCount);
+                    throw new InvalidOperationException(
+                        $"Cannot delete archetype '{archetype.Name}' because it is used in {matchCount} matches");
+                }
+
                 int affected = 0;
                 await db.RunInTransactionAsync(tran =>
                 {
                     affected = tran.Delete(archetype);
+
+                    // Verify deletion
+                    int remainingCount = tran.ExecuteScalar<int>(
+                        "SELECT COUNT(*) FROM Archetype WHERE Id = ?", archetype.Id);
+                    if (remainingCount > 0)
+                    {
+                        _logger.LogError("Archetype {ArchetypeId} was not deleted properly", archetype.Id);
+                        throw new Exception("Failed to delete archetype");
+                    }
                 });
+
+                _logger.LogInformation("Successfully deleted archetype {ArchetypeId} ({ArchetypeName})",
+                    archetype.Id, archetype.Name);
                 return affected;
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogError(ex, "Invalid data when deleting archetype: {Message}", ex.Message);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+                return 0;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Cannot delete archetype: {Message}", ex.Message);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+                return 0;
+            }
+            catch (SQLiteException ex)
+            {
+                _logger.LogError(ex, "Database error when deleting archetype: {Message}", ex.Message);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+                return 0;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting archetype: {Name}", archetype.Name);
+                _logger.LogError(ex, "Error deleting archetype: {Name} - {Message}", archetype.Name, ex.Message);
                 ModalErrorHandler modalErrorHandler = new();
                 modalErrorHandler.HandleError(ex);
                 return 0;
             }
             finally
             {
-                _factory.GetLock().Release();
+                _ = _factory.GetLock().Release();
             }
         }
     }

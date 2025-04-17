@@ -62,14 +62,16 @@
         public async Task SaveTrainerAsync()
         {
             if (NameInput is null)
+            {
                 return;
+            }
 
             TrainerName = NameInput;
             PreferencesHelper.SetSetting("TrainerName", NameInput);
             try
             {
                 await _semaphore.WaitAsync();
-                var affected = await _connection.Trainers.SaveAsync(NameInput);
+                int affected = await _connection.Trainers.SaveAsync(NameInput);
                 if (affected == 0)
                 {
                     _logger.LogInformation("Trainer not saved: {TrainerName}", TrainerName);
@@ -103,14 +105,15 @@
         public async Task SaveTagAsync()
         {
             if (TagInput is null || _trainer is null)
+            {
                 return;
-
+            }
 
             try
             {
                 await _semaphore.WaitAsync();
                 int affected = 0;
-                await _connection.Tags.SaveAsync(TagInput, _trainer.Id);
+                _ = await _connection.Tags.SaveAsync(TagInput, _trainer.Id);
                 if (affected == 0)
                 {
                     _logger.LogInformation("Tag not saved: {TagInput}", TagInput);
@@ -135,13 +138,15 @@
         public async Task SaveArchetypeAsync()
         {
             if (NewDeckName is null || NewDeckIcon is null || _trainer is null)
+            {
                 return;
+            }
 
             try
             {
                 await _semaphore.WaitAsync();
                 int affected = 0;
-                await _connection.Archetypes.SaveAsync(NewDeckName, NewDeckIcon, _trainer.Id);
+                _ = await _connection.Archetypes.SaveAsync(NewDeckName, NewDeckIcon, _trainer.Id);
                 if (affected == 0)
                 {
                     _logger.LogInformation("Archetype not saved: {DeckName} {DeckIcon}", NewDeckName, NewDeckIcon);
@@ -196,7 +201,7 @@
             try
             {
                 await _semaphore.WaitAsync();
-                await _connection.Trainers.DeleteAsync(_trainer);
+                _ = await _connection.Trainers.DeleteAsync(_trainer);
             }
             catch (Exception ex)
             {

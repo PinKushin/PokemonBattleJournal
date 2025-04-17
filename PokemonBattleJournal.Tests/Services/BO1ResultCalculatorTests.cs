@@ -18,9 +18,9 @@
             MatchResult? result1 = null;
 
             // Act & Assert
-            Should.Throw<ArgumentNullException>(() =>
+            _ = Should.Throw<ArgumentNullException>(() =>
             {
-                _bO1ResultCalculator.CalculateResult(result1);
+                _ = _bO1ResultCalculator.CalculateResult(result1);
             });
         }
 
@@ -31,10 +31,10 @@
             MatchResult? result1 = MatchResult.Win;
 
             // Act
-            var result = _bO1ResultCalculator.CalculateResult(result1);
+            MatchResult result = _bO1ResultCalculator.CalculateResult(result1);
 
             // Assert
-            result.ShouldBeOfType<MatchResult>();
+            _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Win);
         }
 
@@ -45,10 +45,10 @@
             MatchResult? result1 = MatchResult.Loss;
 
             // Act
-            var result = _bO1ResultCalculator.CalculateResult(result1);
+            MatchResult result = _bO1ResultCalculator.CalculateResult(result1);
 
             // Assert
-            result.ShouldBeOfType<MatchResult>();
+            _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Loss);
         }
     }

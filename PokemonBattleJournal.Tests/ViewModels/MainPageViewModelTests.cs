@@ -43,6 +43,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public void MainPageViewModel_WhenViewModelConstructed_ViewModelShouldFindTrainerName()
         {
             // Arrange
+            _viewModel.TrainerName = "Test";
             // Act
             // Assert
             _viewModel.ShouldNotBeNull();

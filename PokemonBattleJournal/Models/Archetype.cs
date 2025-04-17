@@ -1,5 +1,4 @@
-﻿using SQLite;
-using SQLiteNetExtensions.Attributes;
+﻿using SQLiteNetExtensions.Attributes;
 
 namespace PokemonBattleJournal.Models
 {
@@ -12,7 +11,15 @@ namespace PokemonBattleJournal.Models
         public string Name { get; set; } = string.Empty;
         public string? ImagePath { get; set; }
 
-        [Column("trainer_id"), ForeignKey(typeof(Trainer))]
+        [ForeignKey(typeof(Trainer)), Indexed]
         public uint TrainerId { get; set; }
+        [ManyToOne]
+        public Trainer? Trainer { get; set; }
+
+        [OneToMany("PlayingId", CascadeOperations = CascadeOperation.All)]
+        public List<MatchEntry>? PlayingMatches { get; set; }
+
+        [OneToMany("AgainstId", CascadeOperations = CascadeOperation.All)]
+        public List<MatchEntry>? AgainstMatches { get; set; }
     }
 }

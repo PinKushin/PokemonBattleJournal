@@ -4,14 +4,20 @@ namespace UITests
     {
         private static AppiumDriver? driver;
 
-        public static AppiumDriver App => driver ?? throw new NullReferenceException("AppiumDriver is null");
+        public static AppiumDriver App
+        {
+            get
+            {
+                return driver ?? throw new NullReferenceException("AppiumDriver is null");
+            }
+        }
 
         public AppiumSetup()
         {
             // If you started an Appium server manually, make sure to comment out the next line
             // This line starts a local Appium server for you as part of the test run
             AppiumServerHelper.StartAppiumLocalServer();
-            var androidOptions = new AppiumOptions
+            AppiumOptions androidOptions = new()
             {
                 // Specify UIAutomator2 as the driver, typically don't need to change this
                 AutomationName = "UIAutomator2",

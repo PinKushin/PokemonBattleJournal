@@ -8,26 +8,22 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
     private static SQLiteAsyncConnection? _database;
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly ILogger _logger;
-    private readonly ITrainerOperations _trainerOps;
-    private readonly IMatchOperations _matchOps;
-    private readonly IArchetypeOperations _archetypeOperations;
-    private readonly ITagOperations _tagOperations;
 
     public SqliteConnectionFactory(ILogger logger)
     {
         _logger = logger;
-        _trainerOps = new TrainerOperations(this, logger);
-        _matchOps = new MatchOperations(this, logger);
-        _archetypeOperations = new ArchetypeOperations(this, logger);
-        _tagOperations = new TagOperations(this, logger);
+        Trainers = new TrainerOperations(this, logger);
+        Matches = new MatchOperations(this, logger);
+        Archetypes = new ArchetypeOperations(this, logger);
+        Tags = new TagOperations(this, logger);
     }
 
-    public ITrainerOperations Trainers => _trainerOps;
-    public IMatchOperations Matches => _matchOps;
+    public ITrainerOperations Trainers { get; }
+    public IMatchOperations Matches { get; }
 
-    public IArchetypeOperations Archetypes => _archetypeOperations;
+    public IArchetypeOperations Archetypes { get; }
 
-    public ITagOperations Tags => _tagOperations;
+    public ITagOperations Tags { get; }
 
     public async Task<SQLiteAsyncConnection> GetDatabaseAsync()
     {
@@ -35,12 +31,17 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
         return _database!;
     }
 
-    public SemaphoreSlim GetLock() => _semaphore;
+    public SemaphoreSlim GetLock()
+    {
+        return _semaphore;
+    }
 
     private static async Task InitAsync()
     {
         if (_database is not null)
+        {
             return;
+        }
 
         try
         {
@@ -48,16 +49,18 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
             if (_database is null)
             {
                 _database = new SQLiteAsyncConnection(Constants.DatabasePath, Constants.Flags);
-                await _database.CreateTableAsync<Trainer>();
-                await _database.CreateTableAsync<Archetype>();
-                await _database.CreateTableAsync<MatchEntry>();
-                await _database.CreateTableAsync<Tags>();
-                await _database.CreateTableAsync<Game>();
+                // Create tables in order of dependencies
+                _ = await _database.CreateTableAsync<Trainer>();
+                _ = await _database.CreateTableAsync<Archetype>();
+                _ = await _database.CreateTableAsync<Tags>();
+                _ = await _database.CreateTableAsync<Game>();
+                _ = await _database.CreateTableAsync<TagGame>();
+                _ = await _database.CreateTableAsync<MatchEntry>();
             }
         }
         finally
         {
-            _semaphore.Release();
+            _ = _semaphore.Release();
         }
     }
 }

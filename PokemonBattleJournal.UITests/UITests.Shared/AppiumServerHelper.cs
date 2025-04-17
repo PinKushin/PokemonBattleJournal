@@ -15,7 +15,7 @@ namespace UITests
                 return;
             }
 
-            var builder = new AppiumServiceBuilder()
+            AppiumServiceBuilder builder = new AppiumServiceBuilder()
                 .WithIPAddress(host)
                 .UsingPort(port);
 

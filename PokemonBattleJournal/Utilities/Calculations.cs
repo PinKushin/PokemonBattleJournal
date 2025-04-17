@@ -15,7 +15,6 @@
             uint wins = 0;
             uint losses = 0;
             uint ties = 0;
-            double winRate = 0;
 
             foreach (MatchEntry match in matchList)
             {
@@ -37,13 +36,14 @@
             Wins = wins;
             Losses = losses;
             Ties = ties;
+            double winRate;
             if (wins + losses + ties == 0)
             {
                 winRate = 0;
             }
             else
             {
-                winRate = ((wins + (0.5 * ties)) / (wins + losses + ties)) * 100;
+                winRate = (wins + (0.5 * ties)) / (wins + losses + ties) * 100;
             }
 
             return winRate;

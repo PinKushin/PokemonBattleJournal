@@ -13,7 +13,13 @@ namespace UITests
     [Collection("UITests")]
     public abstract class BaseTest
     {
-        protected AppiumDriver App => AppiumSetup.App;
+        protected AppiumDriver App
+        {
+            get
+            {
+                return AppiumSetup.App;
+            }
+        }
 
         // This could also be an extension method to AppiumDriver if you prefer
         protected AppiumElement FindUIElement(string id)

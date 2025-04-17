@@ -16,13 +16,13 @@
         /// </summary>
         public async Task<List<Tags>> GetAllAsync()
         {
-            var db = await _factory.GetDatabaseAsync();
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
                 await _factory.GetLock().WaitAsync();
                 if (await db.Table<Tags>().CountAsync() == 0)
                 {
-                    await db.InsertAllAsync(new List<Tags>
+                    _ = await db.InsertAllAsync(new List<Tags>
                 {
                     new() { Name = "Early Start" },
                     new() { Name = "Behind Early" },
@@ -41,11 +41,11 @@
                 ModalErrorHandler error = new();
                 _logger.LogError(ex, "Error getting tags");
                 error.HandleError(ex);
-                return new List<Tags>();
+                return [];
             }
             finally
             {
-                _factory.GetLock().Release();
+                _ = _factory.GetLock().Release();
             }
         }
 
@@ -54,7 +54,7 @@
         /// </summary>
         public async Task<Tags?> GetByIdAsync(uint id)
         {
-            var db = await _factory.GetDatabaseAsync();
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
                 await _factory.GetLock().WaitAsync();
@@ -71,7 +71,7 @@
             }
             finally
             {
-                _factory.GetLock().Release();
+                _ = _factory.GetLock().Release();
             }
         }
 
@@ -80,8 +80,19 @@
         /// </summary>
         public async Task<int> SaveAsync(string tagTxt, uint trainerId)
         {
-            var db = await _factory.GetDatabaseAsync();
-            var tag = new Tags { Name = tagTxt, TrainerId = trainerId };
+            if (string.IsNullOrWhiteSpace(tagTxt))
+            {
+                throw new ArgumentException("Tag name is required", nameof(tagTxt));
+            }
+
+            if (trainerId == 0)
+            {
+                throw new ArgumentException("Trainer ID is required", nameof(trainerId));
+            }
+
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+            Tags tag = new()
+            { Name = tagTxt, TrainerId = trainerId };
 
             try
             {
@@ -100,16 +111,30 @@
                 });
                 return affected;
             }
+            catch (ArgumentException ex)
+            {
+                ModalErrorHandler error = new();
+                _logger.LogError(ex, "Invalid data when saving tag: {Message}", ex.Message);
+                error.HandleError(ex);
+                return 0;
+            }
+            catch (SQLiteException ex)
+            {
+                ModalErrorHandler error = new();
+                _logger.LogError(ex, "Database error when saving tag: {Message}", ex.Message);
+                error.HandleError(ex);
+                return 0;
+            }
             catch (Exception ex)
             {
                 ModalErrorHandler error = new();
-                _logger.LogError(ex, "Error saving tag: {TagName}", tagTxt);
+                _logger.LogError(ex, "Error saving tag: {TagName} - {Message}", tagTxt, ex.Message);
                 error.HandleError(ex);
                 return 0;
             }
             finally
             {
-                _factory.GetLock().Release();
+                _ = _factory.GetLock().Release();
             }
         }
 
@@ -118,27 +143,86 @@
         /// </summary>
         public async Task<int> DeleteAsync(Tags tag)
         {
-            var db = await _factory.GetDatabaseAsync();
+            if (tag.Id == 0)
+            {
+                throw new ArgumentException("Tag ID is required", nameof(tag));
+            }
+
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
                 await _factory.GetLock().WaitAsync();
+
+                // First check if this tag is used in any games
+                int tagGameCount = await db.ExecuteScalarAsync<int>(
+                    "SELECT COUNT(*) FROM TagGame WHERE TagId = ?", tag.Id);
+
+                if (tagGameCount > 0)
+                {
+                    _logger.LogInformation("Tag {TagId} ({TagName}) is used in {Count} games, " +
+                        "related relationships will be deleted", tag.Id, tag.Name, tagGameCount);
+                }
+
                 int affected = 0;
                 await db.RunInTransactionAsync(tran =>
                 {
-                    affected = tran.Delete(tag);
+                    // First delete any relationships in TagGame
+                    int relationshipsDeleted = tran.Execute("DELETE FROM TagGame WHERE TagId = ?", tag.Id);
+                    _logger.LogDebug("Deleted {Count} TagGame relationships for tag {TagId}",
+                        relationshipsDeleted, tag.Id);
+                    affected += relationshipsDeleted;
+
+                    // Then delete the tag
+                    affected += tran.Delete(tag);
+
+                    // Verify deletion
+                    int remainingCount = tran.ExecuteScalar<int>(
+                        "SELECT COUNT(*) FROM Tags WHERE Id = ?", tag.Id);
+                    if (remainingCount > 0)
+                    {
+                        _logger.LogError("Tag {TagId} was not deleted properly", tag.Id);
+                        throw new Exception("Failed to delete tag");
+                    }
+
+                    // Verify relationship deletion
+                    int remainingRelationships = tran.ExecuteScalar<int>(
+                        "SELECT COUNT(*) FROM TagGame WHERE TagId = ?", tag.Id);
+                    if (remainingRelationships > 0)
+                    {
+                        _logger.LogWarning("Some TagGame relationships for Tag {TagId} were not deleted properly",
+                            tag.Id);
+                        _ = tran.Execute("DELETE FROM TagGame WHERE TagId = ?", tag.Id);
+                    }
                 });
+
+                _logger.LogInformation("Successfully deleted tag {TagId} ({TagName}) with {Count} affected rows",
+                    tag.Id, tag.Name, affected);
                 return affected;
+            }
+            catch (ArgumentException ex)
+            {
+                ModalErrorHandler error = new();
+                _logger.LogError(ex, "Invalid data when deleting tag: {Message}", ex.Message);
+                error.HandleError(ex);
+                return 0;
+            }
+            catch (SQLiteException ex)
+            {
+                ModalErrorHandler error = new();
+                _logger.LogError(ex, "Database error when deleting tag: {Message}", ex.Message);
+                error.HandleError(ex);
+                return 0;
             }
             catch (Exception ex)
             {
                 ModalErrorHandler error = new();
-                _logger.LogError(ex, "Error deleting tag: {TagName}", tag.Name);
+                _logger.LogError(ex, "Error deleting tag: {TagName} - {Message}", tag.Name ?? "Unknown", ex.Message);
                 error.HandleError(ex);
                 return 0;
             }
             finally
             {
-                _factory.GetLock().Release();
+                _ = _factory.GetLock().Release();
             }
         }
     }

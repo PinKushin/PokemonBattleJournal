@@ -1,6 +1,4 @@
-﻿using SQLite;
-using SQLiteNetExtensions.Attributes;
-
+﻿using SQLiteNetExtensions.Attributes;
 namespace PokemonBattleJournal.Models
 {
     public class Tags
@@ -11,10 +9,13 @@ namespace PokemonBattleJournal.Models
         public string? Name { get; set; }
 
         //trainer foreign key for profile
-        [Column("trainer_id"), ForeignKey(typeof(Trainer))]
+        [ForeignKey(typeof(Trainer)), Indexed]
         public uint? TrainerId { get; set; }
 
-        [Column("game_id"), ForeignKey(typeof(Game))]
-        public uint? GameId { get; set; }
+        [ManyToOne]
+        public Trainer? Trainer { get; set; }
+
+        [ManyToMany(typeof(TagGame), CascadeOperations = CascadeOperation.All)]
+        public List<Game>? Games { get; set; }
     }
 }

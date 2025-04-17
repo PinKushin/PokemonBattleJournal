@@ -9,6 +9,12 @@
             SQLite.SQLiteOpenFlags.Create |
             SQLite.SQLiteOpenFlags.SharedCache;
 
-        public static string DatabasePath => Path.Combine(FileHelper.GetAppDataPath(), DatabaseFilename);
+        public static string DatabasePath
+        {
+            get
+            {
+                return Path.Combine(FileHelper.GetAppDataPath(), DatabaseFilename);
+            }
+        }
     }
 }

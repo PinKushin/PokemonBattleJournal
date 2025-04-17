@@ -62,11 +62,12 @@ namespace PokemonBattleJournal
             builder.Services.AddSerilog(serilogLogger);
             builder.Services.AddSingleton<ISqliteConnectionFactory>(sp =>
             {
-                var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-                var logger = loggerFactory.CreateLogger<SqliteConnectionFactory>();
+                ILoggerFactory loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+                ILogger<SqliteConnectionFactory> logger = loggerFactory.CreateLogger<SqliteConnectionFactory>();
                 return new SqliteConnectionFactory(logger);
             });
             builder.Services.AddSingleton<IMatchResultsCalculatorFactory, MatchResultCalculatorFactory>();
+            builder.Services.AddSingleton<IMatchAnalysisService, MatchAnalysisService>();
 
             //Link Pages and ViewModels
             //First Start Page

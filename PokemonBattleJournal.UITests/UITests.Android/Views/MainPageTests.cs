@@ -13,12 +13,12 @@
             // Act
             BOSwitch.Click();
             await Task.Delay(500).WaitAsync(cancellationToken); // Wait for the click to register 
-            var toggledOn = BOSwitch.GetAttribute("checked");
+            string toggledOn = BOSwitch.GetAttribute("checked");
             BOSwitch.Click();
             await Task.Delay(500).WaitAsync(cancellationToken); // Wait for the click to register 
-            var toggledOff = BOSwitch.GetAttribute("checked");
+            string toggledOff = BOSwitch.GetAttribute("checked");
             // Assert
-            BOSwitch.ShouldNotBeNull();
+            _ = BOSwitch.ShouldNotBeNull();
             BOSwitch.Displayed.ShouldBeTrue();
             BOSwitch.Enabled.ShouldBeTrue();
             toggledOn.ShouldBe("true"); // "1" for toggled on

@@ -21,7 +21,10 @@
         protected override Window CreateWindow(IActivationState? activationState)
         {
             if (PreferencesHelper.GetSetting("FirstStart") != "false")
+            {
                 return new Window(new FirstStartPage(new FirstStartPageViewModel()));
+            }
+
             return new Window(new AppShell());
         }
     }
