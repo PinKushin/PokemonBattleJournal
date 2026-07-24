@@ -4,7 +4,7 @@
     {
         /// <summary>
         /// Calculate the average win rate of the trainer
-        /// using ((Wins + (0.5 * Ties)) / TotalGames * 100
+        /// using (Wins / TotalGames * 100
         /// </summary>
         /// <param name="matchList">List of Matches</param>
         /// <param name="Wins">Reference to Win property for display</param>
@@ -43,7 +43,7 @@
             }
             else
             {
-                winRate = (wins + (0.5 * ties)) / (wins + losses + ties) * 100;
+                winRate = wins / (double)(wins + losses + ties) * 100;
             }
 
             return winRate;
