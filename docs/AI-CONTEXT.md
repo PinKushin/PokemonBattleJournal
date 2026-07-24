@@ -18,7 +18,7 @@ Pokemon Battle Journal is a .NET MAUI mobile/desktop app for logging and analyzi
 | Framework | .NET 9.0 + MAUI (Android, iOS, MacCatalyst, Windows) |
 | Database | SQLite via `sqlite-net-pcl` + `SQLiteNetExtensions` (async, ORM with FK relationships) |
 | MVVM | CommunityToolkit.Maui + CommunityToolkit.Mvvm (ObservableProperty + RelayCommand codegen) |
-| UI Controls | Syncfusion MAUI (9 packages — TO BE REMOVED) |
+| UI Controls | Custom Controls (ComboBoxControl, ImagePicker, HintedEntry) + MAUI native
 | Logging | Serilog (file + debug sinks) |
 | Error Tracking | Sentry.Maui |
 | Unit Tests | xUnit + Shouldly + NSubstitute |
@@ -38,7 +38,7 @@ PokemonBattleJournal.sln
 │   ├── Services/                            # Business logic + DB operations
 │   ├── Interfaces/                          # Service contracts
 │   ├── Utilities/                           # Helpers (file, threading, preferences, calculations)
-│   ├── Controls/                            # (empty — needs HintedEntry custom control)
+│   ├── Controls/                            # Custom controls (ComboBoxControl, ImagePicker, HintedEntry)
 │   ├── Platforms/                           # Android, iOS, MacCatalyst, Windows bootstraps
 │   └── Resources/                           # Fonts, images, styles, colors
 ├── PokemonBattleJournal.Tests/              # Unit tests (xUnit + NSubstitute + Shouldly)
@@ -119,10 +119,10 @@ AboutPage/VM → Transient
 
 ### 2. MainPage / MainPageViewModel (Singleton)
 - **Purpose:** Create match entries with BO1/BO3 toggle, archetypes, time, tags
-- **Controls:** 2× `SfTextInputLayout`+`SfComboBox` (archetype pickers), `Switch` (BO3), 2× `SfTimePicker`, `SfDatePicker`, 3× `SfComboBox` (results), `Editor` (notes), `CollectionView` (tags), 3× `SfButton`
+- **Controls:** 2× `ComboBoxControl` (archetype pickers), `Switch` (BO3), 2× `TimePicker`, `DatePicker`, 3× `Picker` (results), `Editor` (notes), `CollectionView` (tags), 3× `Button`
 - **Key Properties:** `PlayerSelected`, `RivalSelected`, `Result`/`Result2`/`Result3`, `StartTime`/`EndTime`/`DatePlayed`, `BO3Toggle`, `FirstCheck`/`FirstCheck2`/`FirstCheck3`, `TagsSelected`/`Match2TagsSelected`/`Match3TagsSelected`, `Archetypes`, `TagCollection`
 - **Key Methods:** `AppearingAsync()`, `Disappearing()`, `SaveMatchAsync()`, `ValidateMatchData()`
-- **Code-Behind:** `OpenTimePickers()` and `OpenDatePlayedPicker()` call `.IsOpen = true` on Syncfusion pickers
+- **Code-Behind:** No platform-specific picker dialogs needed; all pickers use MAUI native or custom controls
 
 ### 3. ReadJournalPage / ReadJournalPageViewModel
 - **Purpose:** Browse past matches with full game details
@@ -138,7 +138,7 @@ AboutPage/VM → Transient
 
 ### 5. OptionsPage / OptionsPageViewModel
 - **Purpose:** Manage trainer name, custom archetypes, tags
-- **Controls:** 4× `SfTextInputLayout`, 1× `SfComboBox` (icon picker), 5× `SfButton`
+- **Controls:** 4× `SfTextInputLayout`, 1× `Picker` (icon picker), 5× `Button`
 - **Key Properties:** `NameInput`, `TagInput`, `NewDeckName`, `SelectedIcon`, `IconCollection`
 - **Key Methods:** `SaveTrainerAsync()`, `SaveTagAsync()`, `SaveArchetypeAsync()`, `SaveAllAsync()`, `DeleteTrainerFileAsync()`
 
@@ -211,7 +211,7 @@ AboutPage/VM → Transient
 | `PokemonBattleJournal.csproj` | Remove 9 PackageReference lines |
 | `MauiProgram.cs` | Remove 2 using directives + 2 `.ConfigureSyncfusion*()` calls |
 | `App.xaml.cs` | Remove `SyncfusionLicenseProvider.RegisterLicense()` (4 lines) |
-| `MainPage.xaml` | Replace SfButton→Button, SfTextInputLayout→HintedEntry, SfComboBox→Picker, SfTimePicker→TimePicker, SfDatePicker→DatePicker |
+| `MainPage.xaml` | Replace SfButton→Button, SfTextInputLayout→HintedEntry, SfComboBox→ComboBoxControl, SfTimePicker→TimePicker, SfDatePicker→DatePicker |
 | `MainPage.xaml.cs` | Remove `OpenTimePickers()`/`OpenDatePlayedPicker()` and their `.IsOpen` calls |
 | `OptionsPage.xaml` | Replace SfButton→Button, SfTextInputLayout→HintedEntry, SfComboBox→Picker |
 | `FirstStartPage.xaml` | Replace SfButton→Button, SfTextInputLayout→HintedEntry |
@@ -219,11 +219,12 @@ AboutPage/VM → Transient
 
 ### Replacement Components Needed
 
-1. **HintedEntry** (custom control) — Floating hint Label + Entry + helper text Label. Supports `Hint`, `HelperText`, `ContainerType` (None/Outlined), `Stroke`, `HintLabelStyle`, `HelperLabelStyle`
-2. **Picker with DataTemplate** — Replaces SfComboBox. Must support icon+name display in ItemTemplate
-3. **Native MAUI TimePicker/DatePicker** — Inline, no dialog mode. `MinimumTime` constraint must move to ViewModel
-4. **Heatmap Grid** — New component for Archetype Matchup Matrix (replaces charts)
-5. **ProgressBar segments** — Replace LineSeries, ColumnSeries charts
+1. **ComboBoxControl** (custom control) — Replaces SfComboBox for archetype selection. Supports icon+name display with dropdown popup
+2. **HintedEntry** (custom control) — Floating hint Label + Entry + helper text Label. Supports `Hint`, `HelperText`, `ContainerType` (None/Outlined), `Stroke`, `HintLabelStyle`, `HelperLabelStyle`
+3. **Picker with DataTemplate** — Replaces SfComboBox. Must support icon+name display in ItemTemplate
+4. **Native MAUI TimePicker/DatePicker** — Inline, no dialog mode. `MinimumTime` constraint must move to ViewModel
+5. **Heatmap Grid** — New component for Archetype Matchup Matrix (replaces charts)
+6. **ProgressBar segments** — Replace LineSeries, ColumnSeries charts
 
 ### Syncfusion Control Replacement Map
 
@@ -231,7 +232,7 @@ AboutPage/VM → Transient
 |---|---|---|
 | `SfButton` | MainPage (2), OptionsPage (5), FirstStartPage (1) | MAUI `Button` |
 | `SfTextInputLayout` | MainPage (2), OptionsPage (4), FirstStartPage (1) | Custom `HintedEntry` control |
-| `SfComboBox` | MainPage (5), OptionsPage (1) | MAUI `Picker` + `DataTemplate` |
+| `SfComboBox` | MainPage (2 archetype pickers→ComboBoxControl, 3 result pickers→Picker), OptionsPage (1 icon picker→Picker) | MAUI `Picker` + `DataTemplate` or custom `ComboBoxControl` |
 | `SfTimePicker` | MainPage (2) | MAUI `TimePicker` (inline) |
 | `SfDatePicker` | MainPage (1) | MAUI `DatePicker` (inline) |
 | `SfCartesianChart` | TrainerPage (4) | Native MAUI Grid + ProgressBar |
