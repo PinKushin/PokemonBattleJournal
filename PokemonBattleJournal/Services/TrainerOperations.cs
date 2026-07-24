@@ -232,20 +232,19 @@
 
             try
             {
-                // Check for duplicate name
-                Trainer existingTrainer = await db.Table<Trainer>()
-                    .Where(t => t.Name == trainerName && t.Id != trainer.Id)
-                    .FirstOrDefaultAsync();
-
-                if (existingTrainer != null)
-                {
-                    throw new InvalidOperationException($"A trainer with the name '{trainerName}' already exists");
-                }
-
                 int affected = 0;
                 await _factory.GetLock().WaitAsync();
                 await db.RunInTransactionAsync(tran =>
                 {
+                    Trainer existingTrainer = tran.Table<Trainer>()
+                        .Where(t => t.Name == trainerName && t.Id != trainer.Id)
+                        .FirstOrDefault();
+
+                    if (existingTrainer != null)
+                    {
+                        throw new InvalidOperationException($"A trainer with the name '{trainerName}' already exists");
+                    }
+
                     if (trainer.Id != 0)
                     {
                         affected = tran.Update(trainer);
