@@ -40,7 +40,7 @@ namespace PokemonBattleJournal.Tests.Utilities
         }
 
         [Fact]
-        public void CalculateWinRate_AllTies_ReturnsZero()
+        public void CalculateWinRate_AllTies_Returns50()
         {
             // Arrange
             List<MatchEntry> matches =
@@ -52,8 +52,8 @@ namespace PokemonBattleJournal.Tests.Utilities
             // Act
             double result = Calculations.CalculateWinRate(matches, out uint wins, out uint losses, out uint ties);
 
-            // Assert — ties count as zero
-            result.ShouldBe(0);
+            // Assert — ties count as 0.5 each: (0 + 0.5*2) / 2 * 100 = 50
+            result.ShouldBe(50);
             wins.ShouldBe(0u);
             losses.ShouldBe(0u);
             ties.ShouldBe(2u);
@@ -62,7 +62,7 @@ namespace PokemonBattleJournal.Tests.Utilities
         [Fact]
         public void CalculateWinRate_MixedResults_ReturnsCorrectRate()
         {
-            // Arrange — 2 wins, 1 loss, 1 tie = 2 / 4 * 100 = 50
+            // Arrange — 2 wins, 1 loss, 1 tie = (2 + 0.5) / 4 * 100 = 62.5
             List<MatchEntry> matches =
             [
                 new() { Result = MatchResult.Win },
@@ -75,7 +75,7 @@ namespace PokemonBattleJournal.Tests.Utilities
             double result = Calculations.CalculateWinRate(matches, out uint wins, out uint losses, out uint ties);
 
             // Assert
-            result.ShouldBe(50);
+            result.ShouldBe(62.5);
             wins.ShouldBe(2u);
             losses.ShouldBe(1u);
             ties.ShouldBe(1u);

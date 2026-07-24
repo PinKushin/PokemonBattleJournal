@@ -4,6 +4,7 @@
     x:Class="PokemonBattleJournal.Views.MainPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:PokemonBattleJournal.Controls"
     xmlns:models="clr-namespace:PokemonBattleJournal.Models"
     xmlns:sys="clr-namespace:System;assembly=netstandard"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
@@ -63,58 +64,38 @@
                     VerticalOptions="End" />
                 <StackLayout HorizontalOptions="Center" Orientation="{OnIdiom Default=Horizontal, Phone=Vertical}">
                     <!--#region Player Archetype-->
-                    <Border
-                        Margin="5,0"
-                        Stroke="{StaticResource PokeYellow}"
-                        StrokeThickness="1"
-                        WidthRequest="200">
-                        <VerticalStackLayout>
-                            <Label
-                                Margin="8,4,8,0"
-                                FontSize="12"
-                                Text="Played Archetype"
-                                TextColor="{StaticResource PokeYellow}" />
-                            <Picker
-                                x:Name="PlayerArchetype"
-                                AutomationId="PlayerArchetype"
-                                ItemDisplayBinding="{Binding Name}"
-                                ItemsSource="{Binding Archetypes}"
-                                SelectedItem="{Binding PlayerSelected}"
-                                TextColor="{StaticResource PokeYellow}" />
-                            <Label
-                                Margin="8,0,8,4"
-                                FontSize="10"
-                                Text="Select Your Archetype"
-                                TextColor="{StaticResource PokeGold}" />
-                        </VerticalStackLayout>
-                    </Border>
+                    <controls:ImagePicker
+                        x:Name="PlayerArchetype"
+                        AutomationId="PlayerArchetype"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}"
+                        HelperText="Select Your Archetype"
+                        HintText="Played Archetype"
+                        HintTextColor="{AppThemeBinding Light={StaticResource PokeRed}, Dark={StaticResource PokeYellow}}"
+                        ImageMemberPath="ImagePath"
+                        ItemsSource="{Binding Archetypes}"
+                        PopupAccentColor="{StaticResource PokeBlue}"
+                        PopupBackgroundColor="{StaticResource OffBlack}"
+                        SelectedItem="{Binding PlayerSelected}"
+                        StrokeColor="{StaticResource PokeYellow}"
+                        TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
+                        WidthRequest="200" />
                     <!--#endregion-->
                     <!--#region Rival Archetype-->
-                    <Border
-                        Margin="5,0"
-                        Stroke="{StaticResource PokeYellow}"
-                        StrokeThickness="1"
-                        WidthRequest="200">
-                        <VerticalStackLayout>
-                            <Label
-                                Margin="8,4,8,0"
-                                FontSize="12"
-                                Text="Rival's Archetype"
-                                TextColor="{StaticResource PokeYellow}" />
-                            <Picker
-                                x:Name="RivalArchetype"
-                                AutomationId="RivalArchetype"
-                                ItemDisplayBinding="{Binding Name}"
-                                ItemsSource="{Binding Archetypes}"
-                                SelectedItem="{Binding RivalSelected}"
-                                TextColor="{StaticResource PokeYellow}" />
-                            <Label
-                                Margin="8,0,8,4"
-                                FontSize="10"
-                                Text="Select Rival's Archetype"
-                                TextColor="{StaticResource PokeGold}" />
-                        </VerticalStackLayout>
-                    </Border>
+                    <controls:ImagePicker
+                        x:Name="RivalArchetype"
+                        AutomationId="RivalArchetype"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}"
+                        HelperText="Select Rival's Archetype"
+                        HintText="Rival's Archetype"
+                        HintTextColor="{AppThemeBinding Light={StaticResource PokeRed}, Dark={StaticResource PokeYellow}}"
+                        ImageMemberPath="ImagePath"
+                        ItemsSource="{Binding Archetypes}"
+                        PopupAccentColor="{StaticResource PokeBlue}"
+                        PopupBackgroundColor="{StaticResource OffBlack}"
+                        SelectedItem="{Binding RivalSelected}"
+                        StrokeColor="{StaticResource PokeYellow}"
+                        TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
+                        WidthRequest="200" />
                     <!--#endregion-->
                 </StackLayout>
                 <!--#endregion-->
