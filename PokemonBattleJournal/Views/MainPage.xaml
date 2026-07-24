@@ -4,11 +4,7 @@
     x:Class="PokemonBattleJournal.Views.MainPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:buttons="clr-namespace:Syncfusion.Maui.Toolkit.Buttons;assembly=Syncfusion.Maui.Toolkit"
-    xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
-    xmlns:inputLayout="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
     xmlns:models="clr-namespace:PokemonBattleJournal.Models"
-    xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
     xmlns:sys="clr-namespace:System;assembly=netstandard"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
@@ -67,95 +63,58 @@
                     VerticalOptions="End" />
                 <StackLayout HorizontalOptions="Center" Orientation="{OnIdiom Default=Horizontal, Phone=Vertical}">
                     <!--#region Player Archetype-->
-                    <inputLayout:SfTextInputLayout
+                    <Border
                         Margin="5,0"
-                        ContainerType="None"
-                        HelperText="Select Your Archetype"
-                        Hint="Played Archetype"
                         Stroke="{StaticResource PokeYellow}"
+                        StrokeThickness="1"
                         WidthRequest="200">
-                        <inputLayout:SfTextInputLayout.HintLabelStyle>
-                            <inputLayout:LabelStyle FontSize="16" TextColor="{StaticResource PokeYellow}" />
-                        </inputLayout:SfTextInputLayout.HintLabelStyle>
-                        <inputLayout:SfTextInputLayout.HelperLabelStyle>
-                            <inputLayout:LabelStyle TextColor="{StaticResource PokeGold}" />
-                        </inputLayout:SfTextInputLayout.HelperLabelStyle>
-                        <editors:SfComboBox
-                            x:Name="PlayerArchetype"
-                            AutomationId="PlayerArchetype"
-                            ClearButtonIconColor="{StaticResource PokeRed}"
-                            DisplayMemberPath="Name"
-                            DropDownBackground="{StaticResource OffBlack}"
-                            DropDownIconColor="{StaticResource PokeBlue}"
-                            DropDownStroke="{StaticResource PokeBlue}"
-                            HeightRequest="40"
-                            ItemsSource="{Binding Archetypes}"
-                            SelectedItem="{Binding PlayerSelected}"
-                            TextMemberPath="Name">
-                            <editors:SfComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="models:Archetype">
-                                    <ViewCell>
-                                        <HorizontalStackLayout HorizontalOptions="Start">
-                                            <Image
-                                                Margin="10,0,10,0"
-                                                HeightRequest="30"
-                                                HorizontalOptions="Center"
-                                                Source="{Binding ImagePath}" />
-                                            <Label
-                                                HorizontalTextAlignment="Center"
-                                                Text="{Binding Name}"
-                                                VerticalTextAlignment="Center" />
-                                        </HorizontalStackLayout>
-                                    </ViewCell>
-                                </DataTemplate>
-                            </editors:SfComboBox.ItemTemplate>
-                        </editors:SfComboBox>
-                    </inputLayout:SfTextInputLayout>
+                        <VerticalStackLayout>
+                            <Label
+                                Margin="8,4,8,0"
+                                FontSize="12"
+                                Text="Played Archetype"
+                                TextColor="{StaticResource PokeYellow}" />
+                            <Picker
+                                x:Name="PlayerArchetype"
+                                AutomationId="PlayerArchetype"
+                                ItemDisplayBinding="{Binding Name}"
+                                ItemsSource="{Binding Archetypes}"
+                                SelectedItem="{Binding PlayerSelected}"
+                                TextColor="{StaticResource PokeYellow}" />
+                            <Label
+                                Margin="8,0,8,4"
+                                FontSize="10"
+                                Text="Select Your Archetype"
+                                TextColor="{StaticResource PokeGold}" />
+                        </VerticalStackLayout>
+                    </Border>
                     <!--#endregion-->
                     <!--#region Rival Archetype-->
-                    <inputLayout:SfTextInputLayout
+                    <Border
                         Margin="5,0"
-                        ContainerBackground="Transparent"
-                        ContainerType="None"
-                        HelperText="Select Rival's Archetype"
-                        Hint="Rival's Archetype"
                         Stroke="{StaticResource PokeYellow}"
+                        StrokeThickness="1"
                         WidthRequest="200">
-                        <inputLayout:SfTextInputLayout.HintLabelStyle>
-                            <inputLayout:LabelStyle FontSize="16" TextColor="{StaticResource PokeYellow}" />
-                        </inputLayout:SfTextInputLayout.HintLabelStyle>
-                        <inputLayout:SfTextInputLayout.HelperLabelStyle>
-                            <inputLayout:LabelStyle TextColor="{StaticResource PokeGold}" />
-                        </inputLayout:SfTextInputLayout.HelperLabelStyle>
-                        <editors:SfComboBox
-                            x:Name="RivalArchetype"
-                            AutomationId="RivalArchetype"
-                            DisplayMemberPath="Name"
-                            DropDownBackground="{StaticResource OffBlack}"
-                            DropDownIconColor="{StaticResource PokeBlue}"
-                            DropDownStroke="{StaticResource PokeRed}"
-                            ItemsSource="{Binding Archetypes}"
-                            SelectedItem="{Binding RivalSelected}"
-                            TextMemberPath="Name">
-                            <editors:SfComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="models:Archetype">
-                                    <ViewCell>
-                                        <HorizontalStackLayout HorizontalOptions="Start">
-                                            <Image
-                                                Margin="10,0,10,0"
-                                                HeightRequest="30"
-                                                HorizontalOptions="Center"
-                                                Source="{Binding ImagePath}" />
-                                            <Label
-                                                HorizontalTextAlignment="Center"
-                                                Text="{Binding Name}"
-                                                VerticalTextAlignment="Center" />
-                                        </HorizontalStackLayout>
-                                    </ViewCell>
-                                </DataTemplate>
-                            </editors:SfComboBox.ItemTemplate>
-                        </editors:SfComboBox>
-                    </inputLayout:SfTextInputLayout>
+                        <VerticalStackLayout>
+                            <Label
+                                Margin="8,4,8,0"
+                                FontSize="12"
+                                Text="Rival's Archetype"
+                                TextColor="{StaticResource PokeYellow}" />
+                            <Picker
+                                x:Name="RivalArchetype"
+                                AutomationId="RivalArchetype"
+                                ItemDisplayBinding="{Binding Name}"
+                                ItemsSource="{Binding Archetypes}"
+                                SelectedItem="{Binding RivalSelected}"
+                                TextColor="{StaticResource PokeYellow}" />
+                            <Label
+                                Margin="8,0,8,4"
+                                FontSize="10"
+                                Text="Select Rival's Archetype"
+                                TextColor="{StaticResource PokeGold}" />
+                        </VerticalStackLayout>
+                    </Border>
                     <!--#endregion-->
                 </StackLayout>
                 <!--#endregion-->
@@ -210,62 +169,43 @@
                     VerticalTextAlignment="Start" />
                 <!--#endregion-->
                 <!--#region Start and End Time Pickers-->
-                <buttons:SfButton
-                    AutomationId="TimePickerButton"
-                    Background="{StaticResource PokeBlue}"
-                    Clicked="OpenTimePickers"
-                    MaximumWidthRequest="300"
-                    Text="Input Battle Start and End Time" />
-                <picker:SfTimePicker
+                <Label
+                    FontSize="Micro"
+                    HorizontalOptions="Center"
+                    Text="Battle Start Time"
+                    TextColor="{StaticResource PokeYellow}" />
+                <TimePicker
                     x:Name="StartTimePicker"
                     AutomationId="StartTimePicker"
-                    Format="h_mm_tt"
+                    Format="h_mm tt"
                     HorizontalOptions="Center"
                     MaximumWidthRequest="300"
-                    Mode="Dialog"
-                    SelectedTime="{Binding StartTime}">
-                    <picker:SfTimePicker.HeaderView>
-                        <picker:PickerHeaderView Height="32" Text="Battle Start Time" />
-                    </picker:SfTimePicker.HeaderView>
-                </picker:SfTimePicker>
-                <picker:SfTimePicker
+                    Time="{Binding StartTime}" />
+                <Label
+                    FontSize="Micro"
+                    HorizontalOptions="Center"
+                    Text="Battle End Time"
+                    TextColor="{StaticResource PokeYellow}" />
+                <TimePicker
                     x:Name="EndTimePicker"
                     AutomationId="EndTimePicker"
-                    Format="h_mm_tt"
+                    Format="h_mm tt"
                     HorizontalOptions="Center"
                     MaximumWidthRequest="300"
-                    MinimumTime="{Binding StartTime}"
-                    Mode="Dialog"
-                    SelectedTime="{Binding EndTime}">
-                    <picker:SfTimePicker.HeaderView>
-                        <picker:PickerHeaderView Height="32" Text="Battle End Time" />
-                    </picker:SfTimePicker.HeaderView>
-                </picker:SfTimePicker>
+                    Time="{Binding EndTime}" />
                 <!--#endregion-->
                 <!--#region Date Played Picker-->
-                <HorizontalStackLayout HorizontalOptions="Center">
-                    <buttons:SfButton
-                        AutomationId="DatePickerButton"
-                        Background="{StaticResource PokeBlue}"
-                        Clicked="OpenDatePlayedPicker"
-                        HorizontalOptions="Center"
-                        Text="Input Date Played"
-                        VerticalOptions="Center"
-                        WidthRequest="300" />
-                    <picker:SfDatePicker
-                        x:Name="DatePlayedPicker"
-                        AutomationId="DatePlayedPicker"
-                        Format="Default"
-                        HorizontalOptions="Center"
-                        IsEnabled="True"
-                        Mode="Dialog"
-                        SelectedDate="{Binding DatePlayed}"
-                        VerticalOptions="Center">
-                        <picker:SfDatePicker.HeaderView>
-                            <picker:PickerHeaderView Height="32" Text="Date Played" />
-                        </picker:SfDatePicker.HeaderView>
-                    </picker:SfDatePicker>
-                </HorizontalStackLayout>
+                <Label
+                    FontSize="Micro"
+                    HorizontalOptions="Center"
+                    Text="Date Played"
+                    TextColor="{StaticResource PokeYellow}" />
+                <DatePicker
+                    x:Name="DatePlayedPicker"
+                    AutomationId="DatePlayedPicker"
+                    HorizontalOptions="Center"
+                    MaximumWidthRequest="300"
+                    Date="{Binding DatePlayed}" />
                 <!--#endregion-->
             </VerticalStackLayout>
             <!--#endregion-->
@@ -349,22 +289,12 @@
                         IsChecked="{Binding FirstCheck}"
                         VerticalOptions="Center"
                         Color="{StaticResource PokeBlue}" />
-                    <editors:SfComboBox
+                    <Picker
                         Margin="5"
                         AutomationId="PossibleResultsPicker"
-                        BackgroundColor="Transparent"
-                        ClearButtonIconColor="{StaticResource PokeRed}"
-                        DropDownBackground="{StaticResource OffBlack}"
-                        DropDownIconColor="{StaticResource PokeBlue}"
-                        DropDownItemTextColor="{StaticResource PokeYellow}"
-                        DropDownStroke="{StaticResource PokeYellow}"
                         HorizontalOptions="Center"
                         ItemsSource="{Binding PossibleResults}"
-                        Placeholder="W/L/T"
-                        PlaceholderColor="{StaticResource PokeYellow}"
                         SelectedItem="{Binding Result}"
-                        ShowBorder="False"
-                        TextColor="{StaticResource PokeYellow}"
                         WidthRequest="100" />
                 </HorizontalStackLayout>
                 <!--#endregion-->
@@ -444,10 +374,9 @@
                             HorizontalOptions="Center"
                             IsChecked="{Binding FirstCheck2}"
                             VerticalOptions="Center" />
-                        <editors:SfComboBox
+                        <Picker
                             HorizontalOptions="Center"
                             ItemsSource="{Binding PossibleResults}"
-                            Placeholder="W/L/T"
                             SelectedItem="{Binding Result2}"
                             WidthRequest="120" />
                     </HorizontalStackLayout>
@@ -514,10 +443,9 @@
                             HorizontalOptions="Center"
                             IsChecked="{Binding FirstCheck3}"
                             VerticalOptions="Center" />
-                        <editors:SfComboBox
+                        <Picker
                             HorizontalOptions="Center"
                             ItemsSource="{Binding PossibleResults}"
-                            Placeholder="W/L/T"
                             SelectedItem="{Binding Result3}"
                             SemanticProperties.Description="Results for third game."
                             SemanticProperties.Hint="Pick a result, win, lose, or tie."
@@ -530,14 +458,15 @@
             <!--#endregion-->
 
             <!--#region Save Button-->
-            <buttons:SfButton
+            <Button
                 Grid.Row="4"
                 Grid.ColumnSpan="2"
-                Background="{StaticResource PokeBlue}"
+                BackgroundColor="{StaticResource PokeBlue}"
                 Command="{Binding SaveMatchCommand}"
                 HorizontalOptions="Fill"
                 SemanticProperties.Hint="Save your journal entry"
                 Text="{Binding SavedFileDisplay}"
+                TextColor="White"
                 VerticalOptions="End" />
             <!--#endregion-->
         </Grid>

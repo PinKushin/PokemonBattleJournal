@@ -7,13 +7,6 @@
 
         public App(ILogger<App> logger)
         {
-            //Register Syncfusion license
-            Syncfusion
-                .Licensing
-                .SyncfusionLicenseProvider
-                .RegisterLicense(
-                "Ngo9BigBOggjHTQxAR8/V1NNaF5cXmBCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdmWXxceHVSRGZdVE11VkRWYUA="
-                );
             _logger = logger;
             InitializeComponent();
         }

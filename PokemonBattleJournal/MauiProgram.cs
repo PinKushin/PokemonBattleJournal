@@ -1,7 +1,5 @@
 using CommunityToolkit.Maui;
 using Serilog;
-using Syncfusion.Maui.Core.Hosting;
-using Syncfusion.Maui.Toolkit.Hosting;
 
 namespace PokemonBattleJournal
 {
@@ -11,9 +9,7 @@ namespace PokemonBattleJournal
         {
             MauiAppBuilder builder = MauiApp.CreateBuilder();
             builder
-                .ConfigureSyncfusionToolkit()
                 .UseMauiApp<App>()
-                .ConfigureSyncfusionCore()
                 .UseMauiCommunityToolkit()
                 .ConfigureFonts(fonts =>
                 {

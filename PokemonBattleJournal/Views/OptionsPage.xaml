@@ -3,9 +3,6 @@
     x:Class="PokemonBattleJournal.Views.OptionsPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:buttons="clr-namespace:Syncfusion.Maui.Toolkit.Buttons;assembly=Syncfusion.Maui.Toolkit"
-    xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
-    xmlns:inputLayout="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
     x:Name="BasePage"
@@ -17,9 +14,6 @@
             BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType=ContentPage}"
             Command="{Binding AppearingCommand}"
             EventName="Appearing" />
-        <!--<toolkit:EventToCommandBehavior
-			Command="{Binding DisappearingCommand}"
-			EventName="Disappearing" />-->
     </ContentPage.Behaviors>
     <ScrollView>
         <VerticalStackLayout HorizontalOptions="Center">
@@ -30,19 +24,23 @@
                 Style="{StaticResource Headline}"
                 Text="Options"
                 VerticalOptions="Center" />
-            <inputLayout:SfTextInputLayout
-                x:Name="TrainerNameInputLayout"
-                AutomationId="TrainerNameInputLayout"
-                ContainerType="Outlined"
-                HelperText="Enter New Trainer Name"
-                Hint="Trainer Name"
-                WidthRequest="200">
-                <Entry
-                    x:Name="TrainerNameInput"
-                    AutomationId="TrainerNameInput"
-                    Text="{Binding NameInput}" />
-            </inputLayout:SfTextInputLayout>
-            <buttons:SfButton
+            <Border
+                Margin="0,5"
+                Stroke="Gray"
+                StrokeThickness="1">
+                <VerticalStackLayout>
+                    <Label
+                        Margin="8,4,8,0"
+                        FontSize="12"
+                        Text="Trainer Name" />
+                    <Entry
+                        x:Name="TrainerNameInput"
+                        AutomationId="TrainerNameInput"
+                        Placeholder="Enter New Trainer Name"
+                        Text="{Binding NameInput}" />
+                </VerticalStackLayout>
+            </Border>
+            <Button
                 x:Name="SaveTrainerNameButton"
                 AutomationId="SaveTrainerNameButton"
                 Command="{Binding SaveTrainerCommand}"
@@ -54,50 +52,44 @@
                 AutomationId="ArchetypeIconDisplay"
                 HeightRequest="64"
                 Source="{Binding SelectedIcon}" />
-            <inputLayout:SfTextInputLayout
-                ContainerType="Outlined"
-                HelperText="Select New Archetype's Icon"
-                Hint="Archtype Icon"
-                WidthRequest="200">
-                <editors:SfComboBox
-                    x:Name="NewArchetypeIcon"
-                    AutomationId="ArchetypeIconPicker"
-                    DisplayMemberPath="Name"
-                    HeightRequest="40"
-                    ItemsSource="{Binding IconCollection}"
-                    SelectedItem="{Binding SelectedIcon}"
-                    TextMemberPath="Name">
-                    <editors:SfComboBox.ItemTemplate>
-                        <DataTemplate x:DataType="x:String">
-                            <ViewCell>
-                                <HorizontalStackLayout HorizontalOptions="Start">
-                                    <Image
-                                        HeightRequest="30"
-                                        HorizontalOptions="Center"
-                                        Source="{Binding .}" />
-                                    <Label
-                                        HorizontalTextAlignment="Center"
-                                        Text="{Binding .}"
-                                        VerticalTextAlignment="Center" />
-                                </HorizontalStackLayout>
-                            </ViewCell>
-                        </DataTemplate>
-                    </editors:SfComboBox.ItemTemplate>
-                </editors:SfComboBox>
-            </inputLayout:SfTextInputLayout>
-            <inputLayout:SfTextInputLayout
-                x:Name="ArchetypeNameInputLayout"
-                AutomationId="ArchetypeNameInputLayout"
-                ContainerType="Outlined"
-                HelperText="Enter New Archetype's Name"
-                Hint="Archtype Name"
-                WidthRequest="200">
-                <Entry
-                    x:Name="ArchetypeNameInput"
-                    AutomationId="ArchetypeNameInput"
-                    Text="{Binding NewDeckName}" />
-            </inputLayout:SfTextInputLayout>
-            <buttons:SfButton
+            <Border
+                Margin="0,5"
+                Stroke="Gray"
+                StrokeThickness="1">
+                <VerticalStackLayout>
+                    <Label
+                        Margin="8,4,8,0"
+                        FontSize="12"
+                        Text="Archetype Icon" />
+                    <Picker
+                        x:Name="NewArchetypeIcon"
+                        AutomationId="ArchetypeIconPicker"
+                        ItemDisplayBinding="{Binding .}"
+                        ItemsSource="{Binding IconCollection}"
+                        SelectedItem="{Binding SelectedIcon}" />
+                    <Label
+                        Margin="8,0,8,4"
+                        FontSize="10"
+                        Text="Select New Archetype's Icon" />
+                </VerticalStackLayout>
+            </Border>
+            <Border
+                Margin="0,5"
+                Stroke="Gray"
+                StrokeThickness="1">
+                <VerticalStackLayout>
+                    <Label
+                        Margin="8,4,8,0"
+                        FontSize="12"
+                        Text="Archetype Name" />
+                    <Entry
+                        x:Name="ArchetypeNameInput"
+                        AutomationId="ArchetypeNameInput"
+                        Placeholder="Enter New Archetype's Name"
+                        Text="{Binding NewDeckName}" />
+                </VerticalStackLayout>
+            </Border>
+            <Button
                 x:Name="SaveArchetypeButton"
                 AutomationId="SaveArchetypeButton"
                 Command="{Binding SaveArchetypeCommand}"
@@ -106,19 +98,23 @@
                 VerticalOptions="Center"
                 WidthRequest="200" />
 
-            <inputLayout:SfTextInputLayout
-                x:Name="TagInputLayout"
-                AutomationId="TagInputLayout"
-                ContainerType="Outlined"
-                HelperText="Enter New Tag"
-                Hint="Tag"
-                WidthRequest="200">
-                <Entry
-                    x:Name="TagInput"
-                    AutomationId="TagInput"
-                    Text="{Binding TagInput}" />
-            </inputLayout:SfTextInputLayout>
-            <buttons:SfButton
+            <Border
+                Margin="0,5"
+                Stroke="Gray"
+                StrokeThickness="1">
+                <VerticalStackLayout>
+                    <Label
+                        Margin="8,4,8,0"
+                        FontSize="12"
+                        Text="Tag" />
+                    <Entry
+                        x:Name="TagInput"
+                        AutomationId="TagInput"
+                        Placeholder="Enter New Tag"
+                        Text="{Binding TagInput}" />
+                </VerticalStackLayout>
+            </Border>
+            <Button
                 x:Name="SaveTagButton"
                 AutomationId="SaveTagButton"
                 Command="{Binding SaveTagCommand}"
@@ -127,7 +123,7 @@
                 VerticalOptions="Center"
                 WidthRequest="200" />
 
-            <buttons:SfButton
+            <Button
                 x:Name="SaveAllButton"
                 AutomationId="SaveAllButton"
                 Command="{Binding SaveAllCommand}"
@@ -135,7 +131,7 @@
                 Text="Save All"
                 VerticalOptions="Center"
                 WidthRequest="200" />
-            <buttons:SfButton
+            <Button
                 x:Name="DeleteTrainer"
                 AutomationId="DeleteTrainer"
                 Command="{Binding DeleteTrainerFileCommand}"
