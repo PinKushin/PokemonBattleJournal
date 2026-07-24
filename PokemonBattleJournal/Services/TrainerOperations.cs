@@ -127,23 +127,26 @@
                 // Delete everything in a transaction
                 await db.RunInTransactionAsync(tran =>
                 {
-                    // Delete matches (using synchronous operations inside transaction)
+                    // Delete match-related games and tag relationships via SQL
+                    // (match.Game1/2/3 are null since matches are loaded without children)
                     foreach (MatchEntry match in matches)
                     {
-                        // Delete match's related data
-                        if (match.Game1 != null)
+                        if (match.Game1Id.HasValue)
                         {
-                            DeleteGameAndTags(tran, match.Game1);
+                            _ = tran.Execute("DELETE FROM TagGame WHERE GameId = ?", match.Game1Id.Value);
+                            _ = tran.Execute("DELETE FROM Game WHERE Id = ?", match.Game1Id.Value);
                         }
 
-                        if (match.Game2 != null)
+                        if (match.Game2Id.HasValue)
                         {
-                            DeleteGameAndTags(tran, match.Game2);
+                            _ = tran.Execute("DELETE FROM TagGame WHERE GameId = ?", match.Game2Id.Value);
+                            _ = tran.Execute("DELETE FROM Game WHERE Id = ?", match.Game2Id.Value);
                         }
 
-                        if (match.Game3 != null)
+                        if (match.Game3Id.HasValue)
                         {
-                            DeleteGameAndTags(tran, match.Game3);
+                            _ = tran.Execute("DELETE FROM TagGame WHERE GameId = ?", match.Game3Id.Value);
+                            _ = tran.Execute("DELETE FROM Game WHERE Id = ?", match.Game3Id.Value);
                         }
 
                         affected += tran.Delete(match);
@@ -199,21 +202,6 @@
                 _ = _factory.GetLock().Release();
             }
         }
-        // Helper method to delete a game and its tags
-        private void DeleteGameAndTags(SQLiteConnection tran, Game game)
-        {
-            // Delete associated tags first
-            if (game.Tags != null)
-            {
-                foreach (Tags tag in game.Tags)
-                {
-                    _ = tran.Delete(tag);
-                }
-            }
-            // Then delete the game
-            _ = tran.Delete(game);
-        }
-
         /// <summary>
         /// Saves a trainer to the database. If the trainer has an ID, it updates the existing record; otherwise, it inserts a new record.
         /// </summary>
