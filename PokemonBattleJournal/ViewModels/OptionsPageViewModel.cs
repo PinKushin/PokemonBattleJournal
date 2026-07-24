@@ -173,7 +173,6 @@
         {
             try
             {
-                await _semaphore.WaitAsync();
                 await SaveTrainerAsync();
                 await SaveTagAsync();
                 await SaveArchetypeAsync();
@@ -184,10 +183,6 @@
                 _logger.LogError(ex, "Error saving all");
                 ModalErrorHandler modalErrorHandler = new();
                 modalErrorHandler.HandleError(ex);
-            }
-            finally
-            {
-                _ = _semaphore.Release();
             }
         }
 
