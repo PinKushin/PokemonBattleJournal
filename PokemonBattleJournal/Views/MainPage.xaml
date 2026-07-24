@@ -64,13 +64,11 @@
                     VerticalOptions="End" />
                 <StackLayout HorizontalOptions="Center" Orientation="{OnIdiom Default=Horizontal, Phone=Vertical}">
                     <!--#region Player Archetype-->
-                    <controls:ImagePicker
+                    <controls:ComboBoxControl
                         x:Name="PlayerArchetype"
                         AutomationId="PlayerArchetype"
                         BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}"
-                        HelperText="Select Your Archetype"
-                        HintText="Played Archetype"
-                        HintTextColor="{AppThemeBinding Light={StaticResource PokeRed}, Dark={StaticResource PokeYellow}}"
+                        Placeholder="Played Archetype"
                         ImageMemberPath="ImagePath"
                         ItemsSource="{Binding Archetypes}"
                         PopupAccentColor="{StaticResource PokeBlue}"
@@ -81,13 +79,11 @@
                         WidthRequest="200" />
                     <!--#endregion-->
                     <!--#region Rival Archetype-->
-                    <controls:ImagePicker
+                    <controls:ComboBoxControl
                         x:Name="RivalArchetype"
                         AutomationId="RivalArchetype"
                         BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}"
-                        HelperText="Select Rival's Archetype"
-                        HintText="Rival's Archetype"
-                        HintTextColor="{AppThemeBinding Light={StaticResource PokeRed}, Dark={StaticResource PokeYellow}}"
+                        Placeholder="Rival's Archetype"
                         ImageMemberPath="ImagePath"
                         ItemsSource="{Binding Archetypes}"
                         PopupAccentColor="{StaticResource PokeBlue}"
