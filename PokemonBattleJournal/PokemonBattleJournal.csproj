@@ -49,6 +49,10 @@
         <NuGetAuditMode>All</NuGetAuditMode>
     </PropertyGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="PokemonBattleJournal.Tests" />
+    </ItemGroup>
+
     <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
         <RunAOTCompilation>False</RunAOTCompilation>
         <PublishTrimmed>False</PublishTrimmed>

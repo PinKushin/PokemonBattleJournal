@@ -171,5 +171,65 @@
             // Assert
             result.ShouldBe(MatchResult.Win);
         }
+
+        [Fact]
+        public void CalculateResult_ThreeWins_ReturnsMatchResultOfWin()
+        {
+            // Arrange
+            MatchResult? result1 = MatchResult.Win;
+            MatchResult? result2 = MatchResult.Win;
+            MatchResult? result3 = MatchResult.Win;
+
+            // Act
+            MatchResult result = _bO3ResultCalculator.CalculateResult(result1, result2, result3);
+
+            // Assert
+            result.ShouldBe(MatchResult.Win);
+        }
+
+        [Fact]
+        public void CalculateResult_ThreeLosses_ReturnsMatchResultOfLoss()
+        {
+            // Arrange
+            MatchResult? result1 = MatchResult.Loss;
+            MatchResult? result2 = MatchResult.Loss;
+            MatchResult? result3 = MatchResult.Loss;
+
+            // Act
+            MatchResult result = _bO3ResultCalculator.CalculateResult(result1, result2, result3);
+
+            // Assert
+            result.ShouldBe(MatchResult.Loss);
+        }
+
+        [Fact]
+        public void CalculateResult_ThreeTies_ReturnsMatchResultOfTie()
+        {
+            // Arrange
+            MatchResult? result1 = MatchResult.Tie;
+            MatchResult? result2 = MatchResult.Tie;
+            MatchResult? result3 = MatchResult.Tie;
+
+            // Act
+            MatchResult result = _bO3ResultCalculator.CalculateResult(result1, result2, result3);
+
+            // Assert
+            result.ShouldBe(MatchResult.Tie);
+        }
+
+        [Fact]
+        public void CalculateResult_WinLossLoss_ReturnsMatchResultOfLoss()
+        {
+            // Arrange
+            MatchResult? result1 = MatchResult.Win;
+            MatchResult? result2 = MatchResult.Loss;
+            MatchResult? result3 = MatchResult.Loss;
+
+            // Act
+            MatchResult result = _bO3ResultCalculator.CalculateResult(result1, result2, result3);
+
+            // Assert
+            result.ShouldBe(MatchResult.Loss);
+        }
     }
 }

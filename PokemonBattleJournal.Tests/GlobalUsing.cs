@@ -1,7 +1,9 @@
 ﻿global using Microsoft.Extensions.Logging;
 global using NSubstitute;
+global using PokemonBattleJournal.Interfaces;
 global using PokemonBattleJournal.Models;
 global using PokemonBattleJournal.Services;
+global using PokemonBattleJournal.Utilities;
 global using PokemonBattleJournal.ViewModels;
 global using Shouldly;
 global using Xunit;

@@ -51,5 +51,19 @@
             _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Loss);
         }
+
+        [Fact]
+        public void CalculateResult_TieInput_ReturnMatchResultOfTie()
+        {
+            // Arrange
+            MatchResult? result1 = MatchResult.Tie;
+
+            // Act
+            MatchResult result = _bO1ResultCalculator.CalculateResult(result1);
+
+            // Assert
+            _ = result.ShouldBeOfType<MatchResult>();
+            result.ShouldBe(MatchResult.Tie);
+        }
     }
 }
