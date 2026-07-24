@@ -100,14 +100,7 @@
                 int affected = 0;
                 await db.RunInTransactionAsync(tran =>
                 {
-                    if (tag.Id != 0)
-                    {
-                        affected = tran.Update(tag);
-                    }
-                    else
-                    {
-                        affected = tran.Insert(tag);
-                    }
+                    affected = tran.Insert(tag);
                 });
                 return affected;
             }

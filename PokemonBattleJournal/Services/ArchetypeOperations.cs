@@ -109,14 +109,7 @@
                 int affected = 0;
                 await db.RunInTransactionAsync(tran =>
                 {
-                    if (archetype.Id != 0)
-                    {
-                        affected = tran.Update(archetype);
-                    }
-                    else
-                    {
-                        affected = tran.Insert(archetype);
-                    }
+                    affected = tran.Insert(archetype);
                 });
                 return affected;
             }

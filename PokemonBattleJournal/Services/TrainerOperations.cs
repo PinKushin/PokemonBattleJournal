@@ -233,14 +233,7 @@
                         throw new InvalidOperationException($"A trainer with the name '{trainerName}' already exists");
                     }
 
-                    if (trainer.Id != 0)
-                    {
-                        affected = tran.Update(trainer);
-                    }
-                    else
-                    {
-                        affected = tran.Insert(trainer);
-                    }
+                    affected = tran.Insert(trainer);
                 });
                 return affected;
             }

@@ -11,14 +11,12 @@
         [RelayCommand]
         public void SaveTrainerName()
         {
-            Logger<FirstStartPageViewModel> logger = new(new LoggerFactory());
             if (TrainerNameInput != null && Application.Current != null)
             {
                 PreferencesHelper.SetSetting("FirstStart", "false");
                 PreferencesHelper.SetSetting("TrainerName", TrainerNameInput);
                 Application.Current.Windows[0].Page = new AppShell();
             }
-            logger.LogInformation("Created Trainer: {Name}", TrainerNameInput);
         }
     }
 }
