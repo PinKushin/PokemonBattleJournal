@@ -254,20 +254,12 @@ namespace PokemonBattleJournal.Services
 
                 await db.RunInTransactionAsync(tran =>
                 {
-                    // Delete games and their tags first
-                    if (matchEntry.Game1 != null)
+                    // Delete games and their tag relationships via SQL
+                    // (matchEntry.Game1/2/3 are null since matches are loaded without children)
+                    foreach (uint gameId in gamesIds)
                     {
-                        affected += DeleteGame(tran, matchEntry.Game1);
-                    }
-
-                    if (matchEntry.Game2 != null)
-                    {
-                        affected += DeleteGame(tran, matchEntry.Game2);
-                    }
-
-                    if (matchEntry.Game3 != null)
-                    {
-                        affected += DeleteGame(tran, matchEntry.Game3);
+                        _ = tran.Execute("DELETE FROM TagGame WHERE GameId = ?", gameId);
+                        _ = tran.Execute("DELETE FROM Game WHERE Id = ?", gameId);
                     }
 
                     affected += tran.Delete(matchEntry);
@@ -275,21 +267,19 @@ namespace PokemonBattleJournal.Services
                     // Verify all related records are deleted
                     foreach (uint gameId in gamesIds)
                     {
-                        Task<Game> gameExists = db.FindAsync<Game>(gameId);
-                        if (!gameExists.IsCompletedSuccessfully)
+                        int remainingGames = tran.ExecuteScalar<int>(
+                            "SELECT COUNT(*) FROM Game WHERE Id = ?", gameId);
+                        if (remainingGames != 0)
                         {
                             _logger.LogWarning("Game {GameId} was not deleted properly", gameId);
-                            _ = tran.Delete(gameExists);
                         }
 
-                        Task<List<TagGame>> tagGameExists = db.Table<TagGame>().Where(tg => tg.GameId == gameId).ToListAsync();
-                        if (tagGameExists.Result.Count != 0)
+                        int remainingTagGames = tran.ExecuteScalar<int>(
+                            "SELECT COUNT(*) FROM TagGame WHERE GameId = ?", gameId);
+                        if (remainingTagGames != 0)
                         {
                             _logger.LogWarning("TagGame entries for Game {GameId} were not deleted properly", gameId);
-                            foreach (TagGame tagGame in tagGameExists.Result)
-                            {
-                                _ = tran.Delete(tagGame);
-                            }
+                            _ = tran.Execute("DELETE FROM TagGame WHERE GameId = ?", gameId);
                         }
                     }
                 });
@@ -396,22 +386,6 @@ namespace PokemonBattleJournal.Services
                     affected += tran.Insert(tagGame);
                 }
             }
-
-            return affected;
-        }
-
-        internal int DeleteGame(SQLiteConnection tran, Game game)
-        {
-            int affected = 0;
-
-            // Delete tag-game relationships first
-            affected += tran.Execute("DELETE FROM TagGame WHERE GameId = ?", game.Id);
-
-            _logger.LogDebug("Deleted tag relationships for game {GameId}", game.Id);
-
-            // Delete game
-            affected += tran.Delete(game);
-            _logger.LogDebug("Deleted game {GameId}", game.Id);
 
             return affected;
         }
