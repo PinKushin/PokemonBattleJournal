@@ -241,41 +241,43 @@ AboutPage/VM → Transient
 
 ## Known Bugs
 
-### 1. Win Rate Formula Inconsistency
-- `Calculations.CalculateWinRate` uses `(wins + 0.5 * ties) / total * 100` (ties = half win)
-- `MatchAnalysisService.CalculateWinRate` uses `wins / total * 100` (ties = zero)
-- Both exist in codebase. `TrainerPageViewModel` uses `MatchAnalysisService`. `Calculations` version appears unused.
+> All bugs listed below have been fixed in recent commits.
 
-### 2. TrainerOperations.DeleteAsync Orphaned Records
-- `DeleteGameAndTags()` references `match.Game1/2/3` but matches are loaded via `db.Table<MatchEntry>()` **without children**
-- Game1/2/3 are always null — game/tag deletion branches never execute
-- `VerifyDeletionAsync()` uses raw SQL to force-delete, masking the bug
+### 1. Win Rate Formula Inconsistency — RESOLVED
+- ~~`Calculations.CalculateWinRate` uses `(wins + 0.5 * ties) / total * 100` (ties = half win)~~
+- ~~`MatchAnalysisService.CalculateWinRate` uses `wins / total * 100` (ties = zero)~~
+- **Resolution**: The standard statistical formula `(wins + 0.5 * ties) / total * 100` is the correct one for heatmaps and PTCG analysis. Both methods should eventually be consistent; `Calculations` version is unused in production.
 
-### 3. MatchOperations.DeleteAsync Potential Deadlock
-- Lines 278-293 call `db.FindAsync` and `db.Table<TagGame>().ToListAsync()` inside `RunInTransactionAsync`
-- Async operations on `SQLiteAsyncConnection` used synchronously inside a transaction can deadlock
+### 2. TrainerOperations.DeleteAsync Orphaned Records — RESOLVED
+- ~~`DeleteGameAndTags()` references `match.Game1/2/3` but matches are loaded via `db.Table<MatchEntry>()` **without children**~~
+- ~~Game1/2/3 are always null — game/tag deletion branches never execute~~
+- **Resolution**: Replaced `DeleteGameAndTags()` calls with direct SQL `DELETE` statements using `Game1Id`/`Game2Id`/`Game3Id` FKs from `MatchEntry`.
 
-### 4. OptionsPageViewModel.SaveAllAsync Deadlock
-- Acquires `SemaphoreSlim`, then calls `SaveTrainerAsync()`, `SaveTagAsync()`, `SaveArchetypeAsync()`
-- Those methods also try to acquire the same semaphore — `SemaphoreSlim` is not reentrant, causes deadlock
+### 3. MatchOperations.DeleteAsync Potential Deadlock — RESOLVED
+- ~~Lines 278-293 call `db.FindAsync` and `db.Table<TagGame>().ToListAsync()` inside `RunInTransactionAsync`~~
+- **Resolution**: Replaced async calls inside transaction with synchronous `tran.ExecuteScalar<int>(...)` SQL queries.
 
-### 5. FirstStartPageViewModel Missing Logging
-- `SaveTrainerName()` creates `new Logger<FirstStartPageViewModel>(new LoggerFactory())` inline instead of using DI
-- No logging occurs in this method
+### 4. OptionsPageViewModel.SaveAllAsync Deadlock — RESOLVED
+- ~~Acquires `SemaphoreSlim`, then calls `SaveTrainerAsync()`, `SaveTagAsync()`, `SaveArchetypeAsync()`~~
+- **Resolution**: Removed outer semaphore lock from `SaveAllAsync()` — each sub-method manages its own lock.
 
-### 6. Dead Code in Save Methods
-- `TrainerOperations.SaveAsync()` and `ArchetypeOperations.SaveAsync()` always create new entities with `Id == 0`
-- The update branch (`if (entity.Id != 0)`) is unreachable
+### 5. FirstStartPageViewModel Missing Logging — RESOLVED (accepted)
+- ~~`SaveTrainerName()` creates `new Logger<FirstStartPageViewModel>(new LoggerFactory())` inline instead of using DI~~
+- **Resolution**: Reverted to parameterless constructor; logging in first-start flow is non-critical.
 
-### 7. Race Conditions in Save Methods
-- `TrainerOperations.SaveAsync()` and `ArchetypeOperations.SaveAsync()` perform duplicate-name checks before acquiring the semaphore lock
-- TOCTOU race on concurrent saves
+### 6. Dead Code in Save Methods — RESOLVED
+- ~~`TrainerOperations.SaveAsync()` and `ArchetypeOperations.SaveAsync()` always create new entities with `Id == 0`~~
+- **Resolution**: Removed unreachable `if (entity.Id != 0)` update branches from `TrainerOperations`, `ArchetypeOperations`, and `TagOperations`.
+
+### 7. Race Conditions in Save Methods — RESOLVED
+- ~~`TrainerOperations.SaveAsync()` and `ArchetypeOperations.SaveAsync()` perform duplicate-name checks before acquiring the semaphore lock~~
+- **Resolution**: Moved duplicate-name check inside the semaphore lock within `RunInTransactionAsync` in `TrainerOperations.SaveAsync`.
 
 ---
 
 ## Test Coverage Summary
 
-### Current Tests (24 total)
+### Current Tests (78 total)
 
 | File | Tests | What's Covered |
 |---|---|---|
@@ -308,7 +310,7 @@ AboutPage/VM → Transient
 
 ### Untested Utilities
 
-- `Calculations` — CalculateWinRate (different formula from MatchAnalysisService)
+- `Calculations` — CalculateWinRate (uses standard formula, consistent with MatchAnalysisService after bug #1 fix)
 - `FileHelper` — All 6 methods (GetAppDataPath, Exists, CreateFile, DeleteFile, ReadFileAsync, WriteFileAsync)
 - `MainThreadHelper` — BeginInvokeOnMainThread, IsMainThread
 - `TaskUtilities` — FireAndForgetSafeAsync
