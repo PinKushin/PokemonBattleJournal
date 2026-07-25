@@ -172,6 +172,9 @@ namespace PokemonBattleJournal.ViewModels
 
         public bool ShowGame3 => BO3Toggle && Result != null && Result2 != null && Result != Result2;
 
+        [RelayCommand]
+        private void ToggleBO3() => BO3Toggle = !BO3Toggle;
+
         //Tags
         [ObservableProperty]
         public partial List<Tags>? TagCollection { get; set; }

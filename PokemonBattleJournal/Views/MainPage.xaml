@@ -22,6 +22,14 @@
             FalseObject="{x:Static FontAttributes.None}"
             TrueObject="{x:Static FontAttributes.Bold}" />
         <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+        <toolkit:BoolToObjectConverter
+            x:Key="PokeballOpacityConverter"
+            FalseObject="{x:Double 0.3}"
+            TrueObject="{x:Double 1.0}" />
+        <toolkit:BoolToObjectConverter
+            x:Key="BoolToBO3TextConverter"
+            FalseObject="Best of 1"
+            TrueObject="Best of 3" />
     </ContentPage.Resources>
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
@@ -95,37 +103,24 @@
                 </StackLayout>
                 <!--#endregion-->
                 <!--#region BO3 Switch & Display-->
-                <HorizontalStackLayout HorizontalOptions="Center">
-                    <Switch
-                        x:Name="BOSwitch"
+                <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                    <Image
                         AutomationId="BOSwitch"
-                        HorizontalOptions="Center"
-                        IsToggled="{Binding BO3Toggle}" />
-                    <Label Text="Best of:" VerticalTextAlignment="Center" />
-
-                    <Label Text="1" VerticalTextAlignment="Center">
-                        <Label.Triggers>
-                            <DataTrigger
-                                Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
-                                TargetType="Label"
-                                Value="False">
-                                <Setter Property="FontAttributes" Value="Bold" />
-                                <Setter Property="FontSize" Value="Medium" />
-                            </DataTrigger>
-                        </Label.Triggers>
-                    </Label>
-                    <Label Text=" or " VerticalTextAlignment="Center" />
-                    <Label Text="3" VerticalTextAlignment="Center">
-                        <Label.Triggers>
-                            <DataTrigger
-                                Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
-                                TargetType="Label"
-                                Value="True">
-                                <Setter Property="FontAttributes" Value="Bold" />
-                                <Setter Property="FontSize" Value="Medium" />
-                            </DataTrigger>
-                        </Label.Triggers>
-                    </Label>
+                        Aspect="AspectFit"
+                        HeightRequest="40"
+                        Opacity="{Binding BO3Toggle, Converter={StaticResource PokeballOpacityConverter}}"
+                        Source="ball_icon.png"
+                        VerticalOptions="Center"
+                        WidthRequest="40">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding ToggleBO3Command}" />
+                        </Image.GestureRecognizers>
+                    </Image>
+                    <Label
+                        FontAttributes="Bold"
+                        Text="{Binding BO3Toggle, Converter={StaticResource BoolToBO3TextConverter}}"
+                        TextColor="{StaticResource PokeYellow}"
+                        VerticalTextAlignment="Center" />
                 </HorizontalStackLayout>
                 <!--#endregion-->
                 <!--#region Current Time Display-->
