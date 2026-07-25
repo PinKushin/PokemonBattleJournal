@@ -57,7 +57,7 @@ public class ComboBoxControl : ContentView
         BindableProperty.Create(nameof(ItemHeight), typeof(double), typeof(ComboBoxControl), 40.0);
 
     public static readonly BindableProperty PopupWidthProperty =
-        BindableProperty.Create(nameof(PopupWidth), typeof(double), typeof(ComboBoxControl), 280.0);
+        BindableProperty.Create(nameof(PopupWidth), typeof(double), typeof(ComboBoxControl), 200.0);
 
     public IEnumerable? ItemsSource
     {

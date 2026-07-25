@@ -45,7 +45,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             {
                 VerticalTextAlignment = TextAlignment.Center,
                 FontSize = 13,
-                TextColor = Colors.Black
+                TextColor = accentColor
             };
             label.SetBinding(Label.TextProperty, new Binding(displayMemberPath));
             Grid.SetColumn(label, 1);
@@ -100,12 +100,18 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             await CloseAsync(null);
         };
 
-        Content = new VerticalStackLayout
+        Content = new Border
         {
-            Children = { titleLabel, collectionView, closeButton },
-            WidthRequest = (int)popupWidth,
+            Stroke = accentColor,
+            StrokeThickness = 1.5,
+            StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 8 },
+            BackgroundColor = backgroundColor,
             Padding = 12,
-            BackgroundColor = backgroundColor
+            Content = new VerticalStackLayout
+            {
+                Children = { titleLabel, collectionView, closeButton },
+                WidthRequest = (int)popupWidth,
+            }
         };
     }
 }
