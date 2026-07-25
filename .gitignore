@@ -364,5 +364,9 @@ FodyWeavers.xsd
 /identifier.sqlite
 /qodana.yaml
 
-# Cursor IDE local config (AI rules live in docs/AI-CONTEXT.md)
+# AI tool local config (shared context lives in AI-CONTEXT.md)
 .cursor/
+.claude/
+
+# VS Code machine-local overrides
+.vscode/settings.local.json

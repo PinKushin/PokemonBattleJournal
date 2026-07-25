@@ -356,7 +356,7 @@ dotnet test PokemonBattleJournal.slnx
 
 ## For AI assistants — maintenance rules
 
-1. **Read this file** at the start of a session.
+1. **Read `AI-CONTEXT.md`** (this file, at repo root) at the start of a session.
 2. **Update [Session log](#session-log)** when:
    - User states a new goal or priority
    - You discover a bug, blocker, or environment constraint
