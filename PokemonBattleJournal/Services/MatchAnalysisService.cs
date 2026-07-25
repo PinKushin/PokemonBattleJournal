@@ -6,12 +6,7 @@ namespace PokemonBattleJournal.Services
     {
         public double CalculateWinRate(List<MatchEntry> matches, out uint wins, out uint losses, out uint ties)
         {
-            wins = (uint) matches.Count(m => m.Result == MatchResult.Win);
-            losses = (uint) matches.Count(m => m.Result == MatchResult.Loss);
-            ties = (uint) matches.Count(m => m.Result == MatchResult.Tie);
-
-            uint totalMatches = wins + losses + ties;
-            return totalMatches > 0 ? (wins + 0.5 * ties) / totalMatches * 100 : 0;
+            return Calculations.CalculateWinRate(matches, out wins, out losses, out ties);
         }
 
         public ObservableCollection<ChartDataPoint> GetMostPlayedArchetypes(List<MatchEntry> matches)
@@ -27,7 +22,7 @@ namespace PokemonBattleJournal.Services
               .Select(g => new TimeDataPoint
               {
                   Date = g.Key,
-                  Value = (g.Count(m => m.Result == MatchResult.Win) + 0.5 * g.Count(m => m.Result == MatchResult.Tie)) / g.Count() * 100
+                  Value = Calculations.CalculateWinRate(g.ToList(), out _, out _, out _)
               })];
         }
 
@@ -39,7 +34,7 @@ namespace PokemonBattleJournal.Services
                 .Select(g => new ChartDataPoint
                 {
                     Label = g.Key,
-                    Value = (g.Count(m => m.Result == MatchResult.Win) + 0.5 * g.Count(m => m.Result == MatchResult.Tie)) / g.Count() * 100
+                    Value = Calculations.CalculateWinRate(g.ToList(), out _, out _, out _)
                 })
                 .OrderByDescending(x => x.Value);
 
@@ -84,7 +79,7 @@ namespace PokemonBattleJournal.Services
                 .Select(g => new ChartDataPoint
                 {
                     Label = g.Key,
-                    Value = (g.Count(m => m.Result == MatchResult.Win) + 0.5 * g.Count(m => m.Result == MatchResult.Tie)) / g.Count() * 100
+                    Value = Calculations.CalculateWinRate(g.ToList(), out _, out _, out _)
                 })
                 .OrderByDescending(x => x.Value);
 
