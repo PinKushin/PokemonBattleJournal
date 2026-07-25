@@ -12,6 +12,7 @@ Chronological notes for the current / recent work. **Append or edit this section
 
 | Date | Topic | Status / notes |
 |---|---|---|
+| 2026-07-25 | **ViewModel contract tests** | Adding reflection-based contract tests to `PokemonBattleJournal.Tests/ViewModels/` — one file per page VM pinning all XAML-bound property/command names. Strategy: AI guardrail so renames break tests. Binding lists captured in AI-CONTEXT.md. In progress. |
 | 2026-07-25 | **Package updates + SQLite vuln fix** | **Done.** All packages updated to latest. SQLite vulnerability (GHSA-2m69-gcr7-jv3q) fixed by pinning `SQLitePCLRaw.lib.e_sqlite3` → 3.53.3 and `SQLitePCLRaw.lib.e_sqlite3.android` → 2.1.12 as direct refs. `sqlite-net-pcl` → 1.11.285. `Microsoft.NET.Test.Sdk` → 18.8.1. `Appium.WebDriver` → 8.3.2. Serilog family updated. 78 tests pass. |
 | 2026-07-25 | **.NET 10 migration** | **Done.** All projects updated to `net10.0` TFMs. CommunityToolkit.Maui → 15.0.0 (Popup API: `Popup<T>` for typed results, `CloseAsync(null/result)`, `ShowPopupAsync<T>(page, popup, new PopupOptions())` from `CommunityToolkit.Maui.Extensions`). CommunityToolkit.Mvvm → 8.4.2. Sentry → 6.7.0. Microsoft.Maui.Controls → 10.0.90. 78 unit tests pass on net10.0. |
 | 2026-07-25 | Solution contextualization + living AI docs | User requested full solution map and `docs/AI-CONTEXT.md` kept current for future AI sessions (Claude, Cursor, etc.). |
@@ -242,6 +243,20 @@ All fixed in recent commits on `master`:
 ---
 
 ## Test coverage
+
+### ViewModel binding contracts
+
+Each page ViewModel has a `{VM}ContractTests.cs` in `PokemonBattleJournal.Tests/ViewModels/` that uses reflection to assert every XAML-bound property and command still exists. **Do not rename or remove any of these members without updating the contract tests.** This is the primary AI guardrail for XAML/ViewModel consistency.
+
+XAML bindings by page (source of truth for contract tests):
+
+| Page | ViewModel | Bound properties | Bound commands |
+|---|---|---|---|
+| MainPage | `MainPageViewModel` | WelcomeMsg, Archetypes, PlayerSelected, RivalSelected, IsBO3 (via BO3Toggle), StartTime, EndTime, DatePlayed, CurrentDateTimeDisplay, TagCollection, TagsSelected, UserNoteInput, FirstCheck, PossibleResults, Result, SavedFileDisplay, Match2TagsSelected, UserNoteInput2, FirstCheck2, Result2, Match3TagsSelected, UserNoteInput3, FirstCheck3, Result3 | AppearingCommand, DisappearingCommand, SaveMatchCommand, BO3Toggle |
+| OptionsPage | `OptionsPageViewModel` | Title, NameInput, NewDeckName, SelectedIcon, IconCollection, TagInput | AppearingCommand, SaveTrainerCommand, SaveArchetypeCommand, SaveTagCommand, SaveAllCommand, DeleteTrainerFileCommand |
+| ReadJournalPage | `ReadJournalPageViewModel` | WelcomeMsg, MatchHistory, SelectedMatch, SelectedNote, PlayingName, PlayingIconSource, AgainstName, AgainstIconSource, DatePlayed, Game1TagsInfo, Game2TagsInfo, Game3TagsInfo, HasGame1Tags, HasGame2Tags, HasGame3Tags, TagsSelectedGame1, TagsSelectedGame2, TagsSelectedGame3, Result | AppearingCommand, LoadMatchCommand |
+| TrainerPage | `TrainerPageViewModel` | WelcomeMsg, WinAverage, Wins, Losses, Ties, AverageMatchDuration, FirstTurnAdvantage, StreakInfo, MostPlayedArchetypes, ArchetypeWinRates, OpponentPerformance, TagUsage, WinRateOverTime, WinRateByMatchLength | AppearingCommand |
+| FirstStartPage | `FirstStartPageViewModel` | TrainerNameInput | SaveTrainerNameCommand |
 
 ### Unit tests — 78 total (all passing)
 
