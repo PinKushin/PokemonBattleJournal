@@ -1,10 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 
 <ContentPage
     x:Class="PokemonBattleJournal.Views.MainPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:controls="clr-namespace:PokemonBattleJournal.Controls"
+    xmlns:material="http://schemas.enisn-projects.io/dotnet/maui/uraniumui/material"
     xmlns:models="clr-namespace:PokemonBattleJournal.Models"
     xmlns:sys="clr-namespace:System;assembly=netstandard"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
@@ -64,34 +64,38 @@
                     VerticalOptions="End" />
                 <StackLayout HorizontalOptions="Center" Orientation="{OnIdiom Default=Horizontal, Phone=Vertical}">
                     <!--#region Player Archetype-->
-                    <controls:ComboBoxControl
-                        x:Name="PlayerArchetype"
-                        AutomationId="PlayerArchetype"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}"
-                        Placeholder="Played Archetype"
-                        ImageMemberPath="ImagePath"
-                        ItemsSource="{Binding Archetypes}"
-                        PopupAccentColor="{StaticResource PokeBlue}"
-                        PopupBackgroundColor="{StaticResource OffBlack}"
-                        SelectedItem="{Binding PlayerSelected}"
-                        StrokeColor="{StaticResource PokeYellow}"
-                        TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
-                        WidthRequest="200" />
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="4">
+                        <Image
+                            HeightRequest="40"
+                            HorizontalOptions="Center"
+                            Source="{Binding PlayerSelected.ImagePath}"
+                            IsVisible="{Binding PlayerSelected, Converter={toolkit:IsNotNullConverter}}" />
+                        <material:PickerField
+                            x:Name="PlayerArchetype"
+                            AutomationId="PlayerArchetype"
+                            Title="Played Archetype"
+                            ItemsSource="{Binding Archetypes}"
+                            SelectedItem="{Binding PlayerSelected}"
+                            DisplayMemberPath="Name"
+                            WidthRequest="200" />
+                    </VerticalStackLayout>
                     <!--#endregion-->
                     <!--#region Rival Archetype-->
-                    <controls:ComboBoxControl
-                        x:Name="RivalArchetype"
-                        AutomationId="RivalArchetype"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}"
-                        Placeholder="Rival's Archetype"
-                        ImageMemberPath="ImagePath"
-                        ItemsSource="{Binding Archetypes}"
-                        PopupAccentColor="{StaticResource PokeBlue}"
-                        PopupBackgroundColor="{StaticResource OffBlack}"
-                        SelectedItem="{Binding RivalSelected}"
-                        StrokeColor="{StaticResource PokeYellow}"
-                        TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
-                        WidthRequest="200" />
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="4">
+                        <Image
+                            HeightRequest="40"
+                            HorizontalOptions="Center"
+                            Source="{Binding RivalSelected.ImagePath}"
+                            IsVisible="{Binding RivalSelected, Converter={toolkit:IsNotNullConverter}}" />
+                        <material:PickerField
+                            x:Name="RivalArchetype"
+                            AutomationId="RivalArchetype"
+                            Title="Rival's Archetype"
+                            ItemsSource="{Binding Archetypes}"
+                            SelectedItem="{Binding RivalSelected}"
+                            DisplayMemberPath="Name"
+                            WidthRequest="200" />
+                    </VerticalStackLayout>
                     <!--#endregion-->
                 </StackLayout>
                 <!--#endregion-->
@@ -146,43 +150,29 @@
                     VerticalTextAlignment="Start" />
                 <!--#endregion-->
                 <!--#region Start and End Time Pickers-->
-                <Label
-                    FontSize="Micro"
-                    HorizontalOptions="Center"
-                    Text="Battle Start Time"
-                    TextColor="{StaticResource PokeYellow}" />
-                <TimePicker
+                <material:TimePickerField
                     x:Name="StartTimePicker"
                     AutomationId="StartTimePicker"
-                    Format="h_mm tt"
+                    Title="Battle Start Time"
+                    Time="{Binding StartTime}"
                     HorizontalOptions="Center"
-                    MaximumWidthRequest="300"
-                    Time="{Binding StartTime}" />
-                <Label
-                    FontSize="Micro"
-                    HorizontalOptions="Center"
-                    Text="Battle End Time"
-                    TextColor="{StaticResource PokeYellow}" />
-                <TimePicker
+                    MaximumWidthRequest="300" />
+                <material:TimePickerField
                     x:Name="EndTimePicker"
                     AutomationId="EndTimePicker"
-                    Format="h_mm tt"
+                    Title="Battle End Time"
+                    Time="{Binding EndTime}"
                     HorizontalOptions="Center"
-                    MaximumWidthRequest="300"
-                    Time="{Binding EndTime}" />
+                    MaximumWidthRequest="300" />
                 <!--#endregion-->
                 <!--#region Date Played Picker-->
-                <Label
-                    FontSize="Micro"
-                    HorizontalOptions="Center"
-                    Text="Date Played"
-                    TextColor="{StaticResource PokeYellow}" />
-                <DatePicker
+                <material:DatePickerField
                     x:Name="DatePlayedPicker"
                     AutomationId="DatePlayedPicker"
+                    Title="Date Played"
+                    Date="{Binding DatePlayed}"
                     HorizontalOptions="Center"
-                    MaximumWidthRequest="300"
-                    Date="{Binding DatePlayed}" />
+                    MaximumWidthRequest="300" />
                 <!--#endregion-->
             </VerticalStackLayout>
             <!--#endregion-->
@@ -260,19 +250,20 @@
                         HorizontalOptions="Center"
                         Text="Went First"
                         VerticalOptions="Center" />
-                    <CheckBox
+                    <material:CheckBox
                         AutomationId="FirstCheck"
                         HorizontalOptions="Center"
                         IsChecked="{Binding FirstCheck}"
                         VerticalOptions="Center"
                         Color="{StaticResource PokeBlue}" />
-                    <Picker
+                    <material:PickerField
                         Margin="5"
                         AutomationId="PossibleResultsPicker"
+                        Title="Result"
                         HorizontalOptions="Center"
                         ItemsSource="{Binding PossibleResults}"
                         SelectedItem="{Binding Result}"
-                        WidthRequest="100" />
+                        WidthRequest="120" />
                 </HorizontalStackLayout>
                 <!--#endregion-->
 
@@ -347,11 +338,12 @@
                             HorizontalOptions="Center"
                             Text="Went first?"
                             VerticalOptions="Center" />
-                        <CheckBox
+                        <material:CheckBox
                             HorizontalOptions="Center"
                             IsChecked="{Binding FirstCheck2}"
                             VerticalOptions="Center" />
-                        <Picker
+                        <material:PickerField
+                            Title="Result"
                             HorizontalOptions="Center"
                             ItemsSource="{Binding PossibleResults}"
                             SelectedItem="{Binding Result2}"
@@ -416,11 +408,12 @@
                             HorizontalOptions="Center"
                             Text="Went first?"
                             VerticalOptions="Center" />
-                        <CheckBox
+                        <material:CheckBox
                             HorizontalOptions="Center"
                             IsChecked="{Binding FirstCheck3}"
                             VerticalOptions="Center" />
-                        <Picker
+                        <material:PickerField
+                            Title="Result"
                             HorizontalOptions="Center"
                             ItemsSource="{Binding PossibleResults}"
                             SelectedItem="{Binding Result3}"

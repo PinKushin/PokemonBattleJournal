@@ -101,6 +101,7 @@
         <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
         <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
         <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3.android" Version="2.1.12" />
+        <PackageReference Include="UraniumUI.Material" Version="3.0.0" />
 
     </ItemGroup>
 
