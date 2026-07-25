@@ -61,13 +61,17 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             };
         });
 
-        collectionView.SelectionChanged += async (s, e) =>
+        var closing = false;
+        EventHandler<SelectionChangedEventArgs> selectionHandler = null!;
+        selectionHandler = async (s, e) =>
         {
-            if (e.CurrentSelection.FirstOrDefault() != null)
-            {
-                await CloseAsync(new PickerResult(e.CurrentSelection.First()));
-            }
+            if (closing || e.CurrentSelection.FirstOrDefault() is not { } selected)
+                return;
+            closing = true;
+            collectionView.SelectionChanged -= selectionHandler;
+            await CloseAsync(new PickerResult(selected));
         };
+        collectionView.SelectionChanged += selectionHandler;
 
         var titleLabel = new Label
         {
@@ -88,7 +92,13 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             BackgroundColor = accentColor.MultiplyAlpha(0.2f),
             Margin = new Thickness(0, 5, 0, 8)
         };
-        closeButton.Clicked += async (s, e) => await CloseAsync(null);
+        closeButton.Clicked += async (s, e) =>
+        {
+            if (closing) return;
+            closing = true;
+            collectionView.SelectionChanged -= selectionHandler;
+            await CloseAsync(null);
+        };
 
         Content = new VerticalStackLayout
         {
