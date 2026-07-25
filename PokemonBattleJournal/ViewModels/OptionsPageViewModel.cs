@@ -220,10 +220,9 @@
                 await _semaphore.WaitAsync();
                 await using Stream fileStream = await FileSystem.Current.OpenAppPackageFileAsync("icon_file_names.txt");
                 using StreamReader reader = new(fileStream);
-                while (!reader.EndOfStream)
+                while ((imageName = await reader.ReadLineAsync()) is not null)
                 {
-                    imageName = await reader.ReadLineAsync();
-                    iconCollection.Add(imageName!);
+                    iconCollection.Add(imageName);
                 }
                 return iconCollection;
             }

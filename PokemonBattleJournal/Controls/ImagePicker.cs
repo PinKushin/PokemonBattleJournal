@@ -39,7 +39,7 @@ public class ImagePicker : ContentView
     public static readonly BindableProperty TextColorProperty =
         BindableProperty.Create(nameof(TextColor), typeof(Color), typeof(ImagePicker), Colors.White);
 
-    public static readonly BindableProperty BackgroundColorProperty =
+    public static new readonly BindableProperty BackgroundColorProperty =
         BindableProperty.Create(nameof(BackgroundColor), typeof(Color), typeof(ImagePicker), Colors.Transparent);
 
     public static readonly BindableProperty HintTextColorProperty =
@@ -102,7 +102,7 @@ public class ImagePicker : ContentView
         set => SetValue(StrokeColorProperty, value);
     }
 
-    public new Color TextColor
+    public Color TextColor
     {
         get => (Color)GetValue(TextColorProperty);
         set => SetValue(TextColorProperty, value);

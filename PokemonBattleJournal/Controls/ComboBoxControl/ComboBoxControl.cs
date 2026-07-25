@@ -38,7 +38,7 @@ public class ComboBoxControl : ContentView
     public static readonly BindableProperty StrokeThicknessProperty =
         BindableProperty.Create(nameof(StrokeThickness), typeof(double), typeof(ComboBoxControl), 1.0);
 
-    public static readonly BindableProperty BackgroundColorProperty =
+    public static new readonly BindableProperty BackgroundColorProperty =
         BindableProperty.Create(nameof(BackgroundColor), typeof(Color), typeof(ComboBoxControl), Colors.White);
 
     public static readonly BindableProperty TextColorProperty =
@@ -101,7 +101,7 @@ public class ComboBoxControl : ContentView
         set => SetValue(StrokeThicknessProperty, value);
     }
 
-    public Color BackgroundColor
+    public new Color BackgroundColor
     {
         get => (Color)GetValue(BackgroundColorProperty);
         set => SetValue(BackgroundColorProperty, value);
