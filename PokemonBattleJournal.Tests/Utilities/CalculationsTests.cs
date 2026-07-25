@@ -80,5 +80,44 @@ namespace PokemonBattleJournal.Tests.Utilities
             losses.ShouldBe(1u);
             ties.ShouldBe(1u);
         }
+
+        [Fact]
+        public void CalculateWinRate_AllLosses_ReturnsZero()
+        {
+            List<MatchEntry> matches =
+            [
+                new() { Result = MatchResult.Loss },
+                new() { Result = MatchResult.Loss }
+            ];
+
+            double result = Calculations.CalculateWinRate(matches, out uint wins, out uint losses, out uint ties);
+
+            result.ShouldBe(0);
+            wins.ShouldBe(0u);
+            losses.ShouldBe(2u);
+            ties.ShouldBe(0u);
+        }
+
+        [Fact]
+        public void CalculateWinRate_SingleWin_Returns100()
+        {
+            List<MatchEntry> matches = [new() { Result = MatchResult.Win }];
+
+            double result = Calculations.CalculateWinRate(matches, out uint wins, out _, out _);
+
+            result.ShouldBe(100);
+            wins.ShouldBe(1u);
+        }
+
+        [Fact]
+        public void CalculateWinRate_SingleTie_Returns50()
+        {
+            List<MatchEntry> matches = [new() { Result = MatchResult.Tie }];
+
+            double result = Calculations.CalculateWinRate(matches, out _, out _, out uint ties);
+
+            result.ShouldBe(50);
+            ties.ShouldBe(1u);
+        }
     }
 }
