@@ -17,10 +17,12 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
         double popupWidth,
         double itemHeight)
     {
+        var closing = false;
+
         var collectionView = new CollectionView
         {
             ItemsSource = itemsSource,
-            SelectionMode = SelectionMode.Single,
+            SelectionMode = SelectionMode.None,
             HeightRequest = 250,
             BackgroundColor = backgroundColor,
             WidthRequest = (float)popupWidth
@@ -48,7 +50,16 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             label.SetBinding(Label.TextProperty, new Binding(displayMemberPath));
             Grid.SetColumn(label, 1);
 
-            return new Grid
+            var tap = new TapGestureRecognizer();
+            tap.Tapped += async (s, e) =>
+            {
+                if (closing) return;
+                closing = true;
+                if (s is Grid g && g.BindingContext is { } item)
+                    await CloseAsync(new PickerResult(item));
+            };
+
+            var grid = new Grid
             {
                 ColumnDefinitions =
                 [
@@ -59,19 +70,9 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
                 HeightRequest = itemHeight,
                 BackgroundColor = backgroundColor
             };
+            grid.GestureRecognizers.Add(tap);
+            return grid;
         });
-
-        var closing = false;
-        EventHandler<SelectionChangedEventArgs> selectionHandler = null!;
-        selectionHandler = async (s, e) =>
-        {
-            if (closing || e.CurrentSelection.FirstOrDefault() is not { } selected)
-                return;
-            closing = true;
-            collectionView.SelectionChanged -= selectionHandler;
-            await CloseAsync(new PickerResult(selected));
-        };
-        collectionView.SelectionChanged += selectionHandler;
 
         var titleLabel = new Label
         {
@@ -96,7 +97,6 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
         {
             if (closing) return;
             closing = true;
-            collectionView.SelectionChanged -= selectionHandler;
             await CloseAsync(null);
         };
 
