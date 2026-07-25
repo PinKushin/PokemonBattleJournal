@@ -19,7 +19,7 @@ namespace PokemonBattleJournal.Tests.Services
 
             double winRate = _service.CalculateWinRate(matches, out uint wins, out uint losses, out uint ties);
 
-            Assert.Equal(50, winRate);
+            Assert.Equal(62.5, winRate); // (2 + 0.5*1) / 4 * 100
             Assert.Equal(2u, wins);
             Assert.Equal(1u, losses);
             Assert.Equal(1u, ties);
@@ -293,7 +293,7 @@ namespace PokemonBattleJournal.Tests.Services
         }
 
         [Fact]
-        public void CalculatePerformanceAgainstOpponents_WithOnlyTies_ReturnsZeroWinRate()
+        public void CalculatePerformanceAgainstOpponents_WithOnlyTies_ReturnsFiftyPercent()
         {
             List<MatchEntry> matches =
             [
@@ -304,7 +304,7 @@ namespace PokemonBattleJournal.Tests.Services
             ObservableCollection<ChartDataPoint> result = _service.CalculatePerformanceAgainstOpponents(matches);
 
             result.Count.ShouldBe(1);
-            result[0].Value.ShouldBe(0); // service counts strict wins only, ties = 0 wins / 2 total = 0%
+            result[0].Value.ShouldBe(50); // (0 + 0.5*2) / 2 * 100 = 50%
         }
 
         [Fact]

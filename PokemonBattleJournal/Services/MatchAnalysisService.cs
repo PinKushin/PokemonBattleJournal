@@ -11,7 +11,7 @@ namespace PokemonBattleJournal.Services
             ties = (uint) matches.Count(m => m.Result == MatchResult.Tie);
 
             uint totalMatches = wins + losses + ties;
-            return totalMatches > 0 ? (double) wins / totalMatches * 100 : 0;
+            return totalMatches > 0 ? (wins + 0.5 * ties) / totalMatches * 100 : 0;
         }
 
         public ObservableCollection<ChartDataPoint> GetMostPlayedArchetypes(List<MatchEntry> matches)
@@ -27,7 +27,7 @@ namespace PokemonBattleJournal.Services
               .Select(g => new TimeDataPoint
               {
                   Date = g.Key,
-                  Value = (double) g.Count(m => m.Result == MatchResult.Win) / g.Count() * 100
+                  Value = (g.Count(m => m.Result == MatchResult.Win) + 0.5 * g.Count(m => m.Result == MatchResult.Tie)) / g.Count() * 100
               })];
         }
 
@@ -39,7 +39,7 @@ namespace PokemonBattleJournal.Services
                 .Select(g => new ChartDataPoint
                 {
                     Label = g.Key,
-                    Value = (double) g.Count(m => m.Result == MatchResult.Win) / g.Count() * 100
+                    Value = (g.Count(m => m.Result == MatchResult.Win) + 0.5 * g.Count(m => m.Result == MatchResult.Tie)) / g.Count() * 100
                 })
                 .OrderByDescending(x => x.Value);
 
@@ -84,7 +84,7 @@ namespace PokemonBattleJournal.Services
                 .Select(g => new ChartDataPoint
                 {
                     Label = g.Key,
-                    Value = (double) g.Count(m => m.Result == MatchResult.Win) / g.Count() * 100
+                    Value = (g.Count(m => m.Result == MatchResult.Win) + 0.5 * g.Count(m => m.Result == MatchResult.Tie)) / g.Count() * 100
                 })
                 .OrderByDescending(x => x.Value);
 
@@ -119,38 +119,19 @@ namespace PokemonBattleJournal.Services
 
         public ObservableCollection<ChartDataPoint> CalculateFirstTurnAdvantage(List<MatchEntry> matches)
         {
-            int firstTurnWins = matches
-                .SelectMany(m => new[] { m.Game1, m.Game2, m.Game3 })
-                .Where(g => g != null && g.Turn == 1 && g.Result == MatchResult.Win)
-                .Count();
+            var allGames = matches.SelectMany(m => new[] { m.Game1, m.Game2, m.Game3 }).Where(g => g != null).Select(g => g!);
 
-            int secondTurnWins = matches
-                .SelectMany(m => new[] { m.Game1, m.Game2, m.Game3 })
-                .Where(g => g != null && g.Turn == 2 && g.Result == MatchResult.Win)
-                .Count();
+            var firstTurnGames = allGames.Where(g => g.Turn == 1).ToList();
+            var secondTurnGames = allGames.Where(g => g.Turn == 2).ToList();
 
-            int totalFirstTurnGames = matches
-                .SelectMany(m => new[] { m.Game1, m.Game2, m.Game3 })
-                .Where(g => g != null && g.Turn == 1)
-                .Count();
-
-            int totalSecondTurnGames = matches
-                .SelectMany(m => new[] { m.Game1, m.Game2, m.Game3 })
-                .Where(g => g != null && g.Turn == 2)
-                .Count();
+            double FirstTurnRate(List<Game> games) => games.Count > 0
+                ? (games.Count(g => g.Result == MatchResult.Win) + 0.5 * games.Count(g => g.Result == MatchResult.Tie)) / games.Count * 100
+                : 0;
 
             return new ObservableCollection<ChartDataPoint>
             {
-                new()
-                {
-                    Label = "First Turn",
-                    Value = totalFirstTurnGames > 0 ? (double)firstTurnWins / totalFirstTurnGames * 100 : 0
-                },
-                new()
-                {
-                    Label = "Second Turn",
-                    Value = totalSecondTurnGames > 0 ? (double)secondTurnWins / totalSecondTurnGames * 100 : 0
-                }
+                new() { Label = "First Turn", Value = FirstTurnRate(firstTurnGames) },
+                new() { Label = "Second Turn", Value = FirstTurnRate(secondTurnGames) }
             };
         }
         public (int LongestWinStreak, int LongestLossStreak, int LongestTieStreak) CalculateStreaks(List<MatchEntry> matches)
