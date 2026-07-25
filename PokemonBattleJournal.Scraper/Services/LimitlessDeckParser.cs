@@ -29,17 +29,21 @@ public class LimitlessDeckParser : IMetaDeckParser
             if (anchor is null || img is null)
                 continue;
 
-            // Remove the annotation span text from the full anchor text
+            // Strip annotation span text from anchor text to get base name
             IElement? annotation = anchor.QuerySelector("span.annotation");
             string annotationText = annotation?.TextContent?.Trim() ?? string.Empty;
             string fullText = anchor.TextContent.Trim();
-            string name = annotationText.Length > 0
-                ? fullText.Replace(annotationText, annotationText).Trim()
-                : fullText;
 
-            // Rebuild name: base name + annotation (e.g. "Dragapult ex")
-            string baseName = fullText.Replace(annotationText, string.Empty).Trim();
-            name = annotationText.Length > 0 ? $"{baseName} {annotationText}" : baseName;
+            string name;
+            if (annotationText.Length > 0)
+            {
+                string baseName = fullText.Replace(annotationText, string.Empty).Trim();
+                name = $"{baseName} {annotationText}".Trim();
+            }
+            else
+            {
+                name = fullText;
+            }
 
             string imageUrl = img.GetAttribute("src") ?? string.Empty;
 
