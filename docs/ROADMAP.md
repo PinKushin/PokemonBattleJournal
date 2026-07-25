@@ -18,8 +18,7 @@ Tracked here so nothing gets lost between sessions. Bugs first (things broken ri
 
 | # | Description | Location | Notes |
 |---|---|---|---|
-| B-04 | TrainerPage hangs on navigation | `TrainerPage.xaml` — 8 `CartesianChart` controls init simultaneously | All charts fire at once on page load → WinUI3 message pump deadlock. Charts replaced with placeholder Labels. Fix: lazy/virtualized init or staggered load. |
-| B-05 | Windows Appium driver has poor Win32 compatibility and recurring bugs | `UITests.Windows/AppiumSetup.cs` | Being replaced with a custom driver. Path is hardcoded to dev machine — update `App =` path on any new machine. |
+| B-04 | ~~TrainerPage hangs on navigation~~ | — | **Fixed.** Charts lazy-load correctly now. |
 
 ---
 
@@ -81,7 +80,7 @@ Safe init strategy to investigate: `CollectionChanged`-deferred load, `Loaded` e
 
 | # | Description | Notes |
 |---|---|---|
-| F-19 | Replace Windows Appium driver | Custom driver in progress to replace WinAppDriver. Better Win32 compatibility. Update `AppiumSetup.cs` when ready. |
+| F-19 | Replace Windows Appium driver | Custom driver in progress to replace WinAppDriver. Better Win32 compatibility and fewer bugs. The exe path in `AppiumSetup.cs` is hardcoded — this is required by WinAppDriver (only way to target an unpackaged Windows app). The custom driver may change this. Update `AppiumSetup.cs` when the new driver is ready. |
 | F-20 | Configurable Android emulator AVD | `pixel_7_-_api_35` is hardcoded in `UITests.Android/AppiumSetup.cs`. Make it configurable via env var or test config file. |
 | F-21 | Multi-trainer switcher | Options page can create trainers but there's no switcher UI. Planned. |
 | F-22 | Archetype periodic refresh | Currently upserts on every `GetAllAsync` call (first call per launch). Consider background refresh or a manual "Refresh Meta" button on OptionsPage so existing DB stays current without requiring a restart. |
