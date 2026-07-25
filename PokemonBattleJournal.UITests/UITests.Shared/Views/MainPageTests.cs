@@ -53,5 +53,17 @@
 
             tagsView.Displayed.ShouldBeTrue();
         }
+
+        [Fact]
+        public void MainPage_BOSwitch_ShowsBO3Fields()
+        {
+            AppiumElement boSwitch = FindUIElement("BOSwitch");
+
+            boSwitch.Click();
+            Thread.Sleep(500);
+
+            AppiumElement bo3Layout = FindUIElement("BO3GamesLayout");
+            bo3Layout.Displayed.ShouldBeTrue();
+        }
     }
 }
