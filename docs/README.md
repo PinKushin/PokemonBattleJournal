@@ -17,20 +17,183 @@ Record matches, track win rates, and review your performance against specific ar
 
 ---
 
-## Quick start
+## Prerequisites
+
+| Tool | Minimum version | Notes |
+|---|---|---|
+| .NET SDK | 10.0 | [Download](https://dotnet.microsoft.com/download) |
+| .NET MAUI workload | 10.0 | `dotnet workload install maui` |
+| Windows App SDK | bundled with MAUI workload | Required for Windows target |
+| Node.js | 18+ | Required only for Appium UI tests |
+| Appium | 2.x | `npm install -g appium` |
+| Appium Windows driver | latest | `appium driver install windows` |
+| Appium UIAutomator2 driver | latest | `appium driver install uiautomator2` (Android UI tests only) |
+| Android SDK + emulator | API 35 | Android Studio or `sdkmanager`; AVD must be named `pixel_7_-_api_35` |
+
+---
+
+## Fresh install setup
+
+### 1 — Clone and restore
 
 ```powershell
-# Build
-dotnet build PokemonBattleJournal.slnx -f net10.0-windows10.0.19041.0
+git clone https://github.com/PinKushin/PokemonBattleJournal.git
+cd PokemonBattleJournal
+dotnet restore PokemonBattleJournal.slnx
+```
 
-# Run (Windows)
+If restore fails with `NETSDK1045` (SDK version not found), verify your SDK:
+
+```powershell
+dotnet --version   # must be 10.x
+dotnet workload list
+```
+
+If the MAUI workload is missing:
+
+```powershell
+dotnet workload install maui
+```
+
+### 2 — Build the app (Windows)
+
+```powershell
+dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
+```
+
+**Common build errors:**
+
+| Error | Fix |
+|---|---|
+| `MSB3027` — file locked by another process | Kill any running instance: `Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue` |
+| `MSB3492` — cannot read `.cache` file | Delete the stale cache: `Remove-Item PokemonBattleJournal.Scraper\obj -Recurse -Force`, then rebuild |
+| `XamlPreCompile` fails on first run after clean | Run the build command a second time — a transient XAML cache issue that resolves itself |
+| NuGet restore error on specific package | Clear the cache: `dotnet nuget locals all --clear`, then `dotnet restore` |
+
+### 3 — Run the app
+
+```powershell
 dotnet run --project PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
+```
 
-# Unit tests
+Or launch the built exe directly:
+
+```powershell
+.\PokemonBattleJournal\bin\Debug\net10.0-windows10.0.19041.0\win-x64\PokemonBattleJournal.exe
+```
+
+---
+
+## Running tests
+
+### Unit tests (no device required)
+
+```powershell
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
 ```
 
-> **Solution file:** always use `PokemonBattleJournal.slnx` — do not recreate `.sln`.
+Run a single test by name:
+
+```powershell
+dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --filter "FullyQualifiedName~MethodName"
+```
+
+Expected: **221 tests passing**.
+
+If tests fail to build, restore the scraper project first — the test project references it:
+
+```powershell
+dotnet restore PokemonBattleJournal.Scraper/PokemonBattleJournal.Scraper.csproj
+dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
+```
+
+### Windows UI tests (Appium)
+
+**Before running:**
+
+1. Build the app in Debug for Windows (step 2 above).
+2. Update the exe path in `PokemonBattleJournal.UITests/UITests.Windows/AppiumSetup.cs` if your clone is not at `C:\Users\pinku\source\repos\...`:
+   ```csharp
+   App = @"C:\your\path\PokemonBattleJournal\bin\Debug\net10.0-windows10.0.19041.0\win-x64\PokemonBattleJournal.exe"
+   ```
+3. Enable Developer Mode on Windows: **Settings → System → For developers → Developer Mode → On**.
+4. Verify Appium and the Windows driver are installed:
+   ```powershell
+   appium driver list --installed
+   # should show: windows
+   ```
+
+**Run:**
+
+```powershell
+dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
+```
+
+The test runner starts and stops the Appium server automatically. If a previous run crashed and left the app open:
+
+```powershell
+Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
+```
+
+### Android UI tests (Appium)
+
+**Before running:**
+
+1. Create an AVD named exactly `pixel_7_-_api_35` (API 35, Pixel 7 profile) in Android Studio or via:
+   ```powershell
+   avdmanager create avd -n "pixel_7_-_api_35" -k "system-images;android-35;google_apis;x86_64" -d "pixel_7"
+   ```
+2. Deploy a Debug build to the emulator. Start the emulator first, then:
+   ```powershell
+   dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-android
+   # Deploy via Android Studio or adb
+   ```
+3. Verify the app is installed on the emulator:
+   ```powershell
+   adb shell pm list packages | Select-String "PinKushin"
+   # should show: package:com.PinKushin.PokemonBattleJournal
+   ```
+4. Verify Appium and the UIAutomator2 driver are installed:
+   ```powershell
+   appium driver list --installed
+   # should show: uiautomator2
+   ```
+
+**Run (emulator must be booted and app deployed before running):**
+
+```powershell
+dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
+```
+
+The `avd` option in `AppiumSetup.cs` will boot the emulator automatically if it is not already running.
+
+---
+
+## Benchmarks
+
+Benchmarks only work in Release configuration:
+
+```powershell
+.\PokemonBattleJournal.Benchmarks\Run.ps1
+```
+
+Do not run with `dotnet run` or in Debug — results will be invalid and the run may fail.
+
+---
+
+## Project structure
+
+```
+PokemonBattleJournal/          # MAUI app
+PokemonBattleJournal.Scraper/  # Limitless TCG meta deck fetcher
+PokemonBattleJournal.Tests/    # 221 unit tests (xUnit, NSubstitute, Shouldly)
+PokemonBattleJournal.UITests/
+  UITests.Windows/             # Appium Windows UI tests
+  UITests.Android/             # Appium Android UI tests
+  UITests.Shared/              # Shared test logic
+PokemonBattleJournal.Benchmarks/
+docs/                          # AI-CONTEXT.md, memory/
+```
 
 ---
 
@@ -45,19 +208,6 @@ Views (XAML) → ViewModels → Services → ISqliteConnectionFactory → SQLite
 - **DI** in `MauiProgram.cs` — MainPage/VM are singletons; all other pages/VMs are transient
 - **Scraper** — separate `PokemonBattleJournal.Scraper` class library; SOLID factory pattern; no MAUI dependency so it runs in unit tests
 - **Win rate formula:** `(wins + 0.5 × ties) / total × 100`
-
----
-
-## Project structure
-
-```
-PokemonBattleJournal/          # MAUI app
-PokemonBattleJournal.Scraper/  # Limitless TCG meta deck fetcher
-PokemonBattleJournal.Tests/    # 221 unit tests (xUnit, NSubstitute, Shouldly)
-PokemonBattleJournal.UITests/  # Appium UI tests (Windows + Android)
-PokemonBattleJournal.Benchmarks/
-docs/                          # AI-CONTEXT.md, memory/
-```
 
 ---
 
