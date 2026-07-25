@@ -105,15 +105,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
         {
             string query = e.NewTextValue?.Trim() ?? string.Empty;
             filteredItems.Clear();
-            IEnumerable<object> matches = string.IsNullOrEmpty(query)
-                ? allItems
-                : allItems.Where(item =>
-                {
-                    PropertyInfo? prop = item.GetType().GetProperty(displayMemberPath);
-                    string? text = prop?.GetValue(item)?.ToString();
-                    return text != null && text.Contains(query, StringComparison.OrdinalIgnoreCase);
-                });
-            foreach (object item in matches)
+            foreach (object item in FilterItems(allItems, query, displayMemberPath))
                 filteredItems.Add(item);
         };
 
@@ -146,5 +138,18 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
                 WidthRequest = (int)popupWidth,
             }
         };
+    }
+
+    internal static IEnumerable<object> FilterItems(IEnumerable<object> items, string query, string displayMemberPath)
+    {
+        if (string.IsNullOrEmpty(query))
+            return items;
+
+        return items.Where(item =>
+        {
+            PropertyInfo? prop = item.GetType().GetProperty(displayMemberPath);
+            string? text = prop?.GetValue(item)?.ToString();
+            return text != null && text.Contains(query, StringComparison.OrdinalIgnoreCase);
+        });
     }
 }

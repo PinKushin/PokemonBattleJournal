@@ -1,6 +1,6 @@
 # PokemonBattleJournal — AI Context
 
-> **Last updated:** 2026-07-25 (BO3 tab switcher + pokeball toggle shipped; Limitless scraper + test coverage in progress)
+> **Last updated:** 2026-07-25 (Limitless scraper shipped + wired; archetype picker search added; 221 tests passing)
 > **Solution file:** `PokemonBattleJournal.slnx` (not `.sln`)  
 > **Read this first** when working in this repo. Update the [Session log](#session-log) whenever scope, decisions, or blockers change — especially before long multi-step work.
 
@@ -12,11 +12,12 @@ Chronological notes for the current / recent work. **Append or edit this section
 
 | Date | Topic | Status / notes |
 |---|---|---|
-| 2026-07-25 | **Limitless TCG scraper + test coverage** | Planning complete. New `PokemonBattleJournal.Scraper` class library with SOLID/factory architecture (`IMetaDeckFetcher`, `IMetaDeckParser`, `ILimitlessMetaService`, `IMetaServiceFactory`). TDD approach: tests written first. Covers top-10 meta decks from limitlesstcg.com; upserts into DB on launch; falls back to 8 hardcoded archetypes when offline. **In progress.** |
+| 2026-07-25 | **Limitless TCG scraper shipped** | `PokemonBattleJournal.Scraper` class library with SOLID/factory architecture (`IMetaDeckFetcher`, `IMetaDeckParser`, `ILimitlessMetaService`, `IMetaServiceFactory`). Upserts top-10 meta decks from limitlesstcg.com on every launch (INSERT OR IGNORE — new decks added, existing preserved). Falls back to 8 hardcoded archetypes only when offline AND table empty. Images are CDN URLs from Limitless; load natively via MAUI `Image`. `LimitlessDeckParser` fixed: guard against empty `annotationText` before `string.Replace` (threw `ArgumentException`). 11 scraper tests. |
+| 2026-07-25 | **Archetype picker search** | `ComboBoxPopup` now has a `SearchBar` above the list filtering by display name in real-time (case-insensitive contains). Filter logic extracted to `internal static FilterItems(items, query, displayMemberPath)` for testability. 8 new tests in `ComboBoxPopupTests`. |
 | 2026-07-25 | **BO3 tab switcher shipped** | Replaced flat BO3 VerticalStackLayout with progressive tab UI. Game 1 always visible; Game 2 tab appears when `BO3Toggle=true`; Game 3 tab appears when `ShowGame3=true` (results differ OR both Tie — per official Pokemon TCG tournament rules). No tab auto-switch on toggle. Data preserved when switching tabs (only `IsVisible`, no unloading). |
 | 2026-07-25 | **Pokeball BO3 toggle shipped** | Replaced native `Switch` with tappable `ball_icon.png` `Image`. Full opacity (1.0) when BO3 on; greyed (0.3) when off via `BoolToObjectConverter`. Label shows "Best of 3" / "Best of 1" via `BoolToObjectConverter`. `ToggleBO3Command` relay command added. `AutomationId="BOSwitch"` preserved on the Image. |
 | 2026-07-25 | **StartTime/EndTime fixed to TimeSpan** | `TimePicker.Time` requires `TimeSpan`; binding `DateTime` silently showed midnight. Changed both VM properties to `TimeSpan`. Defaults refreshed in `AppearingAsync` (singleton VM). Guard logic: `OnStartTimeChanged` clamps `EndTime` ≥ `StartTime`; `OnEndTimeChanged` clamps value ≥ `StartTime`. |
-| 2026-07-25 | **Unit tests: 178 passing** | Up from 78. Added ViewModel contract tests for all pages and behavioral tests for MainPageViewModel. |
+| 2026-07-25 | **Unit tests: 221 passing** | Up from 78. ViewModel contract + behavioral tests, scraper tests (11), ComboBoxPopup filter tests (8). |
 | 2026-07-25 | **ShowGame3 Tie+Tie rule** | `ShowGame3 = BO3Toggle && Result != null && Result2 != null && (Result != Result2 || (Result == Tie && Result2 == Tie))`. Tie+Tie requires Game 3 under official Pokemon TCG tournament rules (neither player has won 2 games). |
 | 2026-07-25 | **TrainerPage hang — root cause found** | `lvc:CartesianChart` (LiveCharts2 2.0.5) deadlocks the WinUI3 message pump during initialization, even with `AnimationsSpeed="0" EasingFunction="{x:Null}"`. Confirmed by replacing all 8 charts with Label placeholders — page loads instantly. Fix: chart controls must be lazy-loaded or virtualized so they don't all initialize at once on navigation. **TrainerPage.xaml currently uses placeholder Labels; charts not restored yet.** |
 | 2026-07-25 | **UraniumUI experiment — tried and reverted** | Installed `UraniumUI.Material` to get styled `TextField`/`PickerField`/`TimePickerField`/`DatePickerField`. Blockers: `PickerField` has no image support (no item templates), `material:CheckBox` doesn't exist, MD3 color system didn't pick up app colors. Reverted cleanly via `git revert 68adcb9 --no-edit`. All pages, controls, MauiProgram restored. |
@@ -62,8 +63,9 @@ Chronological notes for the current / recent work. **Append or edit this section
 - [x] Pokeball BO3 toggle (replace native Switch with tappable Image)
 - [x] StartTime/EndTime TimeSpan fix; AppearingAsync refresh
 - [x] 178 unit tests passing
-- [ ] **`PokemonBattleJournal.Scraper` project** — SOLID scraper for top-10 Limitless TCG meta decks (TDD; in progress)
-- [ ] **Test coverage for BO3 tab features** — ShowGame3, SelectGameN commands, ToggleBO3Command, time guards
+- [x] **`PokemonBattleJournal.Scraper` project** — shipped; upserts top-10 on every launch; CDN images; offline fallback
+- [x] **Test coverage for BO3 tab features** — ShowGame3, SelectGameN commands, ToggleBO3Command, time guards; 221 tests passing
+- [x] **Archetype picker search** — `ComboBoxPopup.FilterItems` extracted + tested (8 tests)
 - [ ] **Fix TrainerPage charts** — lazy/virtualized `CartesianChart` loading to avoid WinUI3 deadlock
 - [ ] **Harden concurrency** — fix static semaphore on transient `TrainerPageViewModel`
 - [ ] Multi-trainer switcher UI (future)
