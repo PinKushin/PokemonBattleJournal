@@ -66,32 +66,20 @@
                     <!--#region Player Archetype-->
                     <controls:ComboBoxControl
                         x:Name="PlayerArchetype"
+                        Style="{StaticResource ArchetypePicker}"
                         AutomationId="PlayerArchetype"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}"
                         Placeholder="Played Archetype"
-                        ImageMemberPath="ImagePath"
                         ItemsSource="{Binding Archetypes}"
-                        PopupAccentColor="{StaticResource PokeBlue}"
-                        PopupBackgroundColor="{StaticResource OffBlack}"
-                        SelectedItem="{Binding PlayerSelected}"
-                        StrokeColor="{StaticResource PokeYellow}"
-                        TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
-                        WidthRequest="200" />
+                        SelectedItem="{Binding PlayerSelected}" />
                     <!--#endregion-->
                     <!--#region Rival Archetype-->
                     <controls:ComboBoxControl
                         x:Name="RivalArchetype"
+                        Style="{StaticResource ArchetypePicker}"
                         AutomationId="RivalArchetype"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}"
                         Placeholder="Rival's Archetype"
-                        ImageMemberPath="ImagePath"
                         ItemsSource="{Binding Archetypes}"
-                        PopupAccentColor="{StaticResource PokeBlue}"
-                        PopupBackgroundColor="{StaticResource OffBlack}"
-                        SelectedItem="{Binding RivalSelected}"
-                        StrokeColor="{StaticResource PokeYellow}"
-                        TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
-                        WidthRequest="200" />
+                        SelectedItem="{Binding RivalSelected}" />
                     <!--#endregion-->
                 </StackLayout>
                 <!--#endregion-->
