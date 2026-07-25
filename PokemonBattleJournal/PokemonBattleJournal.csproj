@@ -105,6 +105,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\PokemonBattleJournal.Scraper\PokemonBattleJournal.Scraper.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
         <MauiXaml Update="Views\AboutPage.xaml">
             <Generator>MSBuild:Compile</Generator>
         </MauiXaml>

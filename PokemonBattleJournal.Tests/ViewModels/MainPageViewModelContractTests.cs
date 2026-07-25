@@ -32,6 +32,12 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [InlineData("UserNoteInput3")]
         [InlineData("FirstCheck3")]
         [InlineData("Result3")]
+        [InlineData("ShowGame3")]
+        [InlineData("IsGame1Selected")]
+        [InlineData("IsGame2Selected")]
+        [InlineData("IsGame3Selected")]
+        [InlineData("HasValidationErrors")]
+        [InlineData("ValidationMessage")]
         public void MainPageViewModel_HasProperty(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"MainPage.xaml binds to '{name}' but it was not found on MainPageViewModel");
 
@@ -40,6 +46,10 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [InlineData("DisappearingCommand")]
         [InlineData("SaveMatchCommand")]
         [InlineData("BO3Toggle")]
+        [InlineData("SelectGame1Command")]
+        [InlineData("SelectGame2Command")]
+        [InlineData("SelectGame3Command")]
+        [InlineData("ToggleBO3Command")]
         public void MainPageViewModel_HasCommand(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"MainPage.xaml binds to Command '{name}' but it was not found on MainPageViewModel");
     }

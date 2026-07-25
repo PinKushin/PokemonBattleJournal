@@ -1,4 +1,6 @@
-﻿namespace PokemonBattleJournal.Services;
+﻿using PokemonBattleJournal.Scraper.Interfaces;
+
+namespace PokemonBattleJournal.Services;
 
 /// <summary>
 /// Provides methods for interacting with the SQLite database.
@@ -9,12 +11,12 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly ILogger _logger;
 
-    public SqliteConnectionFactory(ILogger logger)
+    public SqliteConnectionFactory(ILogger logger, ILimitlessMetaService metaService)
     {
         _logger = logger;
         Trainers = new TrainerOperations(this, logger);
         Matches = new MatchOperations(this, logger);
-        Archetypes = new ArchetypeOperations(this, logger);
+        Archetypes = new ArchetypeOperations(this, logger, metaService);
         Tags = new TagOperations(this, logger);
     }
 

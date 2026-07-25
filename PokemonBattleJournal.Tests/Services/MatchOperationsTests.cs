@@ -8,7 +8,7 @@ namespace PokemonBattleJournal.Tests.Services
 
         public MatchOperationsTests()
         {
-            _mockFactory = Substitute.For<SqliteConnectionFactory>(Substitute.For<ILogger<SqliteConnectionFactory>>());
+            _mockFactory = Substitute.For<SqliteConnectionFactory>(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>());
             _mockLogger = Substitute.For<ILogger>();
             _sut = new MatchOperations(_mockFactory, _mockLogger);
         }

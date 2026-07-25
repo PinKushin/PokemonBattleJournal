@@ -2,6 +2,7 @@
 global using NSubstitute;
 global using PokemonBattleJournal.Interfaces;
 global using PokemonBattleJournal.Models;
+global using PokemonBattleJournal.Scraper.Interfaces;
 global using PokemonBattleJournal.Services;
 global using PokemonBattleJournal.Utilities;
 global using PokemonBattleJournal.ViewModels;

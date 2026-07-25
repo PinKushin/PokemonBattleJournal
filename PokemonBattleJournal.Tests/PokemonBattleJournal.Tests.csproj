@@ -30,6 +30,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\PokemonBattleJournal\PokemonBattleJournal.csproj" />
+    <ProjectReference Include="..\PokemonBattleJournal.Scraper\PokemonBattleJournal.Scraper.csproj" />
     </ItemGroup>
 
     <ItemGroup>

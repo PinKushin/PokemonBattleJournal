@@ -1,5 +1,7 @@
 using CommunityToolkit.Maui;
 using LiveChartsCore.SkiaSharpView.Maui;
+using PokemonBattleJournal.Scraper.Interfaces;
+using PokemonBattleJournal.Scraper.Services;
 using Serilog;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
@@ -60,11 +62,18 @@ namespace PokemonBattleJournal
 
 #endif
             builder.Services.AddSerilog(serilogLogger);
+            builder.Services.AddHttpClient<HttpMetaDeckFetcher>();
+            builder.Services.AddSingleton<IMetaDeckFetcher, HttpMetaDeckFetcher>();
+            builder.Services.AddSingleton<IMetaDeckParser, LimitlessDeckParser>();
+            builder.Services.AddSingleton<IMetaServiceFactory, MetaServiceFactory>();
+            builder.Services.AddSingleton<ILimitlessMetaService>(sp =>
+                sp.GetRequiredService<IMetaServiceFactory>().Create());
             builder.Services.AddSingleton<ISqliteConnectionFactory>(sp =>
             {
                 ILoggerFactory loggerFactory = sp.GetRequiredService<ILoggerFactory>();
                 ILogger<SqliteConnectionFactory> logger = loggerFactory.CreateLogger<SqliteConnectionFactory>();
-                return new SqliteConnectionFactory(logger);
+                ILimitlessMetaService metaService = sp.GetRequiredService<ILimitlessMetaService>();
+                return new SqliteConnectionFactory(logger, metaService);
             });
             builder.Services.AddSingleton<IMatchResultsCalculatorFactory, MatchResultCalculatorFactory>();
             builder.Services.AddSingleton<IMatchAnalysisService, MatchAnalysisService>();

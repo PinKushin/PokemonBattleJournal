@@ -1,14 +1,19 @@
-﻿namespace PokemonBattleJournal.Services
+﻿using PokemonBattleJournal.Scraper.Interfaces;
+using PokemonBattleJournal.Scraper.Models;
+
+namespace PokemonBattleJournal.Services
 {
     public class ArchetypeOperations : IArchetypeOperations
     {
         private readonly SqliteConnectionFactory _factory;
         private readonly ILogger _logger;
+        private readonly ILimitlessMetaService _metaService;
 
-        internal ArchetypeOperations(SqliteConnectionFactory factory, ILogger logger)
+        internal ArchetypeOperations(SqliteConnectionFactory factory, ILogger logger, ILimitlessMetaService metaService)
         {
             _factory = factory;
             _logger = logger;
+            _metaService = metaService;
         }
 
         /// <summary>
@@ -22,17 +27,35 @@
                 await _factory.GetLock().WaitAsync();
                 if (await db.Table<Archetype>().CountAsync() == 0)
                 {
-                    _ = await db.InsertAllAsync(new List<Archetype>
+                    List<MetaDeck> metaDecks = await _metaService.GetTopDecksAsync(10);
+                    if (metaDecks.Count > 0)
                     {
-                        new() { Name = "Regidrago", ImagePath = "regidrago.png" },
-                        new() { Name = "Charizard", ImagePath = "charizard.png" },
-                        new() { Name = "Klawf", ImagePath = "klawf.png" },
-                        new() { Name = "Snorlax Stall", ImagePath = "snorlax.png" },
-                        new() { Name = "Raging Bolt", ImagePath = "raging_bolt.png" },
-                        new() { Name = "Gardevoir", ImagePath = "gardevoir.png" },
-                        new() { Name = "Miraidon", ImagePath = "miraidon.png" },
-                        new() { Name = "Other", ImagePath = "ball_icon.png" }
-                    });
+                        foreach (MetaDeck deck in metaDecks)
+                        {
+                            await db.ExecuteAsync(
+                                "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
+                                deck.Name, deck.ImageUrl);
+                        }
+                    }
+                    else
+                    {
+                        // Offline fallback: hardcoded defaults
+                        _ = await db.InsertAllAsync(new List<Archetype>
+                        {
+                            new() { Name = "Regidrago", ImagePath = "regidrago.png" },
+                            new() { Name = "Charizard", ImagePath = "charizard.png" },
+                            new() { Name = "Klawf", ImagePath = "klawf.png" },
+                            new() { Name = "Snorlax Stall", ImagePath = "snorlax.png" },
+                            new() { Name = "Raging Bolt", ImagePath = "raging_bolt.png" },
+                            new() { Name = "Gardevoir", ImagePath = "gardevoir.png" },
+                            new() { Name = "Miraidon", ImagePath = "miraidon.png" },
+                            new() { Name = "Other", ImagePath = "ball_icon.png" }
+                        });
+                    }
+                    // Always ensure "Other" exists as a catch-all
+                    await db.ExecuteAsync(
+                        "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
+                        "Other", "ball_icon.png");
                 }
                 return await db.Table<Archetype>().ToListAsync();
             }
