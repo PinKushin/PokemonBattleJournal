@@ -253,6 +253,61 @@ namespace PokemonBattleJournal.Tests.Services
         }
 
         [Fact]
+        public void CalculateTagUsage_TagsInGame2AndGame3_CountsAllGames()
+        {
+            List<MatchEntry> matches =
+            [
+                new()
+                {
+                    Game1 = new Game { Tags = [new Tags { Name = "Lucky" }] },
+                    Game2 = new Game { Tags = [new Tags { Name = "Lucky" }, new Tags { Name = "Behind Early" }] },
+                    Game3 = new Game { Tags = [new Tags { Name = "Behind Early" }] }
+                }
+            ];
+
+            ObservableCollection<ChartDataPoint> result = _service.CalculateTagUsage(matches);
+
+            result.Count.ShouldBe(2);
+            result[0].Label.ShouldBe("Lucky");
+            result[0].Value.ShouldBe(2);
+            result[1].Label.ShouldBe("Behind Early");
+            result[1].Value.ShouldBe(2);
+        }
+
+        [Fact]
+        public void GetMostPlayedArchetypes_EmptyList_ReturnsEmpty()
+        {
+            ObservableCollection<ChartDataPoint> result = _service.GetMostPlayedArchetypes([]);
+
+            result.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public void CalculateStreaks_EmptyList_ReturnsZeroes()
+        {
+            (int winStreak, int lossStreak, int tieStreak) = _service.CalculateStreaks([]);
+
+            winStreak.ShouldBe(0);
+            lossStreak.ShouldBe(0);
+            tieStreak.ShouldBe(0);
+        }
+
+        [Fact]
+        public void CalculatePerformanceAgainstOpponents_WithOnlyTies_ReturnsZeroWinRate()
+        {
+            List<MatchEntry> matches =
+            [
+                new() { Against = new Archetype { Name = "Charizard" }, Result = MatchResult.Tie },
+                new() { Against = new Archetype { Name = "Charizard" }, Result = MatchResult.Tie }
+            ];
+
+            ObservableCollection<ChartDataPoint> result = _service.CalculatePerformanceAgainstOpponents(matches);
+
+            result.Count.ShouldBe(1);
+            result[0].Value.ShouldBe(0); // service counts strict wins only, ties = 0 wins / 2 total = 0%
+        }
+
+        [Fact]
         public void CalculateStreaks_ShouldReturnLongestStreaks()
         {
             // Arrange
