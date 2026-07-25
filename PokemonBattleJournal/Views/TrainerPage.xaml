@@ -19,6 +19,7 @@
     <ScrollView>
         <StackLayout Padding="10">
             <Label
+                AutomationId="TrainerWelcomeLabel"
                 FontSize="24"
                 HorizontalOptions="Center"
                 Text="{Binding WelcomeMsg}" />
@@ -28,6 +29,7 @@
                 FontSize="18"
                 Text="Win Rate:" />
             <Label
+                AutomationId="WinRateLabel"
                 FontSize="18"
                 Text="{Binding WinAverage, StringFormat='{0:F2}%'}" />
             <Label

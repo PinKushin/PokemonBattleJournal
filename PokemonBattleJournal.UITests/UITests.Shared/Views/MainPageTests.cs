@@ -30,5 +30,28 @@
             BallIconPng.Displayed.ShouldBeTrue();
             BallIconPng.Enabled.ShouldBeTrue();
         }
+
+        [Fact]
+        public void MainPage_Pickers_DisplayedAndEnabled()
+        {
+            AppiumElement startPicker = FindUIElement("StartTimePicker");
+            AppiumElement endPicker = FindUIElement("EndTimePicker");
+            AppiumElement datePicker = FindUIElement("DatePlayedPicker");
+
+            startPicker.Displayed.ShouldBeTrue();
+            startPicker.Enabled.ShouldBeTrue();
+            endPicker.Displayed.ShouldBeTrue();
+            endPicker.Enabled.ShouldBeTrue();
+            datePicker.Displayed.ShouldBeTrue();
+            datePicker.Enabled.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void MainPage_TagsView_Displayed()
+        {
+            AppiumElement tagsView = FindUIElement("TagsView");
+
+            tagsView.Displayed.ShouldBeTrue();
+        }
     }
 }

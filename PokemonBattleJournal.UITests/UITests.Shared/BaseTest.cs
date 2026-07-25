@@ -31,5 +31,15 @@ namespace UITests
 
             return App.FindElement(MobileBy.Id(id));
         }
+
+        protected void NavigateTo(string pageTitle)
+        {
+            var menu = App.FindElement(MobileBy.AccessibilityId("Open navigation menu"));
+            menu.Click();
+            Thread.Sleep(500);
+            var item = App.FindElement(MobileBy.Name(pageTitle));
+            item.Click();
+            Thread.Sleep(500);
+        }
     }
 }

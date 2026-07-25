@@ -24,6 +24,7 @@
             <Label
                 Grid.Row="0"
                 Grid.ColumnSpan="2"
+                AutomationId="JournalWelcomeLabel"
                 HorizontalOptions="Center"
                 Text="Welcome to your journal!"
                 VerticalOptions="Center" />
