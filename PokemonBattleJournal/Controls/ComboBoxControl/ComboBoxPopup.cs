@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.ObjectModel;
+using System.Reflection;
 using CommunityToolkit.Maui.Views;
 using Microsoft.Maui.Controls;
 
@@ -20,9 +22,13 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
         BackgroundColor = Colors.Transparent;
         var closing = false;
 
+        // Snapshot all items so we can filter without mutating the source
+        var allItems = itemsSource.Cast<object>().ToList();
+        var filteredItems = new ObservableCollection<object>(allItems);
+
         var collectionView = new CollectionView
         {
-            ItemsSource = itemsSource,
+            ItemsSource = filteredItems,
             SelectionMode = SelectionMode.None,
             HeightRequest = 250,
             BackgroundColor = backgroundColor,
@@ -85,6 +91,32 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             Margin = new Thickness(0, 8, 0, 5)
         };
 
+        var searchBar = new SearchBar
+        {
+            Placeholder = "Search...",
+            BackgroundColor = backgroundColor,
+            TextColor = accentColor,
+            PlaceholderColor = accentColor.MultiplyAlpha(0.5f),
+            CancelButtonColor = accentColor,
+            WidthRequest = popupWidth,
+            Margin = new Thickness(0, 0, 0, 4)
+        };
+        searchBar.TextChanged += (s, e) =>
+        {
+            string query = e.NewTextValue?.Trim() ?? string.Empty;
+            filteredItems.Clear();
+            IEnumerable<object> matches = string.IsNullOrEmpty(query)
+                ? allItems
+                : allItems.Where(item =>
+                {
+                    PropertyInfo? prop = item.GetType().GetProperty(displayMemberPath);
+                    string? text = prop?.GetValue(item)?.ToString();
+                    return text != null && text.Contains(query, StringComparison.OrdinalIgnoreCase);
+                });
+            foreach (object item in matches)
+                filteredItems.Add(item);
+        };
+
         var closeButton = new Button
         {
             Text = "Cancel",
@@ -110,7 +142,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             Padding = 12,
             Content = new VerticalStackLayout
             {
-                Children = { titleLabel, collectionView, closeButton },
+                Children = { titleLabel, searchBar, collectionView, closeButton },
                 WidthRequest = (int)popupWidth,
             }
         };
