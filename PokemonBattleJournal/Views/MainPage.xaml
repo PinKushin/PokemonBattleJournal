@@ -12,6 +12,16 @@
     x:Name="BasePage"
     Title="{Binding WelcomeMsg}"
     x:DataType="viewmodel:MainPageViewModel">
+    <ContentPage.Resources>
+        <toolkit:BoolToObjectConverter
+            x:Key="TabActiveBgConverter"
+            FalseObject="{x:Null}"
+            TrueObject="{StaticResource PokeBlue}" />
+        <toolkit:BoolToObjectConverter
+            x:Key="TabActiveFontConverter"
+            FalseObject="{x:Static FontAttributes.None}"
+            TrueObject="{x:Static FontAttributes.Bold}" />
+    </ContentPage.Resources>
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
             BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType=ContentPage}"
@@ -264,159 +274,187 @@
                 </HorizontalStackLayout>
                 <!--#endregion-->
 
-                <!--#region BO3 Notes, Tags, FirstCheck & Results-->
+                <!--#region BO3 Game Tabs-->
                 <VerticalStackLayout
                     Margin="0,10"
                     AutomationId="BO3GamesLayout"
-                    IsVisible="False">
-                    <VerticalStackLayout.Triggers>
-                        <DataTrigger
-                            Binding="{Binding Source={x:Reference BOSwitch}, Path=IsToggled}"
-                            TargetType="VerticalStackLayout"
-                            Value="True">
-                            <Setter Property="IsVisible" Value="True" />
-                        </DataTrigger>
-                    </VerticalStackLayout.Triggers>
+                    IsVisible="{Binding BO3Toggle}">
 
-                    <!--#region Match2 Tags-->
-                    <CollectionView
-                        AutomationId="Match2Tags"
-                        CanReorderItems="True"
-                        ItemSizingStrategy="MeasureAllItems"
-                        ItemsSource="{Binding TagCollection}"
-                        SelectedItems="{Binding Match2TagsSelected, Mode=TwoWay}"
-                        SelectionMode="Multiple">
+                    <!--#region Tab Bar-->
+                    <Border
+                        Margin="0,8,0,0"
+                        Padding="4"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource OffBlack}}"
+                        HorizontalOptions="Center"
+                        StrokeShape="RoundRectangle 8"
+                        StrokeThickness="0">
+                        <HorizontalStackLayout Spacing="4">
+                            <Border
+                                Padding="16,8"
+                                BackgroundColor="{Binding IsGame2Selected, Converter={StaticResource TabActiveBgConverter}}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 6">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectGame2Command}" />
+                                </Border.GestureRecognizers>
+                                <Label
+                                    FontAttributes="{Binding IsGame2Selected, Converter={StaticResource TabActiveFontConverter}}"
+                                    FontSize="14"
+                                    Text="Game 2"
+                                    TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
+                            </Border>
+                            <Border
+                                Padding="16,8"
+                                BackgroundColor="{Binding IsGame3Selected, Converter={StaticResource TabActiveBgConverter}}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 6">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectGame3Command}" />
+                                </Border.GestureRecognizers>
+                                <Label
+                                    FontAttributes="{Binding IsGame3Selected, Converter={StaticResource TabActiveFontConverter}}"
+                                    FontSize="14"
+                                    Text="Game 3"
+                                    TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
+                            </Border>
+                        </HorizontalStackLayout>
+                    </Border>
+                    <!--#endregion-->
 
-                        <CollectionView.ItemsLayout>
-                            <GridItemsLayout Orientation="Horizontal" Span="2" />
-                        </CollectionView.ItemsLayout>
-
-                        <CollectionView.Header>
+                    <!--#region Game 2 Panel-->
+                    <VerticalStackLayout IsVisible="{Binding IsGame2Selected}">
+                        <!--#region Match2 Tags-->
+                        <CollectionView
+                            AutomationId="Match2Tags"
+                            CanReorderItems="True"
+                            ItemSizingStrategy="MeasureAllItems"
+                            ItemsSource="{Binding TagCollection}"
+                            SelectedItems="{Binding Match2TagsSelected, Mode=TwoWay}"
+                            SelectionMode="Multiple">
+                            <CollectionView.ItemsLayout>
+                                <GridItemsLayout Orientation="Horizontal" Span="2" />
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.Header>
+                                <Label
+                                    Margin="0,0,10,0"
+                                    HorizontalOptions="Center"
+                                    HorizontalTextAlignment="Center"
+                                    Text="Tags:"
+                                    VerticalOptions="Center"
+                                    VerticalTextAlignment="Center" />
+                            </CollectionView.Header>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <HorizontalStackLayout>
+                                        <Label
+                                            Margin="0,0,40,0"
+                                            Padding="10,0,0,0"
+                                            x:DataType="models:Tags"
+                                            FontAutoScalingEnabled="True"
+                                            HorizontalOptions="Center"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding Name}"
+                                            VerticalOptions="Center"
+                                            VerticalTextAlignment="Center" />
+                                    </HorizontalStackLayout>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                        <!--#endregion-->
+                        <Editor
+                            AutoSize="TextChanges"
+                            AutomationId="UserNoteInput2"
+                            HeightRequest="200"
+                            IsSpellCheckEnabled="True"
+                            MinimumWidthRequest="350"
+                            Placeholder="Write notes here..."
+                            Text="{Binding UserNoteInput2}" />
+                        <HorizontalStackLayout HorizontalOptions="Center">
                             <Label
-                                Margin="0,0,10,0"
                                 HorizontalOptions="Center"
-                                HorizontalTextAlignment="Center"
-                                Text="Tags:"
-                                VerticalOptions="Center"
-                                VerticalTextAlignment="Center" />
-                        </CollectionView.Header>
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <HorizontalStackLayout>
-                                    <Label
-                                        Margin="0,0,40,0"
-                                        Padding="10,0,0,0"
-                                        x:DataType="models:Tags"
-                                        FontAutoScalingEnabled="True"
-                                        HorizontalOptions="Center"
-                                        HorizontalTextAlignment="End"
-                                        Text="{Binding Name}"
-                                        VerticalOptions="Center"
-                                        VerticalTextAlignment="Center" />
-                                </HorizontalStackLayout>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
-                    <!--#endregion-->
-                    <!--#region Match2 NoteInput Editor-->
-                    <Editor
-                        AutoSize="TextChanges"
-                        AutomationId="UserNoteInput2"
-                        HeightRequest="200"
-                        IsSpellCheckEnabled="True"
-                        IsVisible="True"
-                        MinimumWidthRequest="350"
-                        Placeholder="Write notes here..."
-                        Text="{Binding UserNoteInput2}" />
-                    <!--#endregion-->
-                    <!--#region Match2 FirstCheck & Results-->
-                    <HorizontalStackLayout HorizontalOptions="Center">
-                        <Label
-                            HorizontalOptions="Center"
-                            Text="Went first?"
-                            VerticalOptions="Center" />
-                        <CheckBox
-                            HorizontalOptions="Center"
-                            IsChecked="{Binding FirstCheck2}"
-                            VerticalOptions="Center" />
-                        <Picker
-                            HorizontalOptions="Center"
-                            ItemsSource="{Binding PossibleResults}"
-                            SelectedItem="{Binding Result2}"
-                            WidthRequest="120" />
-                    </HorizontalStackLayout>
+                                Text="Went first?"
+                                VerticalOptions="Center" />
+                            <CheckBox
+                                HorizontalOptions="Center"
+                                IsChecked="{Binding FirstCheck2}"
+                                VerticalOptions="Center" />
+                            <Picker
+                                HorizontalOptions="Center"
+                                ItemsSource="{Binding PossibleResults}"
+                                SelectedItem="{Binding Result2}"
+                                WidthRequest="120" />
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
                     <!--#endregion-->
 
-                    <!--#region Match3 Tags-->
-                    <CollectionView
-                        AutomationId="Match3Tags"
-                        CanReorderItems="True"
-                        ItemSizingStrategy="MeasureAllItems"
-                        ItemsSource="{Binding TagCollection}"
-                        SelectedItems="{Binding Match3TagsSelected, Mode=TwoWay}"
-                        SelectionMode="Multiple">
-
-                        <CollectionView.ItemsLayout>
-                            <GridItemsLayout Orientation="Horizontal" Span="2" />
-                        </CollectionView.ItemsLayout>
-
-                        <CollectionView.Header>
+                    <!--#region Game 3 Panel-->
+                    <VerticalStackLayout IsVisible="{Binding IsGame3Selected}">
+                        <!--#region Match3 Tags-->
+                        <CollectionView
+                            AutomationId="Match3Tags"
+                            CanReorderItems="True"
+                            ItemSizingStrategy="MeasureAllItems"
+                            ItemsSource="{Binding TagCollection}"
+                            SelectedItems="{Binding Match3TagsSelected, Mode=TwoWay}"
+                            SelectionMode="Multiple">
+                            <CollectionView.ItemsLayout>
+                                <GridItemsLayout Orientation="Horizontal" Span="2" />
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.Header>
+                                <Label
+                                    Margin="0,0,10,0"
+                                    HorizontalOptions="Center"
+                                    HorizontalTextAlignment="Center"
+                                    Text="Tags:"
+                                    VerticalOptions="Center"
+                                    VerticalTextAlignment="Center" />
+                            </CollectionView.Header>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <HorizontalStackLayout>
+                                        <Label
+                                            Margin="0,0,40,0"
+                                            Padding="10,0,0,0"
+                                            x:DataType="models:Tags"
+                                            FontAutoScalingEnabled="True"
+                                            HorizontalOptions="Center"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding Name}"
+                                            VerticalOptions="Center"
+                                            VerticalTextAlignment="Center" />
+                                    </HorizontalStackLayout>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                        <!--#endregion-->
+                        <Editor
+                            AutoSize="TextChanges"
+                            AutomationId="UserNoteInput3"
+                            HeightRequest="200"
+                            IsSpellCheckEnabled="True"
+                            MinimumWidthRequest="350"
+                            Placeholder="Write notes here..."
+                            Text="{Binding UserNoteInput3}" />
+                        <HorizontalStackLayout HorizontalOptions="Center">
                             <Label
-                                Margin="0,0,10,0"
                                 HorizontalOptions="Center"
-                                HorizontalTextAlignment="Center"
-                                Text="Tags:"
-                                VerticalOptions="Center"
-                                VerticalTextAlignment="Center" />
-                        </CollectionView.Header>
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <HorizontalStackLayout>
-                                    <Label
-                                        Margin="0,0,40,0"
-                                        Padding="10,0,0,0"
-                                        x:DataType="models:Tags"
-                                        FontAutoScalingEnabled="True"
-                                        HorizontalOptions="Center"
-                                        HorizontalTextAlignment="End"
-                                        Text="{Binding Name}"
-                                        VerticalOptions="Center"
-                                        VerticalTextAlignment="Center" />
-                                </HorizontalStackLayout>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
+                                Text="Went first?"
+                                VerticalOptions="Center" />
+                            <CheckBox
+                                HorizontalOptions="Center"
+                                IsChecked="{Binding FirstCheck3}"
+                                VerticalOptions="Center" />
+                            <Picker
+                                HorizontalOptions="Center"
+                                ItemsSource="{Binding PossibleResults}"
+                                SelectedItem="{Binding Result3}"
+                                SemanticProperties.Description="Results for third game."
+                                SemanticProperties.Hint="Pick a result, win, lose, or tie."
+                                WidthRequest="120" />
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
                     <!--#endregion-->
-                    <!--#region Match3 NoteInput Editor-->
-                    <Editor
-                        AutoSize="TextChanges"
-                        AutomationId="UserNoteInput3"
-                        HeightRequest="200"
-                        IsSpellCheckEnabled="True"
-                        IsVisible="True"
-                        MinimumWidthRequest="350"
-                        Placeholder="Write notes here..."
-                        Text="{Binding UserNoteInput3}" />
-                    <!--#endregion-->
-                    <!--#region Match3 FirstCheck & Result-->
-                    <HorizontalStackLayout HorizontalOptions="Center">
-                        <Label
-                            HorizontalOptions="Center"
-                            Text="Went first?"
-                            VerticalOptions="Center" />
-                        <CheckBox
-                            HorizontalOptions="Center"
-                            IsChecked="{Binding FirstCheck3}"
-                            VerticalOptions="Center" />
-                        <Picker
-                            HorizontalOptions="Center"
-                            ItemsSource="{Binding PossibleResults}"
-                            SelectedItem="{Binding Result3}"
-                            SemanticProperties.Description="Results for third game."
-                            SemanticProperties.Hint="Pick a result, win, lose, or tie."
-                            WidthRequest="120" />
-                    </HorizontalStackLayout>
-                    <!--#endregion-->
+
                 </VerticalStackLayout>
                 <!--#endregion-->
             </VerticalStackLayout>

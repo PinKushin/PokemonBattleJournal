@@ -223,25 +223,22 @@ public class ComboBoxControl : ContentView
 
     private void UpdateDisplay()
     {
-        _placeholderLabel.IsVisible = SelectedItem == null;
-        _selectedLabel.IsVisible = SelectedItem != null;
-        _selectedIcon.IsVisible = SelectedItem != null;
+        _selectedIcon.IsVisible = true;
 
         if (SelectedItem != null)
         {
-            var displayProp = DisplayMemberPath;
-            var imageProp = ImageMemberPath;
-
-            var name = SelectedItem.GetType().GetProperty(displayProp)?.GetValue(SelectedItem)?.ToString() ?? "";
-            var imagePath = SelectedItem.GetType().GetProperty(imageProp)?.GetValue(SelectedItem)?.ToString();
-
+            _placeholderLabel.IsVisible = false;
+            _selectedLabel.IsVisible = true;
+            var name = SelectedItem.GetType().GetProperty(DisplayMemberPath)?.GetValue(SelectedItem)?.ToString() ?? "";
+            var imagePath = SelectedItem.GetType().GetProperty(ImageMemberPath)?.GetValue(SelectedItem)?.ToString();
             _selectedLabel.Text = name;
             _selectedIcon.Source = imagePath;
         }
         else
         {
-            _selectedLabel.Text = "";
-            _selectedIcon.Source = null;
+            _placeholderLabel.IsVisible = true;
+            _selectedLabel.IsVisible = false;
+            _selectedIcon.Source = "ball_icon.png";
         }
     }
 

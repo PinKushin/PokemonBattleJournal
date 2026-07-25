@@ -111,6 +111,31 @@ namespace PokemonBattleJournal.ViewModels
                 UserNoteInput2 = null;
                 UserNoteInput3 = null;
             }
+            else
+            {
+                IsGame2Selected = true;
+                IsGame3Selected = false;
+            }
+        }
+
+        [ObservableProperty]
+        public partial bool IsGame2Selected { get; set; } = true;
+
+        [ObservableProperty]
+        public partial bool IsGame3Selected { get; set; }
+
+        [RelayCommand]
+        private void SelectGame2()
+        {
+            IsGame2Selected = true;
+            IsGame3Selected = false;
+        }
+
+        [RelayCommand]
+        private void SelectGame3()
+        {
+            IsGame2Selected = false;
+            IsGame3Selected = true;
         }
         [ObservableProperty]
         public partial bool FirstCheck { get; set; }
