@@ -13,7 +13,6 @@ namespace PokemonBattleJournal.ViewModels
         private readonly ISqliteConnectionFactory _connection;
         private readonly ILogger<TrainerPageViewModel> _logger;
         private readonly IMatchAnalysisService _analysisService;
-        private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
         public TrainerPageViewModel(ILogger<TrainerPageViewModel> logger, ISqliteConnectionFactory connection, IMatchAnalysisService analysisService)
         {
@@ -110,10 +109,9 @@ namespace PokemonBattleJournal.ViewModels
         public async Task AppearingAsync()
         {
             _logger.LogInformation("TrainerPage appearing");
+            List<MatchEntry>? matches = null;
             try
             {
-                await _semaphore.WaitAsync();
-
                 Trainer? trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
                 if (trainer == null)
                 {
@@ -128,47 +126,50 @@ namespace PokemonBattleJournal.ViewModels
                 }
 
                 _logger.LogInformation("Loading matches for trainer: {TrainerId} ({TrainerName})", trainer.Id, trainer.Name);
-                List<MatchEntry>? matches = await _connection.Matches.GetByTrainerIdAsync(trainer.Id, true);
-
-                if (matches == null || matches.Count < 1)
-                {
-                    ResetStats();
-                    return;
-                }
-
-                _logger.LogInformation("Calculating statistics for {Count} matches", matches.Count);
-
-                WinAverage = _analysisService.CalculateWinRate(matches, out uint wins, out uint losses, out uint ties);
-                Wins = wins;
-                Losses = losses;
-                Ties = ties;
-
-                AverageMatchDuration = _analysisService.CalculateAverageMatchDuration(matches);
-
-                (int winStreak, int lossStreak, int tieStreak) = _analysisService.CalculateStreaks(matches);
-                StreakInfo = $"Longest Streaks - Wins: {winStreak}, Losses: {lossStreak}, Ties: {tieStreak}";
-
-                BuildMatchupHeatmap(matches);
-                BuildMostPlayedChart(matches);
-                BuildArchetypeWinRateChart(matches);
-                BuildTagUsageChart(matches);
-                BuildOpponentChart(matches);
-                BuildWinRateOverTimeChart(matches);
-                BuildMatchLengthChart(matches);
-                BuildFirstTurnChart(matches);
-
-                _logger.LogInformation("All statistics calculated successfully");
+                matches = await _connection.Matches.GetByTrainerIdAsync(trainer.Id, true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading Trainer Page data");
                 ModalErrorHandler modalErrorHandler = new();
                 modalErrorHandler.HandleError(ex);
+                return;
             }
-            finally
+
+            if (matches == null || matches.Count < 1)
             {
-                _ = _semaphore.Release();
+                MainThreadHelper.BeginInvokeOnMainThread(ResetStats);
+                return;
             }
+
+            _logger.LogInformation("Calculating statistics for {Count} matches", matches.Count);
+
+            // Compute stats on current thread before touching UI
+            double winAverage = _analysisService.CalculateWinRate(matches, out uint wins, out uint losses, out uint ties);
+            TimeSpan avgDuration = _analysisService.CalculateAverageMatchDuration(matches);
+            (int winStreak, int lossStreak, int tieStreak) = _analysisService.CalculateStreaks(matches);
+
+            // Post scalar stats immediately
+            MainThreadHelper.BeginInvokeOnMainThread(() =>
+            {
+                WinAverage = winAverage;
+                Wins = wins;
+                Losses = losses;
+                Ties = ties;
+                AverageMatchDuration = avgDuration;
+                StreakInfo = $"Longest Streaks - Wins: {winStreak}, Losses: {lossStreak}, Ties: {tieStreak}";
+            });
+
+            MainThreadHelper.BeginInvokeOnMainThread(() => BuildMatchupHeatmap(matches));
+            MainThreadHelper.BeginInvokeOnMainThread(() => BuildMostPlayedChart(matches));
+            MainThreadHelper.BeginInvokeOnMainThread(() => BuildArchetypeWinRateChart(matches));
+            MainThreadHelper.BeginInvokeOnMainThread(() => BuildTagUsageChart(matches));
+            MainThreadHelper.BeginInvokeOnMainThread(() => BuildOpponentChart(matches));
+            MainThreadHelper.BeginInvokeOnMainThread(() => BuildWinRateOverTimeChart(matches));
+            MainThreadHelper.BeginInvokeOnMainThread(() => BuildMatchLengthChart(matches));
+            MainThreadHelper.BeginInvokeOnMainThread(() => BuildFirstTurnChart(matches));
+
+            _logger.LogInformation("All statistics queued for rendering");
         }
 
         private void ResetStats()

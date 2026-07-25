@@ -8,9 +8,9 @@ namespace PokemonBattleJournal.ViewModels
         private readonly ILogger<MainPageViewModel> _logger;
         private readonly IDispatcherTimer? _timer;
         private readonly ISqliteConnectionFactory _connection;
-        private static readonly SemaphoreSlim _semaphore = new(1, 1);
+        private readonly SemaphoreSlim _semaphore = new(1, 1);
         private readonly Lock _lock = new();
-        private static Trainer? _trainer;
+        private Trainer? _trainer;
         private readonly IMatchResultsCalculatorFactory _calculatorFactory;
 
 

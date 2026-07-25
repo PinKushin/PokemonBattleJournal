@@ -3,7 +3,7 @@
     public partial class OptionsPageViewModel : ObservableObject
     {
         private readonly ISqliteConnectionFactory _connection;
-        private static readonly SemaphoreSlim _semaphore = new(1, 1);
+        private readonly SemaphoreSlim _semaphore = new(1, 1);
         private Trainer? _trainer;
         private readonly ILogger<OptionsPageViewModel> _logger;
         public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection)
@@ -211,7 +211,7 @@
         }
 
         //Icon name collection file reader
-        private static async Task<List<string>> PopulateIconCollectionAsync()
+        private async Task<List<string>> PopulateIconCollectionAsync()
         {
             string? imageName;
             List<string> iconCollection = [];

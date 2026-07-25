@@ -1,6 +1,7 @@
 using CommunityToolkit.Maui;
 using LiveChartsCore.SkiaSharpView.Maui;
 using Serilog;
+using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace PokemonBattleJournal
 {
@@ -11,6 +12,7 @@ namespace PokemonBattleJournal
             MauiAppBuilder builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseSkiaSharp()
                 .UseMauiCommunityToolkit()
                 .UseLiveCharts()
                 .ConfigureFonts(fonts =>

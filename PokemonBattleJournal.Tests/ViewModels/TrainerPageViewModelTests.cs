@@ -76,6 +76,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 .Returns(Task.FromResult(matches));
 
             _mockAnalysisService.CalculateWinRate(matches, out _, out _, out _).Returns(100);
+            _mockAnalysisService.CalculateMatchupMatrix(matches).Returns((Array.Empty<string>(), Array.Empty<string>(), Array.Empty<(int, int, double)>()));
             _mockAnalysisService.GetMostPlayedArchetypes(matches).Returns([]);
             _mockAnalysisService.CalculateWinRateOverTime(matches).Returns([]);
             _mockAnalysisService.CalculateArchetypeWinRate(matches).Returns([]);
@@ -109,6 +110,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             _mockAnalysisService.CalculateWinRate(matches, out _, out _, out _)
                 .Returns(66.66666666666667);
+            _mockAnalysisService.CalculateMatchupMatrix(matches)
+                .Returns((Array.Empty<string>(), Array.Empty<string>(), Array.Empty<(int, int, double)>()));
             _mockAnalysisService.GetMostPlayedArchetypes(matches)
                 .Returns([]);
             _mockAnalysisService.CalculateWinRateOverTime(matches)

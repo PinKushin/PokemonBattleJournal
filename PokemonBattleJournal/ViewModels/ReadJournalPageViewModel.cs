@@ -4,7 +4,7 @@
     {
         private readonly ILogger<ReadJournalPageViewModel> _logger;
         private readonly ISqliteConnectionFactory _connection;
-        private static readonly SemaphoreSlim _semaphore = new(1, 1);
+        private readonly SemaphoreSlim _semaphore = new(1, 1);
 
         public ReadJournalPageViewModel(ILogger<ReadJournalPageViewModel> logger, ISqliteConnectionFactory connection)
         {

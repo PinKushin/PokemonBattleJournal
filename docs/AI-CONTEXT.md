@@ -1,6 +1,6 @@
 # PokemonBattleJournal — AI Context
 
-> **Last updated:** 2026-07-25 (.NET 10 migration in progress)
+> **Last updated:** 2026-07-25 (TrainerPage hang diagnosed; concurrency hardening in progress)
 > **Solution file:** `PokemonBattleJournal.slnx` (not `.sln`)  
 > **Read this first** when working in this repo. Update the [Session log](#session-log) whenever scope, decisions, or blockers change — especially before long multi-step work.
 
@@ -12,6 +12,10 @@ Chronological notes for the current / recent work. **Append or edit this section
 
 | Date | Topic | Status / notes |
 |---|---|---|
+| 2026-07-25 | **TrainerPage hang — root cause found** | `lvc:CartesianChart` (LiveCharts2 2.0.5) deadlocks the WinUI3 message pump during initialization, even with `AnimationsSpeed="0" EasingFunction="{x:Null}"`. Confirmed by replacing all 8 charts with Label placeholders — page loads instantly. Fix: chart controls must be lazy-loaded or virtualized so they don't all initialize at once on navigation. **TrainerPage.xaml currently uses placeholder Labels; charts not restored yet.** |
+| 2026-07-25 | **UraniumUI experiment — tried and reverted** | Installed `UraniumUI.Material` to get styled `TextField`/`PickerField`/`TimePickerField`/`DatePickerField`. Blockers: `PickerField` has no image support (no item templates), `material:CheckBox` doesn't exist, MD3 color system didn't pick up app colors. Reverted cleanly via `git revert 68adcb9 --no-edit`. All pages, controls, MauiProgram restored. |
+| 2026-07-25 | **LiveCharts2 installed** | Added `LiveChartsCore.SkiaSharpView.Maui 2.0.5`. `UseLiveCharts()` in MauiProgram. `TrainerPageViewModel` has 8 chart property sets (ISeries[], ICartesianAxis[]) and all 8 `Build*Chart` private methods — they are correct and ready. Only the XAML is using placeholders pending the safe lazy-load implementation. |
+| 2026-07-25 | **Concurrency architecture concerns** | `TrainerPageViewModel._semaphore` is `static` on a `Transient` VM — shared across all instances, counter can get stuck at 0 if an instance is GC'd while holding the lock. `AsyncRelayCommand` already prevents concurrent invocations, so the VM-level semaphore may be redundant. DB semaphore in `SqliteConnectionFactory` is correct (static on a singleton). **Next: audit and harden concurrency throughout ViewModels.** |
 | 2026-07-25 | **ViewModel contract tests** | Adding reflection-based contract tests to `PokemonBattleJournal.Tests/ViewModels/` — one file per page VM pinning all XAML-bound property/command names. Strategy: AI guardrail so renames break tests. Binding lists captured in AI-CONTEXT.md. In progress. |
 | 2026-07-25 | **Package updates + SQLite vuln fix** | **Done.** All packages updated to latest. SQLite vulnerability (GHSA-2m69-gcr7-jv3q) fixed by pinning `SQLitePCLRaw.lib.e_sqlite3` → 3.53.3 and `SQLitePCLRaw.lib.e_sqlite3.android` → 2.1.12 as direct refs. `sqlite-net-pcl` → 1.11.285. `Microsoft.NET.Test.Sdk` → 18.8.1. `Appium.WebDriver` → 8.3.2. Serilog family updated. 78 tests pass. |
 | 2026-07-25 | **.NET 10 migration** | **Done.** All projects updated to `net10.0` TFMs. CommunityToolkit.Maui → 15.0.0 (Popup API: `Popup<T>` for typed results, `CloseAsync(null/result)`, `ShowPopupAsync<T>(page, popup, new PopupOptions())` from `CommunityToolkit.Maui.Extensions`). CommunityToolkit.Mvvm → 8.4.2. Sentry → 6.7.0. Microsoft.Maui.Controls → 10.0.90. 78 unit tests pass on net10.0. |
@@ -45,10 +49,12 @@ Chronological notes for the current / recent work. **Append or edit this section
 
 - [x] Fix `ComboBoxPopup` empty dropdown
 - [x] Fix Windows Appium path
-- [ ] Verify archetype picker in running app (user)
-- [ ] .NET 10 migration (future)
+- [x] .NET 10 migration
+- [x] LiveCharts2 installed + ViewModel chart data wired
+- [x] TrainerPage hang root cause diagnosed (CartesianChart WinUI3 deadlock)
+- [ ] **Fix TrainerPage charts** — implement lazy/virtualized chart loading so `CartesianChart` controls don't all initialize on navigation
+- [ ] **Harden concurrency** — audit all VM semaphores; fix static semaphore on transient `TrainerPageViewModel`
 - [ ] Multi-trainer switcher UI (future)
-- [ ] TrainerPage richer stats (future)
 - [ ] Configurable Android Appium emulator (future)
 
 
@@ -74,6 +80,7 @@ Chronological notes for the current / recent work. **Append or edit this section
 | Database | `sqlite-net-pcl`, `SQLite.Net.Extensions.Async`, `SQLitePCLRaw.bundle_green` |
 | MVVM | CommunityToolkit.Maui 15.x, CommunityToolkit.Mvvm 8.x |
 | UI | Native MAUI controls + custom `ComboBoxControl`, `ImagePicker` |
+| Charts | `LiveChartsCore.SkiaSharpView.Maui` 2.0.5 — `CartesianChart` (8 on TrainerPage); currently using Label placeholders due to WinUI3 init deadlock |
 | Logging | Serilog → debug + rolling file (`log.txt` in app data) |
 | Errors | Sentry.Maui (DSN in `MauiProgram.cs`) |
 | Unit tests | xUnit, Shouldly, NSubstitute |
@@ -170,7 +177,7 @@ Views (XAML) ──bind──► ViewModels ──call──► Services ──�
                               └── ModalErrorHandler (alerts on errors)
 ```
 
-- **Concurrency:** static `SemaphoreSlim` on `SqliteConnectionFactory`; all DB ops acquire it.
+- **Concurrency:** static `SemaphoreSlim` on `SqliteConnectionFactory` (correct — singleton); **WARNING:** `TrainerPageViewModel` also has `static SemaphoreSlim _semaphore` but is registered Transient — shared across instances, can deadlock if counter hits 0 at GC. `AsyncRelayCommand` already prevents concurrent calls. Hardening planned.
 - **Transactions:** `RunInTransactionAsync` for multi-step saves/deletes.
 - **Match results:** `MatchResultCalculatorFactory` → `BO1ResultCalculator` or `BO3ResultCalculator`.
 - **Stats:** `MatchAnalysisService` (11 calculation methods) feeds `TrainerPageViewModel`.
@@ -192,7 +199,7 @@ Views (XAML) ──bind──► ViewModels ──call──► Services ──�
 | `FirstStartPage` | `FirstStartPageViewModel` | Onboarding — trainer name | `Border`+`Entry`, `Button` |
 | `MainPage` | `MainPageViewModel` | Log BO1/BO3 matches | 2× `ComboBoxControl` (archetypes), native `TimePicker`/`DatePicker`/`Picker`, tag `CollectionView`, save/validate |
 | `ReadJournalPage` | `ReadJournalPageViewModel` | Match history browser | `CollectionView`, game/tag detail panels |
-| `TrainerPage` | `TrainerPageViewModel` | Stats dashboard | Labels + `CollectionView` lists (no charts) |
+| `TrainerPage` | `TrainerPageViewModel` | Stats dashboard | Stat labels + 8 `lvc:CartesianChart` sections (**currently Label placeholders** — charts deadlock WinUI3 on init; lazy loading needed) |
 | `OptionsPage` | `OptionsPageViewModel` | Trainer, archetype, tag CRUD | `Border`+`Entry`, `Picker`, `ImagePicker`, buttons |
 | `AboutPage` | `AboutPageViewModel` | Credits | Static content |
 
@@ -322,7 +329,7 @@ XAML bindings by page (source of truth for contract tests):
 | Fix MainPage archetype ComboBoxControl | ✅ Done (2026-07-25) |
 | Fix Windows Appium path | ✅ Done (2026-07-25) |
 | Multi-trainer switcher UI | 🔲 Partial — create trainer on Options page only |
-| TrainerPage richer visuals | 🔲 Deferred |
+| TrainerPage charts (LiveCharts2) | 🔲 In progress — VM ready, XAML has placeholders; lazy loading needed to avoid WinUI3 deadlock |
 | Configurable Android Appium AVD | 🔲 Deferred |
 | .NET 10 upgrade | ✅ Done (2026-07-25) |
 | Branch `origin/sqlite` | Ignore — merged |

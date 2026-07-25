@@ -17,6 +17,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
         double popupWidth,
         double itemHeight)
     {
+        BackgroundColor = Colors.Transparent;
         var closing = false;
 
         var collectionView = new CollectionView

@@ -258,7 +258,11 @@ public class ComboBoxControl : ContentView
             PopupWidth,
             ItemHeight);
 
-        var popupResult = await Shell.Current.CurrentPage.ShowPopupAsync<ComboBoxPopup.PickerResult?>(popup, new PopupOptions());
+        var popupResult = await Shell.Current.CurrentPage.ShowPopupAsync<ComboBoxPopup.PickerResult?>(popup, new PopupOptions
+        {
+            Shape = null,
+            Shadow = null
+        });
 
         if (popupResult?.Result is ComboBoxPopup.PickerResult pickerResult && pickerResult.SelectedItem != null)
         {
