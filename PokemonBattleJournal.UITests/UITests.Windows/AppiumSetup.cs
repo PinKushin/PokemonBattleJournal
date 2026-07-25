@@ -30,7 +30,7 @@ namespace UITests
                 PlatformName = "Windows",
                 DeviceName = "WindowsPC",
                 // The identifier of the deployed application to test
-                App = @"C:\Users\pinku\source\repos\PinKushin\PokemonBattleJournal\PokemonBattleJournal\bin\Debug\net10.0-windows10.0.19041.0\win10-x64\PokemonBattleJournal.exe" // Update path on new machine or repartition
+                App = @"C:\Users\pinku\source\repos\PinKushin\PokemonBattleJournal\PokemonBattleJournal\bin\Debug\net10.0-windows10.0.19041.0\win-x64\PokemonBattleJournal.exe" // Update path on new machine or repartition
             };
 
             // Note there are many more options that you can use to influence the app under test according to your needs

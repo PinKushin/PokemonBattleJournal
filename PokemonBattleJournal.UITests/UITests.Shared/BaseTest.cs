@@ -34,11 +34,23 @@ namespace UITests
 
         protected void NavigateTo(string pageTitle)
         {
-            var menu = App.FindElement(MobileBy.AccessibilityId("Open navigation menu"));
-            menu.Click();
-            Thread.Sleep(500);
-            var item = App.FindElement(MobileBy.Name(pageTitle));
-            item.Click();
+            if (App is WindowsDriver)
+            {
+                // MAUI Shell on WinUI3 renders a NavigationView; the pane toggle has AutomationId="OK"
+                var menu = App.FindElement(MobileBy.AccessibilityId("OK"));
+                menu.Click();
+                Thread.Sleep(500);
+                var item = App.FindElement(MobileBy.Name(pageTitle));
+                item.Click();
+            }
+            else
+            {
+                var menu = App.FindElement(MobileBy.AccessibilityId("Open navigation menu"));
+                menu.Click();
+                Thread.Sleep(500);
+                var item = App.FindElement(MobileBy.Name(pageTitle));
+                item.Click();
+            }
             Thread.Sleep(500);
         }
     }
