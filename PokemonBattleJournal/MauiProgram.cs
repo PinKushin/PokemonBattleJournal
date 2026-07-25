@@ -1,7 +1,6 @@
 using CommunityToolkit.Maui;
 using LiveChartsCore.SkiaSharpView.Maui;
 using Serilog;
-using UraniumUI;
 
 namespace PokemonBattleJournal
 {
@@ -14,8 +13,6 @@ namespace PokemonBattleJournal
                 .UseMauiApp<App>()
                 .UseMauiCommunityToolkit()
                 .UseLiveCharts()
-                .UseUraniumUI()
-                .UseUraniumUIMaterial()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

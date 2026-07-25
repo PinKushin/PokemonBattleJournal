@@ -3,7 +3,7 @@
     x:Class="PokemonBattleJournal.Views.OptionsPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:material="http://schemas.enisn-projects.io/dotnet/maui/uraniumui/material"
+    xmlns:controls="clr-namespace:PokemonBattleJournal.Controls"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
     x:Name="BasePage"
@@ -17,69 +17,111 @@
             EventName="Appearing" />
     </ContentPage.Behaviors>
     <ScrollView>
-        <VerticalStackLayout HorizontalOptions="Center" Padding="16" Spacing="8">
+        <VerticalStackLayout HorizontalOptions="Center">
             <Label
                 x:Name="OptionsPageTitleLabel"
                 AutomationId="OptionsPageTitleLabel"
                 HorizontalOptions="Center"
                 Style="{StaticResource Headline}"
-                Text="Options" />
-
-            <material:TextField
-                x:Name="TrainerNameInput"
-                AutomationId="TrainerNameInput"
-                Title="Trainer Name"
-                Placeholder="Enter New Trainer Name"
-                Text="{Binding NameInput}"
-                WidthRequest="300" />
+                Text="Options"
+                VerticalOptions="Center" />
+            <Border
+                Margin="0,5"
+                Stroke="Gray"
+                StrokeThickness="1">
+                <VerticalStackLayout>
+                    <Label
+                        Margin="8,4,8,0"
+                        FontSize="12"
+                        Text="Trainer Name" />
+                    <Entry
+                        x:Name="TrainerNameInput"
+                        AutomationId="TrainerNameInput"
+                        Placeholder="Enter New Trainer Name"
+                        Text="{Binding NameInput}" />
+                </VerticalStackLayout>
+            </Border>
             <Button
                 x:Name="SaveTrainerNameButton"
                 AutomationId="SaveTrainerNameButton"
                 Command="{Binding SaveTrainerCommand}"
                 HorizontalOptions="Center"
                 Text="Create New Trainer"
+                VerticalOptions="Center"
                 WidthRequest="200" />
-
             <Image
                 AutomationId="ArchetypeIconDisplay"
                 HeightRequest="64"
-                HorizontalOptions="Center"
                 Source="{Binding SelectedIcon}" />
-            <material:PickerField
-                x:Name="NewArchetypeIcon"
-                AutomationId="ArchetypeIconPicker"
-                Title="Archetype Icon"
-                ItemsSource="{Binding IconCollection}"
-                SelectedItem="{Binding SelectedIcon}"
-                WidthRequest="300" />
-            <material:TextField
-                x:Name="ArchetypeNameInput"
-                AutomationId="ArchetypeNameInput"
-                Title="Archetype Name"
-                Placeholder="Enter New Archetype's Name"
-                Text="{Binding NewDeckName}"
-                WidthRequest="300" />
+            <Border
+                Margin="0,5"
+                Stroke="Gray"
+                StrokeThickness="1">
+                <VerticalStackLayout>
+                    <Label
+                        Margin="8,4,8,0"
+                        FontSize="12"
+                        Text="Archetype Icon" />
+                    <Picker
+                        x:Name="NewArchetypeIcon"
+                        AutomationId="ArchetypeIconPicker"
+                        ItemDisplayBinding="{Binding .}"
+                        ItemsSource="{Binding IconCollection}"
+                        SelectedItem="{Binding SelectedIcon}" />
+                    <Label
+                        Margin="8,0,8,4"
+                        FontSize="10"
+                        Text="Select New Archetype's Icon" />
+                </VerticalStackLayout>
+            </Border>
+            <Border
+                Margin="0,5"
+                Stroke="Gray"
+                StrokeThickness="1">
+                <VerticalStackLayout>
+                    <Label
+                        Margin="8,4,8,0"
+                        FontSize="12"
+                        Text="Archetype Name" />
+                    <Entry
+                        x:Name="ArchetypeNameInput"
+                        AutomationId="ArchetypeNameInput"
+                        Placeholder="Enter New Archetype's Name"
+                        Text="{Binding NewDeckName}" />
+                </VerticalStackLayout>
+            </Border>
             <Button
                 x:Name="SaveArchetypeButton"
                 AutomationId="SaveArchetypeButton"
                 Command="{Binding SaveArchetypeCommand}"
                 HorizontalOptions="Center"
                 Text="Save Archetype"
+                VerticalOptions="Center"
                 WidthRequest="200" />
 
-            <material:TextField
-                x:Name="TagInput"
-                AutomationId="TagInput"
-                Title="Tag"
-                Placeholder="Enter New Tag"
-                Text="{Binding TagInput}"
-                WidthRequest="300" />
+            <Border
+                Margin="0,5"
+                Stroke="Gray"
+                StrokeThickness="1">
+                <VerticalStackLayout>
+                    <Label
+                        Margin="8,4,8,0"
+                        FontSize="12"
+                        Text="Tag" />
+                    <Entry
+                        x:Name="TagInput"
+                        AutomationId="TagInput"
+                        Placeholder="Enter New Tag"
+                        Text="{Binding TagInput}" />
+                </VerticalStackLayout>
+            </Border>
             <Button
                 x:Name="SaveTagButton"
                 AutomationId="SaveTagButton"
                 Command="{Binding SaveTagCommand}"
                 HorizontalOptions="Center"
                 Text="Save New Tag"
+                VerticalOptions="Center"
                 WidthRequest="200" />
 
             <Button
@@ -88,14 +130,13 @@
                 Command="{Binding SaveAllCommand}"
                 HorizontalOptions="Center"
                 Text="Save All"
+                VerticalOptions="Center"
                 WidthRequest="200" />
             <Button
                 x:Name="DeleteTrainer"
                 AutomationId="DeleteTrainer"
                 Command="{Binding DeleteTrainerFileCommand}"
-                HorizontalOptions="Center"
-                Text="Delete Current Trainer"
-                WidthRequest="200" />
+                Text="Delete Current Trainer" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

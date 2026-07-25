@@ -1,36 +1,47 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-    x:Class="PokemonBattleJournal.Views.FirstStartPage"
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:material="http://schemas.enisn-projects.io/dotnet/maui/uraniumui/material"
-    xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
-    Title="Welcome"
-    x:DataType="viewmodel:FirstStartPageViewModel">
-    <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="16" HorizontalOptions="Center">
-            <Image
-                Source="ball_icon.png"
-                WidthRequest="100"
-                HorizontalOptions="Center" />
-            <Label
-                FontSize="Header"
-                HorizontalOptions="Center"
-                HorizontalTextAlignment="Center"
-                Text="Welcome to Pokemon TCG Battle Journal" />
-            <material:TextField
-                x:Name="TrainerNameInput"
-                AutomationId="TrainerNameInput"
-                Title="Trainer Name"
-                Placeholder="Enter your name"
-                Text="{Binding TrainerNameInput}"
-                WidthRequest="300" />
-            <Button
-                Command="{Binding SaveTrainerNameCommand}"
-                HeightRequest="50"
-                HorizontalOptions="Center"
-                Text="Save Trainer Name"
-                WidthRequest="200" />
-        </VerticalStackLayout>
-    </ScrollView>
+	x:Class="PokemonBattleJournal.Views.FirstStartPage"
+	xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+	xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
+	Title="Welcome"
+	x:DataType="viewmodel:FirstStartPageViewModel">
+	<ScrollView>
+		<VerticalStackLayout>
+			<Image
+				Source="ball_icon.png"
+				WidthRequest="100" />
+			<Label
+				FontSize="Header"
+				HorizontalOptions="Center"
+				Text="Welcome to Pokemon TCG Battle Journal"
+				VerticalOptions="Center" />
+			<HorizontalStackLayout
+				HorizontalOptions="Center"
+				VerticalOptions="Center">
+				<Border
+					Margin="5"
+					Stroke="Gray"
+					StrokeThickness="1">
+					<VerticalStackLayout>
+						<Label
+							Margin="8,4,8,0"
+							FontSize="12"
+							Text="Trainer Name" />
+						<Entry
+							x:Name="TrainerNameInput"
+							AutomationId="TrainerNameInput"
+							Placeholder="Enter your name"
+							Text="{Binding TrainerNameInput}" />
+					</VerticalStackLayout>
+				</Border>
+
+				<Button
+					x:Name="InputButton"
+					Command="{Binding SaveTrainerNameCommand}"
+					HeightRequest="50"
+					Text="Save Trainer Name" />
+			</HorizontalStackLayout>
+		</VerticalStackLayout>
+	</ScrollView>
 </ContentPage>
