@@ -92,8 +92,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.RivalSelected = new Archetype { Id = 2, Name = "Water" };
             _viewModel.Result = MatchResult.Win;
             _viewModel.DatePlayed = DateTime.Now;
-            _viewModel.StartTime = DateTime.Now;
-            _viewModel.EndTime = DateTime.Now;
+            _viewModel.StartTime = DateTime.Now.TimeOfDay;
+            _viewModel.EndTime = DateTime.Now.AddMinutes(5).TimeOfDay;
 
             _mockTrainerOps.GetByNameAsync(Arg.Any<string>())
                 .Returns(Task.FromResult<Trainer?>(null));

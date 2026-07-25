@@ -68,23 +68,21 @@ namespace PokemonBattleJournal.ViewModels
         public partial string? UserNoteInput3 { get; set; }
 
         [ObservableProperty]
-        public partial DateTime StartTime { get; set; } = DateTime.Now.ToLocalTime();
+        public partial TimeSpan StartTime { get; set; } = DateTime.Now.TimeOfDay;
 
         [ObservableProperty]
-        public partial DateTime EndTime { get; set; } = DateTime.Now.ToLocalTime();
+        public partial TimeSpan EndTime { get; set; } = DateTime.Now.AddMinutes(5).TimeOfDay;
 
-        partial void OnStartTimeChanged(DateTime value)
+        partial void OnStartTimeChanged(TimeSpan value)
         {
-            // Ensure EndTime is not before StartTime
             if (EndTime < value)
             {
                 EndTime = value;
             }
         }
 
-        partial void OnEndTimeChanged(DateTime value)
+        partial void OnEndTimeChanged(TimeSpan value)
         {
-            // Ensure EndTime is not before StartTime
             if (value < StartTime)
             {
                 EndTime = StartTime;
@@ -111,12 +109,6 @@ namespace PokemonBattleJournal.ViewModels
                 UserNoteInput3 = null;
                 IsGame1Selected = true;
                 IsGame2Selected = false;
-                IsGame3Selected = false;
-            }
-            else
-            {
-                IsGame1Selected = false;
-                IsGame2Selected = true;
                 IsGame3Selected = false;
             }
             OnPropertyChanged(nameof(ShowGame3));
@@ -218,6 +210,8 @@ namespace PokemonBattleJournal.ViewModels
         {
             _timer?.Start();
             _logger.LogInformation("Appearing: {Time}", DateTime.Now);
+            StartTime = DateTime.Now.TimeOfDay;
+            EndTime = DateTime.Now.AddMinutes(5).TimeOfDay;
 
             try
             {
@@ -358,8 +352,8 @@ namespace PokemonBattleJournal.ViewModels
                     AgainstId = RivalSelected!.Id,
                     Against = RivalSelected,
                     DatePlayed = DatePlayed,
-                    StartTime = StartTime,
-                    EndTime = EndTime,
+                    StartTime = DatePlayed.Date + StartTime,
+                    EndTime = DatePlayed.Date + EndTime,
                 };
                 List<Game> games = [];
                 Game game1 = new()
