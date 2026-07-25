@@ -3,7 +3,7 @@
     x:Class="PokemonBattleJournal.Views.TrainerPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:models="clr-namespace:PokemonBattleJournal.Models"
+    xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Maui;assembly=LiveChartsCore.SkiaSharpView.Maui"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
     x:Name="BasePage"
@@ -17,232 +17,120 @@
     </ContentPage.Behaviors>
 
     <ScrollView>
-        <StackLayout Padding="10">
+        <StackLayout Padding="16" Spacing="8">
+
+            <!-- Header stats -->
             <Label
                 AutomationId="TrainerWelcomeLabel"
                 FontSize="24"
+                FontAttributes="Bold"
                 HorizontalOptions="Center"
                 Text="{Binding WelcomeMsg}" />
 
-            <!-- Stats Summary -->
-            <Label
-                FontSize="18"
-                Text="Win Rate:" />
-            <Label
-                AutomationId="WinRateLabel"
-                FontSize="18"
-                Text="{Binding WinAverage, StringFormat='{0:F2}%'}" />
-            <Label
-                FontSize="18"
-                Text="Wins:" />
-            <Label
-                FontSize="18"
-                Text="{Binding Wins}" />
-            <Label
-                FontSize="18"
-                Text="Losses:" />
-            <Label
-                FontSize="18"
-                Text="{Binding Losses}" />
-            <Label
-                FontSize="18"
-                Text="Ties:" />
-            <Label
-                FontSize="18"
-                Text="{Binding Ties}" />
+            <Grid ColumnDefinitions="*,*,*,*" Margin="0,8,0,4">
+                <StackLayout Grid.Column="0" HorizontalOptions="Center">
+                    <Label Text="Win Rate" HorizontalOptions="Center" FontSize="12" />
+                    <Label AutomationId="WinRateLabel" Text="{Binding WinAverage, StringFormat='{0:F1}%'}" HorizontalOptions="Center" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource PokeYellow}" />
+                </StackLayout>
+                <StackLayout Grid.Column="1" HorizontalOptions="Center">
+                    <Label Text="Wins" HorizontalOptions="Center" FontSize="12" />
+                    <Label Text="{Binding Wins}" HorizontalOptions="Center" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource PokeYellow}" />
+                </StackLayout>
+                <StackLayout Grid.Column="2" HorizontalOptions="Center">
+                    <Label Text="Losses" HorizontalOptions="Center" FontSize="12" />
+                    <Label Text="{Binding Losses}" HorizontalOptions="Center" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource PokeYellow}" />
+                </StackLayout>
+                <StackLayout Grid.Column="3" HorizontalOptions="Center">
+                    <Label Text="Ties" HorizontalOptions="Center" FontSize="12" />
+                    <Label Text="{Binding Ties}" HorizontalOptions="Center" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource PokeYellow}" />
+                </StackLayout>
+            </Grid>
 
-            <!-- Most Played Archetypes -->
-            <Label
-                FontAttributes="Bold"
-                FontSize="18"
-                Margin="0,10,0,5"
-                Text="Most Played Archetypes" />
-            <CollectionView
-                ItemsSource="{Binding MostPlayedArchetypes}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate
-                        x:DataType="models:ChartDataPoint">
-                        <Grid
-                            ColumnDefinitions="*,Auto"
-                            Padding="5">
-                            <Label
-                                FontSize="16"
-                                Text="{Binding Label}" />
-                            <Label
-                                Grid.Column="1"
-                                FontSize="16"
-                                Text="{Binding Value}" />
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <Label Text="{Binding AverageMatchDuration, StringFormat='Avg Match: {0:mm\\:ss}'}" HorizontalOptions="Center" FontSize="13" />
+            <Label Text="{Binding StreakInfo}" HorizontalOptions="Center" FontSize="13" />
+
+            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,8,0,8" />
+
+            <!-- Matchup Heatmap -->
+            <Label Text="Matchup Matrix" FontAttributes="Bold" FontSize="18" Margin="0,4,0,2" />
+            <Label Text="Win rate by your deck vs opponent deck" FontSize="12" Opacity="0.6" Margin="0,0,0,6" />
+            <lvc:CartesianChart
+                Series="{Binding MatchupHeatSeries}"
+                XAxes="{Binding MatchupXAxes}"
+                YAxes="{Binding MatchupYAxes}"
+                HeightRequest="220"
+                Margin="0,0,0,8" />
+
+            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
 
             <!-- Win Rate Over Time -->
-            <Label
-                FontAttributes="Bold"
-                FontSize="18"
-                Margin="0,10,0,5"
-                Text="Win Rate Over Time" />
-            <CollectionView
-                ItemsSource="{Binding WinRateOverTime}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate
-                        x:DataType="models:TimeDataPoint">
-                        <Grid
-                            ColumnDefinitions="*,Auto"
-                            Padding="5">
-                            <Label
-                                FontSize="14"
-                                Text="{Binding Date, StringFormat='{0:MM/dd}'}" />
-                            <Label
-                                Grid.Column="1"
-                                FontSize="14"
-                                Text="{Binding Value, StringFormat='{0:F1}%'}" />
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <Label Text="Win Rate Over Time" FontAttributes="Bold" FontSize="18" Margin="0,4,0,2" />
+            <lvc:CartesianChart
+                Series="{Binding WinRateOverTimeSeries}"
+                XAxes="{Binding WinRateTimeXAxes}"
+                HeightRequest="180"
+                Margin="0,0,0,8" />
+
+            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
+
+            <!-- Most Played Archetypes -->
+            <Label Text="Most Played Archetypes" FontAttributes="Bold" FontSize="18" Margin="0,4,0,2" />
+            <lvc:CartesianChart
+                Series="{Binding MostPlayedSeries}"
+                YAxes="{Binding MostPlayedYAxes}"
+                HeightRequest="200"
+                Margin="0,0,0,8" />
+
+            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
 
             <!-- Archetype Win Rates -->
-            <Label
-                FontAttributes="Bold"
-                FontSize="18"
-                Margin="0,10,0,5"
-                Text="Archetype Win Rates" />
-            <CollectionView
-                ItemsSource="{Binding ArchetypeWinRates}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate
-                        x:DataType="models:ChartDataPoint">
-                        <Grid
-                            ColumnDefinitions="*,Auto"
-                            Padding="5">
-                            <Label
-                                FontSize="14"
-                                Text="{Binding Label}" />
-                            <Label
-                                Grid.Column="1"
-                                FontSize="14"
-                                Text="{Binding Value, StringFormat='{0:F1}%'}" />
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <Label Text="Win Rate by Archetype" FontAttributes="Bold" FontSize="18" Margin="0,4,0,2" />
+            <lvc:CartesianChart
+                Series="{Binding ArchetypeWinRateSeries}"
+                YAxes="{Binding ArchetypeWinRateYAxes}"
+                HeightRequest="200"
+                Margin="0,0,0,8" />
 
-            <!-- Tag Usage -->
-            <Label
-                FontAttributes="Bold"
-                FontSize="18"
-                Margin="0,10,0,5"
-                Text="Tag Usage" />
-            <CollectionView
-                ItemsSource="{Binding TagUsage}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate
-                        x:DataType="models:ChartDataPoint">
-                        <Grid
-                            ColumnDefinitions="*,Auto"
-                            Padding="5">
-                            <Label
-                                FontSize="14"
-                                Text="{Binding Label}" />
-                            <Label
-                                Grid.Column="1"
-                                FontSize="14"
-                                Text="{Binding Value}" />
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
 
             <!-- Performance vs Opponents -->
-            <Label
-                FontAttributes="Bold"
-                FontSize="18"
-                Margin="0,10,0,5"
-                Text="Performance vs Opponents" />
-            <CollectionView
-                ItemsSource="{Binding OpponentPerformance}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate
-                        x:DataType="models:ChartDataPoint">
-                        <Grid
-                            ColumnDefinitions="*,Auto"
-                            Padding="5">
-                            <Label
-                                FontSize="14"
-                                Text="{Binding Label}" />
-                            <Label
-                                Grid.Column="1"
-                                FontSize="14"
-                                Text="{Binding Value, StringFormat='{0:F1}%'}" />
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <Label Text="Performance vs Opponents" FontAttributes="Bold" FontSize="18" Margin="0,4,0,2" />
+            <lvc:CartesianChart
+                Series="{Binding OpponentSeries}"
+                YAxes="{Binding OpponentYAxes}"
+                HeightRequest="200"
+                Margin="0,0,0,8" />
+
+            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
+
+            <!-- Tag Usage -->
+            <Label Text="Tag Usage" FontAttributes="Bold" FontSize="18" Margin="0,4,0,2" />
+            <lvc:CartesianChart
+                Series="{Binding TagUsageSeries}"
+                YAxes="{Binding TagUsageYAxes}"
+                HeightRequest="200"
+                Margin="0,0,0,8" />
+
+            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
 
             <!-- Win Rate by Match Length -->
-            <Label
-                FontAttributes="Bold"
-                FontSize="18"
-                Margin="0,10,0,5"
-                Text="Win Rate by Match Length" />
-            <CollectionView
-                ItemsSource="{Binding WinRateByMatchLength}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate
-                        x:DataType="models:ChartDataPoint">
-                        <Grid
-                            ColumnDefinitions="*,Auto"
-                            Padding="5">
-                            <Label
-                                FontSize="14"
-                                Text="{Binding Label}" />
-                            <Label
-                                Grid.Column="1"
-                                FontSize="14"
-                                Text="{Binding Value, StringFormat='{0:F1}%'}" />
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <Label Text="Win Rate by Match Length" FontAttributes="Bold" FontSize="18" Margin="0,4,0,2" />
+            <lvc:CartesianChart
+                Series="{Binding MatchLengthSeries}"
+                YAxes="{Binding MatchLengthYAxes}"
+                HeightRequest="120"
+                Margin="0,0,0,8" />
+
+            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
 
             <!-- First Turn Advantage -->
-            <Label
-                FontAttributes="Bold"
-                FontSize="18"
-                Margin="0,10,0,5"
-                Text="First Turn Advantage" />
-            <CollectionView
-                ItemsSource="{Binding FirstTurnAdvantage}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate
-                        x:DataType="models:ChartDataPoint">
-                        <Grid
-                            ColumnDefinitions="*,Auto"
-                            Padding="5">
-                            <Label
-                                FontSize="14"
-                                Text="{Binding Label}" />
-                            <Label
-                                Grid.Column="1"
-                                FontSize="14"
-                                Text="{Binding Value, StringFormat='{0:F1}%'}" />
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <Label Text="First Turn Advantage" FontAttributes="Bold" FontSize="18" Margin="0,4,0,2" />
+            <lvc:CartesianChart
+                Series="{Binding FirstTurnSeries}"
+                YAxes="{Binding FirstTurnYAxes}"
+                HeightRequest="120"
+                Margin="0,0,0,16" />
 
-            <!-- Additional Stats -->
-            <StackLayout Padding="10,20">
-                <Label
-                    FontSize="20"
-                    Text="Additional Statistics" />
-                <Label
-                    Text="{Binding AverageMatchDuration, StringFormat='Average Match Duration: {0:hh\\:mm\\:ss}'}" />
-                <Label
-                    Text="{Binding StreakInfo}" />
-            </StackLayout>
         </StackLayout>
     </ScrollView>
 </ContentPage>

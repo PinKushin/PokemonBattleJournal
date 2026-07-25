@@ -15,14 +15,27 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [InlineData("Losses")]
         [InlineData("Ties")]
         [InlineData("AverageMatchDuration")]
-        [InlineData("FirstTurnAdvantage")]
         [InlineData("StreakInfo")]
-        [InlineData("MostPlayedArchetypes")]
-        [InlineData("ArchetypeWinRates")]
-        [InlineData("OpponentPerformance")]
-        [InlineData("TagUsage")]
-        [InlineData("WinRateOverTime")]
-        [InlineData("WinRateByMatchLength")]
+        // Matchup heatmap
+        [InlineData("MatchupHeatSeries")]
+        [InlineData("MatchupXAxes")]
+        [InlineData("MatchupYAxes")]
+        // Bar charts
+        [InlineData("MostPlayedSeries")]
+        [InlineData("MostPlayedYAxes")]
+        [InlineData("ArchetypeWinRateSeries")]
+        [InlineData("ArchetypeWinRateYAxes")]
+        [InlineData("TagUsageSeries")]
+        [InlineData("TagUsageYAxes")]
+        [InlineData("OpponentSeries")]
+        [InlineData("OpponentYAxes")]
+        [InlineData("MatchLengthSeries")]
+        [InlineData("MatchLengthYAxes")]
+        [InlineData("FirstTurnSeries")]
+        [InlineData("FirstTurnYAxes")]
+        // Line chart
+        [InlineData("WinRateOverTimeSeries")]
+        [InlineData("WinRateTimeXAxes")]
         public void TrainerPageViewModel_HasProperty(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"TrainerPage.xaml binds to '{name}' but it was not found on TrainerPageViewModel");
 

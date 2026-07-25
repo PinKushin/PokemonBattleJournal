@@ -1,4 +1,10 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
+using LiveChartsCore;
+using LiveChartsCore.Defaults;
+using LiveChartsCore.Kernel.Sketches;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.SkiaSharpView.Painting;
+using SkiaSharp;
 
 namespace PokemonBattleJournal.ViewModels
 {
@@ -36,31 +42,69 @@ namespace PokemonBattleJournal.ViewModels
         public partial double WinAverage { get; set; } = 0;
 
         [ObservableProperty]
-        public partial ObservableCollection<ChartDataPoint> MostPlayedArchetypes { get; set; } = [];
-
-        [ObservableProperty]
-        public partial ObservableCollection<TimeDataPoint> WinRateOverTime { get; set; } = [];
-
-        [ObservableProperty]
-        public partial ObservableCollection<ChartDataPoint> ArchetypeWinRates { get; set; } = [];
-
-        [ObservableProperty]
-        public partial ObservableCollection<ChartDataPoint> TagUsage { get; set; } = [];
-
-        [ObservableProperty]
-        public partial ObservableCollection<ChartDataPoint> OpponentPerformance { get; set; } = [];
-
-        [ObservableProperty]
         public partial TimeSpan AverageMatchDuration { get; set; }
 
         [ObservableProperty]
-        public partial ObservableCollection<ChartDataPoint> WinRateByMatchLength { get; set; } = [];
-
-        [ObservableProperty]
-        public partial ObservableCollection<ChartDataPoint> FirstTurnAdvantage { get; set; } = [];
-
-        [ObservableProperty]
         public partial string StreakInfo { get; set; } = "";
+
+        // Matchup matrix heatmap
+        [ObservableProperty]
+        public partial ISeries[] MatchupHeatSeries { get; set; } = [];
+
+        [ObservableProperty]
+        public partial ICartesianAxis[] MatchupXAxes { get; set; } = [new Axis { Name = "Opponent Archetype" }];
+
+        [ObservableProperty]
+        public partial ICartesianAxis[] MatchupYAxes { get; set; } = [new Axis { Name = "Your Archetype" }];
+
+        // Most played archetypes — horizontal bar
+        [ObservableProperty]
+        public partial ISeries[] MostPlayedSeries { get; set; } = [];
+
+        [ObservableProperty]
+        public partial ICartesianAxis[] MostPlayedYAxes { get; set; } = [new Axis()];
+
+        // Archetype win rates — horizontal bar
+        [ObservableProperty]
+        public partial ISeries[] ArchetypeWinRateSeries { get; set; } = [];
+
+        [ObservableProperty]
+        public partial ICartesianAxis[] ArchetypeWinRateYAxes { get; set; } = [new Axis()];
+
+        // Tag usage — horizontal bar
+        [ObservableProperty]
+        public partial ISeries[] TagUsageSeries { get; set; } = [];
+
+        [ObservableProperty]
+        public partial ICartesianAxis[] TagUsageYAxes { get; set; } = [new Axis()];
+
+        // Performance vs opponents — horizontal bar
+        [ObservableProperty]
+        public partial ISeries[] OpponentSeries { get; set; } = [];
+
+        [ObservableProperty]
+        public partial ICartesianAxis[] OpponentYAxes { get; set; } = [new Axis()];
+
+        // Win rate over time — line chart
+        [ObservableProperty]
+        public partial ISeries[] WinRateOverTimeSeries { get; set; } = [];
+
+        [ObservableProperty]
+        public partial ICartesianAxis[] WinRateTimeXAxes { get; set; } = [new Axis()];
+
+        // Win rate by match length — horizontal bar (2 bars)
+        [ObservableProperty]
+        public partial ISeries[] MatchLengthSeries { get; set; } = [];
+
+        [ObservableProperty]
+        public partial ICartesianAxis[] MatchLengthYAxes { get; set; } = [new Axis()];
+
+        // First turn advantage — horizontal bar (2 bars)
+        [ObservableProperty]
+        public partial ISeries[] FirstTurnSeries { get; set; } = [];
+
+        [ObservableProperty]
+        public partial ICartesianAxis[] FirstTurnYAxes { get; set; } = [new Axis()];
 
         [RelayCommand]
         public async Task AppearingAsync()
@@ -70,12 +114,10 @@ namespace PokemonBattleJournal.ViewModels
             {
                 await _semaphore.WaitAsync();
 
-                // Get trainer
                 Trainer? trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
                 if (trainer == null)
                 {
                     _logger.LogWarning("Trainer not found: {TrainerName}", TrainerName);
-                    // Create trainer if they don't exist
                     _ = await _connection.Trainers.SaveAsync(TrainerName);
                     trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
                     if (trainer == null)
@@ -85,68 +127,35 @@ namespace PokemonBattleJournal.ViewModels
                     }
                 }
 
-                // Get matches with related data
                 _logger.LogInformation("Loading matches for trainer: {TrainerId} ({TrainerName})", trainer.Id, trainer.Name);
                 List<MatchEntry>? matches = await _connection.Matches.GetByTrainerIdAsync(trainer.Id, true);
 
                 if (matches == null || matches.Count < 1)
                 {
-                    _logger.LogInformation("No matches found for trainer: {TrainerId} ({TrainerName})", trainer.Id, trainer.Name);
-                    // Reset all stats to zero/empty
-                    Wins = 0;
-                    Losses = 0;
-                    Ties = 0;
-                    WinAverage = 0;
-                    MostPlayedArchetypes = [];
-                    WinRateOverTime = [];
-                    ArchetypeWinRates = [];
-                    TagUsage = [];
-                    OpponentPerformance = [];
-                    AverageMatchDuration = TimeSpan.Zero;
-                    WinRateByMatchLength = [];
-                    FirstTurnAdvantage = [];
-                    StreakInfo = "No matches played yet";
+                    ResetStats();
                     return;
                 }
 
-                // Calculate statistics using MatchAnalysisService
                 _logger.LogInformation("Calculating statistics for {Count} matches", matches.Count);
 
                 WinAverage = _analysisService.CalculateWinRate(matches, out uint wins, out uint losses, out uint ties);
                 Wins = wins;
                 Losses = losses;
                 Ties = ties;
-                _logger.LogDebug("Basic stats calculated: Wins={Wins}, Losses={Losses}, Ties={Ties}, WinRate={WinRate}",
-                    wins, losses, ties, WinAverage);
-
-                MostPlayedArchetypes = _analysisService.GetMostPlayedArchetypes(matches);
-                _logger.LogDebug("Most played archetypes calculated: {Count} entries", MostPlayedArchetypes.Count);
-
-                WinRateOverTime = _analysisService.CalculateWinRateOverTime(matches);
-                _logger.LogDebug("Win rate over time calculated: {Count} data points", WinRateOverTime.Count);
-
-                ArchetypeWinRates = _analysisService.CalculateArchetypeWinRate(matches);
-                _logger.LogDebug("Archetype win rates calculated: {Count} archetypes", ArchetypeWinRates.Count);
-
-                TagUsage = _analysisService.CalculateTagUsage(matches);
-                _logger.LogDebug("Tag usage calculated: {Count} tags", TagUsage.Count);
-
-                OpponentPerformance = _analysisService.CalculatePerformanceAgainstOpponents(matches);
-                _logger.LogDebug("Opponent performance calculated: {Count} opponents", OpponentPerformance.Count);
 
                 AverageMatchDuration = _analysisService.CalculateAverageMatchDuration(matches);
-                _logger.LogDebug("Average match duration calculated: {Duration}", AverageMatchDuration);
-
-                WinRateByMatchLength = _analysisService.CalculateWinRateByMatchLength(matches);
-                _logger.LogDebug("Win rate by match length calculated: {Count} categories", WinRateByMatchLength.Count);
-
-                FirstTurnAdvantage = _analysisService.CalculateFirstTurnAdvantage(matches);
-                _logger.LogDebug("First turn advantage calculated: {Count} entries", FirstTurnAdvantage.Count);
 
                 (int winStreak, int lossStreak, int tieStreak) = _analysisService.CalculateStreaks(matches);
                 StreakInfo = $"Longest Streaks - Wins: {winStreak}, Losses: {lossStreak}, Ties: {tieStreak}";
-                _logger.LogDebug("Streaks calculated: Win={WinStreak}, Loss={LossStreak}, Tie={TieStreak}",
-                    winStreak, lossStreak, tieStreak);
+
+                BuildMatchupHeatmap(matches);
+                BuildMostPlayedChart(matches);
+                BuildArchetypeWinRateChart(matches);
+                BuildTagUsageChart(matches);
+                BuildOpponentChart(matches);
+                BuildWinRateOverTimeChart(matches);
+                BuildMatchLengthChart(matches);
+                BuildFirstTurnChart(matches);
 
                 _logger.LogInformation("All statistics calculated successfully");
             }
@@ -160,6 +169,169 @@ namespace PokemonBattleJournal.ViewModels
             {
                 _ = _semaphore.Release();
             }
+        }
+
+        private void ResetStats()
+        {
+            Wins = 0; Losses = 0; Ties = 0; WinAverage = 0;
+            AverageMatchDuration = TimeSpan.Zero;
+            StreakInfo = "No matches played yet";
+            MatchupHeatSeries = []; MostPlayedSeries = []; ArchetypeWinRateSeries = [];
+            TagUsageSeries = []; OpponentSeries = []; WinRateOverTimeSeries = [];
+            MatchLengthSeries = []; FirstTurnSeries = [];
+        }
+
+        private static SKColor PokeYellow => new(255, 203, 5);
+        private static SKColor PokeBlue => new(59, 130, 246);
+
+        private void BuildMatchupHeatmap(List<MatchEntry> matches)
+        {
+            var (played, opponents, cells) = _analysisService.CalculateMatchupMatrix(matches);
+            if (cells.Length == 0) { MatchupHeatSeries = []; return; }
+
+            MatchupHeatSeries =
+            [
+                new HeatSeries<WeightedPoint>
+                {
+                    Values = cells.Select(c => new WeightedPoint(c.OpponentIdx, c.PlayedIdx, c.WinRate)).ToArray(),
+                    HeatMap =
+                    [
+                        new(239, 68, 68, 200),   // red — 0%
+                        new(250, 204, 21, 200),  // yellow — 50%
+                        new(34, 197, 94, 200),   // green — 100%
+                    ],
+                    MinValue = 0,
+                    MaxValue = 100,
+                    DataLabelsPaint = new SolidColorPaint(SKColors.White) { SKTypeface = SKTypeface.Default },
+                    DataLabelsFormatter = p => $"{p.Model?.Weight:F0}%",
+                }
+            ];
+            MatchupXAxes = [new Axis { Labels = opponents, Name = "Opponent Archetype", TextSize = 11 }];
+            MatchupYAxes = [new Axis { Labels = played, Name = "Your Archetype", TextSize = 11 }];
+        }
+
+        private void BuildMostPlayedChart(List<MatchEntry> matches)
+        {
+            var data = _analysisService.GetMostPlayedArchetypes(matches);
+            MostPlayedSeries =
+            [
+                new RowSeries<ObservableValue>
+                {
+                    Values = data.Select(x => new ObservableValue(x.Value)).ToArray(),
+                    Fill = new SolidColorPaint(PokeBlue),
+                    Name = "Games Played",
+                    MaxBarWidth = 20,
+                }
+            ];
+            MostPlayedYAxes = [new Axis { Labels = data.Select(x => x.Label ?? "").ToArray(), TextSize = 11 }];
+        }
+
+        private void BuildArchetypeWinRateChart(List<MatchEntry> matches)
+        {
+            var data = _analysisService.CalculateArchetypeWinRate(matches);
+            ArchetypeWinRateSeries =
+            [
+                new RowSeries<ObservableValue>
+                {
+                    Values = data.Select(x => new ObservableValue(x.Value)).ToArray(),
+                    Fill = new SolidColorPaint(PokeYellow),
+                    Name = "Win Rate %",
+                    MaxBarWidth = 20,
+                }
+            ];
+            ArchetypeWinRateYAxes = [new Axis { Labels = data.Select(x => x.Label ?? "").ToArray(), TextSize = 11 }];
+        }
+
+        private void BuildTagUsageChart(List<MatchEntry> matches)
+        {
+            var data = _analysisService.CalculateTagUsage(matches);
+            TagUsageSeries =
+            [
+                new RowSeries<ObservableValue>
+                {
+                    Values = data.Select(x => new ObservableValue(x.Value)).ToArray(),
+                    Fill = new SolidColorPaint(PokeBlue),
+                    Name = "Uses",
+                    MaxBarWidth = 20,
+                }
+            ];
+            TagUsageYAxes = [new Axis { Labels = data.Select(x => x.Label ?? "").ToArray(), TextSize = 11 }];
+        }
+
+        private void BuildOpponentChart(List<MatchEntry> matches)
+        {
+            var data = _analysisService.CalculatePerformanceAgainstOpponents(matches);
+            OpponentSeries =
+            [
+                new RowSeries<ObservableValue>
+                {
+                    Values = data.Select(x => new ObservableValue(x.Value)).ToArray(),
+                    Fill = new SolidColorPaint(PokeYellow),
+                    Name = "Win Rate %",
+                    MaxBarWidth = 20,
+                }
+            ];
+            OpponentYAxes = [new Axis { Labels = data.Select(x => x.Label ?? "").ToArray(), TextSize = 11 }];
+        }
+
+        private void BuildWinRateOverTimeChart(List<MatchEntry> matches)
+        {
+            var data = _analysisService.CalculateWinRateOverTime(matches);
+            WinRateOverTimeSeries =
+            [
+                new LineSeries<DateTimePoint>
+                {
+                    Values = data.Select(x => new DateTimePoint(x.Date, x.Value)).ToArray(),
+                    Fill = null,
+                    Stroke = new SolidColorPaint(PokeYellow, 2),
+                    GeometryFill = new SolidColorPaint(PokeYellow),
+                    GeometryStroke = new SolidColorPaint(PokeBlue, 1),
+                    GeometrySize = 6,
+                    Name = "Win Rate %",
+                }
+            ];
+            WinRateTimeXAxes =
+            [
+                new Axis
+                {
+                    Labeler = value => new DateTime((long)value).ToString("MM/dd"),
+                    UnitWidth = TimeSpan.FromDays(1).Ticks,
+                    MinStep = TimeSpan.FromDays(1).Ticks,
+                    TextSize = 11,
+                }
+            ];
+        }
+
+        private void BuildMatchLengthChart(List<MatchEntry> matches)
+        {
+            var data = _analysisService.CalculateWinRateByMatchLength(matches);
+            MatchLengthSeries =
+            [
+                new RowSeries<ObservableValue>
+                {
+                    Values = data.Select(x => new ObservableValue(x.Value)).ToArray(),
+                    Fill = new SolidColorPaint(PokeBlue),
+                    Name = "Win Rate %",
+                    MaxBarWidth = 24,
+                }
+            ];
+            MatchLengthYAxes = [new Axis { Labels = data.Select(x => x.Label ?? "").ToArray(), TextSize = 12 }];
+        }
+
+        private void BuildFirstTurnChart(List<MatchEntry> matches)
+        {
+            var data = _analysisService.CalculateFirstTurnAdvantage(matches);
+            FirstTurnSeries =
+            [
+                new RowSeries<ObservableValue>
+                {
+                    Values = data.Select(x => new ObservableValue(x.Value)).ToArray(),
+                    Fill = new SolidColorPaint(PokeYellow),
+                    Name = "Win Rate %",
+                    MaxBarWidth = 24,
+                }
+            ];
+            FirstTurnYAxes = [new Axis { Labels = data.Select(x => x.Label ?? "").ToArray(), TextSize = 12 }];
         }
     }
 }
