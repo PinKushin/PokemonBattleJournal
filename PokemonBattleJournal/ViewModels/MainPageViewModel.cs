@@ -101,7 +101,6 @@ namespace PokemonBattleJournal.ViewModels
 
         partial void OnBO3ToggleChanged(bool value)
         {
-            // Reset game 2 and 3 results if toggling off BO3
             if (!value)
             {
                 Result2 = null;
@@ -110,11 +109,17 @@ namespace PokemonBattleJournal.ViewModels
                 Match3TagsSelected = null;
                 UserNoteInput2 = null;
                 UserNoteInput3 = null;
+                IsGame1Selected = true;
+                IsGame2Selected = false;
+                IsGame3Selected = false;
             }
-            // Always land on Game 1 tab when entering/leaving BO3 mode
-            IsGame1Selected = true;
-            IsGame2Selected = false;
-            IsGame3Selected = false;
+            else
+            {
+                IsGame1Selected = false;
+                IsGame2Selected = true;
+                IsGame3Selected = false;
+            }
+            OnPropertyChanged(nameof(ShowGame3));
         }
 
         [ObservableProperty]
@@ -149,6 +154,7 @@ namespace PokemonBattleJournal.ViewModels
             IsGame2Selected = false;
             IsGame3Selected = true;
         }
+
         [ObservableProperty]
         public partial bool FirstCheck { get; set; }
 
@@ -162,13 +168,17 @@ namespace PokemonBattleJournal.ViewModels
         public partial List<MatchResult> PossibleResults { get; set; } = [.. Enum.GetValues<MatchResult>().Cast<MatchResult>()];
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ShowGame3))]
         public partial MatchResult? Result { get; set; }
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ShowGame3))]
         public partial MatchResult? Result2 { get; set; }
 
         [ObservableProperty]
         public partial MatchResult? Result3 { get; set; }
+
+        public bool ShowGame3 => BO3Toggle && Result != null && Result2 != null && Result != Result2;
 
         //Tags
         [ObservableProperty]

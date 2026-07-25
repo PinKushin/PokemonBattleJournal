@@ -194,88 +194,8 @@
                                       Phone=0}"
                 HorizontalOptions="Center"
                 IsVisible="True">
-                <!--#region Game 1 Standalone (BO3 off)-->
-                <VerticalStackLayout IsVisible="{Binding BO3Toggle, Converter={StaticResource InvertedBoolConverter}}">
-                    <Label
-                        FontAttributes="Bold"
-                        FontSize="Large"
-                        HorizontalOptions="Center"
-                        Text="Match Tags:"
-                        VerticalOptions="End" />
-                    <CollectionView
-                        x:Name="TagsView"
-                        AutomationId="TagsView"
-                        CanReorderItems="True"
-                        ItemSizingStrategy="MeasureAllItems"
-                        ItemsSource="{Binding TagCollection}"
-                        MaximumWidthRequest="600"
-                        MinimumHeightRequest="100"
-                        SelectedItems="{Binding TagsSelected, Mode=TwoWay}"
-                        SelectionMode="Multiple">
-                        <CollectionView.ItemsLayout>
-                            <GridItemsLayout Orientation="Horizontal" Span="2" />
-                        </CollectionView.ItemsLayout>
-                        <CollectionView.Header>
-                            <Label
-                                Margin="0,0,10,0"
-                                HorizontalOptions="Center"
-                                HorizontalTextAlignment="Center"
-                                Text="Tags:"
-                                VerticalOptions="Center"
-                                VerticalTextAlignment="Center" />
-                        </CollectionView.Header>
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <HorizontalStackLayout>
-                                    <Label
-                                        Margin="0,0,40,0"
-                                        Padding="10,0,0,0"
-                                        x:DataType="models:Tags"
-                                        FontAutoScalingEnabled="True"
-                                        HorizontalOptions="Center"
-                                        HorizontalTextAlignment="End"
-                                        Text="{Binding Name}"
-                                        VerticalOptions="Center"
-                                        VerticalTextAlignment="Center" />
-                                </HorizontalStackLayout>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
-                    <Editor
-                        AutoSize="TextChanges"
-                        AutomationId="UserNoteInput"
-                        HeightRequest="200"
-                        IsSpellCheckEnabled="True"
-                        MinimumWidthRequest="350"
-                        Placeholder="Write notes here..."
-                        Text="{Binding UserNoteInput}" />
-                    <HorizontalStackLayout HorizontalOptions="Center">
-                        <Label
-                            HorizontalOptions="Center"
-                            Text="Went First"
-                            VerticalOptions="Center" />
-                        <CheckBox
-                            AutomationId="FirstCheck"
-                            HorizontalOptions="Center"
-                            IsChecked="{Binding FirstCheck}"
-                            VerticalOptions="Center"
-                            Color="{StaticResource PokeBlue}" />
-                        <Picker
-                            Margin="5"
-                            AutomationId="PossibleResultsPicker"
-                            HorizontalOptions="Center"
-                            ItemsSource="{Binding PossibleResults}"
-                            SelectedItem="{Binding Result}"
-                            WidthRequest="100" />
-                    </HorizontalStackLayout>
-                </VerticalStackLayout>
-                <!--#endregion-->
-
-                <!--#region BO3 Game Tabs-->
-                <VerticalStackLayout
-                    Margin="0,10"
-                    AutomationId="BO3GamesLayout"
-                    IsVisible="{Binding BO3Toggle}">
+                <!--#region Game Tabs (always visible)-->
+                <VerticalStackLayout AutomationId="GamesLayout">
 
                     <!--#region Tab Bar-->
                     <Border
@@ -303,6 +223,7 @@
                             <Border
                                 Padding="16,8"
                                 BackgroundColor="{Binding IsGame2Selected, Converter={StaticResource TabActiveBgConverter}}"
+                                IsVisible="{Binding BO3Toggle}"
                                 StrokeThickness="0"
                                 StrokeShape="RoundRectangle 6">
                                 <Border.GestureRecognizers>
@@ -317,6 +238,7 @@
                             <Border
                                 Padding="16,8"
                                 BackgroundColor="{Binding IsGame3Selected, Converter={StaticResource TabActiveBgConverter}}"
+                                IsVisible="{Binding ShowGame3}"
                                 StrokeThickness="0"
                                 StrokeShape="RoundRectangle 6">
                                 <Border.GestureRecognizers>
@@ -332,9 +254,11 @@
                     </Border>
                     <!--#endregion-->
 
-                    <!--#region Game 1 Panel (inside BO3 tabs)-->
+                    <!--#region Game 1 Panel-->
                     <VerticalStackLayout IsVisible="{Binding IsGame1Selected}">
                         <CollectionView
+                            x:Name="TagsView"
+                            AutomationId="TagsView"
                             CanReorderItems="True"
                             ItemSizingStrategy="MeasureAllItems"
                             ItemsSource="{Binding TagCollection}"
@@ -373,6 +297,7 @@
                         </CollectionView>
                         <Editor
                             AutoSize="TextChanges"
+                            AutomationId="UserNoteInput"
                             HeightRequest="200"
                             IsSpellCheckEnabled="True"
                             MinimumWidthRequest="350"
@@ -384,12 +309,14 @@
                                 Text="Went First"
                                 VerticalOptions="Center" />
                             <CheckBox
+                                AutomationId="FirstCheck"
                                 HorizontalOptions="Center"
                                 IsChecked="{Binding FirstCheck}"
                                 VerticalOptions="Center"
                                 Color="{StaticResource PokeBlue}" />
                             <Picker
                                 Margin="5"
+                                AutomationId="PossibleResultsPicker"
                                 HorizontalOptions="Center"
                                 ItemsSource="{Binding PossibleResults}"
                                 SelectedItem="{Binding Result}"
@@ -400,7 +327,6 @@
 
                     <!--#region Game 2 Panel-->
                     <VerticalStackLayout IsVisible="{Binding IsGame2Selected}">
-                        <!--#region Match2 Tags-->
                         <CollectionView
                             AutomationId="Match2Tags"
                             CanReorderItems="True"
@@ -437,7 +363,6 @@
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
                         </CollectionView>
-                        <!--#endregion-->
                         <Editor
                             AutoSize="TextChanges"
                             AutomationId="UserNoteInput2"
@@ -466,7 +391,6 @@
 
                     <!--#region Game 3 Panel-->
                     <VerticalStackLayout IsVisible="{Binding IsGame3Selected}">
-                        <!--#region Match3 Tags-->
                         <CollectionView
                             AutomationId="Match3Tags"
                             CanReorderItems="True"
@@ -503,7 +427,6 @@
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
                         </CollectionView>
-                        <!--#endregion-->
                         <Editor
                             AutoSize="TextChanges"
                             AutomationId="UserNoteInput3"
