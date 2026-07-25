@@ -111,22 +111,33 @@ namespace PokemonBattleJournal.ViewModels
                 UserNoteInput2 = null;
                 UserNoteInput3 = null;
             }
-            else
-            {
-                IsGame2Selected = true;
-                IsGame3Selected = false;
-            }
+            // Always land on Game 1 tab when entering/leaving BO3 mode
+            IsGame1Selected = true;
+            IsGame2Selected = false;
+            IsGame3Selected = false;
         }
 
         [ObservableProperty]
-        public partial bool IsGame2Selected { get; set; } = true;
+        public partial bool IsGame1Selected { get; set; } = true;
+
+        [ObservableProperty]
+        public partial bool IsGame2Selected { get; set; }
 
         [ObservableProperty]
         public partial bool IsGame3Selected { get; set; }
 
         [RelayCommand]
+        private void SelectGame1()
+        {
+            IsGame1Selected = true;
+            IsGame2Selected = false;
+            IsGame3Selected = false;
+        }
+
+        [RelayCommand]
         private void SelectGame2()
         {
+            IsGame1Selected = false;
             IsGame2Selected = true;
             IsGame3Selected = false;
         }
@@ -134,6 +145,7 @@ namespace PokemonBattleJournal.ViewModels
         [RelayCommand]
         private void SelectGame3()
         {
+            IsGame1Selected = false;
             IsGame2Selected = false;
             IsGame3Selected = true;
         }
