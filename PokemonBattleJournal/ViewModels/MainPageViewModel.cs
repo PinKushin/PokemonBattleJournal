@@ -170,7 +170,8 @@ namespace PokemonBattleJournal.ViewModels
         [ObservableProperty]
         public partial MatchResult? Result3 { get; set; }
 
-        public bool ShowGame3 => BO3Toggle && Result != null && Result2 != null && Result != Result2;
+        public bool ShowGame3 => BO3Toggle && Result != null && Result2 != null &&
+            (Result != Result2 || (Result == MatchResult.Tie && Result2 == MatchResult.Tie));
 
         [RelayCommand]
         private void ToggleBO3() => BO3Toggle = !BO3Toggle;
@@ -292,10 +293,11 @@ namespace PokemonBattleJournal.ViewModels
                     isValid = false;
                 }
 
-                // Game 3 is required only if games 1 and 2 have different results
-                if (Result != null && Result2 != null && Result != Result2 && Result3 == null)
+                // Game 3 is required when results differ OR both are ties (official Pokemon TCG tournament rules)
+                if (Result != null && Result2 != null && Result3 == null &&
+                    (Result != Result2 || (Result == MatchResult.Tie && Result2 == MatchResult.Tie)))
                 {
-                    _ = validationMessages.AppendLine("Game 3 result is required when games 1 and 2 have different results");
+                    _ = validationMessages.AppendLine("Game 3 result is required (results are split or both tied)");
                     isValid = false;
                 }
             }
