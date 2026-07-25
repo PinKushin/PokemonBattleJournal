@@ -52,6 +52,46 @@ namespace PokemonBattleJournal.Tests.ViewModels
         }
 
         [Fact]
+        public async Task AppearingAsync_NoTrainer_AfterCreateFails_DoesNotCallAnalysis()
+        {
+            _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
+                .Returns(Task.FromResult<Trainer?>(null));
+            _mockConnectionFactory.Trainers.SaveAsync(Arg.Any<string>())
+                .Returns(Task.FromResult(0));
+
+            await _viewModel.AppearingAsync();
+
+            _mockAnalysisService.DidNotReceive().CalculateWinRate(
+                Arg.Any<List<MatchEntry>>(), out Arg.Any<uint>(), out Arg.Any<uint>(), out Arg.Any<uint>());
+        }
+
+        [Fact]
+        public async Task AppearingAsync_WithMatches_SetsStreakInfoString()
+        {
+            List<MatchEntry> matches = [new() { Result = MatchResult.Win }];
+
+            _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
+                .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
+            _mockConnectionFactory.Matches.GetByTrainerIdAsync(1, true)
+                .Returns(Task.FromResult(matches));
+
+            _mockAnalysisService.CalculateWinRate(matches, out _, out _, out _).Returns(100);
+            _mockAnalysisService.GetMostPlayedArchetypes(matches).Returns([]);
+            _mockAnalysisService.CalculateWinRateOverTime(matches).Returns([]);
+            _mockAnalysisService.CalculateArchetypeWinRate(matches).Returns([]);
+            _mockAnalysisService.CalculateTagUsage(matches).Returns([]);
+            _mockAnalysisService.CalculatePerformanceAgainstOpponents(matches).Returns([]);
+            _mockAnalysisService.CalculateAverageMatchDuration(matches).Returns(TimeSpan.Zero);
+            _mockAnalysisService.CalculateWinRateByMatchLength(matches).Returns([]);
+            _mockAnalysisService.CalculateFirstTurnAdvantage(matches).Returns([]);
+            _mockAnalysisService.CalculateStreaks(matches).Returns((5, 2, 1));
+
+            await _viewModel.AppearingAsync();
+
+            _viewModel.StreakInfo.ShouldBe("Longest Streaks - Wins: 5, Losses: 2, Ties: 1");
+        }
+
+        [Fact]
         public async Task AppearingAsync_WithMatches_CalculatesStats()
         {
             // Arrange
