@@ -16,5 +16,6 @@ namespace PokemonBattleJournal.Interfaces
         ObservableCollection<ChartDataPoint> CalculateWinRateByMatchLength(List<MatchEntry> matches);
         ObservableCollection<ChartDataPoint> CalculateFirstTurnAdvantage(List<MatchEntry> matches);
         (int LongestWinStreak, int LongestLossStreak, int LongestTieStreak) CalculateStreaks(List<MatchEntry> matches);
+        (string[] PlayedArchetypes, string[] OpponentArchetypes, (int PlayedIdx, int OpponentIdx, double WinRate)[] Cells) CalculateMatchupMatrix(List<MatchEntry> matches);
     }
 }

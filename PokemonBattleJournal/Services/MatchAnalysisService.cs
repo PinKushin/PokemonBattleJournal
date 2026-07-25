@@ -129,6 +129,28 @@ namespace PokemonBattleJournal.Services
                 new() { Label = "Second Turn", Value = FirstTurnRate(secondTurnGames) }
             };
         }
+        public (string[] PlayedArchetypes, string[] OpponentArchetypes, (int PlayedIdx, int OpponentIdx, double WinRate)[] Cells) CalculateMatchupMatrix(List<MatchEntry> matches)
+        {
+            var relevant = matches.Where(m => m.Playing?.Name != null && m.Against?.Name != null).ToList();
+
+            var played = relevant.Select(m => m.Playing!.Name!).Distinct().OrderBy(x => x).ToArray();
+            var opponents = relevant.Select(m => m.Against!.Name!).Distinct().OrderBy(x => x).ToArray();
+
+            var playedIdx = played.Select((n, i) => (n, i)).ToDictionary(x => x.n, x => x.i);
+            var opponentIdx = opponents.Select((n, i) => (n, i)).ToDictionary(x => x.n, x => x.i);
+
+            var cells = relevant
+                .GroupBy(m => (m.Playing!.Name!, m.Against!.Name!))
+                .Select(g => (
+                    PlayedIdx: playedIdx[g.Key.Item1],
+                    OpponentIdx: opponentIdx[g.Key.Item2],
+                    WinRate: Calculations.CalculateWinRate(g.ToList(), out _, out _, out _)
+                ))
+                .ToArray();
+
+            return (played, opponents, cells);
+        }
+
         public (int LongestWinStreak, int LongestLossStreak, int LongestTieStreak) CalculateStreaks(List<MatchEntry> matches)
         {
             int currentWinStreak = 0, longestWinStreak = 0;

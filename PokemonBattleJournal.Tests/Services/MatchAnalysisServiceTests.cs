@@ -308,6 +308,56 @@ namespace PokemonBattleJournal.Tests.Services
         }
 
         [Fact]
+        public void CalculateMatchupMatrix_BasicMatchups_BuildsCorrectGrid()
+        {
+            List<MatchEntry> matches =
+            [
+                new() { Playing = new Archetype { Name = "Charizard" }, Against = new Archetype { Name = "Gardevoir" }, Result = MatchResult.Win },
+                new() { Playing = new Archetype { Name = "Charizard" }, Against = new Archetype { Name = "Gardevoir" }, Result = MatchResult.Loss },
+                new() { Playing = new Archetype { Name = "Gardevoir" }, Against = new Archetype { Name = "Charizard" }, Result = MatchResult.Win },
+            ];
+
+            var (played, opponents, cells) = _service.CalculateMatchupMatrix(matches);
+
+            played.ShouldBe(["Charizard", "Gardevoir"], ignoreOrder: false);
+            opponents.ShouldBe(["Charizard", "Gardevoir"], ignoreOrder: false);
+            cells.Length.ShouldBe(2);
+
+            var chariVsGarde = cells.Single(c => c.PlayedIdx == Array.IndexOf(played, "Charizard") && c.OpponentIdx == Array.IndexOf(opponents, "Gardevoir"));
+            chariVsGarde.WinRate.ShouldBe(50); // 1W 1L
+
+            var gardeVsChar = cells.Single(c => c.PlayedIdx == Array.IndexOf(played, "Gardevoir") && c.OpponentIdx == Array.IndexOf(opponents, "Charizard"));
+            gardeVsChar.WinRate.ShouldBe(100);
+        }
+
+        [Fact]
+        public void CalculateMatchupMatrix_EmptyList_ReturnsEmptyArrays()
+        {
+            var (played, opponents, cells) = _service.CalculateMatchupMatrix([]);
+
+            played.ShouldBeEmpty();
+            opponents.ShouldBeEmpty();
+            cells.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public void CalculateMatchupMatrix_MatchesWithNullArchetypes_AreExcluded()
+        {
+            List<MatchEntry> matches =
+            [
+                new() { Playing = null, Against = new Archetype { Name = "Gardevoir" }, Result = MatchResult.Win },
+                new() { Playing = new Archetype { Name = "Charizard" }, Against = null, Result = MatchResult.Win },
+                new() { Playing = new Archetype { Name = "Charizard" }, Against = new Archetype { Name = "Gardevoir" }, Result = MatchResult.Win },
+            ];
+
+            var (played, opponents, cells) = _service.CalculateMatchupMatrix(matches);
+
+            played.ShouldBe(["Charizard"]);
+            opponents.ShouldBe(["Gardevoir"]);
+            cells.Length.ShouldBe(1);
+        }
+
+        [Fact]
         public void CalculateStreaks_ShouldReturnLongestStreaks()
         {
             // Arrange
