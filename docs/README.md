@@ -216,6 +216,7 @@ Views (XAML) → ViewModels → Services → ISqliteConnectionFactory → SQLite
 | File | Purpose |
 |---|---|
 | [`AI-CONTEXT.md`](AI-CONTEXT.md) | Architecture, domain model, session log, known issues — read this first |
+| [`ROADMAP.md`](ROADMAP.md) | Bug and feature backlog with priority order |
 | [`../CLAUDE.md`](../CLAUDE.md) | Claude Code guidance — commands, conventions, architecture summary |
 | [`../LICENSE.txt`](../LICENSE.txt) | The Unlicense (public domain) |
 
