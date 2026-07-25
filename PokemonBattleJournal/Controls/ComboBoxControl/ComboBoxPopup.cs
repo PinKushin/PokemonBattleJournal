@@ -4,44 +4,27 @@ using Microsoft.Maui.Controls;
 
 namespace PokemonBattleJournal.Controls;
 
-public class ComboBoxPopup : Popup
+public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
 {
     public record PickerResult(object? SelectedItem);
 
-    public IEnumerable? ItemsSource { get; set; }
-    public string DisplayMemberPath { get; set; } = "Name";
-    public string ImageMemberPath { get; set; } = "ImagePath";
-    public object? SelectedItem { get; set; }
-    public Color BackgroundColor { get; set; } = Colors.White;
-    public Color AccentColor { get; set; } = Colors.Gray;
-    public double PopupWidth { get; set; } = 280;
-    public double ItemHeight { get; set; } = 40;
-
-    public ComboBoxPopup()
+    public ComboBoxPopup(
+        IEnumerable itemsSource,
+        string displayMemberPath,
+        string imageMemberPath,
+        Color backgroundColor,
+        Color accentColor,
+        double popupWidth,
+        double itemHeight)
     {
-        var titleLabel = new Label
-        {
-            Text = "Select an option",
-            FontSize = 16,
-            FontAttributes = FontAttributes.Bold,
-            HorizontalOptions = LayoutOptions.Center,
-            TextColor = AccentColor,
-            Margin = new Thickness(0, 8, 0, 5)
-        };
-
         var collectionView = new CollectionView
         {
-            ItemsSource = ItemsSource,
+            ItemsSource = itemsSource,
             SelectionMode = SelectionMode.Single,
             HeightRequest = 250,
-            BackgroundColor = BackgroundColor,
-            WidthRequest = (float)PopupWidth
+            BackgroundColor = backgroundColor,
+            WidthRequest = (float)popupWidth
         };
-
-        collectionView.SetBinding(CollectionView.SelectedItemProperty, new Binding(
-            nameof(SelectedItem),
-            source: this,
-            mode: BindingMode.TwoWay));
 
         collectionView.ItemTemplate = new DataTemplate(() =>
         {
@@ -54,7 +37,7 @@ public class ComboBoxPopup : Popup
                 HorizontalOptions = LayoutOptions.Start,
                 Margin = new Thickness(10, 0, 10, 0)
             };
-            image.SetBinding(Image.SourceProperty, new Binding(ImageMemberPath));
+            image.SetBinding(Image.SourceProperty, new Binding(imageMemberPath));
 
             var label = new Label
             {
@@ -62,9 +45,10 @@ public class ComboBoxPopup : Popup
                 FontSize = 13,
                 TextColor = Colors.Black
             };
-            label.SetBinding(Label.TextProperty, new Binding(DisplayMemberPath));
+            label.SetBinding(Label.TextProperty, new Binding(displayMemberPath));
+            Grid.SetColumn(label, 1);
 
-            var grid = new Grid
+            return new Grid
             {
                 ColumnDefinitions =
                 [
@@ -72,19 +56,27 @@ public class ComboBoxPopup : Popup
                     new ColumnDefinition(GridLength.Star)
                 ],
                 Children = { image, label },
-                HeightRequest = ItemHeight,
-                BackgroundColor = BackgroundColor
+                HeightRequest = itemHeight,
+                BackgroundColor = backgroundColor
             };
-
-            return new ViewCell { View = grid };
         });
 
-        collectionView.SelectionChanged += (s, e) =>
+        collectionView.SelectionChanged += async (s, e) =>
         {
             if (e.CurrentSelection.FirstOrDefault() != null)
             {
-                Close(new PickerResult(e.CurrentSelection.First()));
+                await CloseAsync(new PickerResult(e.CurrentSelection.First()));
             }
+        };
+
+        var titleLabel = new Label
+        {
+            Text = "Select an option",
+            FontSize = 16,
+            FontAttributes = FontAttributes.Bold,
+            HorizontalOptions = LayoutOptions.Center,
+            TextColor = accentColor,
+            Margin = new Thickness(0, 8, 0, 5)
         };
 
         var closeButton = new Button
@@ -92,20 +84,18 @@ public class ComboBoxPopup : Popup
             Text = "Cancel",
             HorizontalOptions = LayoutOptions.Center,
             WidthRequest = 120,
-            TextColor = AccentColor,
-            BackgroundColor = AccentColor.MultiplyAlpha(0.2f),
+            TextColor = accentColor,
+            BackgroundColor = accentColor.MultiplyAlpha(0.2f),
             Margin = new Thickness(0, 5, 0, 8)
         };
-        closeButton.Clicked += (s, e) => Close();
+        closeButton.Clicked += async (s, e) => await CloseAsync(null);
 
-        var container = new VerticalStackLayout
+        Content = new VerticalStackLayout
         {
             Children = { titleLabel, collectionView, closeButton },
-            WidthRequest = (int)PopupWidth,
+            WidthRequest = (int)popupWidth,
             Padding = 12,
-            BackgroundColor = BackgroundColor
+            BackgroundColor = backgroundColor
         };
-
-        Content = container;
     }
 }

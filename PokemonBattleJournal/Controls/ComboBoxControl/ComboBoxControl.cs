@@ -1,6 +1,8 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Windows.Input;
+using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Extensions;
 using CommunityToolkit.Maui.Views;
 using Microsoft.Maui.Controls;
 
@@ -247,21 +249,18 @@ public class ComboBoxControl : ContentView
     {
         if (ItemsSource == null) return;
 
-        var popup = new ComboBoxPopup
-        {
-            ItemsSource = ItemsSource,
-            DisplayMemberPath = DisplayMemberPath,
-            ImageMemberPath = ImageMemberPath,
-            SelectedItem = SelectedItem,
-            BackgroundColor = PopupBackgroundColor,
-            AccentColor = PopupAccentColor,
-            PopupWidth = PopupWidth,
-            ItemHeight = ItemHeight
-        };
+        var popup = new ComboBoxPopup(
+            ItemsSource,
+            DisplayMemberPath,
+            ImageMemberPath,
+            PopupBackgroundColor,
+            PopupAccentColor,
+            PopupWidth,
+            ItemHeight);
 
-        var result = await Shell.Current.ShowPopupAsync(popup);
+        var popupResult = await Shell.Current.CurrentPage.ShowPopupAsync<ComboBoxPopup.PickerResult?>(popup, new PopupOptions());
 
-        if (result is ComboBoxPopup.PickerResult pickerResult && pickerResult.SelectedItem != null)
+        if (popupResult?.Result is ComboBoxPopup.PickerResult pickerResult && pickerResult.SelectedItem != null)
         {
             SelectedItem = pickerResult.SelectedItem;
         }

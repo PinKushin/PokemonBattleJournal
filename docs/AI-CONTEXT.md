@@ -1,371 +1,345 @@
-# PokemonBattleJournal - AI Context Document
+# PokemonBattleJournal — AI Context
 
-> **Last Updated:** 2026-07-24
-> **Purpose:** Comprehensive reference for AI assistants working on this codebase. Contains architecture, domain model, Syncfusion removal plan, test coverage gaps, and known bugs.
-
----
-
-## Project Overview
-
-Pokemon Battle Journal is a .NET MAUI mobile/desktop app for logging and analyzing Pokemon TCG battle records. Built in C# with MVVM pattern using CommunityToolkit.Mvvm.
+> **Last updated:** 2026-07-25 (.NET 10 migration in progress)
+> **Solution file:** `PokemonBattleJournal.slnx` (not `.sln`)  
+> **Read this first** when working in this repo. Update the [Session log](#session-log) whenever scope, decisions, or blockers change — especially before long multi-step work.
 
 ---
 
-## Tech Stack
+## Session log
 
-| Component | Technology |
+Chronological notes for the current / recent work. **Append or edit this section** as conversations progress.
+
+| Date | Topic | Status / notes |
+|---|---|---|
+| 2026-07-25 | **Package updates + SQLite vuln fix** | **Done.** All packages updated to latest. SQLite vulnerability (GHSA-2m69-gcr7-jv3q) fixed by pinning `SQLitePCLRaw.lib.e_sqlite3` → 3.53.3 and `SQLitePCLRaw.lib.e_sqlite3.android` → 2.1.12 as direct refs. `sqlite-net-pcl` → 1.11.285. `Microsoft.NET.Test.Sdk` → 18.8.1. `Appium.WebDriver` → 8.3.2. Serilog family updated. 78 tests pass. |
+| 2026-07-25 | **.NET 10 migration** | **Done.** All projects updated to `net10.0` TFMs. CommunityToolkit.Maui → 15.0.0 (Popup API: `Popup<T>` for typed results, `CloseAsync(null/result)`, `ShowPopupAsync<T>(page, popup, new PopupOptions())` from `CommunityToolkit.Maui.Extensions`). CommunityToolkit.Mvvm → 8.4.2. Sentry → 6.7.0. Microsoft.Maui.Controls → 10.0.90. 78 unit tests pass on net10.0. |
+| 2026-07-25 | Solution contextualization + living AI docs | User requested full solution map and `docs/AI-CONTEXT.md` kept current for future AI sessions (Claude, Cursor, etc.). |
+| 2026-07-25 | **Top priority: MainPage archetype picker** | `ComboBoxControl` dropdown should show icon + name. **Fixed:** (1) `ComboBoxPopup` used object initializer for `ItemsSource` *after* ctor — `CollectionView` always got `null`; now passed via ctor. (2) `ViewCell` in `CollectionView.ItemTemplate` — invalid in MAUI; return `Grid` directly. Same fix applied to `ImagePickerPopup`. |
+| 2026-07-25 | IDE run/debug broken | **Cause:** stale `PokemonBattleJournal.sln` referenced deleted `PokemonBattleJournal.UI.Tests` project; Cursor/VS Code tasks pointed at `.sln`. **Fix:** removed `.sln`; use `PokemonBattleJournal.slnx` only. Updated `.vscode/settings.json` (`dotnet.defaultSolution`), `tasks.json`, `launch.json` (Windows MAUI exe). |
+| 2026-07-25 | Orphan processes after UI tests | Appium Windows tests can leave `PokemonBattleJournal.exe` running and lock rebuilds. Kill manually: `Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue` |
+| 2026-07-25 | Unit tests | **78 passing** (`PokemonBattleJournal.Tests`). |
+| 2026-07-25 | Android Appium UI tests | **4 passing** with local emulator `pixel_7_-_api_35`. Hardcoded to user's setup — note for later: make AVD/path configurable (VS 2026 + MAUI). |
+| 2026-07-25 | Benchmarks | Fail under Debug; use Release + `Run.ps1`. |
+| — | Syncfusion removal | **Done.** Native MAUI + custom controls only. |
+| — | .NET 10 upgrade | **Planned next phase** after picker/stabilization. User open to adding a shared picker dependency post-.NET 10 if custom controls remain painful. |
+| — | TrainerPage visualizations | Lists/labels only; richer visuals deferred. |
+| — | Multi-trainer | **Planned.** Options page already has **Create New Trainer** (`SaveTrainerAsync` + `PreferencesHelper`). Not a trainer switcher yet — only creates/renames via preferences. |
+| — | `origin/sqlite` branch | **Ignore** — SQLite work merged to master. |
+| — | Cursor rules | `.cursor/` added to `.gitignore`; local rule points here. Shared doc is this file. |
+
+### User decisions (2026-07-25)
+
+| Topic | Decision |
 |---|---|
-| Framework | .NET 9.0 + MAUI (Android, iOS, MacCatalyst, Windows) |
-| Database | SQLite via `sqlite-net-pcl` + `SQLiteNetExtensions` (async, ORM with FK relationships) |
-| MVVM | CommunityToolkit.Maui + CommunityToolkit.Mvvm (ObservableProperty + RelayCommand codegen) |
-| UI Controls | Custom Controls (ComboBoxControl, ImagePicker, HintedEntry) + MAUI native
-| Logging | Serilog (file + debug sinks) |
-| Error Tracking | Sentry.Maui |
-| Unit Tests | xUnit + Shouldly + NSubstitute |
-| UI Tests | Appium (Windows + Android) |
+| **Top priority** | Fix MainPage archetype `ComboBoxControl` (image + name dropdown). Avoid new dependency unless migrating everything to a library post-.NET 10. |
+| **Release platforms** | All 4 MAUI targets matter. User tests on **Windows** and **Android** only (no Mac hardware). Support as far back as MAUI allows on those two. |
+| **Multi-trainer** | Planned. Options page has create-trainer flow; full multi-trainer UX (switch/list) not built yet. |
+| **Android UI tests** | Tied to `pixel_7_-_api_35` — OK for now; refactor later if needed. |
+| **AI onboarding** | `docs/AI-CONTEXT.md` is the canonical context doc (not Cursor-specific). |
+| **TrainerPage stats UI** | Not current priority. |
+| **Windows Appium** | Fix path quoting — done. |
+
+### Active work
+
+- [x] Fix `ComboBoxPopup` empty dropdown
+- [x] Fix Windows Appium path
+- [ ] Verify archetype picker in running app (user)
+- [ ] .NET 10 migration (future)
+- [ ] Multi-trainer switcher UI (future)
+- [ ] TrainerPage richer stats (future)
+- [ ] Configurable Android Appium emulator (future)
+
+
+---
+
+## Project overview
+
+**Pokemon Battle Journal** is a .NET MAUI app for logging and analyzing **Pokemon TCG (PTCG)** battle records. Users record BO1/BO3 matches with archetypes, tags, times, and notes; browse history; and view trainer stats.
+
+- **Author / package id:** `com.PinKushin.PokemonBattleJournal`
+- **License:** The Unlicense (`LICENSE.txt`)
+- **Pattern:** MVVM with CommunityToolkit.Mvvm source generators
+- **Data:** Local SQLite (`PokemonBattleJournal.db3` in app data)
+
+---
+
+## Tech stack
+
+| Area | Technology |
+|---|---|
+| Runtime | .NET 10.0 + MAUI |
+| Platforms | Android 21+, iOS 15+, MacCatalyst 15+, Windows 10 19041+ (Tizen scaffold present, not in active TFM list) |
+| Database | `sqlite-net-pcl`, `SQLite.Net.Extensions.Async`, `SQLitePCLRaw.bundle_green` |
+| MVVM | CommunityToolkit.Maui 15.x, CommunityToolkit.Mvvm 8.x |
+| UI | Native MAUI controls + custom `ComboBoxControl`, `ImagePicker` |
+| Logging | Serilog → debug + rolling file (`log.txt` in app data) |
+| Errors | Sentry.Maui (DSN in `MauiProgram.cs`) |
+| Unit tests | xUnit, Shouldly, NSubstitute |
+| UI tests | Appium (Windows + Android runners, shared tests) |
 | Benchmarks | BenchmarkDotNet |
 
----
-
-## Solution Structure
-
-```
-PokemonBattleJournal.sln
-├── PokemonBattleJournal/                    # Main MAUI app
-│   ├── Models/                              # Domain entities (SQLite ORM)
-│   ├── ViewModels/                          # MVVM ViewModels (ObservableObject + RelayCommand)
-│   ├── Views/                               # XAML pages
-│   ├── Services/                            # Business logic + DB operations
-│   ├── Interfaces/                          # Service contracts
-│   ├── Utilities/                           # Helpers (file, threading, preferences, calculations)
-│   ├── Controls/                            # Custom controls (ComboBoxControl, ImagePicker, HintedEntry)
-│   ├── Platforms/                           # Android, iOS, MacCatalyst, Windows bootstraps
-│   └── Resources/                           # Fonts, images, styles, colors
-├── PokemonBattleJournal.Tests/              # Unit tests (xUnit + NSubstitute + Shouldly)
-├── PokemonBattleJournal.Benchmarks/         # BenchmarkDotNet perf tests
-└── PokemonBattleJournal.UITests/            # Appium UI tests
-    ├── UITests.Shared/                      # Shared test code + base class
-    ├── UITests.Windows/                     # Windows Appium runner
-    └── UITests.Android/                     # Android Appium runner
-```
+**Syncfusion:** fully removed. No Syncfusion packages in `PokemonBattleJournal.csproj`.
 
 ---
 
-## Domain Model
+## Solution structure (`PokemonBattleJournal.slnx`)
+
+```
+PokemonBattleJournal.slnx
+├── PokemonBattleJournal/                 # Main MAUI app (Deploy)
+│   ├── Models/                           # SQLite ORM entities
+│   ├── ViewModels/                       # ObservableObject + RelayCommand
+│   ├── Views/                            # XAML Shell pages
+│   ├── Services/                         # DB + business logic
+│   ├── Interfaces/                       # Service contracts
+│   ├── Utilities/                        # File, prefs, threading, calculations
+│   ├── Controls/                         # ComboBoxControl, ImagePicker
+│   ├── Platforms/                        # Android, iOS, MacCatalyst, Windows, Tizen
+│   └── Resources/                        # Fonts, sprites, styles, images
+├── PokemonBattleJournal.Tests/           # Unit tests (excluded from Release solution build)
+├── PokemonBattleJournal.Benchmarks/      # BenchmarkDotNet (PokemonBattleJournal.Benchmarking.csproj)
+└── PokemonBattleJournal.UITests/
+    ├── UITests.Shared/                   # Shared Appium tests + server helper
+    ├── UITests.Windows/                  # Windows Appium runner
+    └── UITests.Android/                  # Android Appium runner
+```
+
+**Build notes**
+
+- Open/build with **`PokemonBattleJournal.slnx` only**. Do **not** recreate `PokemonBattleJournal.sln` — the old file referenced removed projects (`PokemonBattleJournal.UI.Tests`) and broke IDE build/debug.
+- Cursor/VS Code: `.vscode/settings.json` sets `dotnet.defaultSolution` → `PokemonBattleJournal.slnx`.
+- Debug profile launches the Windows **`.exe`**, not the `.dll` (`launch.json` → "Windows (MAUI)").
+- `PokemonBattleJournal.Tests` has `<Build Solution="Release|*" Project="false" />` — Release solution builds skip unit tests; run tests explicitly.
+- Main app: `WindowsPackageType=None` (unpackaged Windows).
+- After failed Appium runs, kill orphaned app: `Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue`
+
+---
+
+## App navigation & lifecycle
+
+```
+App.CreateWindow()
+  ├─ FirstStartPage (if Preferences "FirstStart" != "false")
+  └─ AppShell (flyout) otherwise
+       ├─ MainPage          — create match entries
+       ├─ ReadJournalPage   — browse past matches
+       ├─ TrainerPage       — stats dashboard
+       ├─ OptionsPage       — trainer name, archetypes, tags
+       └─ AboutPage         — credits
+```
+
+- **Shell:** flyout navigation (`AppShell.xaml`).
+- **DI:** `MauiProgram.cs` registers singletons for DB factory, analysis, calculators; `MainPage`+VM singleton; other pages transient.
+- **First start:** `FirstStartPageViewModel` saves trainer name to `PreferencesHelper` and opens `AppShell`.
+- **Windows-only:** `CollectionViewHandler` mapping disables multi-select checkbox.
+
+---
+
+## Domain model
 
 ### Entities
 
-| Entity | Key Fields | Relationships |
+| Entity | Key fields | Relationships |
 |---|---|---|
-| `Trainer` | `Id` (uint PK), `Name` (string, Unique) | OneToMany → Archetypes, Tags, MatchEntries |
-| `Archetype` | `Id` (uint PK), `Name` (string, Unique), `ImagePath` (string), `TrainerId` (uint FK) | ManyToOne → Trainer; OneToMany → MatchEntries (Playing/Against) |
-| `Tags` | `Id` (uint PK), `Name` (string, Unique), `TrainerId` (uint FK) | ManyToOne → Trainer; ManyToMany → Game (via TagGame) |
-| `Game` | `Id` (uint PK), `Result` (MatchResult?), `Turn` (uint, 1=Player/2=Opponent), `Notes` (string?) | ManyToMany → Tags (via TagGame) |
-| `TagGame` | `GameId` (uint FK), `TagId` (uint FK) | Junction table for Game↔Tags many-to-many |
-| `MatchEntry` | `Id` (uint PK), `TrainerId` (uint FK), `PlayingId`/`AgainstId` (uint FK), `Result` (MatchResult?), `Game1Id`/`Game2Id`/`Game3Id` (uint? FK), `StartTime`, `EndTime`, `DatePlayed` | ManyToOne → Trainer, Playing Archetype, Against Archetype; OneToOne → Game1/2/3 |
+| `Trainer` | `Id`, `Name` (unique) | → Archetypes, Tags, MatchEntries |
+| `Archetype` | `Id`, `Name`, `ImagePath`, `TrainerId` | → Trainer; used in matches (Playing/Against) |
+| `Tags` | `Id`, `Name`, `TrainerId` | → Trainer; M2M → `Game` via `TagGame` |
+| `Game` | `Id`, `Result?`, `Turn`, `Notes?` | M2M → Tags |
+| `TagGame` | `GameId`, `TagId` | Junction |
+| `MatchEntry` | `Id`, trainer/archetype FKs, `Result?`, `Game1/2/3Id`, times, `DatePlayed` | → Trainer, archetypes, games |
 
-### Enums
+### Enums & chart DTOs
 
 ```csharp
 public enum MatchResult { Win, Loss, Tie }
-```
-
-### Data Models for Charts
-
-```csharp
 public class ChartDataPoint { string? Label; double Value; }
 public class TimeDataPoint { DateTime Date; double Value; }
 ```
+
+Default archetypes/tags are seeded when tables are empty (`ArchetypeOperations`, `TagOperations`).
 
 ---
 
 ## Architecture
 
-### MVVM Pattern
-
 ```
-Views (XAML) --bind--> ViewModels (ObservableObject + RelayCommand)
-    --call--> Services (business logic) --> Interfaces --> SqliteConnectionFactory --> SQLite DB
-```
-
-- **DI:** `MauiProgram.cs` registers all services, ViewModels, and Pages
-- **Navigation:** MAUI Shell with Flyout
-- **Lifecycle:** `EventToCommandBehavior` on `Appearing`/`Disappearing` events
-- **Async:** `SemaphoreSlim` for thread safety on all DB operations
-- **Error Handling:** All operations wrapped in try/catch with `ModalErrorHandler` display alerts
-
-### DI Registration (MauiProgram.cs)
-
-```
-ISqliteConnectionFactory → SqliteConnectionFactory (singleton)
-IMatchResultsCalculatorFactory → MatchResultCalculatorFactory (singleton)
-IMatchAnalysisService → MatchAnalysisService (singleton)
-FirstStartPage/VM → Transient
-MainPage/VM → Singleton
-ReadJournalPage/VM → Transient
-TrainerPage/VM → Transient
-OptionsPage/VM → Transient
-AboutPage/VM → Transient
+Views (XAML) ──bind──► ViewModels ──call──► Services ──► ISqliteConnectionFactory ──► SQLite
+                              │
+                              └── ModalErrorHandler (alerts on errors)
 ```
 
----
+- **Concurrency:** static `SemaphoreSlim` on `SqliteConnectionFactory`; all DB ops acquire it.
+- **Transactions:** `RunInTransactionAsync` for multi-step saves/deletes.
+- **Match results:** `MatchResultCalculatorFactory` → `BO1ResultCalculator` or `BO3ResultCalculator`.
+- **Stats:** `MatchAnalysisService` (11 calculation methods) feeds `TrainerPageViewModel`.
+- **Test detection:** `DeviceInfo.Platform == DevicePlatform.Unknown` ⇒ unit test environment (no MAUI runtime).
 
-## Pages and ViewModels
+### DI registration (`MauiProgram.cs`)
 
-### 1. FirstStartPage / FirstStartPageViewModel
-- **Purpose:** Initial onboarding — enter trainer name
-- **Controls:** `SfTextInputLayout` + `Entry`, `SfButton`
-- **Key Behavior:** Sets `PreferencesHelper.SetSetting("FirstStart", "false")` and `PreferencesHelper.SetSetting("TrainerName", name)`, then navigates to `AppShell`
-
-### 2. MainPage / MainPageViewModel (Singleton)
-- **Purpose:** Create match entries with BO1/BO3 toggle, archetypes, time, tags
-- **Controls:** 2× `ComboBoxControl` (archetype pickers), `Switch` (BO3), 2× `TimePicker`, `DatePicker`, 3× `Picker` (results), `Editor` (notes), `CollectionView` (tags), 3× `Button`
-- **Key Properties:** `PlayerSelected`, `RivalSelected`, `Result`/`Result2`/`Result3`, `StartTime`/`EndTime`/`DatePlayed`, `BO3Toggle`, `FirstCheck`/`FirstCheck2`/`FirstCheck3`, `TagsSelected`/`Match2TagsSelected`/`Match3TagsSelected`, `Archetypes`, `TagCollection`
-- **Key Methods:** `AppearingAsync()`, `Disappearing()`, `SaveMatchAsync()`, `ValidateMatchData()`
-- **Code-Behind:** No platform-specific picker dialogs needed; all pickers use MAUI native or custom controls
-
-### 3. ReadJournalPage / ReadJournalPageViewModel
-- **Purpose:** Browse past matches with full game details
-- **Controls:** No Syncfusion (pure MAUI)
-- **Key Properties:** `MatchHistory`, `SelectedMatch`, `TagsSelectedGame1/2/3`, `PlayingName`/`AgainstName`, `PlayingIconSource`/`AgainstIconSource`
-- **Key Methods:** `AppearingAsync()`, `LoadMatch()`, `ResetDisplay()`
-
-### 4. TrainerPage / TrainerPageViewModel
-- **Purpose:** Stats dashboard with 7 Syncfusion charts
-- **Controls:** 4× `SfCartesianChart`, 2× `SfCircularChart`, text labels, `CollectionView`
-- **Key Properties:** `Wins`, `Losses`, `Ties`, `WinAverage`, `MostPlayedArchetypes`, `WinRateOverTime`, `ArchetypeWinRates`, `TagUsage`, `OpponentPerformance`, `WinRateByMatchLength`, `FirstTurnAdvantage`, `AverageMatchDuration`, `StreakInfo`
-- **Key Methods:** `AppearingAsync()` — calls `MatchAnalysisService` for all stats
-
-### 5. OptionsPage / OptionsPageViewModel
-- **Purpose:** Manage trainer name, custom archetypes, tags
-- **Controls:** 4× `SfTextInputLayout`, 1× `Picker` (icon picker), 5× `Button`
-- **Key Properties:** `NameInput`, `TagInput`, `NewDeckName`, `SelectedIcon`, `IconCollection`
-- **Key Methods:** `SaveTrainerAsync()`, `SaveTagAsync()`, `SaveArchetypeAsync()`, `SaveAllAsync()`, `DeleteTrainerFileAsync()`
-
-### 6. AboutPage / AboutPageViewModel
-- **Purpose:** Credits page
-- **Controls:** No Syncfusion
-- **ViewModel:** Only has logger injection
-
----
-
-## Services Layer
-
-### SqliteConnectionFactory (Singleton)
-- Creates `SQLiteAsyncConnection` with double-checked locking
-- Exposes `Trainers`, `Matches`, `Archetypes`, `Tags` operation interfaces
-- Creates tables in dependency order: Trainer, Archetype, Tags, Game, TagGame, MatchEntry
-
-### MatchOperations
-- `SaveAsync(MatchEntry, List<Game>)` — Transaction: insert/update match, save games with tags, verify integrity
-- `GetAllAsync()`, `GetByIdAsync()`, `GetByTrainerIdAsync()` — Load with related data
-- `DeleteAsync(MatchEntry)` — Cascade delete games and tag relationships
-- **Internal methods:** `SaveGame()`, `DeleteGame()` for transaction helpers
-
-### TrainerOperations
-- `GetByNameAsync()`, `GetAllAsync()`, `SaveAsync()`, `DeleteAsync()` — Full CRUD with cascade
-- `DeleteAsync()` loads related matches, archetypes, tags and deletes in transaction
-
-### ArchetypeOperations
-- `GetAllAsync()` — Seeds 8 default archetypes if table empty
-- `SaveAsync()`, `DeleteAsync()` — Blocks deletion if archetype is used in matches
-
-### TagOperations
-- `GetAllAsync()` — Seeds 8 default tags if table empty
-- `SaveAsync()`, `DeleteAsync()` — Cascades TagGame relationships
-
-### MatchAnalysisService
-- 11 methods for computing statistics:
-  - `CalculateWinRate()`, `GetMostPlayedArchetypes()`, `CalculateWinRateOverTime()`
-  - `CalculateArchetypeWinRate()`, `CalculateTagUsage()`, `CalculatePerformanceAgainstOpponents()`
-  - `CalculateAverageMatchDuration()`, `CalculateWinRateByMatchLength()`, `CalculateFirstTurnAdvantage()`
-  - `CalculateStreaks()`, `CalculateMatchFrequency()`
-
-### MatchResultCalculatorFactory / BO1ResultCalculator / BO3ResultCalculator
-- Factory pattern: `GetCalculator(isBestOf3)` returns appropriate calculator
-- BO1: Returns the single game result
-- BO3: Counts wins/losses across 2-3 games; ties are neither win nor loss
-
----
-
-## Syncfusion Removal Plan
-
-### Packages to Remove (9)
-
-| Package | Version | Used Controls |
-|---|---|---|
-| `Syncfusion.Maui.AIAssistView` | 29.1.38 | **UNUSED** — no references in code |
-| `Syncfusion.Maui.Buttons` | 29.1.38 | **UNUSED** — SfButton comes from Toolkit |
-| `Syncfusion.Maui.Cards` | 29.1.38 | **UNUSED** — no references in code |
-| `Syncfusion.Maui.Charts` | 29.1.38 | SfCartesianChart, SfCircularChart, LineSeries, ColumnSeries, PieSeries |
-| `Syncfusion.Maui.Core` | 29.1.38 | SfTextInputLayout, LabelStyle, SyncfusionLicenseProvider |
-| `Syncfusion.Maui.DataForm` | 29.1.38 | **UNUSED** — no references in code |
-| `Syncfusion.Maui.Picker` | 29.1.38 | SfTimePicker, SfDatePicker, PickerHeaderView |
-| `Syncfusion.Maui.Sliders` | 29.1.38 | **UNUSED** — no references in code |
-| `Syncfusion.Maui.Toolkit` | 1.0.4 | SfButton, ConfigureSyncfusionToolkit() |
-
-### Files to Modify
-
-| File | Changes |
+| Lifetime | Types |
 |---|---|
-| `PokemonBattleJournal.csproj` | Remove 9 PackageReference lines |
-| `MauiProgram.cs` | Remove 2 using directives + 2 `.ConfigureSyncfusion*()` calls |
-| `App.xaml.cs` | Remove `SyncfusionLicenseProvider.RegisterLicense()` (4 lines) |
-| `MainPage.xaml` | Replace SfButton→Button, SfTextInputLayout→HintedEntry, SfComboBox→ComboBoxControl, SfTimePicker→TimePicker, SfDatePicker→DatePicker |
-| `MainPage.xaml.cs` | Remove `OpenTimePickers()`/`OpenDatePlayedPicker()` and their `.IsOpen` calls |
-| `OptionsPage.xaml` | Replace SfButton→Button, SfTextInputLayout→HintedEntry, SfComboBox→Picker |
-| `FirstStartPage.xaml` | Replace SfButton→Button, SfTextInputLayout→HintedEntry |
-| `TrainerPage.xaml` | Replace 7 Syncfusion charts with native MAUI controls |
+| Singleton | `ISqliteConnectionFactory`, `IMatchResultsCalculatorFactory`, `IMatchAnalysisService`, `MainPage`, `MainPageViewModel` |
+| Transient | All other pages + ViewModels |
 
-### Replacement Components Needed
+---
 
-1. **ComboBoxControl** (custom control) — Replaces SfComboBox for archetype selection. Supports icon+name display with dropdown popup
-2. **HintedEntry** (custom control) — Floating hint Label + Entry + helper text Label. Supports `Hint`, `HelperText`, `ContainerType` (None/Outlined), `Stroke`, `HintLabelStyle`, `HelperLabelStyle`
-3. **Picker with DataTemplate** — Replaces SfComboBox. Must support icon+name display in ItemTemplate
-4. **Native MAUI TimePicker/DatePicker** — Inline, no dialog mode. `MinimumTime` constraint must move to ViewModel
-5. **Heatmap Grid** — New component for Archetype Matchup Matrix (replaces charts)
-6. **ProgressBar segments** — Replace LineSeries, ColumnSeries charts
+## Pages & ViewModels
 
-### Syncfusion Control Replacement Map
+| Page | VM | Purpose | Notable UI |
+|---|---|---|---|
+| `FirstStartPage` | `FirstStartPageViewModel` | Onboarding — trainer name | `Border`+`Entry`, `Button` |
+| `MainPage` | `MainPageViewModel` | Log BO1/BO3 matches | 2× `ComboBoxControl` (archetypes), native `TimePicker`/`DatePicker`/`Picker`, tag `CollectionView`, save/validate |
+| `ReadJournalPage` | `ReadJournalPageViewModel` | Match history browser | `CollectionView`, game/tag detail panels |
+| `TrainerPage` | `TrainerPageViewModel` | Stats dashboard | Labels + `CollectionView` lists (no charts) |
+| `OptionsPage` | `OptionsPageViewModel` | Trainer, archetype, tag CRUD | `Border`+`Entry`, `Picker`, `ImagePicker`, buttons |
+| `AboutPage` | `AboutPageViewModel` | Credits | Static content |
 
-| Syncfusion Control | Location | Replacement |
+**MainPageViewModel highlights:** `AppearingAsync`, `Disappearing`, `SaveMatchAsync`, `ValidateMatchData`, BO3 toggle, per-game tags/results/first-turn flags.
+
+---
+
+## Services layer
+
+| Service | Role |
+|---|---|
+| `SqliteConnectionFactory` | Connection init, table creation, exposes `Trainers`/`Matches`/`Archetypes`/`Tags` ops |
+| `MatchOperations` | Save/get/delete matches + games + tag links (transactional) |
+| `TrainerOperations` | Trainer CRUD; delete cascades via SQL on FK ids |
+| `ArchetypeOperations` | CRUD; blocks delete if used; seeds defaults |
+| `TagOperations` | CRUD; cascades `TagGame`; seeds defaults |
+| `MatchAnalysisService` | Win rate, archetypes, tags, opponents, streaks, duration, etc. |
+| `BO1ResultCalculator` / `BO3ResultCalculator` | Aggregate game results into match result |
+| `ModalErrorHandler` | Shows error alerts (`IErrorHandler`) |
+
+**Win rate formula (canonical):** `(wins + 0.5 * ties) / total * 100` in `Calculations.CalculateWinRate`. Align any new stats code with this.
+
+---
+
+## Custom controls
+
+| Control | Location | Purpose | Known issues |
+|---|---|---|---|
+| `ComboBoxControl` | `Controls/ComboBoxControl/` | MainPage archetype picker (icon + name popup) | Fixed 2026-07-25: popup ItemsSource + ViewCell template bugs |
+| `ImagePicker` | `Controls/ImagePicker.cs` | Options page icon selection | Same ViewCell fix applied to popup |
+
+Text inputs use **Border + Label + Entry** (not a separate `HintedEntry` control).
+
+---
+
+## Resolved bugs (historical)
+
+All fixed in recent commits on `master`:
+
+1. Win rate formula inconsistency — aligned to standard formula with half-weight ties.
+2. `TrainerOperations.DeleteAsync` orphaned games — SQL delete via `Game1/2/3Id` FKs.
+3. `MatchOperations.DeleteAsync` deadlock — sync SQL inside transactions.
+4. `OptionsPageViewModel.SaveAllAsync` deadlock — removed outer semaphore.
+5. `FirstStartPageViewModel` logging — accepted minimal logging in onboarding.
+6. Dead update branches in Save methods — removed unreachable `Id != 0` paths.
+7. Race in `TrainerOperations.SaveAsync` — duplicate check moved inside lock.
+
+---
+
+## Test coverage
+
+### Unit tests — 78 total (all passing)
+
+| Area | File(s) | Count |
 |---|---|---|
-| `SfButton` | MainPage (2), OptionsPage (5), FirstStartPage (1) | MAUI `Button` |
-| `SfTextInputLayout` | MainPage (2), OptionsPage (4), FirstStartPage (1) | Custom `HintedEntry` control |
-| `SfComboBox` | MainPage (2 archetype pickers→ComboBoxControl, 3 result pickers→Picker), OptionsPage (1 icon picker→Picker) | MAUI `Picker` + `DataTemplate` or custom `ComboBoxControl` |
-| `SfTimePicker` | MainPage (2) | MAUI `TimePicker` (inline) |
-| `SfDatePicker` | MainPage (1) | MAUI `DatePicker` (inline) |
-| `SfCartesianChart` | TrainerPage (4) | Native MAUI Grid + ProgressBar |
-| `SfCircularChart` | TrainerPage (2) | Native MAUI ProgressBar + labels |
+| BO1/BO3 calculators | `BO1ResultCalculatorTests`, `BO3ResultCalculatorTests`, `MatchResultCalculatorFactoryTests` | 20 |
+| Match analysis | `MatchAnalysisServiceTests` | 11 |
+| DB services | `MatchOperationsTests`, `TrainerOperationsTests`, `ArchetypeOperationsTests`, `TagOperationsTests` | 21 |
+| ViewModels | `MainPage`, `TrainerPage`, `OptionsPage`, `ReadJournalPage` ViewModel tests | 19 |
+| Utilities | `CalculationsTests`, `TaskUtilitiesTests` | 7 |
 
----
+**Still lightly covered or untested**
 
-## Known Bugs
+- `SqliteConnectionFactory` init (integration-style)
+- `ModalErrorHandler`, `FileHelper`, `PreferencesHelper`, `MainThreadHelper`
+- End-to-end UI flows (save match, pick archetype) beyond basic Appium smoke tests
 
-> All bugs listed below have been fixed in recent commits.
+### UI tests (Appium)
 
-### 1. Win Rate Formula Inconsistency — RESOLVED
-- ~~`Calculations.CalculateWinRate` uses `(wins + 0.5 * ties) / total * 100` (ties = half win)~~
-- ~~`MatchAnalysisService.CalculateWinRate` uses `wins / total * 100` (ties = zero)~~
-- **Resolution**: The standard statistical formula `(wins + 0.5 * ties) / total * 100` is the correct one for heatmaps and PTCG analysis. Both methods should eventually be consistent; `Calculations` version is unused in production.
-
-### 2. TrainerOperations.DeleteAsync Orphaned Records — RESOLVED
-- ~~`DeleteGameAndTags()` references `match.Game1/2/3` but matches are loaded via `db.Table<MatchEntry>()` **without children**~~
-- ~~Game1/2/3 are always null — game/tag deletion branches never execute~~
-- **Resolution**: Replaced `DeleteGameAndTags()` calls with direct SQL `DELETE` statements using `Game1Id`/`Game2Id`/`Game3Id` FKs from `MatchEntry`.
-
-### 3. MatchOperations.DeleteAsync Potential Deadlock — RESOLVED
-- ~~Lines 278-293 call `db.FindAsync` and `db.Table<TagGame>().ToListAsync()` inside `RunInTransactionAsync`~~
-- **Resolution**: Replaced async calls inside transaction with synchronous `tran.ExecuteScalar<int>(...)` SQL queries.
-
-### 4. OptionsPageViewModel.SaveAllAsync Deadlock — RESOLVED
-- ~~Acquires `SemaphoreSlim`, then calls `SaveTrainerAsync()`, `SaveTagAsync()`, `SaveArchetypeAsync()`~~
-- **Resolution**: Removed outer semaphore lock from `SaveAllAsync()` — each sub-method manages its own lock.
-
-### 5. FirstStartPageViewModel Missing Logging — RESOLVED (accepted)
-- ~~`SaveTrainerName()` creates `new Logger<FirstStartPageViewModel>(new LoggerFactory())` inline instead of using DI~~
-- **Resolution**: Reverted to parameterless constructor; logging in first-start flow is non-critical.
-
-### 6. Dead Code in Save Methods — RESOLVED
-- ~~`TrainerOperations.SaveAsync()` and `ArchetypeOperations.SaveAsync()` always create new entities with `Id == 0`~~
-- **Resolution**: Removed unreachable `if (entity.Id != 0)` update branches from `TrainerOperations`, `ArchetypeOperations`, and `TagOperations`.
-
-### 7. Race Conditions in Save Methods — RESOLVED
-- ~~`TrainerOperations.SaveAsync()` and `ArchetypeOperations.SaveAsync()` perform duplicate-name checks before acquiring the semaphore lock~~
-- **Resolution**: Moved duplicate-name check inside the semaphore lock within `RunInTransactionAsync` in `TrainerOperations.SaveAsync`.
-
----
-
-## Test Coverage Summary
-
-### Current Tests (78 total)
-
-| File | Tests | What's Covered |
+| Runner | Tests | Status (2026-07-25) |
 |---|---|---|
-| `BO1ResultCalculatorTests.cs` | 3 | Null throws, Win→Win, Loss→Loss. **Missing: Tie** |
-| `BO3ResultCalculatorTests.cs` | 10 | Null combos, 2-wins, 2-losses, 1-1-tie, ties+win, ties+loss. **Missing: 3-of-a-kind** |
-| `MatchResultCalculatorFactoryTests.cs` | 2 | Both branches |
-| `MatchAnalysisServiceTests.cs` | 2 | `CalculateWinRate` and `GetMostPlayedArchetypes` only. **9 of 11 methods untested** |
-| `MainPageViewModelTests.cs` | 2 | Constructor non-null, TrainerName property. **Mock wired but never called** |
-| UI Tests (Shared) | 2 | Note input accepts text, ball icon displays |
-| UI Tests (AppWindow) | 1 | App launches (no assertions) |
-| UI Tests (Windows) | 1 | BO3 switch toggles |
-| UI Tests (Android) | 1 | BO3 switch toggles |
+| `UITests.Android` | 4 | Pass with configured emulator + debug app |
+| `UITests.Windows` | 4 | Path quoting fixed; requires built exe at hardcoded path + Appium |
+| `UITests.Shared` | Shared by both | `AppWindowTests`, `MainPageTests` |
 
-### Untested Services (0 unit tests)
+**Windows Appium setup:** hardcoded exe path in `UITests.Windows/AppiumSetup.cs` — update when machine/output path changes. Do **not** wrap path in extra quote characters.
 
-- `MatchOperations` — Save, GetAll, GetById, GetByTrainerId, Delete
-- `TrainerOperations` — GetAll, GetByName, Save, Delete
-- `ArchetypeOperations` — GetAll, GetById, Save, Delete
-- `TagOperations` — GetAll, GetById, Save, Delete
-- `SqliteConnectionFactory` — Init, GetDatabase, GetLock
-- `ModalErrorHandler` — HandleError
+**Android Appium setup:** hardcoded AVD `pixel_7_-_api_35` — matches author's machine; make configurable later.
 
-### Untested ViewModels
+### Benchmarks
 
-- `MainPageViewModel` — AppearingAsync, Disappearing, SaveMatchAsync, ValidateMatchData
-- `TrainerPageViewModel` — AppearingAsync (all stat calculations)
-- `OptionsPageViewModel` — SaveTrainerAsync, SaveTagAsync, SaveArchetypeAsync, SaveAllAsync, DeleteTrainerFileAsync
-- `ReadJournalPageViewModel` — AppearingAsync, LoadMatch, ResetDisplay
-- `FirstStartPageViewModel` — SaveTrainerName
-
-### Untested Utilities
-
-- `Calculations` — CalculateWinRate (uses standard formula, consistent with MatchAnalysisService after bug #1 fix)
-- `FileHelper` — All 6 methods (GetAppDataPath, Exists, CreateFile, DeleteFile, ReadFileAsync, WriteFileAsync)
-- `MainThreadHelper` — BeginInvokeOnMainThread, IsMainThread
-- `TaskUtilities` — FireAndForgetSafeAsync
-- `PreferencesHelper` — GetSetting, SetSetting
-
-### Tests Needed Before Syncfusion Replacement (Priority Order)
-
-1. `MainPageViewModel.ValidateMatchData()` — all validation paths
-2. `MainPageViewModel.SaveMatchAsync()` — end-to-end save with mocked DB
-3. `TrainerPageViewModel.AppearingAsync()` — all stat calculations via mocked `IMatchAnalysisService`
-4. `MatchAnalysisService` — all 11 methods with empty, single, mixed, and edge-case inputs
-5. `OptionsPageViewModel` — all save/delete commands
-6. `ReadJournalPageViewModel.LoadMatch()` — match loading with tags
-7. `MatchOperations.SaveAsync` / `DeleteAsync` — validation and data integrity
-8. `TrainerOperations.DeleteAsync` — verify the Game1/2/3 null bug
-9. UI tests for archetype picker, result picker, time/date picker, save button flow
+- Project: `PokemonBattleJournal.Benchmarks` / `ViewModels/MainPageViewModelBenchmarks`
+- Requires **Release** build of main app; use `Run.ps1`.
 
 ---
 
-## Platform-Specific Notes
+## Platform notes
 
-### Windows
-- `CollectionViewHandler` mapping disables multi-select checkbox (`MauiProgram.cs` lines 97-101)
-- `WindowsPackageType=None` (unpackaged app)
-
-### Android
-- `SupportedOSPlatformVersion`: 21.0
-- `RunAOTCompilation=False`, `PublishTrimmed=False`
-
-### iOS / MacCatalyst
-- `SupportedOSPlatformVersion`: 15.0
+| Platform | Notes |
+|---|---|
+| Windows | Unpackaged; Appium path points to `bin\Debug\net9.0-windows10.0.19041.0\win10-x64\PokemonBattleJournal.exe` |
+| Android | `RunAOTCompilation=False`, `PublishTrimmed=False` in Release |
+| iOS / MacCatalyst | Min OS 15.0 |
 
 ---
 
-## Code Conventions
+## Code conventions
 
-- **ObservableProperty/RelayCommand:** Source-generated via CommunityToolkit.Mvvm (no manual INPC)
-- **Async patterns:** `SemaphoreSlim` for all DB access, `await` everywhere
-- **Error handling:** `try/catch` with `ModalErrorHandler.HandleError(ex)` — swallows exceptions, returns default values
-- **Logging:** Heavy use of `_logger.LogInformation/LogDebug/LogWarning/LogError` throughout
-- **Test helpers:** `DeviceInfo.Platform == DevicePlatform.Unknown` detects unit test environment (no MAUI runtime)
-- **Naming:** `{ClassName}Tests` for test classes, `{MethodName}_{Scenario}_{Expected}` for test methods
+- `[ObservableProperty]` / `[RelayCommand]` — CommunityToolkit source generators
+- Async DB access always under `SemaphoreSlim`
+- Errors: `try/catch` + `ModalErrorHandler.HandleError` (often returns defaults)
+- Logging: `_logger.LogInformation/Debug/Warning/Error` throughout services/VMs
+- Tests: `{Class}Tests`, methods `{Method}_{Scenario}_{Expected}`
 
 ---
 
-## Branch Strategy
+## Roadmap
 
-- `master` — production-ready code
-- `refactor/syncfusion-exit-and-net10` — planned branch for Syncfusion removal + .NET 10 upgrade
+| Item | Status |
+|---|---|
+| Remove Syncfusion | ✅ Done |
+| Expand unit tests | ✅ Largely done (78 tests) |
+| Fix MainPage archetype ComboBoxControl | ✅ Done (2026-07-25) |
+| Fix Windows Appium path | ✅ Done (2026-07-25) |
+| Multi-trainer switcher UI | 🔲 Partial — create trainer on Options page only |
+| TrainerPage richer visuals | 🔲 Deferred |
+| Configurable Android Appium AVD | 🔲 Deferred |
+| .NET 10 upgrade | ✅ Done (2026-07-25) |
+| Branch `origin/sqlite` | Ignore — merged |
 
-## .NET 10 Upgrade (Post-Syncfusion)
+---
 
-1. Update all `TargetFramework` values to `net10.0-*` in all 6 csproj files
-2. Update remaining NuGet packages to latest versions
-3. Build and fix deprecated API calls
-4. Run tests
-5. Test on each platform
+## Commands cheat sheet
+
+```powershell
+# Build main app (Windows)
+dotnet build PokemonBattleJournal.slnx -f net10.0-windows10.0.19041.0
+
+# Unit tests only
+dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
+
+# Full test run (includes UI tests — needs Appium + emulator/device)
+dotnet test PokemonBattleJournal.slnx
+
+# Benchmarks (Release)
+.\PokemonBattleJournal.Benchmarks\Run.ps1
+```
+
+---
+
+## For AI assistants — maintenance rules
+
+1. **Read this file** at the start of a session.
+2. **Update [Session log](#session-log)** when:
+   - User states a new goal or priority
+   - You discover a bug, blocker, or environment constraint
+   - You finish a significant chunk of work
+   - Before starting a long multi-file refactor
+3. **Keep facts accurate:** prefer reading code over trusting stale sections.
+4. **Do not commit** unless the user asks.
+5. **Minimize scope** — match existing patterns; don't reintroduce Syncfusion or heavy dependencies without explicit approval.

@@ -3,14 +3,14 @@ using CommunityToolkit.Maui.Views;
 
 namespace PokemonBattleJournal.Controls;
 
-public class ImagePickerPopup : Popup
+public class ImagePickerPopup : Popup<ImagePickerPopup.PickerResult?>
 {
     public record PickerResult(object? SelectedItem);
 
     public object? SelectedItem { get; set; }
 
     public ImagePickerPopup(
-        System.Collections.IEnumerable items,
+        IEnumerable items,
         string displayMemberPath,
         string imageMemberPath,
         Color backgroundColor,
@@ -45,28 +45,26 @@ public class ImagePickerPopup : Popup
                 TextColor = textColor
             };
             label.SetBinding(Label.TextProperty, new Binding(displayMemberPath));
+            Grid.SetColumn(label, 1);
 
-            return new ViewCell
+            return new Grid
             {
-                View = new Grid
-                {
-                    ColumnDefinitions =
-                    [
-                        new ColumnDefinition(GridLength.Auto),
-                        new ColumnDefinition(GridLength.Star)
-                    ],
-                    Children = { image, label },
-                    HeightRequest = 36,
-                    BackgroundColor = backgroundColor
-                }
+                ColumnDefinitions =
+                [
+                    new ColumnDefinition(GridLength.Auto),
+                    new ColumnDefinition(GridLength.Star)
+                ],
+                Children = { image, label },
+                HeightRequest = 36,
+                BackgroundColor = backgroundColor
             };
         });
 
-        collectionView.SelectionChanged += (s, e) =>
+        collectionView.SelectionChanged += async (s, e) =>
         {
             if (e.CurrentSelection.FirstOrDefault() != null)
             {
-                Close(new PickerResult(e.CurrentSelection.First()));
+                await CloseAsync(new PickerResult(e.CurrentSelection.First()));
             }
         };
 
@@ -89,16 +87,14 @@ public class ImagePickerPopup : Popup
             BackgroundColor = accentColor,
             Margin = new Thickness(0, 5, 0, 8)
         };
-        closeButton.Clicked += (s, e) => Close();
+        closeButton.Clicked += async (s, e) => await CloseAsync(null);
 
-        var container = new VerticalStackLayout
+        Content = new VerticalStackLayout
         {
             Children = { titleLabel, collectionView, closeButton },
             WidthRequest = 300,
             Padding = 12,
             BackgroundColor = backgroundColor
         };
-
-        Content = container;
     }
 }

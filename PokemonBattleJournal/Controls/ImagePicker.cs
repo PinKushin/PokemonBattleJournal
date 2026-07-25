@@ -1,4 +1,6 @@
 using System.Collections;
+using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Extensions;
 using CommunityToolkit.Maui.Views;
 
 namespace PokemonBattleJournal.Controls;
@@ -225,9 +227,9 @@ public class ImagePicker : ContentView
             SelectedItem = SelectedItem
         };
 
-        var result = await Shell.Current.ShowPopupAsync(popup);
+        var popupResult = await Shell.Current.CurrentPage.ShowPopupAsync<ImagePickerPopup.PickerResult?>(popup, new PopupOptions());
 
-        if (result is ImagePickerPopup.PickerResult pickerResult && pickerResult.SelectedItem != null)
+        if (popupResult?.Result is ImagePickerPopup.PickerResult pickerResult && pickerResult.SelectedItem != null)
         {
             SelectedItem = pickerResult.SelectedItem;
         }

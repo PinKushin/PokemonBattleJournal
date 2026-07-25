@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Windows (MAUI)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/PokemonBattleJournal/bin/Debug/net10.0-windows10.0.19041.0/win10-x64/PokemonBattleJournal.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}/PokemonBattleJournal/bin/Debug/net10.0-windows10.0.19041.0/win10-x64",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach"
+    }
+  ]
+}
