@@ -272,7 +272,7 @@
                             MinimumWidthRequest="350"
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput}" />
-                        <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
+                        <HorizontalStackLayout HorizontalOptions="Center" Margin="0,10,0,0" Spacing="12">
                             <Border
                                 Padding="16,4"
                                 Stroke="{StaticResource PokeYellow}"
@@ -348,7 +348,7 @@
                             MinimumWidthRequest="350"
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput2}" />
-                        <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
+                        <HorizontalStackLayout HorizontalOptions="Center" Margin="0,10,0,0" Spacing="12">
                             <Border
                                 Padding="16,4"
                                 Stroke="{StaticResource PokeYellow}"
@@ -424,7 +424,7 @@
                             MinimumWidthRequest="350"
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput3}" />
-                        <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
+                        <HorizontalStackLayout HorizontalOptions="Center" Margin="0,10,0,0" Spacing="12">
                             <Border
                                 Padding="16,4"
                                 Stroke="{StaticResource PokeYellow}"
