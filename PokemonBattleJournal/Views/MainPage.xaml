@@ -105,11 +105,11 @@
                     <Border
                         AutomationId="BOSwitch"
                         BackgroundColor="{Binding BO3Toggle, Converter={StaticResource BO3TrackColorConverter}}"
-                        HeightRequest="40"
+                        HeightRequest="32"
                         Stroke="{StaticResource PokeYellow}"
-                        StrokeShape="RoundRectangle 20"
+                        StrokeShape="RoundRectangle 16"
                         StrokeThickness="2"
-                        WidthRequest="76"
+                        WidthRequest="68"
                         VerticalOptions="Center">
                         <Border.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding ToggleBO3Command}" />
@@ -119,22 +119,22 @@
                             <Image
                                 Grid.Column="0"
                                 Aspect="AspectFit"
-                                HeightRequest="32"
+                                HeightRequest="24"
                                 HorizontalOptions="Center"
                                 IsVisible="{Binding BO3Toggle, Converter={StaticResource InvertedBoolConverter}}"
                                 Source="ball_icon.png"
                                 VerticalOptions="Center"
-                                WidthRequest="32" />
+                                WidthRequest="24" />
                             <!--  Ball on right = ON  -->
                             <Image
                                 Grid.Column="1"
                                 Aspect="AspectFit"
-                                HeightRequest="32"
+                                HeightRequest="24"
                                 HorizontalOptions="Center"
                                 IsVisible="{Binding BO3Toggle}"
                                 Source="ball_icon.png"
                                 VerticalOptions="Center"
-                                WidthRequest="32" />
+                                WidthRequest="24" />
                         </Grid>
                     </Border>
                     <Label
