@@ -81,13 +81,13 @@
                     Style="{StaticResource Headline}"
                     Text="Select Decks"
                     VerticalOptions="End" />
-                <StackLayout HorizontalOptions="Center" Orientation="{OnIdiom Default=Horizontal, Phone=Vertical}">
+                <StackLayout HorizontalOptions="Center" Orientation="{OnIdiom Default=Horizontal, Phone=Vertical}" Spacing="10">
                     <!--#region Player Archetype-->
                     <controls:ComboBoxControl
                         x:Name="PlayerArchetype"
                         Style="{StaticResource ArchetypePicker}"
                         AutomationId="PlayerArchetype"
-                        Placeholder="Played Archetype"
+                        Placeholder="Player"
                         ItemsSource="{Binding Archetypes}"
                         SelectedItem="{Binding PlayerSelected}" />
                     <!--#endregion-->
@@ -96,7 +96,7 @@
                         x:Name="RivalArchetype"
                         Style="{StaticResource ArchetypePicker}"
                         AutomationId="RivalArchetype"
-                        Placeholder="Rival's Archetype"
+                        Placeholder="Rival"
                         ItemsSource="{Binding Archetypes}"
                         SelectedItem="{Binding RivalSelected}" />
                     <!--#endregion-->

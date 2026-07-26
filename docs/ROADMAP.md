@@ -10,9 +10,9 @@ Tracked here so nothing gets lost between sessions. Bugs first (things broken ri
 
 | # | Description | Location | Notes |
 |---|---|---|---|
-| B-01 | Archetype dropdowns are too close together | `MainPage.xaml` — `StackLayout` wrapping both `ComboBoxControl`s | Add `Spacing` to the `StackLayout`, or `Margin` on each control. Columns need visible separation. |
-| B-02 | Dropdown placeholder text is grammatically wrong | `MainPage.xaml` — `Placeholder="Played Archetype"` / `"Rival's Archetype"` | Change to `"Player"` and `"Rival"`. The section is already titled "Select Decks" so "Archetype" is redundant, and "Played" reads like past tense. |
-| B-03 | Dropdown width is fixed at 210 — doesn't adapt to content | `Styles.xaml` — `ArchetypePicker` style `WidthRequest="210"` | Long deck names (e.g. "Crustle Mysterious Rock Inn") overflow or truncate. Target: dynamic width based on selected text, or bump to ~180 and ensure the button label truncates gracefully with ellipsis. |
+| ~~B-01~~ | ~~Archetype dropdowns are too close together~~ | — | **Fixed.** Added `Spacing="10"` to the StackLayout. |
+| ~~B-02~~ | ~~Dropdown placeholder text is grammatically wrong~~ | — | **Fixed.** Changed to `"Player"` and `"Rival"`. |
+| ~~B-03~~ | ~~Dropdown width is fixed at 210~~ | — | **Fixed.** `WidthRequest` reduced to 180; labels already had `TailTruncation`. |
 
 ### UI / Layout (general)
 
