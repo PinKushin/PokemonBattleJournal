@@ -235,6 +235,7 @@
                 EmptyView="No Matches Found"
                 HeightRequest="300"
                 HorizontalOptions="Center"
+                ItemSizingStrategy="MeasureFirstItem"
                 ItemsSource="{Binding MatchHistory}"
                 ItemsUpdatingScrollMode="KeepItemsInView"
                 MaximumWidthRequest="560"

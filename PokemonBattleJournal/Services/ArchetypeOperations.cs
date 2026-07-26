@@ -1,4 +1,5 @@
-﻿using PokemonBattleJournal.Scraper.Interfaces;
+﻿using System.Text.RegularExpressions;
+using PokemonBattleJournal.Scraper.Interfaces;
 using PokemonBattleJournal.Scraper.Models;
 
 namespace PokemonBattleJournal.Services
@@ -31,9 +32,14 @@ namespace PokemonBattleJournal.Services
                 {
                     foreach (MetaDeck deck in metaDecks)
                     {
+                        string imagePath = TryResolveLocalSprite(deck.Name);
                         await db.ExecuteAsync(
                             "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
-                            deck.Name, deck.ImageUrl);
+                            deck.Name, imagePath);
+                        // Fix existing rows that still reference CDN URLs
+                        await db.ExecuteAsync(
+                            "UPDATE Archetype SET ImagePath = ? WHERE Name = ? AND ImagePath LIKE 'http%'",
+                            imagePath, deck.Name);
                     }
                 }
                 else if (await db.Table<Archetype>().CountAsync() == 0)
@@ -159,6 +165,15 @@ namespace PokemonBattleJournal.Services
             {
                 _ = _factory.GetLock().Release();
             }
+        }
+
+        // Maps a Limitless deck name to a local PokemonSprite filename.
+        // e.g. "Charizard ex" → "charizard.png", "Raging Bolt ex" → "raging_bolt.png"
+        private static string TryResolveLocalSprite(string deckName)
+        {
+            string name = deckName.Split('&')[0].Trim();
+            name = Regex.Replace(name, @"\s+(ex|EX|GX|V|VMAX|VSTAR|VUNION|tera|Tera)$", "", RegexOptions.IgnoreCase).Trim();
+            return Regex.Replace(name.ToLowerInvariant(), @"\s+", "_") + ".png";
         }
 
         /// <summary>
