@@ -52,15 +52,15 @@ Safe init strategy to investigate: `CollectionChanged`-deferred load, `Loaded` e
 
 | # | Description | Notes |
 |---|---|---|
-| F-11 | Apply consistent page styling | Match MainPage palette (PokeYellow headings, PokeBlue accents, dark background). Match card/row spacing to MainPage. |
-| F-12 | Match history card design | Each match entry should show archetype icons (playing/against), result badge, date, and BO1/BO3 indicator. Currently plain list rows. |
+| ~~F-11~~ | ~~Apply consistent page styling~~ | **Done.** PokeYellow title, PokeBlue match card borders, result badge chips, PokeYellow date. |
+| ~~F-12~~ | ~~Match history card design~~ | **Done.** Cards show playing archetype icon + name, rival name, date (PokeYellow), result badge (PokeBlue chip). |
 | F-13 | Filter/search by archetype or date | UI for narrowing the journal list. |
 
 ### OptionsPage — Styling
 
 | # | Description | Notes |
 |---|---|---|
-| F-14 | Apply consistent page styling | Header, spacing, and input controls should match MainPage palette. |
+| ~~F-14~~ | ~~Apply consistent page styling~~ | **Done.** Section headings (TRAINER / CUSTOM ARCHETYPE / CUSTOM TAG) in PokeBlue, PokeYellow-bordered inputs, BostonRed delete button. Icon picker replaced with `ComboBoxControl` (searchable, shows image + name). Fixed pre-existing bug: `NewDeckIcon` was never wired from old Picker. |
 | F-15 | Archetype management | Add/rename/delete custom archetypes (currently only pre-seeded ones exist). `SaveAsync` in `ArchetypeOperations` exists but no UI for it on OptionsPage. |
 | F-16 | Trainer name editing | Edit the trainer name in place without re-triggering first-start flow. |
 
@@ -68,13 +68,13 @@ Safe init strategy to investigate: `CollectionChanged`-deferred load, `Loaded` e
 
 | # | Description | Notes |
 |---|---|---|
-| F-17 | Apply consistent page styling | Currently minimal. Should match app palette — Pokemon font for title, PokeYellow/PokeBlue accents, Saira body text. |
+| ~~F-17~~ | ~~Apply consistent page styling~~ | **Done.** Pokeball hero, Pokemon font title in PokeYellow, PokeBlue divider, Saira credit + tagline. `AutomationId="AboutPageTitle"` added for UI tests. |
 
 ### FirstStartPage — Styling
 
 | # | Description | Notes |
 |---|---|---|
-| F-18 | Polish first-start flow | Consistent palette. Pokeball splash or logo on entry. Clear CTA for trainer name input. |
+| ~~F-18~~ | ~~Polish first-start flow~~ | **Done.** Pokeball hero, Pokemon font title, centered PokeYellow-bordered name input card. |
 
 ### Infrastructure
 
@@ -89,8 +89,9 @@ Safe init strategy to investigate: `CollectionChanged`-deferred load, `Loaded` e
 
 ## Priority order (suggested)
 
-1. **B-01, B-02, B-03** — quick MainPage polish, visible every session
-2. **F-03 → F-10** — TrainerPage charts (data is ready, just need safe XAML)
-3. **F-11 → F-18** — page styling passes
+1. ~~**B-01, B-02, B-03**~~ — done
+2. **F-03 → F-10** — TrainerPage charts (data is ready, just need safe lazy XAML init)
+3. ~~**F-11 → F-18**~~ — done (styling pass complete)
 4. **F-19** — Windows Appium driver replacement (in progress externally)
-5. **F-20, F-21, F-22** — infrastructure and multi-trainer
+5. **F-13, F-15, F-16** — ReadJournalPage filter/search, archetype management UI, trainer name edit
+6. **F-20, F-21, F-22** — infrastructure and multi-trainer

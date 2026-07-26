@@ -1,6 +1,6 @@
 # PokemonBattleJournal — AI Context
 
-> **Last updated:** 2026-07-25 (B-01/B-02/B-03 fixed; roadmap created; Limitless scraper shipped; archetype search added; 221 tests passing)
+> **Last updated:** 2026-07-26 (Page styling pass done; OptionsPage icon picker → ComboBoxControl; UI test coverage for all Shell pages; 223 unit tests passing)
 > **Solution file:** `PokemonBattleJournal.slnx` (not `.sln`)  
 > **Read this first** when working in this repo. Update the [Session log](#session-log) whenever scope, decisions, or blockers change — especially before long multi-step work.
 
@@ -20,6 +20,9 @@ Chronological notes for the current / recent work. **Append or edit this section
 | 2026-07-25 | **Unit tests: 221 passing** | Up from 78. ViewModel contract + behavioral tests, scraper tests (11), ComboBoxPopup filter tests (8). |
 | 2026-07-25 | **B-01/B-02/B-03 fixed** | B-01: Added `Spacing="10"` to StackLayout wrapping both archetype `ComboBoxControl`s on `MainPage.xaml`. B-02: Placeholder text changed from "Played Archetype"→"Player" and "Rival's Archetype"→"Rival". B-03: `ArchetypePicker` style `WidthRequest` reduced 210→180; `ComboBoxControl` already had `LineBreakMode.TailTruncation` on both labels so long names truncate gracefully. |
 | 2026-07-25 | **docs/ reorganization + ROADMAP.md** | Moved AI files to `docs/`; README moved to `docs/README.md` (root deleted). Created `docs/ROADMAP.md` with all features (F-01→F-22) and bugs (B-01→B-05). |
+| 2026-07-26 | **Page styling pass** | AboutPage, FirstStartPage, OptionsPage, ReadJournalPage all restyled: PokeYellow/PokeBlue palette, PokemonSolid/SairaRegular fonts, PokeYellow-bordered input sections. Match list cards in ReadJournalPage use PokeBlue border + result badge chips. Delete button on OptionsPage uses BostonRed. |
+| 2026-07-26 | **OptionsPage icon picker → ComboBoxControl** | Replaced native `Picker` with `ComboBoxControl` (same searchable dropdown as MainPage). Added `IconItem` record (`Name`, `ImagePath`), `IconItems`/`SelectedIconItem` VM properties. `OnSelectedIconItemChanged` syncs `SelectedIcon` (image preview) and `NewDeckIcon` (save path) — also fixed pre-existing bug where `NewDeckIcon` was never set from UI. `ToDisplayName` helper strips `.png` and title-cases filename for display. 223 unit tests (2 new contract tests). |
+| 2026-07-26 | **UI test coverage: all Shell pages** | Every Shell page now has a navigation + element-visible Appium test. AboutPage was the only missing one — added `AboutPageTests.cs` (Shared) with `AboutPage_Loads_TitleDisplayed`; added `AutomationId="AboutPageTitle"` to the title label. Strategy: `FindUIElement` timeouts if a page hangs, failing the test. |
 | 2026-07-25 | **ShowGame3 Tie+Tie rule** | `ShowGame3 = BO3Toggle && Result != null && Result2 != null && (Result != Result2 || (Result == Tie && Result2 == Tie))`. Tie+Tie requires Game 3 under official Pokemon TCG tournament rules (neither player has won 2 games). |
 | 2026-07-25 | **TrainerPage hang — root cause found** | `lvc:CartesianChart` (LiveCharts2 2.0.5) deadlocks the WinUI3 message pump during initialization, even with `AnimationsSpeed="0" EasingFunction="{x:Null}"`. Confirmed by replacing all 8 charts with Label placeholders — page loads instantly. Fix: chart controls must be lazy-loaded or virtualized so they don't all initialize at once on navigation. **TrainerPage.xaml currently uses placeholder Labels; charts not restored yet.** |
 | 2026-07-25 | **UraniumUI experiment — tried and reverted** | Installed `UraniumUI.Material` to get styled `TextField`/`PickerField`/`TimePickerField`/`DatePickerField`. Blockers: `PickerField` has no image support (no item templates), `material:CheckBox` doesn't exist, MD3 color system didn't pick up app colors. Reverted cleanly via `git revert 68adcb9 --no-edit`. All pages, controls, MauiProgram restored. |
@@ -69,6 +72,10 @@ Chronological notes for the current / recent work. **Append or edit this section
 - [x] **Test coverage for BO3 tab features** — ShowGame3, SelectGameN commands, ToggleBO3Command, time guards; 221 tests passing
 - [x] **Archetype picker search** — `ComboBoxPopup.FilterItems` extracted + tested (8 tests)
 - [x] **B-01/B-02/B-03** — dropdown spacing, placeholder text, width reduced to 180
+- [x] **Page styling pass** — AboutPage, FirstStartPage, OptionsPage, ReadJournalPage
+- [x] **OptionsPage icon picker** — replaced native Picker with ComboBoxControl; fixed NewDeckIcon wiring bug
+- [x] **UI test coverage** — all 5 Shell pages have navigation + element-visible Appium tests
+- [x] **223 unit tests passing**
 - [ ] **Fix TrainerPage charts** — lazy/virtualized `CartesianChart` loading to avoid WinUI3 deadlock
 - [ ] **Harden concurrency** — fix static semaphore on transient `TrainerPageViewModel`
 - [ ] Multi-trainer switcher UI (future)
