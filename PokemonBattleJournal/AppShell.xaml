@@ -78,7 +78,7 @@
                     HorizontalOptions="Fill" />
 
                 <!--  Nav items  -->
-                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                <Border AutomationId="Journal Entry" Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//MainPage" />
                     </Border.GestureRecognizers>
@@ -88,7 +88,7 @@
                         </Label.GestureRecognizers>
                     </Label>
                 </Border>
-                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                <Border AutomationId="Read Journal" Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//ReadJournalPage" />
                     </Border.GestureRecognizers>
@@ -98,7 +98,7 @@
                         </Label.GestureRecognizers>
                     </Label>
                 </Border>
-                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                <Border AutomationId="Trainer's Profile" Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//TrainerPage" />
                     </Border.GestureRecognizers>
@@ -108,7 +108,7 @@
                         </Label.GestureRecognizers>
                     </Label>
                 </Border>
-                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                <Border AutomationId="Options" Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//OptionsPage" />
                     </Border.GestureRecognizers>
@@ -118,7 +118,7 @@
                         </Label.GestureRecognizers>
                     </Label>
                 </Border>
-                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                <Border AutomationId="About" Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//AboutPage" />
                     </Border.GestureRecognizers>

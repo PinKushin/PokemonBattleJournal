@@ -40,7 +40,8 @@ namespace UITests
                 var menu = App.FindElement(MobileBy.AccessibilityId("OK"));
                 menu.Click();
                 Thread.Sleep(500);
-                var item = App.FindElement(MobileBy.Name(pageTitle));
+                // Custom FlyoutContent nav items have AutomationId matching the page title
+                var item = App.FindElement(MobileBy.AccessibilityId(pageTitle));
                 item.Click();
             }
             else
