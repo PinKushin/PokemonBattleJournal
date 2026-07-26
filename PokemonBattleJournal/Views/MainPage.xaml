@@ -42,15 +42,10 @@
         <toolkit:EventToCommandBehavior Command="{Binding DisappearingCommand}" EventName="Disappearing" />
     </ContentPage.Behaviors>
     <ScrollView>
-        <Grid
-            Padding="15,15"
-            ColumnDefinitions="*,Auto"
-            ColumnSpacing="10"
-            HorizontalOptions="Center"
-            RowDefinitions="Auto, Auto, *, Auto, Auto"
-            RowSpacing="1">
+        <VerticalStackLayout Padding="15,15" Spacing="8">
+
             <!--#region Page Title Bar-->
-            <HorizontalStackLayout Grid.ColumnSpan="2" HorizontalOptions="Center">
+            <HorizontalStackLayout HorizontalOptions="Center">
                 <Image
                     Margin="10"
                     AutomationId="ball_icon.png"
@@ -62,16 +57,17 @@
                     FontSize="Title"
                     SemanticProperties.Description="Create a Match Entry"
                     SemanticProperties.HeadingLevel="Level1"
-                    Text="Create a Match Entry" />
+                    Text="Create a Match Entry"
+                    VerticalOptions="Center" />
             </HorizontalStackLayout>
             <!--#endregion-->
+
+            <FlexLayout Wrap="Wrap" JustifyContent="Center" AlignItems="Start">
 
             <!--#region Match Archetypes, Time, BO3-->
             <VerticalStackLayout
                 x:Name="LeftColumn"
-                Grid.Row="1"
-                Grid.RowSpan="2"
-                Grid.Column="0"
+                Margin="8"
                 HorizontalOptions="Center"
                 Spacing="10">
 
@@ -198,10 +194,7 @@
             <!--#region Match Notes, Tags, Results-->
             <VerticalStackLayout
                 x:Name="RightColumn"
-                Grid.Row="{OnIdiom Default=2,
-                                   Phone=3}"
-                Grid.Column="{OnIdiom Default=1,
-                                      Phone=0}"
+                Margin="8"
                 HorizontalOptions="Center"
                 IsVisible="True">
                 <!--#region Game Tabs (always visible)-->
@@ -470,18 +463,18 @@
             </VerticalStackLayout>
             <!--#endregion-->
 
+            </FlexLayout>
+
             <!--#region Save Button-->
             <Button
-                Grid.Row="4"
-                Grid.ColumnSpan="2"
                 BackgroundColor="{StaticResource PokeBlue}"
                 Command="{Binding SaveMatchCommand}"
                 HorizontalOptions="Fill"
                 SemanticProperties.Hint="Save your journal entry"
                 Text="{Binding SavedFileDisplay}"
-                TextColor="White"
-                VerticalOptions="End" />
+                TextColor="White" />
             <!--#endregion-->
-        </Grid>
+
+        </VerticalStackLayout>
     </ScrollView>
 </ContentPage>
