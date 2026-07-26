@@ -191,7 +191,7 @@ public class ComboBoxControl : ContentView
         {
             Spacing = 8,
             VerticalOptions = LayoutOptions.Center,
-            HorizontalOptions = LayoutOptions.End,
+            HorizontalOptions = LayoutOptions.Start,
             Children = { _selectedIcon, _selectedLabel, _placeholderLabel }
         };
 
