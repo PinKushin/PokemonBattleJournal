@@ -87,7 +87,7 @@
                     FontFamily="SairaRegular"
                     FontSize="15"
                     HorizontalOptions="Fill"
-                    HorizontalContentAlignment="Start"
+                    ContentLayout="Left, 0"
                     Padding="20,14"
                     Text="Journal Entry" />
                 <Button
@@ -99,7 +99,7 @@
                     FontFamily="SairaRegular"
                     FontSize="15"
                     HorizontalOptions="Fill"
-                    HorizontalContentAlignment="Start"
+                    ContentLayout="Left, 0"
                     Padding="20,14"
                     Text="Read Journal" />
                 <Button
@@ -111,7 +111,7 @@
                     FontFamily="SairaRegular"
                     FontSize="15"
                     HorizontalOptions="Fill"
-                    HorizontalContentAlignment="Start"
+                    ContentLayout="Left, 0"
                     Padding="20,14"
                     Text="Trainer's Profile" />
                 <Button
@@ -123,7 +123,7 @@
                     FontFamily="SairaRegular"
                     FontSize="15"
                     HorizontalOptions="Fill"
-                    HorizontalContentAlignment="Start"
+                    ContentLayout="Left, 0"
                     Padding="20,14"
                     Text="Options" />
                 <Button
@@ -135,7 +135,7 @@
                     FontFamily="SairaRegular"
                     FontSize="15"
                     HorizontalOptions="Fill"
-                    HorizontalContentAlignment="Start"
+                    ContentLayout="Left, 0"
                     Padding="20,14"
                     Text="About" />
 
