@@ -87,7 +87,7 @@
         <Setter Property="PopupAccentColor" Value="{StaticResource PokeBlue}" />
         <Setter Property="PopupBackgroundColor" Value="{StaticResource OffBlack}" />
         <Setter Property="ImageMemberPath" Value="ImagePath" />
-        <Setter Property="MinimumWidthRequest" Value="160" />
+        <Setter Property="MinimumWidthRequest" Value="130" />
         <Setter Property="MaximumWidthRequest" Value="210" />
     </Style>
 
