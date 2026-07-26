@@ -78,51 +78,51 @@
                     HorizontalOptions="Fill" />
 
                 <!--  Nav items  -->
-                <Border AutomationId="Journal Entry" Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//MainPage" />
                     </Border.GestureRecognizers>
-                    <Label FontFamily="SairaRegular" FontSize="15" Text="Journal Entry">
+                    <Label AutomationId="Journal Entry" FontFamily="SairaRegular" FontSize="15" Text="Journal Entry">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//MainPage" />
                         </Label.GestureRecognizers>
                     </Label>
                 </Border>
-                <Border AutomationId="Read Journal" Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//ReadJournalPage" />
                     </Border.GestureRecognizers>
-                    <Label FontFamily="SairaRegular" FontSize="15" Text="Read Journal">
+                    <Label AutomationId="Read Journal" FontFamily="SairaRegular" FontSize="15" Text="Read Journal">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//ReadJournalPage" />
                         </Label.GestureRecognizers>
                     </Label>
                 </Border>
-                <Border AutomationId="Trainer's Profile" Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//TrainerPage" />
                     </Border.GestureRecognizers>
-                    <Label FontFamily="SairaRegular" FontSize="15" Text="Trainer's Profile">
+                    <Label AutomationId="Trainer's Profile" FontFamily="SairaRegular" FontSize="15" Text="Trainer's Profile">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//TrainerPage" />
                         </Label.GestureRecognizers>
                     </Label>
                 </Border>
-                <Border AutomationId="Options" Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//OptionsPage" />
                     </Border.GestureRecognizers>
-                    <Label FontFamily="SairaRegular" FontSize="15" Text="Options">
+                    <Label AutomationId="Options" FontFamily="SairaRegular" FontSize="15" Text="Options">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//OptionsPage" />
                         </Label.GestureRecognizers>
                     </Label>
                 </Border>
-                <Border AutomationId="About" Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//AboutPage" />
                     </Border.GestureRecognizers>
-                    <Label FontFamily="SairaRegular" FontSize="15" Text="About">
+                    <Label AutomationId="About" FontFamily="SairaRegular" FontSize="15" Text="About">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//AboutPage" />
                         </Label.GestureRecognizers>

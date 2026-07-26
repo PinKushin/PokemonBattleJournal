@@ -6,24 +6,24 @@
         [Fact]
         public async Task MainPage_BOSwitch_DisplayedAndToggled()
         {
-            // Arrange
+            // Arrange — BOSwitch is a pokeball image toggle, not a Switch control
             AppiumElement BOSwitch = FindUIElement("BOSwitch");
             CancellationToken cancellationToken = new();
 
-            // Act
-            BOSwitch.Click();
-            await Task.Delay(500).WaitAsync(cancellationToken); // Wait for the click to register 
-            string toggledOn = BOSwitch.GetAttribute("Toggle.ToggleState");
-            BOSwitch.Click();
-            await Task.Delay(500).WaitAsync(cancellationToken); // Wait for the click to register 
-            string toggledOff = BOSwitch.GetAttribute("Toggle.ToggleState");
-            // Assert
             _ = BOSwitch.ShouldNotBeNull();
             BOSwitch.Displayed.ShouldBeTrue();
-            BOSwitch.Enabled.ShouldBeTrue();
-            toggledOn.ShouldBe("1"); // "1" for toggled on
-            toggledOff.ShouldBe("0");// "0" for toggled off
 
+            // Toggle BO3 on — BO3GamesLayout (Game 2 tab) should appear
+            BOSwitch.Click();
+            await Task.Delay(500).WaitAsync(cancellationToken);
+            AppiumElement bo3Layout = FindUIElement("BO3GamesLayout");
+            bo3Layout.Displayed.ShouldBeTrue();
+
+            // Toggle BO3 off — BO3GamesLayout should disappear
+            BOSwitch.Click();
+            await Task.Delay(500).WaitAsync(cancellationToken);
+            var hidden = App.FindElements(MobileBy.AccessibilityId("BO3GamesLayout"));
+            hidden.ShouldBeEmpty();
         }
     }
 }

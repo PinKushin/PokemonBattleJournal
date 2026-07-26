@@ -195,6 +195,7 @@
                                     TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
                             </Border>
                             <Border
+                                AutomationId="BO3GamesLayout"
                                 Padding="16,8"
                                 BackgroundColor="{Binding IsGame2Selected, Converter={StaticResource TabActiveBgConverter}}"
                                 IsVisible="{Binding BO3Toggle}"
