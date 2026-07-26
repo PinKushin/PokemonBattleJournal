@@ -1,4 +1,4 @@
-﻿namespace UITests
+namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {
@@ -8,10 +8,11 @@
         {
             // Arrange
             AppiumElement BOSwitch = FindUIElement("BOSwitch");
+            AppiumElement statusLabel = FindUIElement("BO3StatusLabel");
             CancellationToken cancellationToken = new();
 
             // Ensure starting state is off
-            if (BOSwitch.GetAttribute("checked") == "true")
+            if (statusLabel.Text == "Best of 3")
             {
                 BOSwitch.Click();
                 await Task.Delay(500).WaitAsync(cancellationToken);
@@ -20,17 +21,17 @@
             // Act
             BOSwitch.Click();
             await Task.Delay(500).WaitAsync(cancellationToken);
-            string toggledOn = BOSwitch.GetAttribute("checked");
+            string toggledOn = statusLabel.Text;
             BOSwitch.Click();
             await Task.Delay(500).WaitAsync(cancellationToken);
-            string toggledOff = BOSwitch.GetAttribute("checked");
+            string toggledOff = statusLabel.Text;
 
             // Assert
             _ = BOSwitch.ShouldNotBeNull();
             BOSwitch.Displayed.ShouldBeTrue();
             BOSwitch.Enabled.ShouldBeTrue();
-            toggledOn.ShouldBe("true");
-            toggledOff.ShouldBe("false");
+            toggledOn.ShouldBe("Best of 3");
+            toggledOff.ShouldBe("Best of 1");
         }
     }
 }

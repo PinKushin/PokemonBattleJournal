@@ -1,4 +1,4 @@
-﻿namespace UITests
+namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {
@@ -8,22 +8,23 @@
         {
             // Arrange
             AppiumElement BOSwitch = FindUIElement("BOSwitch");
+            AppiumElement statusLabel = FindUIElement("BO3StatusLabel");
             CancellationToken cancellationToken = new();
 
             // Act
             BOSwitch.Click();
             await Task.Delay(500).WaitAsync(cancellationToken);
-            string toggledOn = BOSwitch.GetAttribute("Toggle.ToggleState");
+            string toggledOn = statusLabel.Text;
             BOSwitch.Click();
             await Task.Delay(500).WaitAsync(cancellationToken);
-            string toggledOff = BOSwitch.GetAttribute("Toggle.ToggleState");
+            string toggledOff = statusLabel.Text;
 
             // Assert
             _ = BOSwitch.ShouldNotBeNull();
             BOSwitch.Displayed.ShouldBeTrue();
             BOSwitch.Enabled.ShouldBeTrue();
-            toggledOn.ShouldBe("1");
-            toggledOff.ShouldBe("0");
+            toggledOn.ShouldBe("Best of 3");
+            toggledOff.ShouldBe("Best of 1");
         }
     }
 }

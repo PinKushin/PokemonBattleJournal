@@ -33,6 +33,10 @@
             x:Key="BoolToBO3TextConverter"
             FalseObject="Best of 1"
             TrueObject="Best of 3" />
+        <toolkit:BoolToObjectConverter
+            x:Key="BO3TrackColorConverter"
+            FalseObject="#444444"
+            TrueObject="{StaticResource PokeBlue}" />
     </ContentPage.Resources>
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
@@ -96,12 +100,51 @@
                 <!--#endregion-->
                 <!--#region BO3 Switch & Display-->
                 <Label Style="{StaticResource Headline}" Text="Match Format" />
-                <Switch
-                    AutomationId="BOSwitch"
-                    HorizontalOptions="Center"
-                    IsToggled="{Binding BO3Toggle, Mode=TwoWay}"
-                    OnColor="{StaticResource PokeYellow}"
-                    ThumbColor="{StaticResource PokeBlue}" />
+                <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                    <!--  Pokeball slider track  -->
+                    <Border
+                        AutomationId="BOSwitch"
+                        BackgroundColor="{Binding BO3Toggle, Converter={StaticResource BO3TrackColorConverter}}"
+                        HeightRequest="40"
+                        Stroke="{StaticResource PokeYellow}"
+                        StrokeShape="RoundRectangle 20"
+                        StrokeThickness="2"
+                        WidthRequest="76"
+                        VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding ToggleBO3Command}" />
+                        </Border.GestureRecognizers>
+                        <Grid ColumnDefinitions="*,*" Padding="3">
+                            <!--  Ball on left = OFF  -->
+                            <Image
+                                Grid.Column="0"
+                                Aspect="AspectFit"
+                                HeightRequest="32"
+                                HorizontalOptions="Center"
+                                IsVisible="{Binding BO3Toggle, Converter={StaticResource InvertedBoolConverter}}"
+                                Source="ball_icon.png"
+                                VerticalOptions="Center"
+                                WidthRequest="32" />
+                            <!--  Ball on right = ON  -->
+                            <Image
+                                Grid.Column="1"
+                                Aspect="AspectFit"
+                                HeightRequest="32"
+                                HorizontalOptions="Center"
+                                IsVisible="{Binding BO3Toggle}"
+                                Source="ball_icon.png"
+                                VerticalOptions="Center"
+                                WidthRequest="32" />
+                        </Grid>
+                    </Border>
+                    <Label
+                        AutomationId="BO3StatusLabel"
+                        FontAttributes="Bold"
+                        FontFamily="SairaRegular"
+                        Text="{Binding BO3Toggle, Converter={StaticResource BoolToBO3TextConverter}}"
+                        TextColor="{StaticResource PokeYellow}"
+                        VerticalTextAlignment="Center" />
+                </HorizontalStackLayout>
                 <!--#endregion-->
                 <!--#region Current Time Display-->
                 <Label
