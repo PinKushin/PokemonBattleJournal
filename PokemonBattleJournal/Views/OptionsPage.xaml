@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:controls="clr-namespace:PokemonBattleJournal.Controls"
+    xmlns:models="clr-namespace:PokemonBattleJournal.Models"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
     x:Name="BasePage"
@@ -151,6 +152,48 @@
                 Text="Delete Current Trainer"
                 TextColor="{StaticResource White}"
                 WidthRequest="220" />
+
+            <!--#region Trainer Switcher-->
+            <Label Style="{StaticResource Headline}" Text="Switch Trainer" />
+            <CollectionView
+                AutomationId="TrainerList"
+                ItemsSource="{Binding AllTrainers}"
+                SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Trainer">
+                        <Grid
+                            Padding="4,6"
+                            ColumnDefinitions="*,Auto,Auto"
+                            ColumnSpacing="8">
+                            <Label
+                                Grid.Column="0"
+                                FontFamily="SairaRegular"
+                                FontSize="16"
+                                Text="{Binding Name}"
+                                VerticalOptions="Center" />
+                            <Button
+                                Grid.Column="1"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SwitchTrainerCommand}"
+                                CommandParameter="{Binding .}"
+                                FontSize="13"
+                                HeightRequest="36"
+                                Text="Switch"
+                                WidthRequest="80" />
+                            <Button
+                                Grid.Column="2"
+                                BackgroundColor="{StaticResource BostonRed}"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteTrainerFromListCommand}"
+                                CommandParameter="{Binding .}"
+                                FontSize="13"
+                                HeightRequest="36"
+                                Text="Delete"
+                                TextColor="{StaticResource White}"
+                                WidthRequest="80" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+            <!--#endregion-->
 
         </VerticalStackLayout>
     </ScrollView>

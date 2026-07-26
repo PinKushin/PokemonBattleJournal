@@ -12,13 +12,21 @@ namespace PokemonBattleJournal.ViewModels
         private readonly Lock _lock = new();
         private Trainer? _trainer;
         private readonly IMatchResultsCalculatorFactory _calculatorFactory;
+        private readonly ITrainerSwitchService _switchService;
 
+        public bool HasUnsavedData =>
+            PlayerSelected != null ||
+            RivalSelected != null ||
+            !string.IsNullOrWhiteSpace(UserNoteInput) ||
+            TagsSelected?.Count > 0;
 
-        public MainPageViewModel(ILogger<MainPageViewModel> logger, ISqliteConnectionFactory connection, IMatchResultsCalculatorFactory calculatorFactory)
+        public MainPageViewModel(ILogger<MainPageViewModel> logger, ISqliteConnectionFactory connection, IMatchResultsCalculatorFactory calculatorFactory, ITrainerSwitchService switchService)
         {
             _logger = logger;
             _connection = connection;
             _calculatorFactory = calculatorFactory;
+            _switchService = switchService;
+            _switchService.TrainerChanged += OnTrainerChanged;
 
             //Timer to update displayed time
             if (Application.Current != null)
@@ -30,6 +38,36 @@ namespace PokemonBattleJournal.ViewModels
 
             _logger.LogInformation("Created Main Page ViewModel{this}", this);
             WelcomeMsg = $"Welcome {TrainerName}";
+        }
+
+        private void OnTrainerChanged(object? sender, Trainer trainer)
+        {
+            MainThreadHelper.BeginInvokeOnMainThread(async () =>
+            {
+                TrainerName = trainer.Name ?? string.Empty;
+                WelcomeMsg = $"Welcome {TrainerName}";
+                ResetForm();
+                await AppearingAsync();
+            });
+        }
+
+        private void ResetForm()
+        {
+            PlayerSelected = null;
+            RivalSelected = null;
+            UserNoteInput = string.Empty;
+            UserNoteInput2 = string.Empty;
+            UserNoteInput3 = string.Empty;
+            TagsSelected = null;
+            Match2TagsSelected = null;
+            Match3TagsSelected = null;
+            Result = default;
+            Result2 = default;
+            Result3 = default;
+            FirstCheck = false;
+            FirstCheck2 = false;
+            FirstCheck3 = false;
+            BO3Toggle = false;
         }
 
         //Convert date-time to string that can be used in the UI
@@ -234,12 +272,19 @@ namespace PokemonBattleJournal.ViewModels
             try
             {
                 await _semaphore.WaitAsync();
-                _trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
+                var activeId = PreferencesHelper.GetTrainerId();
+                _trainer = activeId > 0
+                    ? await _connection.Trainers.GetByIdAsync(activeId)
+                    : await _connection.Trainers.GetByNameAsync(TrainerName);
                 if (_trainer == null)
                 {
                     _ = await _connection.Trainers.SaveAsync(TrainerName);
                     _trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
+                    if (_trainer != null)
+                        PreferencesHelper.SetTrainerId(_trainer.Id);
                 }
+                TrainerName = _trainer?.Name ?? TrainerName;
+                WelcomeMsg = $"Welcome {TrainerName}";
                 Archetypes = await _connection.Archetypes.GetAllAsync();
                 TagCollection = await _connection.Tags.GetAllAsync();
 

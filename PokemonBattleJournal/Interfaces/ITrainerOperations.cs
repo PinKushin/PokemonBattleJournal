@@ -13,6 +13,11 @@
         Task<Trainer?> GetByNameAsync(string name);
 
         /// <summary>
+        /// Retrieves a trainer by ID from the database.
+        /// </summary>
+        Task<Trainer?> GetByIdAsync(uint id);
+
+        /// <summary>
         /// Saves a trainer to the database.
         /// </summary>
         Task<int> SaveAsync(string trainerName);

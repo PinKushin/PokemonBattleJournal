@@ -21,5 +21,19 @@
             }
             Preferences.Set(key, value);
         }
+
+        public static uint GetTrainerId()
+        {
+            if (DeviceInfo.Platform == DevicePlatform.Unknown)
+                return 0u;
+            return (uint)Preferences.Get("TrainerId", 0);
+        }
+
+        public static void SetTrainerId(uint id)
+        {
+            if (DeviceInfo.Platform == DevicePlatform.Unknown)
+                return;
+            Preferences.Set("TrainerId", (int)id);
+        }
     }
 }

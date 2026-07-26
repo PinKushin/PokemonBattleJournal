@@ -4,8 +4,23 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:PokemonBattleJournal.Views"
+    xmlns:vm="clr-namespace:PokemonBattleJournal.ViewModels"
     Title="Pokemon TCG Battle Journal"
     Shell.FlyoutBehavior="Flyout">
+    <Shell.TitleView>
+        <Grid Padding="0,0,12,0" ColumnDefinitions="*,Auto">
+            <Picker
+                Grid.Column="1"
+                ItemDisplayBinding="{Binding Name}"
+                ItemsSource="{Binding Trainers}"
+                SelectedItem="{Binding SelectedTrainer, Mode=TwoWay}"
+                TextColor="{StaticResource PokeYellow}"
+                TitleColor="{StaticResource PokeYellow}"
+                HorizontalOptions="End"
+                VerticalOptions="Center"
+                WidthRequest="160" />
+        </Grid>
+    </Shell.TitleView>
     <Shell.FlyoutHeader>
 
         <Grid BackgroundColor="{StaticResource PokeBlue}" HeightRequest="{OnIdiom Phone=55, Default=100}">
@@ -14,7 +29,7 @@
                 Opacity="0.2"
                 Source="ball_icon.png" />
             <Label
-                FontAttributes="None"
+                FontFamily="PokemonSolid"
                 FontSize="Large"
                 HorizontalTextAlignment="Center"
                 Text="PTCG Journal"

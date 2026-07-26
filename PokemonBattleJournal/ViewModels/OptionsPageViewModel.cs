@@ -6,11 +6,19 @@
         private readonly SemaphoreSlim _semaphore = new(1, 1);
         private Trainer? _trainer;
         private readonly ILogger<OptionsPageViewModel> _logger;
-        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection)
+        private readonly ITrainerSwitchService _switchService;
+        private readonly AppShellViewModel _shellVm;
+
+        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService, AppShellViewModel shellVm)
         {
             _connection = connection;
             _logger = logger;
+            _switchService = switchService;
+            _shellVm = shellVm;
         }
+
+        [ObservableProperty]
+        public partial List<Trainer> AllTrainers { get; set; } = [];
 
         [ObservableProperty]
         public partial string Title { get; set; } = $"{PreferencesHelper.GetSetting("TrainerName")}'s Options";
@@ -55,11 +63,17 @@
         public async Task AppearingAsync()
         {
             _logger.LogInformation("OptionsPageViewModel appearing");
+            TrainerName = PreferencesHelper.GetSetting("TrainerName");
+            Title = $"{TrainerName}'s Options";
             _logger.LogInformation("Current Trainer Name: {TrainerName}", TrainerName);
             try
             {
                 IconCollection = await PopulateIconCollectionAsync();
-                _trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
+                var activeId = PreferencesHelper.GetTrainerId();
+                _trainer = activeId > 0
+                    ? await _connection.Trainers.GetByIdAsync(activeId)
+                    : await _connection.Trainers.GetByNameAsync(TrainerName);
+                AllTrainers = await _connection.Trainers.GetAllAsync();
                 _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
             }
             catch (Exception ex)
@@ -67,6 +81,55 @@
                 _logger.LogError(ex, "Error loading ViewModel: {TrainerName} {@IconCollection}", TrainerName, IconCollection);
                 ModalErrorHandler modalErrorHandler = new();
                 modalErrorHandler.HandleError(ex);
+            }
+        }
+
+        [RelayCommand]
+        public async Task SwitchTrainerAsync(Trainer trainer)
+        {
+            if (trainer.Id == (_trainer?.Id ?? 0))
+                return;
+
+            // Forward to AppShellViewModel which owns the unsaved-data check
+            await _shellVm.LoadAsync(); // ensure shell list is current
+            _shellVm.SelectedTrainer = trainer;
+            // Update local state to reflect new active trainer
+            _trainer = trainer;
+            TrainerName = trainer.Name ?? string.Empty;
+            Title = $"{TrainerName}'s Options";
+            FileConfirmMessage = $"Delete {TrainerName}'s Trainer File?";
+        }
+
+        [RelayCommand]
+        public async Task DeleteTrainerFromListAsync(Trainer trainer)
+        {
+            bool confirmed = await Shell.Current.DisplayAlert(
+                "Delete Trainer",
+                $"Delete '{trainer.Name}' and all their match data?",
+                "Delete", "Cancel");
+            if (!confirmed)
+                return;
+
+            try
+            {
+                await _semaphore.WaitAsync();
+                _ = await _connection.Trainers.DeleteAsync(trainer);
+                AllTrainers = await _connection.Trainers.GetAllAsync();
+                await _shellVm.LoadAsync();
+
+                // If we deleted the active trainer, switch to first available
+                if (trainer.Id == (_trainer?.Id ?? 0) && AllTrainers.Count > 0)
+                    await SwitchTrainerAsync(AllTrainers[0]);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting trainer {TrainerName}", trainer.Name);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+            }
+            finally
+            {
+                _ = _semaphore.Release();
             }
         }
 
@@ -97,6 +160,9 @@
                     return;
                 }
                 _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
+                PreferencesHelper.SetTrainerId(_trainer.Id);
+                AllTrainers = await _connection.Trainers.GetAllAsync();
+                _shellVm.OnTrainerCreated(_trainer);
 
             }
             catch (Exception ex)
