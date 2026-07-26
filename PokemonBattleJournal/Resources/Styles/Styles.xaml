@@ -88,7 +88,7 @@
         <Setter Property="PopupBackgroundColor" Value="{StaticResource OffBlack}" />
         <Setter Property="ImageMemberPath" Value="ImagePath" />
         <Setter Property="MinimumWidthRequest" Value="130" />
-        <Setter Property="MaximumWidthRequest" Value="240" />
+        <Setter Property="MaximumWidthRequest" Value="260" />
     </Style>
 
     <Style TargetType="ActivityIndicator">
