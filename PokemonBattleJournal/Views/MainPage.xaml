@@ -240,6 +240,7 @@
                             CanReorderItems="True"
                             ItemSizingStrategy="MeasureAllItems"
                             ItemsSource="{Binding TagCollection}"
+                            MinimumHeightRequest="100"
                             SelectedItems="{Binding TagsSelected, Mode=TwoWay}"
                             SelectionMode="Multiple">
                             <CollectionView.ItemsLayout>
@@ -274,7 +275,10 @@
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput}" />
                         <HorizontalStackLayout HorizontalOptions="Center">
-                            <Label Style="{StaticResource FieldLabel}" Text="Went first" />
+                            <Label
+                                HorizontalOptions="Center"
+                                Text="Went first"
+                                VerticalOptions="Center" />
                             <CheckBox
                                 AutomationId="FirstCheck"
                                 Color="{StaticResource PokeBlue}"
@@ -282,6 +286,7 @@
                                 IsChecked="{Binding FirstCheck}"
                                 VerticalOptions="Center" />
                             <Picker
+                                Margin="5"
                                 AutomationId="PossibleResultsPicker"
                                 HorizontalOptions="Center"
                                 ItemsSource="{Binding PossibleResults}"
@@ -298,6 +303,7 @@
                             CanReorderItems="True"
                             ItemSizingStrategy="MeasureAllItems"
                             ItemsSource="{Binding TagCollection}"
+                            MinimumHeightRequest="100"
                             SelectedItems="{Binding Match2TagsSelected, Mode=TwoWay}"
                             SelectionMode="Multiple">
                             <CollectionView.ItemsLayout>
@@ -332,13 +338,17 @@
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput2}" />
                         <HorizontalStackLayout HorizontalOptions="Center">
-                            <Label Style="{StaticResource FieldLabel}" Text="Went first" />
+                            <Label
+                                HorizontalOptions="Center"
+                                Text="Went first"
+                                VerticalOptions="Center" />
                             <CheckBox
                                 Color="{StaticResource PokeBlue}"
                                 HorizontalOptions="Center"
                                 IsChecked="{Binding FirstCheck2}"
                                 VerticalOptions="Center" />
                             <Picker
+                                Margin="5"
                                 HorizontalOptions="Center"
                                 ItemsSource="{Binding PossibleResults}"
                                 SelectedItem="{Binding Result2}"
@@ -354,6 +364,7 @@
                             CanReorderItems="True"
                             ItemSizingStrategy="MeasureAllItems"
                             ItemsSource="{Binding TagCollection}"
+                            MinimumHeightRequest="100"
                             SelectedItems="{Binding Match3TagsSelected, Mode=TwoWay}"
                             SelectionMode="Multiple">
                             <CollectionView.ItemsLayout>
@@ -388,13 +399,17 @@
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput3}" />
                         <HorizontalStackLayout HorizontalOptions="Center">
-                            <Label Style="{StaticResource FieldLabel}" Text="Went first" />
+                            <Label
+                                HorizontalOptions="Center"
+                                Text="Went first"
+                                VerticalOptions="Center" />
                             <CheckBox
                                 Color="{StaticResource PokeBlue}"
                                 HorizontalOptions="Center"
                                 IsChecked="{Binding FirstCheck3}"
                                 VerticalOptions="Center" />
                             <Picker
+                                Margin="5"
                                 HorizontalOptions="Center"
                                 ItemsSource="{Binding PossibleResults}"
                                 SelectedItem="{Binding Result3}"
