@@ -1,3 +1,5 @@
+using PokemonBattleJournal.Interfaces;
+
 namespace PokemonBattleJournal.Tests.ViewModels
 {
     public class OptionsPageViewModelTests
@@ -5,19 +7,30 @@ namespace PokemonBattleJournal.Tests.ViewModels
         private readonly OptionsPageViewModel _viewModel;
         private readonly ISqliteConnectionFactory _mockConnectionFactory;
         private readonly ILogger<OptionsPageViewModel> _mockLogger;
+        private readonly ITrainerSwitchService _mockSwitchService;
+        private readonly AppShellViewModel _shellVm;
 
         public OptionsPageViewModelTests()
         {
             // Mocks
             _mockLogger = Substitute.For<ILogger<OptionsPageViewModel>>();
             _mockConnectionFactory = Substitute.For<ISqliteConnectionFactory>();
+            _mockSwitchService = Substitute.For<ITrainerSwitchService>();
 
             _mockConnectionFactory.Trainers.Returns(Substitute.For<ITrainerOperations>());
             _mockConnectionFactory.Tags.Returns(Substitute.For<ITagOperations>());
             _mockConnectionFactory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
+            _mockConnectionFactory.Matches.Returns(Substitute.For<IMatchOperations>());
+
+            var mainPageVm = new MainPageViewModel(
+                Substitute.For<ILogger<MainPageViewModel>>(),
+                _mockConnectionFactory,
+                Substitute.For<IMatchResultsCalculatorFactory>(),
+                _mockSwitchService);
+            _shellVm = new AppShellViewModel(_mockSwitchService, mainPageVm, Substitute.For<ILogger<AppShellViewModel>>());
 
             // SUT
-            _viewModel = new OptionsPageViewModel(_mockLogger, _mockConnectionFactory);
+            _viewModel = new OptionsPageViewModel(_mockLogger, _mockConnectionFactory, _mockSwitchService, _shellVm);
         }
 
         [Fact]

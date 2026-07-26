@@ -8,6 +8,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         private readonly ISqliteConnectionFactory _mockConnectionFactory;
         private readonly ILogger<TrainerPageViewModel> _mockLogger;
         private readonly IMatchAnalysisService _mockAnalysisService;
+        private readonly ITrainerSwitchService _mockSwitchService;
 
         public TrainerPageViewModelTests()
         {
@@ -15,12 +16,13 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _mockLogger = Substitute.For<ILogger<TrainerPageViewModel>>();
             _mockAnalysisService = Substitute.For<IMatchAnalysisService>();
             _mockConnectionFactory = Substitute.For<ISqliteConnectionFactory>();
+            _mockSwitchService = Substitute.For<ITrainerSwitchService>();
 
             _mockConnectionFactory.Trainers.Returns(Substitute.For<ITrainerOperations>());
             _mockConnectionFactory.Matches.Returns(Substitute.For<IMatchOperations>());
 
             // SUT
-            _viewModel = new TrainerPageViewModel(_mockLogger, _mockConnectionFactory, _mockAnalysisService);
+            _viewModel = new TrainerPageViewModel(_mockLogger, _mockConnectionFactory, _mockAnalysisService, _mockSwitchService);
         }
 
         [Fact]
