@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 
 <ContentPage
     x:Class="PokemonBattleJournal.Views.MainPage"
@@ -72,13 +72,7 @@
                 Spacing="10">
 
                 <!--#region Archetype Pickers-->
-                <Label
-                    FontAttributes="Bold"
-                    HorizontalOptions="Center"
-                    HorizontalTextAlignment="Center"
-                    Style="{StaticResource Headline}"
-                    Text="Select Decks"
-                    VerticalOptions="End" />
+                <Label Style="{StaticResource Headline}" Text="Select Decks" />
                 <StackLayout HorizontalOptions="Center" Orientation="{OnIdiom Default=Horizontal, Phone=Vertical}" Spacing="10">
                     <!--#region Player Archetype-->
                     <controls:ComboBoxControl
@@ -101,12 +95,7 @@
                 </StackLayout>
                 <!--#endregion-->
                 <!--#region BO3 Switch & Display-->
-                <Label
-                    FontFamily="SairaRegular"
-                    FontSize="12"
-                    HorizontalOptions="Center"
-                    Text="MATCH FORMAT"
-                    TextColor="{StaticResource PokeBlue}" />
+                <Label Style="{StaticResource Headline}" Text="Match Format" />
                 <Border
                     HorizontalOptions="Center"
                     Padding="16,8"
@@ -125,12 +114,7 @@
                             Source="ball_icon.png"
                             VerticalOptions="Center"
                             WidthRequest="32" />
-                        <Label
-                            FontFamily="SairaRegular"
-                            FontAttributes="Bold"
-                            Text="{Binding BO3Toggle, Converter={StaticResource BoolToBO3TextConverter}}"
-                            TextColor="{StaticResource PokeYellow}"
-                            VerticalTextAlignment="Center" />
+                        <Label Style="{StaticResource BO3Label}" Text="{Binding BO3Toggle, Converter={StaticResource BoolToBO3TextConverter}}" />
                     </HorizontalStackLayout>
                 </Border>
                 <!--#endregion-->
@@ -151,11 +135,7 @@
                     VerticalTextAlignment="Start" />
                 <!--#endregion-->
                 <!--#region Start and End Time Pickers-->
-                <Label
-                    FontSize="Micro"
-                    HorizontalOptions="Center"
-                    Text="Battle Start Time"
-                    TextColor="{StaticResource PokeYellow}" />
+                <Label Style="{StaticResource FieldLabel}" HorizontalOptions="Center" Text="Battle Start Time" />
                 <TimePicker
                     x:Name="StartTimePicker"
                     AutomationId="StartTimePicker"
@@ -163,11 +143,7 @@
                     HorizontalOptions="Center"
                     MaximumWidthRequest="300"
                     Time="{Binding StartTime}" />
-                <Label
-                    FontSize="Micro"
-                    HorizontalOptions="Center"
-                    Text="Battle End Time"
-                    TextColor="{StaticResource PokeYellow}" />
+                <Label Style="{StaticResource FieldLabel}" HorizontalOptions="Center" Text="Battle End Time" />
                 <TimePicker
                     x:Name="EndTimePicker"
                     AutomationId="EndTimePicker"
@@ -177,11 +153,7 @@
                     Time="{Binding EndTime}" />
                 <!--#endregion-->
                 <!--#region Date Played Picker-->
-                <Label
-                    FontSize="Micro"
-                    HorizontalOptions="Center"
-                    Text="Date Played"
-                    TextColor="{StaticResource PokeYellow}" />
+                <Label Style="{StaticResource FieldLabel}" HorizontalOptions="Center" Text="Date Played" />
                 <DatePicker
                     x:Name="DatePlayedPicker"
                     AutomationId="DatePlayedPicker"
@@ -219,6 +191,7 @@
                                 </Border.GestureRecognizers>
                                 <Label
                                     FontAttributes="{Binding IsGame1Selected, Converter={StaticResource TabActiveFontConverter}}"
+                                    FontFamily="SairaRegular"
                                     FontSize="14"
                                     Text="Game 1"
                                     TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
@@ -234,6 +207,7 @@
                                 </Border.GestureRecognizers>
                                 <Label
                                     FontAttributes="{Binding IsGame2Selected, Converter={StaticResource TabActiveFontConverter}}"
+                                    FontFamily="SairaRegular"
                                     FontSize="14"
                                     Text="Game 2"
                                     TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
@@ -249,6 +223,7 @@
                                 </Border.GestureRecognizers>
                                 <Label
                                     FontAttributes="{Binding IsGame3Selected, Converter={StaticResource TabActiveFontConverter}}"
+                                    FontFamily="SairaRegular"
                                     FontSize="14"
                                     Text="Game 3"
                                     TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />

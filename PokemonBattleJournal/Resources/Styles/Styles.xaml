@@ -5,6 +5,61 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:controls="clr-namespace:PokemonBattleJournal.Controls;assembly=PokemonBattleJournal">
 
+    <!--  Yellow field label — Trainer Name, Battle Start Time, etc.  -->
+    <Style x:Key="FieldLabel" TargetType="Label">
+        <Setter Property="FontFamily" Value="SairaRegular" />
+        <Setter Property="FontSize" Value="Body" />
+        <Setter Property="TextColor" Value="{StaticResource PokeYellow}" />
+    </Style>
+
+    <!--  White tag text inside blue badge chips  -->
+    <Style x:Key="TagBadge" TargetType="Label">
+        <Setter Property="FontFamily" Value="SairaRegular" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="TextColor" Value="{StaticResource White}" />
+        <Setter Property="HorizontalOptions" Value="Center" />
+        <Setter Property="HorizontalTextAlignment" Value="Center" />
+        <Setter Property="VerticalOptions" Value="Center" />
+        <Setter Property="VerticalTextAlignment" Value="Center" />
+    </Style>
+
+    <!--  TrainerPage chart section titles — Matchup Matrix, Win Rate Over Time, etc.  -->
+    <Style x:Key="ChartSectionHeader" TargetType="Label">
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="Margin" Value="0,4,0,2" />
+    </Style>
+
+    <!--  TrainerPage big stat value — 42%, 12, 3, etc.  -->
+    <Style x:Key="StatValue" TargetType="Label">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource PokeYellow}" />
+        <Setter Property="HorizontalOptions" Value="Center" />
+    </Style>
+
+    <!--  TrainerPage stat name — Win Rate, Wins, Losses, Ties  -->
+    <Style x:Key="StatName" TargetType="Label">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="HorizontalOptions" Value="Center" />
+    </Style>
+
+    <!--  Match list primary archetype name  -->
+    <Style x:Key="MatchCardName" TargetType="Label">
+        <Setter Property="FontFamily" Value="SairaRegular" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource Gray100}}" />
+        <Setter Property="VerticalOptions" Value="Center" />
+    </Style>
+
+    <!--  BO3 toggle label — Best of 1 / Best of 3  -->
+    <Style x:Key="BO3Label" TargetType="Label">
+        <Setter Property="FontFamily" Value="SairaRegular" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource PokeYellow}" />
+        <Setter Property="VerticalTextAlignment" Value="Center" />
+    </Style>
+
     <Style x:Key="ShellTitleLabel" TargetType="Label">
         <Setter Property="FontFamily" Value="PokemonSolid" />
         <Setter Property="FontSize" Value="24" />
@@ -207,7 +262,7 @@
         <Setter Property="HorizontalTextAlignment" Value="Center" />
     </Style>
 
-    <Style
+<Style
         x:Key="SubHeadline"
         TargetType="Label">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />

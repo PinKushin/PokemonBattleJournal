@@ -106,11 +106,7 @@
                                     Padding="10,4"
                                     BackgroundColor="{StaticResource PokeBlue}"
                                     StrokeThickness="0">
-                                    <Label
-                                        FontFamily="SairaRegular"
-                                        FontSize="12"
-                                        Text="Game 1"
-                                        TextColor="{StaticResource White}" />
+                                    <Label Style="{StaticResource TagBadge}" Text="Game 1" />
                                 </Border>
                             </CollectionView.Header>
                             <CollectionView.ItemTemplate>
@@ -122,14 +118,8 @@
                                         StrokeThickness="0">
                                         <Label
                                             x:DataType="model:Tags"
-                                            FontFamily="SairaRegular"
-                                            FontSize="12"
-                                            HorizontalOptions="Center"
-                                            HorizontalTextAlignment="Center"
-                                            Text="{Binding Name}"
-                                            TextColor="{StaticResource White}"
-                                            VerticalOptions="Center"
-                                            VerticalTextAlignment="Center" />
+                                            Style="{StaticResource TagBadge}"
+                                            Text="{Binding Name}" />
                                     </Border>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
@@ -165,11 +155,7 @@
                                     Padding="10,4"
                                     BackgroundColor="{StaticResource PokeBlue}"
                                     StrokeThickness="0">
-                                    <Label
-                                        FontFamily="SairaRegular"
-                                        FontSize="12"
-                                        Text="Game 2"
-                                        TextColor="{StaticResource White}" />
+                                    <Label Style="{StaticResource TagBadge}" Text="Game 2" />
                                 </Border>
                             </CollectionView.Header>
                             <CollectionView.ItemTemplate>
@@ -181,14 +167,8 @@
                                         StrokeThickness="0">
                                         <Label
                                             x:DataType="model:Tags"
-                                            FontFamily="SairaRegular"
-                                            FontSize="12"
-                                            HorizontalOptions="Center"
-                                            HorizontalTextAlignment="Center"
-                                            Text="{Binding Name}"
-                                            TextColor="{StaticResource White}"
-                                            VerticalOptions="Center"
-                                            VerticalTextAlignment="Center" />
+                                            Style="{StaticResource TagBadge}"
+                                            Text="{Binding Name}" />
                                     </Border>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
@@ -224,11 +204,7 @@
                                     Padding="10,4"
                                     BackgroundColor="{StaticResource PokeBlue}"
                                     StrokeThickness="0">
-                                    <Label
-                                        FontFamily="SairaRegular"
-                                        FontSize="12"
-                                        Text="Game 3"
-                                        TextColor="{StaticResource White}" />
+                                    <Label Style="{StaticResource TagBadge}" Text="Game 3" />
                                 </Border>
                             </CollectionView.Header>
                             <CollectionView.ItemTemplate>
@@ -240,14 +216,8 @@
                                         StrokeThickness="0">
                                         <Label
                                             x:DataType="model:Tags"
-                                            FontFamily="SairaRegular"
-                                            FontSize="12"
-                                            HorizontalOptions="Center"
-                                            HorizontalTextAlignment="Center"
-                                            Text="{Binding Name}"
-                                            TextColor="{StaticResource White}"
-                                            VerticalOptions="Center"
-                                            VerticalTextAlignment="Center" />
+                                            Style="{StaticResource TagBadge}"
+                                            Text="{Binding Name}" />
                                     </Border>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
@@ -258,12 +228,7 @@
             </Border>
 
             <!--  Match list heading  -->
-            <Label
-                FontFamily="SairaRegular"
-                FontSize="12"
-                HorizontalOptions="Center"
-                Text="PICK A MATCH"
-                TextColor="{StaticResource PokeBlue}" />
+            <Label Style="{StaticResource Headline}" Text="Pick a Match" />
 
             <!--  Match history list  -->
             <CollectionView
@@ -290,11 +255,8 @@
                                     WidthRequest="32" />
                                 <Label
                                     Grid.Column="1"
-                                    FontFamily="SairaRegular"
-                                    FontSize="13"
-                                    Text="{Binding Playing.Name}"
-                                    TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource Gray100}}"
-                                    VerticalOptions="Center" />
+                                    Style="{StaticResource MatchCardName}"
+                                    Text="{Binding Playing.Name}" />
                                 <Label
                                     Grid.Column="2"
                                     FontFamily="SairaRegular"

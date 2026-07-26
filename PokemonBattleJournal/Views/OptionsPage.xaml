@@ -27,22 +27,14 @@
             Spacing="12">
 
             <!--  Trainer section  -->
-            <Label
-                FontFamily="SairaRegular"
-                FontSize="12"
-                Text="TRAINER"
-                TextColor="{StaticResource PokeBlue}" />
+            <Label Style="{StaticResource Headline}" Text="Trainer" />
 
             <Border
                 Padding="12,8"
                 Stroke="{StaticResource PokeYellow}"
                 StrokeThickness="1.5">
                 <VerticalStackLayout Spacing="4">
-                    <Label
-                        FontFamily="SairaRegular"
-                        FontSize="12"
-                        Text="Trainer Name"
-                        TextColor="{StaticResource PokeYellow}" />
+                    <Label Style="{StaticResource FieldLabel}" Text="Trainer Name" />
                     <Entry
                         x:Name="TrainerNameInput"
                         AutomationId="TrainerNameInput"
@@ -61,23 +53,14 @@
                 WidthRequest="220" />
 
             <!--  Archetype section  -->
-            <Label
-                Margin="0,8,0,0"
-                FontFamily="SairaRegular"
-                FontSize="12"
-                Text="CUSTOM ARCHETYPE"
-                TextColor="{StaticResource PokeBlue}" />
+            <Label Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Custom Archetype" />
 
             <Border
                 Padding="12,8"
                 Stroke="{StaticResource PokeYellow}"
                 StrokeThickness="1.5">
                 <VerticalStackLayout Spacing="8">
-                    <Label
-                        FontFamily="SairaRegular"
-                        FontSize="12"
-                        Text="Archetype Icon"
-                        TextColor="{StaticResource PokeYellow}" />
+                    <Label Style="{StaticResource FieldLabel}" Text="Archetype Icon" />
                     <controls:ComboBoxControl
                         x:Name="NewArchetypeIcon"
                         AutomationId="ArchetypeIconPicker"
@@ -100,11 +83,7 @@
                 Stroke="{StaticResource PokeYellow}"
                 StrokeThickness="1.5">
                 <VerticalStackLayout Spacing="4">
-                    <Label
-                        FontFamily="SairaRegular"
-                        FontSize="12"
-                        Text="Archetype Name"
-                        TextColor="{StaticResource PokeYellow}" />
+                    <Label Style="{StaticResource FieldLabel}" Text="Archetype Name" />
                     <Entry
                         x:Name="ArchetypeNameInput"
                         AutomationId="ArchetypeNameInput"
@@ -123,23 +102,14 @@
                 WidthRequest="220" />
 
             <!--  Tags section  -->
-            <Label
-                Margin="0,8,0,0"
-                FontFamily="SairaRegular"
-                FontSize="12"
-                Text="CUSTOM TAG"
-                TextColor="{StaticResource PokeBlue}" />
+            <Label Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Custom Tag" />
 
             <Border
                 Padding="12,8"
                 Stroke="{StaticResource PokeYellow}"
                 StrokeThickness="1.5">
                 <VerticalStackLayout Spacing="4">
-                    <Label
-                        FontFamily="SairaRegular"
-                        FontSize="12"
-                        Text="Tag Name"
-                        TextColor="{StaticResource PokeYellow}" />
+                    <Label Style="{StaticResource FieldLabel}" Text="Tag Name" />
                     <Entry
                         x:Name="TagInput"
                         AutomationId="TagInput"
