@@ -19,6 +19,7 @@
                 WidthRequest="96" />
 
             <Label
+                AutomationId="AboutPageTitle"
                 FontFamily="PokemonSolid"
                 FontSize="Title"
                 HorizontalOptions="Center"
