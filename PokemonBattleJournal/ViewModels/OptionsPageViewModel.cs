@@ -37,6 +37,18 @@
         public partial string SelectedIcon { get; set; } = "ball_icon.png";
 
         [ObservableProperty]
+        public partial List<IconItem> IconItems { get; set; } = [];
+
+        [ObservableProperty]
+        public partial IconItem? SelectedIconItem { get; set; }
+
+        partial void OnSelectedIconItemChanged(IconItem? value)
+        {
+            SelectedIcon = value?.ImagePath ?? "ball_icon.png";
+            NewDeckIcon = value?.ImagePath;
+        }
+
+        [ObservableProperty]
         public partial string FileConfirmMessage { get; set; } = $"Delete {PreferencesHelper.GetSetting("TrainerName")}'s Trainer File?";
 
         [RelayCommand]
@@ -224,6 +236,9 @@
                 {
                     iconCollection.Add(imageName);
                 }
+                IconItems = iconCollection
+                    .Select(f => new IconItem(ToDisplayName(f), f))
+                    .ToList();
                 return iconCollection;
             }
             catch (Exception ex)
@@ -236,6 +251,13 @@
             {
                 _ = _semaphore.Release();
             }
+        }
+
+        private static string ToDisplayName(string filename)
+        {
+            string name = System.IO.Path.GetFileNameWithoutExtension(filename);
+            return System.Globalization.CultureInfo.CurrentCulture.TextInfo
+                .ToTitleCase(name.Replace('_', ' '));
         }
     }
 }

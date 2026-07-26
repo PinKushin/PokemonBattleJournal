@@ -14,6 +14,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [InlineData("NewDeckName")]
         [InlineData("SelectedIcon")]
         [InlineData("IconCollection")]
+        [InlineData("IconItems")]
+        [InlineData("SelectedIconItem")]
         [InlineData("TagInput")]
         public void OptionsPageViewModel_HasProperty(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"OptionsPage.xaml binds to '{name}' but it was not found on OptionsPageViewModel");

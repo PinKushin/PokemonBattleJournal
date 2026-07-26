@@ -1,47 +1,67 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-	x:Class="PokemonBattleJournal.Views.FirstStartPage"
-	xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-	xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
-	Title="Welcome"
-	x:DataType="viewmodel:FirstStartPageViewModel">
-	<ScrollView>
-		<VerticalStackLayout>
-			<Image
-				Source="ball_icon.png"
-				WidthRequest="100" />
-			<Label
-				FontSize="Header"
-				HorizontalOptions="Center"
-				Text="Welcome to Pokemon TCG Battle Journal"
-				VerticalOptions="Center" />
-			<HorizontalStackLayout
-				HorizontalOptions="Center"
-				VerticalOptions="Center">
-				<Border
-					Margin="5"
-					Stroke="Gray"
-					StrokeThickness="1">
-					<VerticalStackLayout>
-						<Label
-							Margin="8,4,8,0"
-							FontSize="12"
-							Text="Trainer Name" />
-						<Entry
-							x:Name="TrainerNameInput"
-							AutomationId="TrainerNameInput"
-							Placeholder="Enter your name"
-							Text="{Binding TrainerNameInput}" />
-					</VerticalStackLayout>
-				</Border>
+    x:Class="PokemonBattleJournal.Views.FirstStartPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
+    Title="Welcome"
+    x:DataType="viewmodel:FirstStartPageViewModel">
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="32"
+            HorizontalOptions="Center"
+            Spacing="20"
+            VerticalOptions="Center">
 
-				<Button
-					x:Name="InputButton"
-					Command="{Binding SaveTrainerNameCommand}"
-					HeightRequest="50"
-					Text="Save Trainer Name" />
-			</HorizontalStackLayout>
-		</VerticalStackLayout>
-	</ScrollView>
+            <Image
+                HorizontalOptions="Center"
+                Source="ball_icon.png"
+                WidthRequest="120" />
+
+            <Label
+                FontFamily="PokemonSolid"
+                FontSize="Title"
+                HorizontalOptions="Center"
+                HorizontalTextAlignment="Center"
+                Text="Pokemon TCG Battle Journal"
+                TextColor="{StaticResource PokeYellow}" />
+
+            <Label
+                FontFamily="SairaRegular"
+                FontSize="Body"
+                HorizontalOptions="Center"
+                HorizontalTextAlignment="Center"
+                Text="Enter your trainer name to get started."
+                TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource Gray200}}" />
+
+            <Border
+                Padding="16"
+                HorizontalOptions="Center"
+                Stroke="{StaticResource PokeYellow}"
+                StrokeThickness="1.5"
+                WidthRequest="320">
+                <VerticalStackLayout Spacing="4">
+                    <Label
+                        FontFamily="SairaRegular"
+                        FontSize="12"
+                        Text="Trainer Name"
+                        TextColor="{StaticResource PokeYellow}" />
+                    <Entry
+                        x:Name="TrainerNameInput"
+                        AutomationId="TrainerNameInput"
+                        FontFamily="SairaRegular"
+                        Placeholder="Enter your name"
+                        Text="{Binding TrainerNameInput}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button
+                x:Name="InputButton"
+                Command="{Binding SaveTrainerNameCommand}"
+                HorizontalOptions="Center"
+                Text="Save Trainer Name"
+                WidthRequest="200" />
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

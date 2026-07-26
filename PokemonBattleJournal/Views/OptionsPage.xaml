@@ -17,112 +17,159 @@
             EventName="Appearing" />
     </ContentPage.Behaviors>
     <ScrollView>
-        <VerticalStackLayout HorizontalOptions="Center">
+        <VerticalStackLayout
+            Padding="20"
+            HorizontalOptions="Center"
+            MaximumWidthRequest="480"
+            Spacing="12">
+
             <Label
                 x:Name="OptionsPageTitleLabel"
                 AutomationId="OptionsPageTitleLabel"
+                FontFamily="PokemonSolid"
+                FontSize="Title"
                 HorizontalOptions="Center"
                 Style="{StaticResource Headline}"
                 Text="Options"
-                VerticalOptions="Center" />
+                TextColor="{StaticResource PokeYellow}" />
+
+            <!--  Trainer section  -->
+            <Label
+                FontFamily="SairaRegular"
+                FontSize="12"
+                Text="TRAINER"
+                TextColor="{StaticResource PokeBlue}" />
+
             <Border
-                Margin="0,5"
-                Stroke="Gray"
-                StrokeThickness="1">
-                <VerticalStackLayout>
+                Padding="12,8"
+                Stroke="{StaticResource PokeYellow}"
+                StrokeThickness="1.5">
+                <VerticalStackLayout Spacing="4">
                     <Label
-                        Margin="8,4,8,0"
+                        FontFamily="SairaRegular"
                         FontSize="12"
-                        Text="Trainer Name" />
+                        Text="Trainer Name"
+                        TextColor="{StaticResource PokeYellow}" />
                     <Entry
                         x:Name="TrainerNameInput"
                         AutomationId="TrainerNameInput"
+                        FontFamily="SairaRegular"
                         Placeholder="Enter New Trainer Name"
                         Text="{Binding NameInput}" />
                 </VerticalStackLayout>
             </Border>
+
             <Button
                 x:Name="SaveTrainerNameButton"
                 AutomationId="SaveTrainerNameButton"
                 Command="{Binding SaveTrainerCommand}"
                 HorizontalOptions="Center"
                 Text="Create New Trainer"
-                VerticalOptions="Center"
-                WidthRequest="200" />
-            <Image
-                AutomationId="ArchetypeIconDisplay"
-                HeightRequest="64"
-                Source="{Binding SelectedIcon}" />
+                WidthRequest="220" />
+
+            <!--  Archetype section  -->
+            <Label
+                Margin="0,8,0,0"
+                FontFamily="SairaRegular"
+                FontSize="12"
+                Text="CUSTOM ARCHETYPE"
+                TextColor="{StaticResource PokeBlue}" />
+
             <Border
-                Margin="0,5"
-                Stroke="Gray"
-                StrokeThickness="1">
-                <VerticalStackLayout>
+                Padding="12,8"
+                Stroke="{StaticResource PokeYellow}"
+                StrokeThickness="1.5">
+                <VerticalStackLayout Spacing="8">
                     <Label
-                        Margin="8,4,8,0"
+                        FontFamily="SairaRegular"
                         FontSize="12"
-                        Text="Archetype Icon" />
-                    <Picker
+                        Text="Archetype Icon"
+                        TextColor="{StaticResource PokeYellow}" />
+                    <controls:ComboBoxControl
                         x:Name="NewArchetypeIcon"
                         AutomationId="ArchetypeIconPicker"
-                        ItemDisplayBinding="{Binding .}"
-                        ItemsSource="{Binding IconCollection}"
-                        SelectedItem="{Binding SelectedIcon}" />
+                        Style="{StaticResource ArchetypePicker}"
+                        DisplayMemberPath="Name"
+                        ImageMemberPath="ImagePath"
+                        ItemsSource="{Binding IconItems}"
+                        Placeholder="Select Icon"
+                        SelectedItem="{Binding SelectedIconItem}" />
                     <Label
-                        Margin="8,0,8,4"
+                        FontFamily="SairaRegular"
                         FontSize="10"
-                        Text="Select New Archetype's Icon" />
+                        Text="Select the icon for your custom archetype"
+                        TextColor="{StaticResource Gray400}" />
                 </VerticalStackLayout>
             </Border>
+
             <Border
-                Margin="0,5"
-                Stroke="Gray"
-                StrokeThickness="1">
-                <VerticalStackLayout>
+                Padding="12,8"
+                Stroke="{StaticResource PokeYellow}"
+                StrokeThickness="1.5">
+                <VerticalStackLayout Spacing="4">
                     <Label
-                        Margin="8,4,8,0"
+                        FontFamily="SairaRegular"
                         FontSize="12"
-                        Text="Archetype Name" />
+                        Text="Archetype Name"
+                        TextColor="{StaticResource PokeYellow}" />
                     <Entry
                         x:Name="ArchetypeNameInput"
                         AutomationId="ArchetypeNameInput"
+                        FontFamily="SairaRegular"
                         Placeholder="Enter New Archetype's Name"
                         Text="{Binding NewDeckName}" />
                 </VerticalStackLayout>
             </Border>
+
             <Button
                 x:Name="SaveArchetypeButton"
                 AutomationId="SaveArchetypeButton"
                 Command="{Binding SaveArchetypeCommand}"
                 HorizontalOptions="Center"
                 Text="Save Archetype"
-                VerticalOptions="Center"
-                WidthRequest="200" />
+                WidthRequest="220" />
+
+            <!--  Tags section  -->
+            <Label
+                Margin="0,8,0,0"
+                FontFamily="SairaRegular"
+                FontSize="12"
+                Text="CUSTOM TAG"
+                TextColor="{StaticResource PokeBlue}" />
 
             <Border
-                Margin="0,5"
-                Stroke="Gray"
-                StrokeThickness="1">
-                <VerticalStackLayout>
+                Padding="12,8"
+                Stroke="{StaticResource PokeYellow}"
+                StrokeThickness="1.5">
+                <VerticalStackLayout Spacing="4">
                     <Label
-                        Margin="8,4,8,0"
+                        FontFamily="SairaRegular"
                         FontSize="12"
-                        Text="Tag" />
+                        Text="Tag Name"
+                        TextColor="{StaticResource PokeYellow}" />
                     <Entry
                         x:Name="TagInput"
                         AutomationId="TagInput"
+                        FontFamily="SairaRegular"
                         Placeholder="Enter New Tag"
                         Text="{Binding TagInput}" />
                 </VerticalStackLayout>
             </Border>
+
             <Button
                 x:Name="SaveTagButton"
                 AutomationId="SaveTagButton"
                 Command="{Binding SaveTagCommand}"
                 HorizontalOptions="Center"
                 Text="Save New Tag"
-                VerticalOptions="Center"
-                WidthRequest="200" />
+                WidthRequest="220" />
+
+            <!--  Save all / danger zone  -->
+            <BoxView
+                Margin="0,8"
+                BackgroundColor="{StaticResource PokeBlue}"
+                HeightRequest="1"
+                HorizontalOptions="Fill" />
 
             <Button
                 x:Name="SaveAllButton"
@@ -130,13 +177,18 @@
                 Command="{Binding SaveAllCommand}"
                 HorizontalOptions="Center"
                 Text="Save All"
-                VerticalOptions="Center"
-                WidthRequest="200" />
+                WidthRequest="220" />
+
             <Button
                 x:Name="DeleteTrainer"
                 AutomationId="DeleteTrainer"
+                BackgroundColor="{StaticResource BostonRed}"
                 Command="{Binding DeleteTrainerFileCommand}"
-                Text="Delete Current Trainer" />
+                HorizontalOptions="Center"
+                Text="Delete Current Trainer"
+                TextColor="{StaticResource White}"
+                WidthRequest="220" />
+
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

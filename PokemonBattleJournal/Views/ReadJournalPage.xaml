@@ -19,252 +19,267 @@
     <ContentPage.Resources>
         <toolkit:IsNotNullConverter x:Key="IsNotNullConverter" />
     </ContentPage.Resources>
-    <ScrollView Margin="20">
-        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto, *, *, Auto, *, *, Auto">
+    <ScrollView Margin="16">
+        <VerticalStackLayout Spacing="12">
+
+            <!--  Page title  -->
             <Label
-                Grid.Row="0"
-                Grid.ColumnSpan="2"
                 AutomationId="JournalWelcomeLabel"
+                FontFamily="PokemonSolid"
+                FontSize="Title"
                 HorizontalOptions="Center"
-                Text="Welcome to your journal!"
-                VerticalOptions="Center" />
-            <HorizontalStackLayout
-                Grid.Row="1"
-                Grid.ColumnSpan="2"
-                HorizontalOptions="Center"
-                VerticalOptions="Center">
-                <Label
-                    Text="{Binding PlayingName}"
-                    VerticalOptions="Center"
-                    VerticalTextAlignment="Center" />
-                <Image HeightRequest="48" Source="{Binding PlayingIconSource}" />
-                <Label Text="VS" />
-                <Image HeightRequest="48" Source="{Binding AgainstIconSource}" />
-                <Label
-                    Text="{Binding AgainstName}"
-                    VerticalOptions="Center"
-                    VerticalTextAlignment="Center" />
-            </HorizontalStackLayout>
-            <Editor
-                Grid.Row="2"
-                Grid.ColumnSpan="2"
-                HeightRequest="200"
-                IsReadOnly="True"
-                MaximumWidthRequest="800"
-                Text="{Binding SelectedNote}" />
-            <Grid
-                Grid.Row="3"
-                Grid.ColumnSpan="2"
-                ColumnDefinitions="*"
-                HorizontalOptions="Center"
-                RowDefinitions="Auto, Auto, Auto"
-                VerticalOptions="Center">
-                <CollectionView
-                    Grid.Row="0"
-                    Margin="10,10,10,5"
-                    ItemSizingStrategy="MeasureAllItems"
-                    ItemsSource="{Binding TagsSelectedGame1}"
-                    ToolTipProperties.Text="Tags for game 1">
-                    <CollectionView.EmptyView>
-                        <Grid>
-                            <VerticalStackLayout 
-                                HorizontalOptions="Center" 
-                                VerticalOptions="Center">
-                                <Label 
-                                    Text="No Tags Available for Game 1" 
-                                    TextColor="Gray" 
-                                    FontSize="Small"
-                                    HorizontalOptions="Center" />
-                                <Label 
-                                    Text="{Binding Game1TagsInfo}" 
-                                    TextColor="Gray" 
-                                    FontSize="Micro"
-                                    HorizontalOptions="Center" />
-                            </VerticalStackLayout>
-                        </Grid>
-                    </CollectionView.EmptyView>
-                    <CollectionView.ItemsLayout>
-                        <LinearItemsLayout Orientation="Horizontal" />
-                    </CollectionView.ItemsLayout>
+                HorizontalTextAlignment="Center"
+                Text="Battle Journal"
+                TextColor="{StaticResource PokeYellow}" />
 
-                    <CollectionView.Header>
-                        <Border
-                            Margin="5,5,5,5"
-                            BackgroundColor="{StaticResource PokeBlue}"
-                            MaximumHeightRequest="64"
-                            MaximumWidthRequest="200">
-                            <Label
-                                Margin="10,0,10,0"
-                                HorizontalTextAlignment="Center"
-                                Text="Tags Game 1:"
-                                VerticalTextAlignment="Center" />
-                        </Border>
-                    </CollectionView.Header>
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <Border
-                                Padding="3"
-                                Background="{StaticResource PokeBlue}"
-                                HeightRequest="52"
-                                MaximumWidthRequest="500">
-                                <Label
-                                    Padding="10,0,10,0"
-                                    x:DataType="model:Tags"
-                                    FontAutoScalingEnabled="True"
-                                    HorizontalOptions="Center"
-                                    HorizontalTextAlignment="Center"
-                                    Text="{Binding Name}"
-                                    VerticalOptions="Center"
-                                    VerticalTextAlignment="Center" />
-                            </Border>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
+            <!--  Selected match detail card  -->
+            <Border
+                Padding="16"
+                IsVisible="{Binding SelectedMatch, Converter={StaticResource IsNotNullConverter}}"
+                Stroke="{StaticResource PokeYellow}"
+                StrokeThickness="1.5">
+                <VerticalStackLayout Spacing="10">
 
-                <!--  For Match 2  -->
-                <CollectionView
-                    Grid.Row="1"
-                    Margin="10,5,10,5"
-                    IsVisible="{Binding SelectedMatch.Game2, Converter={StaticResource IsNotNullConverter}}"
-                    ItemSizingStrategy="MeasureAllItems"
-                    ItemsSource="{Binding TagsSelectedGame2}"
-                    ToolTipProperties.Text="Tags for game 2">
-                    <CollectionView.EmptyView>
-                        <Grid>
-                            <VerticalStackLayout 
-                                HorizontalOptions="Center" 
-                                VerticalOptions="Center">
-                                <Label 
-                                    Text="No Tags Available for Game 2" 
-                                    TextColor="Gray" 
-                                    FontSize="Small"
-                                    HorizontalOptions="Center" />
-                                <Label 
-                                    Text="{Binding Game2TagsInfo}" 
-                                    TextColor="Gray" 
-                                    FontSize="Micro"
-                                    HorizontalOptions="Center" />
-                            </VerticalStackLayout>
-                        </Grid>
-                    </CollectionView.EmptyView>
-                    <CollectionView.ItemsLayout>
-                        <LinearItemsLayout Orientation="Horizontal" />
-                    </CollectionView.ItemsLayout>
-                    <CollectionView.Header>
-                        <Border
-                            Margin="5,5,5,5"
-                            BackgroundColor="{StaticResource PokeBlue}"
-                            MaximumHeightRequest="64"
-                            MaximumWidthRequest="200">
-                            <Label
-                                Margin="10,0,10,0"
-                                HorizontalTextAlignment="Center"
-                                Text="Tags Game 2:"
-                                VerticalTextAlignment="Center" />
-                        </Border>
-                    </CollectionView.Header>
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <Border
-                                Padding="3"
-                                Background="{StaticResource PokeBlue}"
-                                HeightRequest="52"
-                                MaximumWidthRequest="500">
-                                <Label
-                                    Padding="10,0,10,0"
-                                    x:DataType="model:Tags"
-                                    FontAutoScalingEnabled="True"
-                                    HorizontalOptions="Center"
-                                    HorizontalTextAlignment="Center"
-                                    Text="{Binding Name}"
-                                    VerticalOptions="Center"
-                                    VerticalTextAlignment="Center" />
-                            </Border>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
+                    <!--  Matchup header  -->
+                    <HorizontalStackLayout
+                        HorizontalOptions="Center"
+                        Spacing="8">
+                        <Image
+                            HeightRequest="48"
+                            Source="{Binding PlayingIconSource}"
+                            WidthRequest="48" />
+                        <Label
+                            FontFamily="SairaRegular"
+                            FontSize="Body"
+                            Text="{Binding PlayingName}"
+                            TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
+                            VerticalOptions="Center" />
+                        <Label
+                            FontFamily="PokemonSolid"
+                            FontSize="Body"
+                            Text="VS"
+                            TextColor="{StaticResource PokeBlue}"
+                            VerticalOptions="Center" />
+                        <Label
+                            FontFamily="SairaRegular"
+                            FontSize="Body"
+                            Text="{Binding AgainstName}"
+                            TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
+                            VerticalOptions="Center" />
+                        <Image
+                            HeightRequest="48"
+                            Source="{Binding AgainstIconSource}"
+                            WidthRequest="48" />
+                    </HorizontalStackLayout>
 
-                <!--  For Match 3  -->
-                <CollectionView
-                    Grid.Row="2"
-                    Margin="10,5,10,5"
-                    IsVisible="{Binding SelectedMatch.Game3, Converter={StaticResource IsNotNullConverter}}"
-                    ItemSizingStrategy="MeasureAllItems"
-                    ItemsSource="{Binding TagsSelectedGame3}"
-                    ToolTipProperties.Text="Tags for game 3">
-                    <CollectionView.EmptyView>
-                        <Grid>
-                            <VerticalStackLayout 
-                                HorizontalOptions="Center" 
-                                VerticalOptions="Center">
-                                <Label 
-                                    Text="No Tags Available for Game 3" 
-                                    TextColor="Gray" 
-                                    FontSize="Small"
-                                    HorizontalOptions="Center" />
-                                <Label 
-                                    Text="{Binding Game3TagsInfo}" 
-                                    TextColor="Gray" 
-                                    FontSize="Micro"
-                                    HorizontalOptions="Center" />
-                            </VerticalStackLayout>
-                        </Grid>
-                    </CollectionView.EmptyView>
-                    <CollectionView.ItemsLayout>
-                        <LinearItemsLayout Orientation="Horizontal" />
-                    </CollectionView.ItemsLayout>
+                    <!--  Notes  -->
+                    <Editor
+                        HeightRequest="120"
+                        IsReadOnly="True"
+                        MaximumWidthRequest="700"
+                        Text="{Binding SelectedNote}" />
 
-                    <CollectionView.Header>
-                        <Border
-                            Margin="5,5,5,5"
-                            BackgroundColor="{StaticResource PokeBlue}"
-                            MaximumHeightRequest="64"
-                            MaximumWidthRequest="200">
-                            <Label
-                                Margin="10,0,10,0"
-                                HorizontalTextAlignment="Center"
-                                Text="Tags Game 3:"
-                                VerticalTextAlignment="Center" />
-                        </Border>
-                    </CollectionView.Header>
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <Border
-                                Padding="3"
-                                Background="{StaticResource PokeBlue}"
-                                HeightRequest="52"
-                                MaximumWidthRequest="500">
-                                <Label
-                                    Padding="10,0,10,0"
-                                    x:DataType="model:Tags"
-                                    FontAutoScalingEnabled="True"
-                                    HorizontalOptions="Center"
-                                    HorizontalTextAlignment="Center"
-                                    Text="{Binding Name}"
-                                    VerticalOptions="Center"
-                                    VerticalTextAlignment="Center" />
-                            </Border>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-            </Grid>
+                    <!--  Tags  -->
+                    <Grid
+                        ColumnDefinitions="*"
+                        RowDefinitions="Auto, Auto, Auto">
 
+                        <CollectionView
+                            Grid.Row="0"
+                            Margin="0,4"
+                            ItemSizingStrategy="MeasureAllItems"
+                            ItemsSource="{Binding TagsSelectedGame1}"
+                            ToolTipProperties.Text="Tags for game 1">
+                            <CollectionView.EmptyView>
+                                <VerticalStackLayout HorizontalOptions="Center">
+                                    <Label
+                                        FontSize="Small"
+                                        HorizontalOptions="Center"
+                                        Text="No Tags for Game 1"
+                                        TextColor="{StaticResource Gray400}" />
+                                    <Label
+                                        FontSize="Micro"
+                                        HorizontalOptions="Center"
+                                        Text="{Binding Game1TagsInfo}"
+                                        TextColor="{StaticResource Gray400}" />
+                                </VerticalStackLayout>
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="6" />
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.Header>
+                                <Border
+                                    Margin="0,0,8,0"
+                                    Padding="10,4"
+                                    BackgroundColor="{StaticResource PokeBlue}"
+                                    StrokeThickness="0">
+                                    <Label
+                                        FontFamily="SairaRegular"
+                                        FontSize="12"
+                                        Text="Game 1"
+                                        TextColor="{StaticResource White}" />
+                                </Border>
+                            </CollectionView.Header>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Padding="10,4"
+                                        BackgroundColor="{StaticResource PokeBlue}"
+                                        HeightRequest="32"
+                                        StrokeThickness="0">
+                                        <Label
+                                            x:DataType="model:Tags"
+                                            FontFamily="SairaRegular"
+                                            FontSize="12"
+                                            HorizontalOptions="Center"
+                                            HorizontalTextAlignment="Center"
+                                            Text="{Binding Name}"
+                                            TextColor="{StaticResource White}"
+                                            VerticalOptions="Center"
+                                            VerticalTextAlignment="Center" />
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <CollectionView
+                            Grid.Row="1"
+                            Margin="0,4"
+                            IsVisible="{Binding SelectedMatch.Game2, Converter={StaticResource IsNotNullConverter}}"
+                            ItemSizingStrategy="MeasureAllItems"
+                            ItemsSource="{Binding TagsSelectedGame2}"
+                            ToolTipProperties.Text="Tags for game 2">
+                            <CollectionView.EmptyView>
+                                <VerticalStackLayout HorizontalOptions="Center">
+                                    <Label
+                                        FontSize="Small"
+                                        HorizontalOptions="Center"
+                                        Text="No Tags for Game 2"
+                                        TextColor="{StaticResource Gray400}" />
+                                    <Label
+                                        FontSize="Micro"
+                                        HorizontalOptions="Center"
+                                        Text="{Binding Game2TagsInfo}"
+                                        TextColor="{StaticResource Gray400}" />
+                                </VerticalStackLayout>
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="6" />
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.Header>
+                                <Border
+                                    Margin="0,0,8,0"
+                                    Padding="10,4"
+                                    BackgroundColor="{StaticResource PokeBlue}"
+                                    StrokeThickness="0">
+                                    <Label
+                                        FontFamily="SairaRegular"
+                                        FontSize="12"
+                                        Text="Game 2"
+                                        TextColor="{StaticResource White}" />
+                                </Border>
+                            </CollectionView.Header>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Padding="10,4"
+                                        BackgroundColor="{StaticResource PokeBlue}"
+                                        HeightRequest="32"
+                                        StrokeThickness="0">
+                                        <Label
+                                            x:DataType="model:Tags"
+                                            FontFamily="SairaRegular"
+                                            FontSize="12"
+                                            HorizontalOptions="Center"
+                                            HorizontalTextAlignment="Center"
+                                            Text="{Binding Name}"
+                                            TextColor="{StaticResource White}"
+                                            VerticalOptions="Center"
+                                            VerticalTextAlignment="Center" />
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <CollectionView
+                            Grid.Row="2"
+                            Margin="0,4"
+                            IsVisible="{Binding SelectedMatch.Game3, Converter={StaticResource IsNotNullConverter}}"
+                            ItemSizingStrategy="MeasureAllItems"
+                            ItemsSource="{Binding TagsSelectedGame3}"
+                            ToolTipProperties.Text="Tags for game 3">
+                            <CollectionView.EmptyView>
+                                <VerticalStackLayout HorizontalOptions="Center">
+                                    <Label
+                                        FontSize="Small"
+                                        HorizontalOptions="Center"
+                                        Text="No Tags for Game 3"
+                                        TextColor="{StaticResource Gray400}" />
+                                    <Label
+                                        FontSize="Micro"
+                                        HorizontalOptions="Center"
+                                        Text="{Binding Game3TagsInfo}"
+                                        TextColor="{StaticResource Gray400}" />
+                                </VerticalStackLayout>
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="6" />
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.Header>
+                                <Border
+                                    Margin="0,0,8,0"
+                                    Padding="10,4"
+                                    BackgroundColor="{StaticResource PokeBlue}"
+                                    StrokeThickness="0">
+                                    <Label
+                                        FontFamily="SairaRegular"
+                                        FontSize="12"
+                                        Text="Game 3"
+                                        TextColor="{StaticResource White}" />
+                                </Border>
+                            </CollectionView.Header>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Padding="10,4"
+                                        BackgroundColor="{StaticResource PokeBlue}"
+                                        HeightRequest="32"
+                                        StrokeThickness="0">
+                                        <Label
+                                            x:DataType="model:Tags"
+                                            FontFamily="SairaRegular"
+                                            FontSize="12"
+                                            HorizontalOptions="Center"
+                                            HorizontalTextAlignment="Center"
+                                            Text="{Binding Name}"
+                                            TextColor="{StaticResource White}"
+                                            VerticalOptions="Center"
+                                            VerticalTextAlignment="Center" />
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!--  Match list heading  -->
             <Label
-                Grid.Row="4"
-                Grid.ColumnSpan="2"
+                FontFamily="SairaRegular"
+                FontSize="12"
                 HorizontalOptions="Center"
-                Text="Pick A Match" />
+                Text="PICK A MATCH"
+                TextColor="{StaticResource PokeBlue}" />
 
+            <!--  Match history list  -->
             <CollectionView
-                Grid.Row="5"
-                Grid.ColumnSpan="2"
-                Margin="12"
                 EmptyView="No Matches Found"
-                HeightRequest="200"
+                HeightRequest="300"
                 HorizontalOptions="Center"
                 ItemsSource="{Binding MatchHistory}"
                 ItemsUpdatingScrollMode="KeepItemsInView"
-                MaximumWidthRequest="400"
+                MaximumWidthRequest="560"
                 SelectedItem="{Binding SelectedMatch}"
                 SelectionChangedCommand="{Binding LoadMatchCommand}"
                 SelectionMode="Single"
@@ -272,61 +287,73 @@
                 VerticalScrollBarVisibility="Always">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="model:MatchEntry">
-                        <Border Margin="5" Padding="10">
-                            <HorizontalStackLayout>
+                        <Border Margin="4,3" Padding="12,8" Stroke="{StaticResource PokeBlue}" StrokeThickness="1">
+                            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="8">
                                 <Image
+                                    Grid.Column="0"
                                     HeightRequest="32"
                                     Source="{Binding Playing.ImagePath}"
+                                    VerticalOptions="Center"
                                     WidthRequest="32" />
                                 <Label
-                                    Margin="10"
-                                    HorizontalOptions="Center"
-                                    HorizontalTextAlignment="Center"
+                                    Grid.Column="1"
+                                    FontFamily="SairaRegular"
+                                    FontSize="13"
                                     Text="{Binding Playing.Name}"
-                                    VerticalOptions="Center"
-                                    VerticalTextAlignment="Center" />
-                                <Label Text="vs" VerticalOptions="Center" />
-                                <Label Text="{Binding Against.Name}" VerticalOptions="Center" />
+                                    TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource Gray100}}"
+                                    VerticalOptions="Center" />
                                 <Label
+                                    Grid.Column="2"
+                                    FontFamily="SairaRegular"
+                                    FontSize="11"
                                     HorizontalOptions="Center"
-                                    HorizontalTextAlignment="Center"
-                                    Text="{Binding DatePlayed, StringFormat='{0:g}}'}"
-                                    VerticalOptions="Center"
-                                    VerticalTextAlignment="Center" />
-                                <Label Text="{Binding Result}" VerticalOptions="Center" />
-                            </HorizontalStackLayout>
-
+                                    Text="{Binding Against.Name}"
+                                    TextColor="{StaticResource Gray400}"
+                                    VerticalOptions="Center" />
+                                <Label
+                                    Grid.Column="3"
+                                    FontFamily="SairaRegular"
+                                    FontSize="11"
+                                    Text="{Binding DatePlayed, StringFormat='{0:d}'}"
+                                    TextColor="{StaticResource PokeYellow}"
+                                    VerticalOptions="Center" />
+                                <Border
+                                    Grid.Column="4"
+                                    Padding="8,2"
+                                    BackgroundColor="{StaticResource PokeBlue}"
+                                    StrokeThickness="0"
+                                    VerticalOptions="Center">
+                                    <Label
+                                        FontFamily="SairaRegular"
+                                        FontSize="12"
+                                        Text="{Binding Result}"
+                                        TextColor="{StaticResource White}" />
+                                </Border>
+                            </Grid>
                         </Border>
-
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
 
-            <!--  Add this after your main Grid: Debug View  -->
-            <Border
-                Grid.Row="6"
-                Grid.ColumnSpan="2"
-                IsVisible="{OnPlatform WinUI=true,
-                                       Default=false}">
-                <VerticalStackLayout Spacing="5">
-                    <Label Text="{Binding MatchHistory.Count, StringFormat='Matches Loaded: {0}'}" />
-                    <Label Text="{Binding SelectedMatch.Id, StringFormat='Selected Match ID: {0}'}" />
-                    <Label Text="{Binding PlayingName, StringFormat='Playing: {0}'}" />
-                    <Label Text="{Binding AgainstName, StringFormat='Against: {0}'}" />
-                    <Label Text="{Binding TagsSelectedGame1.Count, StringFormat='Game 1 Tags Count: {0}'}" />
-                    <Label Text="{Binding HasGame1Tags, StringFormat='Has Game 1 Tags: {0}'}" />
-                    <Label Text="{Binding Game1TagsInfo}" />
-                    
-                    <Label Text="{Binding TagsSelectedGame2.Count, StringFormat='Game 2 Tags Count: {0}'}" />
-                    <Label Text="{Binding HasGame2Tags, StringFormat='Has Game 2 Tags: {0}'}" />
-                    <Label Text="{Binding Game2TagsInfo}" />
-                    
-                    <Label Text="{Binding TagsSelectedGame3.Count, StringFormat='Game 3 Tags Count: {0}'}" />
-                    <Label Text="{Binding HasGame3Tags, StringFormat='Has Game 3 Tags: {0}'}" />
-                    <Label Text="{Binding Game3TagsInfo}" />
+            <!--  Debug view (Windows only)  -->
+            <Border IsVisible="{OnPlatform WinUI=true, Default=false}" Padding="12">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="{Binding MatchHistory.Count, StringFormat='Matches Loaded: {0}'}" FontSize="Small" />
+                    <Label Text="{Binding SelectedMatch.Id, StringFormat='Selected Match ID: {0}'}" FontSize="Small" />
+                    <Label Text="{Binding PlayingName, StringFormat='Playing: {0}'}" FontSize="Small" />
+                    <Label Text="{Binding AgainstName, StringFormat='Against: {0}'}" FontSize="Small" />
+                    <Label Text="{Binding TagsSelectedGame1.Count, StringFormat='Game 1 Tags: {0}'}" FontSize="Small" />
+                    <Label Text="{Binding HasGame1Tags, StringFormat='Has Game 1 Tags: {0}'}" FontSize="Small" />
+                    <Label Text="{Binding Game1TagsInfo}" FontSize="Small" />
+                    <Label Text="{Binding TagsSelectedGame2.Count, StringFormat='Game 2 Tags: {0}'}" FontSize="Small" />
+                    <Label Text="{Binding HasGame2Tags, StringFormat='Has Game 2 Tags: {0}'}" FontSize="Small" />
+                    <Label Text="{Binding Game2TagsInfo}" FontSize="Small" />
+                    <Label Text="{Binding TagsSelectedGame3.Count, StringFormat='Game 3 Tags: {0}'}" FontSize="Small" />
+                    <Label Text="{Binding HasGame3Tags, StringFormat='Has Game 3 Tags: {0}'}" FontSize="Small" />
+                    <Label Text="{Binding Game3TagsInfo}" FontSize="Small" />
                 </VerticalStackLayout>
             </Border>
-        </Grid>
 
+        </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

@@ -4,18 +4,50 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
-    Title="About Page"
+    Title="About"
     x:DataType="viewmodel:AboutPageViewModel">
-    <VerticalStackLayout>
-        <Image
-            Source="ball_icon.png"
-            WidthRequest="128" />
-        <Label
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="24"
             HorizontalOptions="Center"
-            Text="Created by John 'Pinkushin' Moore"
-            VerticalOptions="Center" />
-        <!--<Label
-            HorizontalOptions="Center"
-            Text="Book by QuinX from https://thenounproject.com/browse/icons/term/book/" />-->
-    </VerticalStackLayout>
+            Spacing="16"
+            VerticalOptions="Center">
+
+            <Image
+                HorizontalOptions="Center"
+                Source="ball_icon.png"
+                WidthRequest="96" />
+
+            <Label
+                FontFamily="PokemonSolid"
+                FontSize="Title"
+                HorizontalOptions="Center"
+                HorizontalTextAlignment="Center"
+                Text="Pokemon TCG Battle Journal"
+                TextColor="{StaticResource PokeYellow}" />
+
+            <BoxView
+                HeightRequest="2"
+                BackgroundColor="{StaticResource PokeBlue}"
+                HorizontalOptions="Center"
+                WidthRequest="200" />
+
+            <Label
+                FontFamily="SairaRegular"
+                FontSize="Body"
+                HorizontalOptions="Center"
+                HorizontalTextAlignment="Center"
+                Text="Created by John 'Pinkushin' Moore"
+                TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource Gray200}}" />
+
+            <Label
+                FontFamily="SairaRegular"
+                FontSize="Small"
+                HorizontalOptions="Center"
+                HorizontalTextAlignment="Center"
+                Text="Track your matches. Master the meta."
+                TextColor="{StaticResource PokeBlue}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>
