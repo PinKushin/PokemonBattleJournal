@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Shell
     x:Class="PokemonBattleJournal.AppShell"
+    x:Name="TheShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:models="clr-namespace:PokemonBattleJournal.Models"
     xmlns:views="clr-namespace:PokemonBattleJournal.Views"
     xmlns:vm="clr-namespace:PokemonBattleJournal.ViewModels"
     Title="Pokemon TCG Battle Journal"
@@ -14,20 +16,105 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Shell.Resources>
-    <Shell.TitleView>
-        <Grid Padding="0,0,12,0" ColumnDefinitions="*,Auto">
-            <Picker
-                Grid.Column="1"
-                ItemDisplayBinding="{Binding Name}"
-                ItemsSource="{Binding Trainers}"
-                SelectedItem="{Binding SelectedTrainer, Mode=TwoWay}"
-                TextColor="{StaticResource PokeYellow}"
-                TitleColor="{StaticResource PokeYellow}"
-                HorizontalOptions="End"
-                VerticalOptions="Center"
-                WidthRequest="160" />
-        </Grid>
-    </Shell.TitleView>
+    <Shell.FlyoutContent>
+        <ScrollView BindingContext="{Binding Source={x:Reference TheShell}, Path=BindingContext}">
+            <VerticalStackLayout Spacing="0">
+
+                <!--  Nav items  -->
+                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//MainPage" />
+                    </Border.GestureRecognizers>
+                    <Label FontFamily="SairaRegular" FontSize="15" Text="Journal Entry" />
+                </Border>
+                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//ReadJournalPage" />
+                    </Border.GestureRecognizers>
+                    <Label FontFamily="SairaRegular" FontSize="15" Text="Read Journal" />
+                </Border>
+                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//TrainerPage" />
+                    </Border.GestureRecognizers>
+                    <Label FontFamily="SairaRegular" FontSize="15" Text="Trainer's Profile" />
+                </Border>
+                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//OptionsPage" />
+                    </Border.GestureRecognizers>
+                    <Label FontFamily="SairaRegular" FontSize="15" Text="Options" />
+                </Border>
+                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//AboutPage" />
+                    </Border.GestureRecognizers>
+                    <Label FontFamily="SairaRegular" FontSize="15" Text="About" />
+                </Border>
+
+                <!--  Separator  -->
+                <BoxView
+                    Margin="20,4"
+                    BackgroundColor="{StaticResource PokeBlue}"
+                    HeightRequest="1"
+                    HorizontalOptions="Fill" />
+
+                <!--  Switch Trainer accordion header  -->
+                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ToggleTrainerMenuCommand}" />
+                    </Border.GestureRecognizers>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label
+                            FontFamily="SairaRegular"
+                            FontSize="15"
+                            Text="Switch Trainer"
+                            VerticalOptions="Center" />
+                        <Label
+                            x:Name="TrainerMenuArrow"
+                            Grid.Column="1"
+                            FontFamily="SairaRegular"
+                            FontSize="13"
+                            Text="▶"
+                            TextColor="{StaticResource PokeYellow}"
+                            VerticalOptions="Center">
+                            <Label.Triggers>
+                                <DataTrigger
+                                    Binding="{Binding IsTrainerMenuOpen}"
+                                    TargetType="Label"
+                                    Value="True">
+                                    <Setter Property="Text" Value="▼" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                    </Grid>
+                </Border>
+
+                <!--  Trainer submenu — expands inline  -->
+                <VerticalStackLayout IsVisible="{Binding IsTrainerMenuOpen}" Spacing="0">
+                    <CollectionView ItemsSource="{Binding Trainers}" SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:Trainer">
+                                <Border Padding="40,12,20,12" BackgroundColor="Transparent" StrokeThickness="0">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={x:Reference TheShell}, Path=BindingContext.SelectTrainerCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
+                                    <Label
+                                        FontFamily="SairaRegular"
+                                        FontSize="14"
+                                        Text="{Binding Name}"
+                                        TextColor="{StaticResource PokeYellow}" />
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Shell.FlyoutContent>
     <Shell.FlyoutHeader>
 
         <Grid BackgroundColor="{StaticResource PokeBlue}" HeightRequest="{OnIdiom Phone=55, Default=100}">

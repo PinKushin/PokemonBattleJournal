@@ -90,14 +90,12 @@
             if (trainer.Id == (_trainer?.Id ?? 0))
                 return;
 
-            // Forward to AppShellViewModel which owns the unsaved-data check
-            await _shellVm.LoadAsync(); // ensure shell list is current
-            _shellVm.SelectedTrainer = trainer;
-            // Update local state to reflect new active trainer
+            await _switchService.SwitchToAsync(trainer);
             _trainer = trainer;
             TrainerName = trainer.Name ?? string.Empty;
             Title = $"{TrainerName}'s Options";
             FileConfirmMessage = $"Delete {TrainerName}'s Trainer File?";
+            await _shellVm.LoadAsync();
         }
 
         [RelayCommand]

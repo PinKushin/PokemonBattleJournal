@@ -314,7 +314,13 @@ namespace PokemonBattleJournal.ViewModels
             [
                 new Axis
                 {
-                    Labeler = value => new DateTime((long)value).ToString("MM/dd"),
+                    Labeler = value =>
+                    {
+                        long ticks = (long)value;
+                        if (ticks < DateTime.MinValue.Ticks || ticks > DateTime.MaxValue.Ticks)
+                            return string.Empty;
+                        return new DateTime(ticks).ToString("MM/dd");
+                    },
                     UnitWidth = TimeSpan.FromDays(1).Ticks,
                     MinStep = TimeSpan.FromDays(1).Ticks,
                     TextSize = 11,

@@ -17,7 +17,17 @@ namespace PokemonBattleJournal.ViewModels
             _switchService = switchService;
             _mainPageVm = mainPageVm;
             _logger = logger;
+            _switchService.TrainerChanged += (_, trainer) =>
+            {
+                _suppressSelectionChanged = true;
+                SelectedTrainer = Trainers.FirstOrDefault(t => t.Id == trainer.Id);
+                _suppressSelectionChanged = false;
+                IsTrainerMenuOpen = false;
+            };
         }
+
+        [ObservableProperty]
+        public partial bool IsTrainerMenuOpen { get; set; }
 
         [ObservableProperty]
         public partial ObservableCollection<Trainer> Trainers { get; set; } = [];
@@ -72,6 +82,27 @@ namespace PokemonBattleJournal.ViewModels
             }
 
             await _switchService.SwitchToAsync(trainer);
+        }
+
+        [RelayCommand]
+        public void ToggleTrainerMenu() => IsTrainerMenuOpen = !IsTrainerMenuOpen;
+
+        [RelayCommand]
+        public async Task SelectTrainerAsync(Trainer trainer)
+        {
+            if (trainer is null || trainer.Id == (SelectedTrainer?.Id ?? 0))
+            {
+                IsTrainerMenuOpen = false;
+                return;
+            }
+            await SwitchTrainerAsync(trainer);
+        }
+
+        [RelayCommand]
+        public async Task NavigateAsync(string route)
+        {
+            await Shell.Current.GoToAsync(route);
+            Shell.Current.FlyoutIsPresented = false;
         }
 
         public void OnTrainerCreated(Trainer trainer)
