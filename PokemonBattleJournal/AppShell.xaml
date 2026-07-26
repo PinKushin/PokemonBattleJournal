@@ -82,31 +82,51 @@
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//MainPage" />
                     </Border.GestureRecognizers>
-                    <Label FontFamily="SairaRegular" FontSize="15" Text="Journal Entry" />
+                    <Label FontFamily="SairaRegular" FontSize="15" Text="Journal Entry">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//MainPage" />
+                        </Label.GestureRecognizers>
+                    </Label>
                 </Border>
                 <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//ReadJournalPage" />
                     </Border.GestureRecognizers>
-                    <Label FontFamily="SairaRegular" FontSize="15" Text="Read Journal" />
+                    <Label FontFamily="SairaRegular" FontSize="15" Text="Read Journal">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//ReadJournalPage" />
+                        </Label.GestureRecognizers>
+                    </Label>
                 </Border>
                 <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//TrainerPage" />
                     </Border.GestureRecognizers>
-                    <Label FontFamily="SairaRegular" FontSize="15" Text="Trainer's Profile" />
+                    <Label FontFamily="SairaRegular" FontSize="15" Text="Trainer's Profile">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//TrainerPage" />
+                        </Label.GestureRecognizers>
+                    </Label>
                 </Border>
                 <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//OptionsPage" />
                     </Border.GestureRecognizers>
-                    <Label FontFamily="SairaRegular" FontSize="15" Text="Options" />
+                    <Label FontFamily="SairaRegular" FontSize="15" Text="Options">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//OptionsPage" />
+                        </Label.GestureRecognizers>
+                    </Label>
                 </Border>
                 <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//AboutPage" />
                     </Border.GestureRecognizers>
-                    <Label FontFamily="SairaRegular" FontSize="15" Text="About" />
+                    <Label FontFamily="SairaRegular" FontSize="15" Text="About">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//AboutPage" />
+                        </Label.GestureRecognizers>
+                    </Label>
                 </Border>
 
 
