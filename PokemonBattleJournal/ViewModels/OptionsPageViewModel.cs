@@ -21,6 +21,16 @@
         public partial List<Trainer> AllTrainers { get; set; } = [];
 
         [ObservableProperty]
+        public partial Trainer? SelectedSwitchTrainer { get; set; }
+
+        partial void OnSelectedSwitchTrainerChanged(Trainer? value)
+        {
+            if (value is null || value.Id == (_trainer?.Id ?? 0))
+                return;
+            _ = SwitchTrainerAsync(value);
+        }
+
+        [ObservableProperty]
         public partial string Title { get; set; } = $"{PreferencesHelper.GetSetting("TrainerName")}'s Options";
 
         [ObservableProperty]
@@ -74,6 +84,7 @@
                     ? await _connection.Trainers.GetByIdAsync(activeId)
                     : await _connection.Trainers.GetByNameAsync(TrainerName);
                 AllTrainers = await _connection.Trainers.GetAllAsync();
+                SelectedSwitchTrainer = AllTrainers.FirstOrDefault(t => t.Id == (_trainer?.Id ?? 0));
                 _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
             }
             catch (Exception ex)

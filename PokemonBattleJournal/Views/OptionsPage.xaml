@@ -154,45 +154,23 @@
                 WidthRequest="220" />
 
             <!--#region Trainer Switcher-->
-            <Label Style="{StaticResource Headline}" Text="Switch Trainer" />
-            <CollectionView
-                AutomationId="TrainerList"
-                ItemsSource="{Binding AllTrainers}"
-                SelectionMode="None">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:Trainer">
-                        <Grid
-                            Padding="4,6"
-                            ColumnDefinitions="*,Auto,Auto"
-                            ColumnSpacing="8">
-                            <Label
-                                Grid.Column="0"
-                                FontFamily="SairaRegular"
-                                FontSize="16"
-                                Text="{Binding Name}"
-                                VerticalOptions="Center" />
-                            <Button
-                                Grid.Column="1"
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SwitchTrainerCommand}"
-                                CommandParameter="{Binding .}"
-                                FontSize="13"
-                                HeightRequest="36"
-                                Text="Switch"
-                                WidthRequest="80" />
-                            <Button
-                                Grid.Column="2"
-                                BackgroundColor="{StaticResource BostonRed}"
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteTrainerFromListCommand}"
-                                CommandParameter="{Binding .}"
-                                FontSize="13"
-                                HeightRequest="36"
-                                Text="Delete"
-                                TextColor="{StaticResource White}"
-                                WidthRequest="80" />
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <Label Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Switch Trainer" />
+
+            <Border
+                Padding="12,8"
+                Stroke="{StaticResource PokeYellow}"
+                StrokeThickness="1.5">
+                <VerticalStackLayout Spacing="4">
+                    <Label Style="{StaticResource FieldLabel}" Text="Active Trainer" />
+                    <Picker
+                        AutomationId="TrainerSwitchPicker"
+                        FontFamily="SairaRegular"
+                        ItemDisplayBinding="{Binding Name}"
+                        ItemsSource="{Binding AllTrainers}"
+                        SelectedItem="{Binding SelectedSwitchTrainer, Mode=TwoWay}" />
+                </VerticalStackLayout>
+            </Border>
+
             <!--#endregion-->
 
         </VerticalStackLayout>
