@@ -1,12 +1,10 @@
-﻿using System.Globalization;
-using System.Text;
+﻿using System.Text;
 
 namespace PokemonBattleJournal.ViewModels
 {
     public partial class MainPageViewModel : ObservableObject
     {
         private readonly ILogger<MainPageViewModel> _logger;
-        private readonly IDispatcherTimer? _timer;
         private readonly ISqliteConnectionFactory _connection;
         private readonly SemaphoreSlim _semaphore = new(1, 1);
         private readonly Lock _lock = new();
@@ -28,13 +26,6 @@ namespace PokemonBattleJournal.ViewModels
             _switchService = switchService;
             _switchService.TrainerChanged += OnTrainerChanged;
 
-            //Timer to update displayed time
-            if (Application.Current != null)
-            {
-                _timer = Application.Current.Dispatcher.CreateTimer();
-                _timer.Interval = TimeSpan.FromSeconds(1);
-                _timer.Tick += UpdateTime;
-            }
 
             _logger.LogInformation("Created Main Page ViewModel{this}", this);
             WelcomeMsg = $"Welcome {TrainerName}";
@@ -70,10 +61,6 @@ namespace PokemonBattleJournal.ViewModels
             BO3Toggle = false;
         }
 
-        //Convert date-time to string that can be used in the UI
-        [ObservableProperty]
-        public partial string CurrentDateTimeDisplay { get; set; } =
-            DateTime.Now.ToLocalTime().ToString("T", CultureInfo.InvariantCulture);
 
         [ObservableProperty]
         public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
@@ -247,15 +234,7 @@ namespace PokemonBattleJournal.ViewModels
         /// <summary>
         /// Update displayed time on UI
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        public void UpdateTime(object? sender, EventArgs e)
-        {
-            MainThreadHelper.BeginInvokeOnMainThread(() =>
-            {
-                CurrentDateTimeDisplay = $"{DateTime.Now.ToLocalTime().ToString("T", CultureInfo.InvariantCulture)}";
-            });
-        }
+
 
         /// <summary>
         /// Load Archetypes and Tags when page appears
@@ -264,7 +243,6 @@ namespace PokemonBattleJournal.ViewModels
         [RelayCommand]
         public async Task AppearingAsync()
         {
-            _timer?.Start();
             _logger.LogInformation("Appearing: {Time}", DateTime.Now);
             StartTime = DateTime.Now.TimeOfDay;
             EndTime = DateTime.Now.AddMinutes(5).TimeOfDay;
@@ -305,7 +283,6 @@ namespace PokemonBattleJournal.ViewModels
         private void Disappearing()
         {
             _logger.LogInformation("Disappearing: {Time}", DateTime.Now);
-            _timer?.Stop();
         }
 
         /// <summary>

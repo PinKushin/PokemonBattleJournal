@@ -146,24 +146,8 @@
                         VerticalTextAlignment="Center" />
                 </HorizontalStackLayout>
                 <!--#endregion-->
-                <!--#region Current Time Display-->
-                <Label
-                    Padding="0,10,0,0"
-                    FontSize="Micro"
-                    HorizontalTextAlignment="Center"
-                    Text="Current Time"
-                    VerticalTextAlignment="End" />
-                <Label
-                    Padding="0,0,0,10"
-                    FontFamily="DotoRoundedBlack"
-                    FontSize="Micro"
-                    HorizontalOptions="Center"
-                    HorizontalTextAlignment="Center"
-                    Text="{Binding CurrentDateTimeDisplay}"
-                    VerticalTextAlignment="Start" />
-                <!--#endregion-->
                 <!--#region Start and End Time Pickers-->
-                <Label Style="{StaticResource FieldLabel}" HorizontalOptions="Center" Text="Battle Start Time" />
+                <Label Style="{StaticResource Headline}" Text="Start Time" />
                 <TimePicker
                     x:Name="StartTimePicker"
                     AutomationId="StartTimePicker"
@@ -171,7 +155,7 @@
                     HorizontalOptions="Center"
                     MaximumWidthRequest="300"
                     Time="{Binding StartTime}" />
-                <Label Style="{StaticResource FieldLabel}" HorizontalOptions="Center" Text="Battle End Time" />
+                <Label Style="{StaticResource Headline}" Text="End Time" />
                 <TimePicker
                     x:Name="EndTimePicker"
                     AutomationId="EndTimePicker"
@@ -181,7 +165,7 @@
                     Time="{Binding EndTime}" />
                 <!--#endregion-->
                 <!--#region Date Played Picker-->
-                <Label Style="{StaticResource FieldLabel}" HorizontalOptions="Center" Text="Date Played" />
+                <Label Style="{StaticResource Headline}" Text="Date Played" />
                 <DatePicker
                     x:Name="DatePlayedPicker"
                     AutomationId="DatePlayedPicker"
