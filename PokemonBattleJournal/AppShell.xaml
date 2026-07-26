@@ -77,57 +77,67 @@
                     HeightRequest="1"
                     HorizontalOptions="Fill" />
 
-                <!--  Nav items  -->
-                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//MainPage" />
-                    </Border.GestureRecognizers>
-                    <Label AutomationId="Journal Entry" FontFamily="SairaRegular" FontSize="15" Text="Journal Entry">
-                        <Label.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//MainPage" />
-                        </Label.GestureRecognizers>
-                    </Label>
-                </Border>
-                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//ReadJournalPage" />
-                    </Border.GestureRecognizers>
-                    <Label AutomationId="Read Journal" FontFamily="SairaRegular" FontSize="15" Text="Read Journal">
-                        <Label.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//ReadJournalPage" />
-                        </Label.GestureRecognizers>
-                    </Label>
-                </Border>
-                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//TrainerPage" />
-                    </Border.GestureRecognizers>
-                    <Label AutomationId="Trainer's Profile" FontFamily="SairaRegular" FontSize="15" Text="Trainer's Profile">
-                        <Label.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//TrainerPage" />
-                        </Label.GestureRecognizers>
-                    </Label>
-                </Border>
-                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//OptionsPage" />
-                    </Border.GestureRecognizers>
-                    <Label AutomationId="Options" FontFamily="SairaRegular" FontSize="15" Text="Options">
-                        <Label.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//OptionsPage" />
-                        </Label.GestureRecognizers>
-                    </Label>
-                </Border>
-                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//AboutPage" />
-                    </Border.GestureRecognizers>
-                    <Label AutomationId="About" FontFamily="SairaRegular" FontSize="15" Text="About">
-                        <Label.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="//AboutPage" />
-                        </Label.GestureRecognizers>
-                    </Label>
-                </Border>
+                <!--  Nav items — Buttons so Appium AccessibilityId lookup works on WinUI3  -->
+                <Button
+                    AutomationId="Journal Entry"
+                    BackgroundColor="Transparent"
+                    BorderWidth="0"
+                    Command="{Binding NavigateCommand}"
+                    CommandParameter="//MainPage"
+                    FontFamily="SairaRegular"
+                    FontSize="15"
+                    HorizontalOptions="Fill"
+                    HorizontalContentAlignment="Start"
+                    Padding="20,14"
+                    Text="Journal Entry" />
+                <Button
+                    AutomationId="Read Journal"
+                    BackgroundColor="Transparent"
+                    BorderWidth="0"
+                    Command="{Binding NavigateCommand}"
+                    CommandParameter="//ReadJournalPage"
+                    FontFamily="SairaRegular"
+                    FontSize="15"
+                    HorizontalOptions="Fill"
+                    HorizontalContentAlignment="Start"
+                    Padding="20,14"
+                    Text="Read Journal" />
+                <Button
+                    AutomationId="Trainer's Profile"
+                    BackgroundColor="Transparent"
+                    BorderWidth="0"
+                    Command="{Binding NavigateCommand}"
+                    CommandParameter="//TrainerPage"
+                    FontFamily="SairaRegular"
+                    FontSize="15"
+                    HorizontalOptions="Fill"
+                    HorizontalContentAlignment="Start"
+                    Padding="20,14"
+                    Text="Trainer's Profile" />
+                <Button
+                    AutomationId="Options"
+                    BackgroundColor="Transparent"
+                    BorderWidth="0"
+                    Command="{Binding NavigateCommand}"
+                    CommandParameter="//OptionsPage"
+                    FontFamily="SairaRegular"
+                    FontSize="15"
+                    HorizontalOptions="Fill"
+                    HorizontalContentAlignment="Start"
+                    Padding="20,14"
+                    Text="Options" />
+                <Button
+                    AutomationId="About"
+                    BackgroundColor="Transparent"
+                    BorderWidth="0"
+                    Command="{Binding NavigateCommand}"
+                    CommandParameter="//AboutPage"
+                    FontFamily="SairaRegular"
+                    FontSize="15"
+                    HorizontalOptions="Fill"
+                    HorizontalContentAlignment="Start"
+                    Padding="20,14"
+                    Text="About" />
 
 
             </VerticalStackLayout>
