@@ -12,18 +12,18 @@
 
             // Act
             BOSwitch.Click();
-            await Task.Delay(500).WaitAsync(cancellationToken); // Wait for the click to register 
+            await Task.Delay(500).WaitAsync(cancellationToken);
             string toggledOn = BOSwitch.GetAttribute("Toggle.ToggleState");
             BOSwitch.Click();
-            await Task.Delay(500).WaitAsync(cancellationToken); // Wait for the click to register 
+            await Task.Delay(500).WaitAsync(cancellationToken);
             string toggledOff = BOSwitch.GetAttribute("Toggle.ToggleState");
+
             // Assert
             _ = BOSwitch.ShouldNotBeNull();
             BOSwitch.Displayed.ShouldBeTrue();
             BOSwitch.Enabled.ShouldBeTrue();
-            toggledOn.ShouldBe("1"); // "1" for toggled on
-            toggledOff.ShouldBe("0");// "0" for toggled off
-
+            toggledOn.ShouldBe("1");
+            toggledOff.ShouldBe("0");
         }
     }
 }

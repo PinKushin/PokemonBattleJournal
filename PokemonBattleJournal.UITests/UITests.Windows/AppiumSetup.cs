@@ -36,6 +36,7 @@ namespace UITests
             // Note there are many more options that you can use to influence the app under test according to your needs
 
             driver = new WindowsDriver(windowsOptions);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
         }
 
         public void Dispose()

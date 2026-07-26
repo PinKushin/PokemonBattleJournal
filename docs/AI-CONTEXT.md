@@ -1,6 +1,6 @@
 # PokemonBattleJournal — AI Context
 
-> **Last updated:** 2026-07-26 (Page styling pass done; OptionsPage icon picker → ComboBoxControl; UI test coverage for all Shell pages; 223 unit tests passing)
+> **Last updated:** 2026-07-26 (Trainer switching shipped — see session log)
 > **Solution file:** `PokemonBattleJournal.slnx` (not `.sln`)  
 > **Read this first** when working in this repo. Update the [Session log](#session-log) whenever scope, decisions, or blockers change — especially before long multi-step work.
 
@@ -22,6 +22,12 @@ Chronological notes for the current / recent work. **Append or edit this section
 | 2026-07-25 | **docs/ reorganization + ROADMAP.md** | Moved AI files to `docs/`; README moved to `docs/README.md` (root deleted). Created `docs/ROADMAP.md` with all features (F-01→F-22) and bugs (B-01→B-05). |
 | 2026-07-26 | **Page styling pass** | AboutPage, FirstStartPage, OptionsPage, ReadJournalPage all restyled: PokeYellow/PokeBlue palette, PokemonSolid/SairaRegular fonts, PokeYellow-bordered input sections. Match list cards in ReadJournalPage use PokeBlue border + result badge chips. Delete button on OptionsPage uses BostonRed. |
 | 2026-07-26 | **OptionsPage icon picker → ComboBoxControl** | Replaced native `Picker` with `ComboBoxControl` (same searchable dropdown as MainPage). Added `IconItem` record (`Name`, `ImagePath`), `IconItems`/`SelectedIconItem` VM properties. `OnSelectedIconItemChanged` syncs `SelectedIcon` (image preview) and `NewDeckIcon` (save path) — also fixed pre-existing bug where `NewDeckIcon` was never set from UI. `ToDisplayName` helper strips `.png` and title-cases filename for display. 223 unit tests (2 new contract tests). |
+| 2026-07-26 | **Trainer switching — shipped** | Full multi-trainer switching via `ITrainerSwitchService` (singleton event bus). `TrainerSwitchService.SwitchToAsync` sets Preferences (name + Id), fires `TrainerChanged` event. `AppShellViewModel` subscribes and syncs the flyout. `MainPageViewModel` and `TrainerPageViewModel` subscribe and reload on switch. `OptionsPageViewModel.SwitchTrainerAsync` calls the service directly (earlier attempt routing through `_shellVm.SelectedTrainer` failed due to object reference mismatch). New singleton registrations: `ITrainerSwitchService`, `AppShellViewModel`, `AppShell`. `PreferencesHelper` now stores `TrainerId` (uint) as well as `TrainerName` for stable Id-based lookup. All VMs resolve trainer by Id first, fall back to name. Unsaved-data warning in `AppShellViewModel.SwitchTrainerAsync` (checks `MainPageViewModel.HasUnsavedData`). |
+| 2026-07-26 | **Shell flyout — accordion trainer submenu** | Replaced broken `Shell.TitleView` Picker (BindingContext always inherited from current page VM, never the Shell) with `Shell.FlyoutContent` accordion. Single-column list: nav items (SairaRegular labels, TapGestureRecognizer → NavigateCommand), separator, "Switch Trainer ▶/▼" row (toggles `IsTrainerMenuOpen` via `ToggleTrainerMenuCommand`), indented CollectionView of trainers (visible when open, items call `SelectTrainerCommand`). `AppShellViewModel` gets: `IsTrainerMenuOpen`, `ToggleTrainerMenuCommand`, `SelectTrainerCommand(Trainer)`, `NavigateCommand(string route)`, `TrainerChanged` event subscription to sync picker without re-triggering the switch chain. FlyoutHeader (logo) and FlyoutFooter (copyright) unchanged. |
+| 2026-07-26 | **TrainerPage DateTime crash — fixed** | `BuildWinRateOverTimeChart` labeler `new DateTime((long)value)` threw `ArgumentOutOfRangeException` when LiveCharts probed with out-of-range tick values during label size measurement. Fixed with ticks range guard: return `string.Empty` when value is outside `DateTime.MinValue.Ticks..MaxValue.Ticks`. |
+| 2026-07-26 | **Pokeball "Went first" toggle — shipped** | Replaced native WinUI3 `CheckBox` (shifted horizontally ~6–8px when switching BO3 tabs due to FlexLayout JustifyContent="Center" re-centering when content width changed). Replaced with tappable `ball_icon.png` `Image` + `BoolToObjectConverter` for opacity (same pattern as BO3 toggle). Three relay commands: `ToggleFirstCheckCommand`, `ToggleFirstCheck2Command`, `ToggleFirstCheck3Command`. Padding on both toggle pills and ComboBoxes reduced to `16,4` to match a tighter height. Added `Margin="0,10,0,0"` to the Went First row to separate it from the note input. |
+| 2026-07-26 | **ComboBox layout — left-aligned icon+text, right-pinned arrow** | Inner layout changed from `HorizontalStackLayout` to `Grid(*, Auto)`: icon+text `HorizontalStackLayout` in column 0 (`HOptions=Start`), arrow label in column 1. `MinimumWidthRequest=130`, `MaximumWidthRequest=260` (covers ~80% of real Limitless meta archetype names). ComboBoxes auto-size to content between these bounds. |
+| 2026-07-26 | **Checkbox shift bug — UNRESOLVED, investigation paused** | In BO3 mode, the CheckBox in the "Went first" row shifts horizontally by ~6–8 px when switching between Game 1 and Game 2 tabs. **Confirmed above-panel cause:** replacing Game 1's entire panel XAML with Game 2's code still reproduced the shift — the cause is in the container hierarchy above the panels, not inside any game panel. **Fixes tried (none worked):** (1) removed `GameCheckBox` named style entirely — all checkboxes now use implicit style; (2) removed `HorizontalOptions="Center"` from `RightColumn` VerticalStackLayout; (3) removed `HorizontalOptions="Center"` from the Tab Bar Border (user kept this change — prefers tabs left-aligned); (4) replaced `HorizontalOptions="Center"` on the "Went first" Grid with `HorizontalOptions="Fill"` across all 3 panels (replace_all). **Leading hypothesis:** FlexLayout (`JustifyContent="Center"`) re-centers `RightColumn` when its natural width changes between tabs (e.g., CollectionView measuring differently due to `x:Name="TagsView"` only on Game 1, or async tag loading timing). **Suggested next debug step:** use VS Live Visual Tree (Debug → Windows → Live Visual Tree) to compare the `ActualOffset.X` of the CheckBox element in Game 1 vs Game 2 — this will show which layer in the hierarchy is actually moving. App crashed before we could do this. **Current XAML state:** all 3 game panels are structurally identical; no `HorizontalOptions="Center"` on any "Went first" Grid; Tab Bar Border has no `HorizontalOptions`. |
 | 2026-07-26 | **UI test coverage: all Shell pages** | Every Shell page now has a navigation + element-visible Appium test. AboutPage was the only missing one — added `AboutPageTests.cs` (Shared) with `AboutPage_Loads_TitleDisplayed`; added `AutomationId="AboutPageTitle"` to the title label. Strategy: `FindUIElement` timeouts if a page hangs, failing the test. |
 | 2026-07-25 | **ShowGame3 Tie+Tie rule** | `ShowGame3 = BO3Toggle && Result != null && Result2 != null && (Result != Result2 || (Result == Tie && Result2 == Tie))`. Tie+Tie requires Game 3 under official Pokemon TCG tournament rules (neither player has won 2 games). |
 | 2026-07-25 | **TrainerPage hang — root cause found** | `lvc:CartesianChart` (LiveCharts2 2.0.5) deadlocks the WinUI3 message pump during initialization, even with `AnimationsSpeed="0" EasingFunction="{x:Null}"`. Confirmed by replacing all 8 charts with Label placeholders — page loads instantly. Fix: chart controls must be lazy-loaded or virtualized so they don't all initialize at once on navigation. **TrainerPage.xaml currently uses placeholder Labels; charts not restored yet.** |
@@ -76,9 +82,12 @@ Chronological notes for the current / recent work. **Append or edit this section
 - [x] **OptionsPage icon picker** — replaced native Picker with ComboBoxControl; fixed NewDeckIcon wiring bug
 - [x] **UI test coverage** — all 5 Shell pages have navigation + element-visible Appium tests
 - [x] **223 unit tests passing**
+- [x] **Trainer switching** — ITrainerSwitchService, AppShellViewModel, flyout accordion submenu, Options page switch
+- [x] **TrainerPage DateTime crash** — labeler ticks range guard
+- [x] **Pokeball "Went first" toggle** — replaces native CheckBox (shift bug)
+- [x] **ComboBox layout** — left-align icon+text, right-pin arrow, auto-size 130–260px
 - [ ] **Fix TrainerPage charts** — lazy/virtualized `CartesianChart` loading to avoid WinUI3 deadlock
 - [ ] **Harden concurrency** — fix static semaphore on transient `TrainerPageViewModel`
-- [ ] Multi-trainer switcher UI (future)
 - [ ] Configurable Android Appium emulator (future)
 
 
@@ -212,7 +221,7 @@ Views (XAML) ──bind──► ViewModels ──call──► Services ──�
 
 | Lifetime | Types |
 |---|---|
-| Singleton | `ISqliteConnectionFactory`, `IMatchResultsCalculatorFactory`, `IMatchAnalysisService`, `MainPage`, `MainPageViewModel` |
+| Singleton | `ISqliteConnectionFactory`, `IMatchResultsCalculatorFactory`, `IMatchAnalysisService`, `ITrainerSwitchService`, `AppShellViewModel`, `AppShell`, `MainPage`, `MainPageViewModel` |
 | Transient | All other pages + ViewModels |
 
 ---
@@ -242,6 +251,7 @@ Views (XAML) ──bind──► ViewModels ──call──► Services ──�
 | `ArchetypeOperations` | CRUD; blocks delete if used; seeds defaults |
 | `TagOperations` | CRUD; cascades `TagGame`; seeds defaults |
 | `MatchAnalysisService` | Win rate, archetypes, tags, opponents, streaks, duration, etc. |
+| `TrainerSwitchService` | Singleton event bus for trainer switching. `SwitchToAsync` sets Preferences (name + Id), fires `TrainerChanged(Trainer)`. VMs subscribe in constructor, reload data on event. |
 | `BO1ResultCalculator` / `BO3ResultCalculator` | Aggregate game results into match result |
 | `ModalErrorHandler` | Shows error alerts (`IErrorHandler`) |
 
@@ -284,8 +294,8 @@ XAML bindings by page (source of truth for contract tests):
 
 | Page | ViewModel | Bound properties | Bound commands |
 |---|---|---|---|
-| MainPage | `MainPageViewModel` | WelcomeMsg, Archetypes, PlayerSelected, RivalSelected, BO3Toggle, StartTime, EndTime, DatePlayed, CurrentDateTimeDisplay, TagCollection, TagsSelected, UserNoteInput, FirstCheck, PossibleResults, Result, SavedFileDisplay, Match2TagsSelected, UserNoteInput2, FirstCheck2, Result2, Match3TagsSelected, UserNoteInput3, FirstCheck3, Result3, ShowGame3, IsGame1Selected, IsGame2Selected, IsGame3Selected, HasValidationErrors, ValidationMessage | AppearingCommand, DisappearingCommand, SaveMatchCommand, SelectGame1Command, SelectGame2Command, SelectGame3Command, ToggleBO3Command |
-| OptionsPage | `OptionsPageViewModel` | Title, NameInput, NewDeckName, SelectedIcon, IconCollection, TagInput | AppearingCommand, SaveTrainerCommand, SaveArchetypeCommand, SaveTagCommand, SaveAllCommand, DeleteTrainerFileCommand |
+| MainPage | `MainPageViewModel` | WelcomeMsg, Archetypes, PlayerSelected, RivalSelected, BO3Toggle, StartTime, EndTime, DatePlayed, CurrentDateTimeDisplay, TagCollection, TagsSelected, UserNoteInput, FirstCheck, PossibleResults, Result, SavedFileDisplay, Match2TagsSelected, UserNoteInput2, FirstCheck2, Result2, Match3TagsSelected, UserNoteInput3, FirstCheck3, Result3, ShowGame3, IsGame1Selected, IsGame2Selected, IsGame3Selected, HasValidationErrors, ValidationMessage | AppearingCommand, DisappearingCommand, SaveMatchCommand, SelectGame1Command, SelectGame2Command, SelectGame3Command, ToggleBO3Command, ToggleFirstCheckCommand, ToggleFirstCheck2Command, ToggleFirstCheck3Command |
+| OptionsPage | `OptionsPageViewModel` | Title, NameInput, NewDeckName, SelectedIcon, IconCollection, TagInput, AllTrainers | AppearingCommand, SaveTrainerCommand, SaveArchetypeCommand, SaveTagCommand, SaveAllCommand, DeleteTrainerFileCommand, SwitchTrainerCommand, DeleteTrainerFromListCommand |
 | ReadJournalPage | `ReadJournalPageViewModel` | WelcomeMsg, MatchHistory, SelectedMatch, SelectedNote, PlayingName, PlayingIconSource, AgainstName, AgainstIconSource, DatePlayed, Game1TagsInfo, Game2TagsInfo, Game3TagsInfo, HasGame1Tags, HasGame2Tags, HasGame3Tags, TagsSelectedGame1, TagsSelectedGame2, TagsSelectedGame3, Result | AppearingCommand, LoadMatchCommand |
 | TrainerPage | `TrainerPageViewModel` | WelcomeMsg, WinAverage, Wins, Losses, Ties, AverageMatchDuration, FirstTurnAdvantage, StreakInfo, MostPlayedArchetypes, ArchetypeWinRates, OpponentPerformance, TagUsage, WinRateOverTime, WinRateByMatchLength | AppearingCommand |
 | FirstStartPage | `FirstStartPageViewModel` | TrainerNameInput | SaveTrainerNameCommand |
@@ -353,7 +363,7 @@ XAML bindings by page (source of truth for contract tests):
 | Expand unit tests | ✅ 178 tests passing; BO3 tab features still need coverage |
 | Fix MainPage archetype ComboBoxControl | ✅ Done (2026-07-25) |
 | Fix Windows Appium path | ✅ Done (2026-07-25) |
-| Multi-trainer switcher UI | 🔲 Partial — create trainer on Options page only |
+| Multi-trainer switcher UI | ✅ Shipped — ITrainerSwitchService, AppShellViewModel accordion flyout, Options page list with Switch/Delete, unsaved-data warning |
 | TrainerPage charts (LiveCharts2) | 🔲 In progress — VM ready, XAML has placeholders; lazy loading needed to avoid WinUI3 deadlock |
 | Configurable Android Appium AVD | 🔲 Deferred |
 | .NET 10 upgrade | ✅ Done (2026-07-25) |

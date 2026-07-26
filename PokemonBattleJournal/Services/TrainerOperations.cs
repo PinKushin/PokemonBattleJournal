@@ -81,6 +81,32 @@
         }
 
         /// <summary>
+        /// Retrieves a trainer by ID from the database.
+        /// </summary>
+        public virtual async Task<Trainer?> GetByIdAsync(uint id)
+        {
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+            try
+            {
+                await _factory.GetLock().WaitAsync();
+                return await db.Table<Trainer>()
+                    .Where(i => i.Id == id)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                ModalErrorHandler error = new();
+                _logger.LogError(ex, "Error retrieving trainer by id {Id}: {Message}", id, ex.Message);
+                error.HandleError(ex);
+                return null;
+            }
+            finally
+            {
+                _ = _factory.GetLock().Release();
+            }
+        }
+
+        /// <summary>
         /// Deletes a trainer and all related records from the database.
         /// </summary>
         public virtual async Task<int> DeleteAsync(Trainer trainer)

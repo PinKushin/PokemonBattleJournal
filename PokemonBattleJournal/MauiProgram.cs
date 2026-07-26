@@ -77,6 +77,9 @@ namespace PokemonBattleJournal
             });
             builder.Services.AddSingleton<IMatchResultsCalculatorFactory, MatchResultCalculatorFactory>();
             builder.Services.AddSingleton<IMatchAnalysisService, MatchAnalysisService>();
+            builder.Services.AddSingleton<ITrainerSwitchService, TrainerSwitchService>();
+            builder.Services.AddSingleton<AppShellViewModel>();
+            builder.Services.AddSingleton<AppShell>();
 
             //Link Pages and ViewModels
             //First Start Page

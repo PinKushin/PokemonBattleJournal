@@ -13,17 +13,31 @@ namespace PokemonBattleJournal.ViewModels
         private readonly ISqliteConnectionFactory _connection;
         private readonly ILogger<TrainerPageViewModel> _logger;
         private readonly IMatchAnalysisService _analysisService;
+        private readonly ITrainerSwitchService _switchService;
 
-        public TrainerPageViewModel(ILogger<TrainerPageViewModel> logger, ISqliteConnectionFactory connection, IMatchAnalysisService analysisService)
+        public TrainerPageViewModel(ILogger<TrainerPageViewModel> logger, ISqliteConnectionFactory connection, IMatchAnalysisService analysisService, ITrainerSwitchService switchService)
         {
-            WelcomeMsg = $"{TrainerName}'s Profile";
             _logger = logger;
             _connection = connection;
             _analysisService = analysisService;
+            _switchService = switchService;
+            _switchService.TrainerChanged += OnTrainerChanged;
+            TrainerName = PreferencesHelper.GetSetting("TrainerName");
+            WelcomeMsg = $"{TrainerName}'s Profile";
+        }
+
+        private void OnTrainerChanged(object? sender, Trainer trainer)
+        {
+            MainThreadHelper.BeginInvokeOnMainThread(async () =>
+            {
+                TrainerName = trainer.Name ?? string.Empty;
+                WelcomeMsg = $"{TrainerName}'s Profile";
+                await AppearingAsync();
+            });
         }
 
         [ObservableProperty]
-        public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
+        public partial string TrainerName { get; set; }
 
         [ObservableProperty]
         public partial string WelcomeMsg { get; set; }
@@ -112,7 +126,10 @@ namespace PokemonBattleJournal.ViewModels
             List<MatchEntry>? matches = null;
             try
             {
-                Trainer? trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
+                var activeId = PreferencesHelper.GetTrainerId();
+                Trainer? trainer = activeId > 0
+                    ? await _connection.Trainers.GetByIdAsync(activeId)
+                    : await _connection.Trainers.GetByNameAsync(TrainerName);
                 if (trainer == null)
                 {
                     _logger.LogWarning("Trainer not found: {TrainerName}", TrainerName);
@@ -124,6 +141,8 @@ namespace PokemonBattleJournal.ViewModels
                         return;
                     }
                 }
+                TrainerName = trainer.Name ?? TrainerName;
+                WelcomeMsg = $"{TrainerName}'s Profile";
 
                 _logger.LogInformation("Loading matches for trainer: {TrainerId} ({TrainerName})", trainer.Id, trainer.Name);
                 matches = await _connection.Matches.GetByTrainerIdAsync(trainer.Id, true);
@@ -295,7 +314,13 @@ namespace PokemonBattleJournal.ViewModels
             [
                 new Axis
                 {
-                    Labeler = value => new DateTime((long)value).ToString("MM/dd"),
+                    Labeler = value =>
+                    {
+                        long ticks = (long)value;
+                        if (ticks < DateTime.MinValue.Ticks || ticks > DateTime.MaxValue.Ticks)
+                            return string.Empty;
+                        return new DateTime(ticks).ToString("MM/dd");
+                    },
                     UnitWidth = TimeSpan.FromDays(1).Ticks,
                     MinStep = TimeSpan.FromDays(1).Ticks,
                     TextSize = 11,

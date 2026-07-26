@@ -15,7 +15,7 @@
             {
                 PreferencesHelper.SetSetting("FirstStart", "false");
                 PreferencesHelper.SetSetting("TrainerName", TrainerNameInput);
-                Application.Current.Windows[0].Page = new AppShell();
+                Application.Current.Windows[0].Page = IPlatformApplication.Current!.Services.GetRequiredService<AppShell>();
             }
         }
     }

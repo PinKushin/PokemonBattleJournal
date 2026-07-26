@@ -1,11 +1,154 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Shell
     x:Class="PokemonBattleJournal.AppShell"
+    x:Name="TheShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:models="clr-namespace:PokemonBattleJournal.Models"
     xmlns:views="clr-namespace:PokemonBattleJournal.Views"
+    xmlns:vm="clr-namespace:PokemonBattleJournal.ViewModels"
     Title="Pokemon TCG Battle Journal"
     Shell.FlyoutBehavior="Flyout">
+    <Shell.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Shell.Resources>
+    <Shell.FlyoutContent>
+        <ScrollView BindingContext="{Binding Source={x:Reference TheShell}, Path=BindingContext}">
+            <VerticalStackLayout Spacing="0">
+
+                <!--  Switch Trainer accordion — top of list  -->
+                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ToggleTrainerMenuCommand}" />
+                    </Border.GestureRecognizers>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label
+                            FontFamily="SairaRegular"
+                            FontSize="15"
+                            Text="Switch Trainer"
+                            TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                            VerticalOptions="Center" />
+                        <Label
+                            Grid.Column="1"
+                            FontFamily="SairaRegular"
+                            FontSize="13"
+                            Text="▶"
+                            TextColor="{StaticResource PokeYellow}"
+                            VerticalOptions="Center">
+                            <Label.Triggers>
+                                <DataTrigger
+                                    Binding="{Binding IsTrainerMenuOpen}"
+                                    TargetType="Label"
+                                    Value="True">
+                                    <Setter Property="Text" Value="▼" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                    </Grid>
+                </Border>
+                <VerticalStackLayout IsVisible="{Binding IsTrainerMenuOpen}" Spacing="0">
+                    <CollectionView ItemsSource="{Binding Trainers}" SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:Trainer">
+                                <Border Padding="40,12,20,12" BackgroundColor="Transparent" StrokeThickness="0">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={x:Reference TheShell}, Path=BindingContext.SelectTrainerCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
+                                    <Label
+                                        FontFamily="SairaRegular"
+                                        FontSize="14"
+                                        Text="{Binding Name}"
+                                        TextColor="{StaticResource PokeYellow}" />
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <!--  Separator  -->
+                <BoxView
+                    Margin="20,4"
+                    BackgroundColor="{StaticResource PokeBlue}"
+                    HeightRequest="1"
+                    HorizontalOptions="Fill" />
+
+                <!--  Nav items — Buttons so Appium AccessibilityId lookup works on WinUI3  -->
+                <Button
+                    AutomationId="Journal Entry"
+                    BackgroundColor="Transparent"
+                    BorderWidth="0"
+                    Command="{Binding NavigateCommand}"
+                    CommandParameter="//MainPage"
+                    FontFamily="SairaRegular"
+                    FontSize="15"
+                    HorizontalOptions="Fill"
+                    ContentLayout="Left, 0"
+                    Padding="20,14"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                    Text="Journal Entry" />
+                <Button
+                    AutomationId="Read Journal"
+                    BackgroundColor="Transparent"
+                    BorderWidth="0"
+                    Command="{Binding NavigateCommand}"
+                    CommandParameter="//ReadJournalPage"
+                    FontFamily="SairaRegular"
+                    FontSize="15"
+                    HorizontalOptions="Fill"
+                    ContentLayout="Left, 0"
+                    Padding="20,14"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                    Text="Read Journal" />
+                <Button
+                    AutomationId="Trainer's Profile"
+                    BackgroundColor="Transparent"
+                    BorderWidth="0"
+                    Command="{Binding NavigateCommand}"
+                    CommandParameter="//TrainerPage"
+                    FontFamily="SairaRegular"
+                    FontSize="15"
+                    HorizontalOptions="Fill"
+                    ContentLayout="Left, 0"
+                    Padding="20,14"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                    Text="Trainer's Profile" />
+                <Button
+                    AutomationId="Options"
+                    BackgroundColor="Transparent"
+                    BorderWidth="0"
+                    Command="{Binding NavigateCommand}"
+                    CommandParameter="//OptionsPage"
+                    FontFamily="SairaRegular"
+                    FontSize="15"
+                    HorizontalOptions="Fill"
+                    ContentLayout="Left, 0"
+                    Padding="20,14"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                    Text="Options" />
+                <Button
+                    AutomationId="About"
+                    BackgroundColor="Transparent"
+                    BorderWidth="0"
+                    Command="{Binding NavigateCommand}"
+                    CommandParameter="//AboutPage"
+                    FontFamily="SairaRegular"
+                    FontSize="15"
+                    HorizontalOptions="Fill"
+                    ContentLayout="Left, 0"
+                    Padding="20,14"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                    Text="About" />
+
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Shell.FlyoutContent>
     <Shell.FlyoutHeader>
 
         <Grid BackgroundColor="{StaticResource PokeBlue}" HeightRequest="{OnIdiom Phone=55, Default=100}">
@@ -14,7 +157,7 @@
                 Opacity="0.2"
                 Source="ball_icon.png" />
             <Label
-                FontAttributes="None"
+                FontFamily="PokemonSolid"
                 FontSize="Large"
                 HorizontalTextAlignment="Center"
                 Text="PTCG Journal"

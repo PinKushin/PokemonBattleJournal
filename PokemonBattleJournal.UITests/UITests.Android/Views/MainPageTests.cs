@@ -10,20 +10,27 @@
             AppiumElement BOSwitch = FindUIElement("BOSwitch");
             CancellationToken cancellationToken = new();
 
+            // Ensure starting state is off
+            if (BOSwitch.GetAttribute("checked") == "true")
+            {
+                BOSwitch.Click();
+                await Task.Delay(500).WaitAsync(cancellationToken);
+            }
+
             // Act
             BOSwitch.Click();
-            await Task.Delay(500).WaitAsync(cancellationToken); // Wait for the click to register 
+            await Task.Delay(500).WaitAsync(cancellationToken);
             string toggledOn = BOSwitch.GetAttribute("checked");
             BOSwitch.Click();
-            await Task.Delay(500).WaitAsync(cancellationToken); // Wait for the click to register 
+            await Task.Delay(500).WaitAsync(cancellationToken);
             string toggledOff = BOSwitch.GetAttribute("checked");
+
             // Assert
             _ = BOSwitch.ShouldNotBeNull();
             BOSwitch.Displayed.ShouldBeTrue();
             BOSwitch.Enabled.ShouldBeTrue();
-            toggledOn.ShouldBe("true"); // "1" for toggled on
-            toggledOff.ShouldBe("false");// "0" for toggled off
-
+            toggledOn.ShouldBe("true");
+            toggledOff.ShouldBe("false");
         }
     }
 }

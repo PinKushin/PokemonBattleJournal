@@ -3,11 +3,13 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using PokemonBattleJournal.Interfaces;
 using PokemonBattleJournal.Models;
+using PokemonBattleJournal.Services;
 using PokemonBattleJournal.ViewModels;
 
 namespace PokemonBattleJournal.Benchmarking.ViewModels
 {
-    [MemoryDiagnoser] // Tracks memory usage during benchmarks
+    [Config(typeof(BenchmarkConfig))]
+    [MemoryDiagnoser]
     public class MainPageViewModelBenchmarks
     {
         private MainPageViewModel? _viewModel;
@@ -65,8 +67,11 @@ namespace PokemonBattleJournal.Benchmarking.ViewModels
                 .Returns(MatchResult.Win);
             _ = calculatorFactory.GetCalculator(Arg.Any<bool>()).Returns(calculator);
 
+            // Mock ITrainerSwitchService
+            ITrainerSwitchService switchService = Substitute.For<ITrainerSwitchService>();
+
             // Initialize the ViewModel
-            _viewModel = new MainPageViewModel(logger, sqliteConnectionFactory, calculatorFactory);
+            _viewModel = new MainPageViewModel(logger, sqliteConnectionFactory, calculatorFactory, switchService);
         }
 
         [Benchmark]

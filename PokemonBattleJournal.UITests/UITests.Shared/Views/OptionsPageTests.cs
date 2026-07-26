@@ -5,11 +5,10 @@ namespace UITests
         [Fact]
         public void OptionsPage_Loads_PageVisible()
         {
-            NavigateTo("Options");
-
-            AppiumElement saveButton = FindUIElement("SaveTrainerNameButton");
+            var (saveButton, elapsed) = MeasurePageLoad("Options", "SaveTrainerNameButton");
 
             saveButton.Displayed.ShouldBeTrue();
+            elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(5));
         }
 
         [Fact]

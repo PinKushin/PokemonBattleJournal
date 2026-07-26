@@ -2,42 +2,36 @@ using BenchmarkDotNet.Analysers;
 using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
-using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Exporters.Csv;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
+using BenchmarkDotNet.Toolchains.InProcess.Emit;
 
 namespace PokemonBattleJournal.Benchmarking
 {
-    public class BenchmarkConfig
+    // Extends ManualConfig so [Config(typeof(BenchmarkConfig))] works via Activator.CreateInstance.
+    // DisableOptimizationsValidator allows running against Debug-built dependencies.
+    public class BenchmarkConfig : ManualConfig
     {
-        /// <summary>
-        /// Get a custom configuration
-        /// </summary>
-        /// <returns></returns>
-        public static IConfig Get()
+        public BenchmarkConfig()
         {
-            return ManualConfig.CreateEmpty()
-                // Jobs
-                .AddJob(Job.Default
-                    .WithRuntime(CoreRuntime.Core90)
-                    //.WithPlatform(Platform.X64)
-                    )
-                // Configuration of diagnosers and outputs
-                .AddDiagnoser(MemoryDiagnoser.Default)
-                .AddColumnProvider(DefaultColumnProviders.Instance)
-                .AddLogger(ConsoleLogger.Default)
-                .AddExporter(CsvExporter.Default)
-                .AddExporter(HtmlExporter.Default)
-                .AddAnalyser(GetAnalysers().ToArray());
+            WithOptions(ConfigOptions.DisableOptimizationsValidator);
+            AddJob(Job.Default
+                .WithToolchain(InProcessEmitToolchain.Instance)
+                .WithWarmupCount(1)
+                .WithIterationCount(3));
+            AddDiagnoser(MemoryDiagnoser.Default);
+            AddColumnProvider(DefaultColumnProviders.Instance);
+            AddLogger(ConsoleLogger.Default);
+            AddExporter(CsvExporter.Default);
+            AddExporter(HtmlExporter.Default);
+            AddAnalyser(GetAnalysers().ToArray());
         }
 
-        /// <summary>
-        /// Get analyzer for the custom configuration
-        /// </summary>
-        /// <returns></returns>
-        private static IEnumerable<IAnalyser> GetAnalysers()
+        public static IConfig Get() => new BenchmarkConfig();
+
+        private static new IEnumerable<IAnalyser> GetAnalysers()
         {
             yield return EnvironmentAnalyser.Default;
             yield return OutliersAnalyser.Default;

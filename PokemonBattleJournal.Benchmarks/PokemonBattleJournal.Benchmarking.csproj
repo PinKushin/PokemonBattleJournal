@@ -13,8 +13,8 @@
         <Configuration>Release</Configuration>
         <IsPackable>false</IsPackable>
         <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
-        <!-- Disable entry point generation if this project has it's own entry point -->
-        <GenerateProgramFile>true</GenerateProgramFile>
+        <!-- Disable entry point generation — explicit Program.Main exists in Program.cs -->
+        <GenerateProgramFile>false</GenerateProgramFile>
     </PropertyGroup>
 
     <ItemGroup>
