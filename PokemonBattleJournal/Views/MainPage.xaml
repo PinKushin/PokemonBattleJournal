@@ -240,8 +240,6 @@
                             CanReorderItems="True"
                             ItemSizingStrategy="MeasureAllItems"
                             ItemsSource="{Binding TagCollection}"
-                            MaximumWidthRequest="600"
-                            MinimumHeightRequest="100"
                             SelectedItems="{Binding TagsSelected, Mode=TwoWay}"
                             SelectionMode="Multiple">
                             <CollectionView.ItemsLayout>
@@ -260,15 +258,9 @@
                                 <DataTemplate>
                                     <HorizontalStackLayout>
                                         <Label
-                                            Margin="0,0,40,0"
-                                            Padding="10,0,0,0"
                                             x:DataType="models:Tags"
-                                            FontAutoScalingEnabled="True"
-                                            HorizontalOptions="Center"
-                                            HorizontalTextAlignment="End"
-                                            Text="{Binding Name}"
-                                            VerticalOptions="Center"
-                                            VerticalTextAlignment="Center" />
+                                            Style="{StaticResource GameTagLabel}"
+                                            Text="{Binding Name}" />
                                     </HorizontalStackLayout>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
@@ -282,23 +274,19 @@
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput}" />
                         <HorizontalStackLayout HorizontalOptions="Center">
-                            <Label
-                                HorizontalOptions="Center"
-                                Text="Went First"
-                                VerticalOptions="Center" />
+                            <Label Style="{StaticResource FieldLabel}" Text="Went first" />
                             <CheckBox
                                 AutomationId="FirstCheck"
+                                Color="{StaticResource PokeBlue}"
                                 HorizontalOptions="Center"
                                 IsChecked="{Binding FirstCheck}"
-                                VerticalOptions="Center"
-                                Color="{StaticResource PokeBlue}" />
+                                VerticalOptions="Center" />
                             <Picker
-                                Margin="5"
                                 AutomationId="PossibleResultsPicker"
                                 HorizontalOptions="Center"
                                 ItemsSource="{Binding PossibleResults}"
                                 SelectedItem="{Binding Result}"
-                                WidthRequest="100" />
+                                WidthRequest="120" />
                         </HorizontalStackLayout>
                     </VerticalStackLayout>
                     <!--#endregion-->
@@ -328,15 +316,9 @@
                                 <DataTemplate>
                                     <HorizontalStackLayout>
                                         <Label
-                                            Margin="0,0,40,0"
-                                            Padding="10,0,0,0"
                                             x:DataType="models:Tags"
-                                            FontAutoScalingEnabled="True"
-                                            HorizontalOptions="Center"
-                                            HorizontalTextAlignment="End"
-                                            Text="{Binding Name}"
-                                            VerticalOptions="Center"
-                                            VerticalTextAlignment="Center" />
+                                            Style="{StaticResource GameTagLabel}"
+                                            Text="{Binding Name}" />
                                     </HorizontalStackLayout>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
@@ -350,11 +332,9 @@
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput2}" />
                         <HorizontalStackLayout HorizontalOptions="Center">
-                            <Label
-                                HorizontalOptions="Center"
-                                Text="Went first?"
-                                VerticalOptions="Center" />
+                            <Label Style="{StaticResource FieldLabel}" Text="Went first" />
                             <CheckBox
+                                Color="{StaticResource PokeBlue}"
                                 HorizontalOptions="Center"
                                 IsChecked="{Binding FirstCheck2}"
                                 VerticalOptions="Center" />
@@ -392,15 +372,9 @@
                                 <DataTemplate>
                                     <HorizontalStackLayout>
                                         <Label
-                                            Margin="0,0,40,0"
-                                            Padding="10,0,0,0"
                                             x:DataType="models:Tags"
-                                            FontAutoScalingEnabled="True"
-                                            HorizontalOptions="Center"
-                                            HorizontalTextAlignment="End"
-                                            Text="{Binding Name}"
-                                            VerticalOptions="Center"
-                                            VerticalTextAlignment="Center" />
+                                            Style="{StaticResource GameTagLabel}"
+                                            Text="{Binding Name}" />
                                     </HorizontalStackLayout>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
@@ -414,11 +388,9 @@
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput3}" />
                         <HorizontalStackLayout HorizontalOptions="Center">
-                            <Label
-                                HorizontalOptions="Center"
-                                Text="Went first?"
-                                VerticalOptions="Center" />
+                            <Label Style="{StaticResource FieldLabel}" Text="Went first" />
                             <CheckBox
+                                Color="{StaticResource PokeBlue}"
                                 HorizontalOptions="Center"
                                 IsChecked="{Binding FirstCheck3}"
                                 VerticalOptions="Center" />
@@ -426,8 +398,6 @@
                                 HorizontalOptions="Center"
                                 ItemsSource="{Binding PossibleResults}"
                                 SelectedItem="{Binding Result3}"
-                                SemanticProperties.Description="Results for third game."
-                                SemanticProperties.Hint="Pick a result, win, lose, or tie."
                                 WidthRequest="120" />
                         </HorizontalStackLayout>
                     </VerticalStackLayout>
