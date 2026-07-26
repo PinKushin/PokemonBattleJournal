@@ -96,27 +96,12 @@
                 <!--#endregion-->
                 <!--#region BO3 Switch & Display-->
                 <Label Style="{StaticResource Headline}" Text="Match Format" />
-                <Border
+                <Switch
+                    AutomationId="BOSwitch"
                     HorizontalOptions="Center"
-                    Padding="16,4"
-                    Stroke="{StaticResource PokeYellow}"
-                    StrokeThickness="1.5"
-                    StrokeShape="RoundRectangle 20">
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding ToggleBO3Command}" />
-                    </Border.GestureRecognizers>
-                    <HorizontalStackLayout Spacing="10">
-                        <Image
-                            AutomationId="BOSwitch"
-                            Aspect="AspectFit"
-                            HeightRequest="32"
-                            Opacity="{Binding BO3Toggle, Converter={StaticResource PokeballOpacityConverter}}"
-                            Source="ball_icon.png"
-                            VerticalOptions="Center"
-                            WidthRequest="32" />
-                        <Label Style="{StaticResource BO3Label}" Text="{Binding BO3Toggle, Converter={StaticResource BoolToBO3TextConverter}}" />
-                    </HorizontalStackLayout>
-                </Border>
+                    IsToggled="{Binding BO3Toggle, Mode=TwoWay}"
+                    OnColor="{StaticResource PokeYellow}"
+                    ThumbColor="{StaticResource PokeBlue}" />
                 <!--#endregion-->
                 <!--#region Current Time Display-->
                 <Label
@@ -169,7 +154,7 @@
                 Margin="8"
                 IsVisible="True">
                 <!--#region Game Tabs (always visible)-->
-                <VerticalStackLayout AutomationId="GamesLayout">
+                <VerticalStackLayout AutomationId="BO3GamesLayout">
 
                     <!--#region Tab Bar-->
                     <Border
@@ -195,7 +180,6 @@
                                     TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
                             </Border>
                             <Border
-                                AutomationId="BO3GamesLayout"
                                 Padding="16,8"
                                 BackgroundColor="{Binding IsGame2Selected, Converter={StaticResource TabActiveBgConverter}}"
                                 IsVisible="{Binding BO3Toggle}"
