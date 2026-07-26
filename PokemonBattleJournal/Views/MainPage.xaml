@@ -167,7 +167,6 @@
             <VerticalStackLayout
                 x:Name="RightColumn"
                 Margin="8"
-                HorizontalOptions="Center"
                 IsVisible="True">
                 <!--#region Game Tabs (always visible)-->
                 <VerticalStackLayout AutomationId="GamesLayout">
@@ -177,7 +176,6 @@
                         Margin="0,8,0,0"
                         Padding="4"
                         BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource OffBlack}}"
-                        HorizontalOptions="Center"
                         StrokeShape="RoundRectangle 8"
                         StrokeThickness="0">
                         <HorizontalStackLayout Spacing="4">
@@ -274,23 +272,36 @@
                             MinimumWidthRequest="350"
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput}" />
-                        <HorizontalStackLayout HorizontalOptions="Center">
-                            <Label
-                                HorizontalOptions="Center"
-                                Text="Went first"
-                                VerticalOptions="Center" />
-                            <CheckBox
-                                AutomationId="FirstCheck"
-                                Color="{StaticResource PokeBlue}"
-                                HorizontalOptions="Center"
-                                IsChecked="{Binding FirstCheck}"
-                                VerticalOptions="Center" />
+                        <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
+                            <Border
+                                Padding="16,8"
+                                Stroke="{StaticResource PokeYellow}"
+                                StrokeThickness="1.5"
+                                StrokeShape="RoundRectangle 20">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleFirstCheckCommand}" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="10">
+                                    <Image
+                                        AutomationId="FirstCheck"
+                                        Aspect="AspectFit"
+                                        HeightRequest="32"
+                                        Opacity="{Binding FirstCheck, Converter={StaticResource PokeballOpacityConverter}}"
+                                        Source="ball_icon.png"
+                                        VerticalOptions="Center"
+                                        WidthRequest="32" />
+                                    <Label
+                                        Style="{StaticResource BO3Label}"
+                                        Text="Went first"
+                                        VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
                             <Picker
-                                Margin="5"
                                 AutomationId="PossibleResultsPicker"
                                 HorizontalOptions="Center"
                                 ItemsSource="{Binding PossibleResults}"
                                 SelectedItem="{Binding Result}"
+                                VerticalOptions="Center"
                                 WidthRequest="120" />
                         </HorizontalStackLayout>
                     </VerticalStackLayout>
@@ -337,21 +348,36 @@
                             MinimumWidthRequest="350"
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput2}" />
-                        <HorizontalStackLayout HorizontalOptions="Center">
-                            <Label
-                                HorizontalOptions="Center"
-                                Text="Went first"
-                                VerticalOptions="Center" />
-                            <CheckBox
-                                Color="{StaticResource PokeBlue}"
-                                HorizontalOptions="Center"
-                                IsChecked="{Binding FirstCheck2}"
-                                VerticalOptions="Center" />
+                        <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
+                            <Border
+                                Padding="16,8"
+                                Stroke="{StaticResource PokeYellow}"
+                                StrokeThickness="1.5"
+                                StrokeShape="RoundRectangle 20">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleFirstCheck2Command}" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="10">
+                                    <Image
+                                        AutomationId="FirstCheck2"
+                                        Aspect="AspectFit"
+                                        HeightRequest="32"
+                                        Opacity="{Binding FirstCheck2, Converter={StaticResource PokeballOpacityConverter}}"
+                                        Source="ball_icon.png"
+                                        VerticalOptions="Center"
+                                        WidthRequest="32" />
+                                    <Label
+                                        Style="{StaticResource BO3Label}"
+                                        Text="Went first"
+                                        VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
                             <Picker
-                                Margin="5"
+                                AutomationId="PossibleResultsPicker2"
                                 HorizontalOptions="Center"
                                 ItemsSource="{Binding PossibleResults}"
                                 SelectedItem="{Binding Result2}"
+                                VerticalOptions="Center"
                                 WidthRequest="120" />
                         </HorizontalStackLayout>
                     </VerticalStackLayout>
@@ -398,21 +424,36 @@
                             MinimumWidthRequest="350"
                             Placeholder="Write notes here..."
                             Text="{Binding UserNoteInput3}" />
-                        <HorizontalStackLayout HorizontalOptions="Center">
-                            <Label
-                                HorizontalOptions="Center"
-                                Text="Went first"
-                                VerticalOptions="Center" />
-                            <CheckBox
-                                Color="{StaticResource PokeBlue}"
-                                HorizontalOptions="Center"
-                                IsChecked="{Binding FirstCheck3}"
-                                VerticalOptions="Center" />
+                        <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
+                            <Border
+                                Padding="16,8"
+                                Stroke="{StaticResource PokeYellow}"
+                                StrokeThickness="1.5"
+                                StrokeShape="RoundRectangle 20">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleFirstCheck3Command}" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="10">
+                                    <Image
+                                        AutomationId="FirstCheck3"
+                                        Aspect="AspectFit"
+                                        HeightRequest="32"
+                                        Opacity="{Binding FirstCheck3, Converter={StaticResource PokeballOpacityConverter}}"
+                                        Source="ball_icon.png"
+                                        VerticalOptions="Center"
+                                        WidthRequest="32" />
+                                    <Label
+                                        Style="{StaticResource BO3Label}"
+                                        Text="Went first"
+                                        VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
                             <Picker
-                                Margin="5"
+                                AutomationId="PossibleResultsPicker3"
                                 HorizontalOptions="Center"
                                 ItemsSource="{Binding PossibleResults}"
                                 SelectedItem="{Binding Result3}"
+                                VerticalOptions="Center"
                                 WidthRequest="120" />
                         </HorizontalStackLayout>
                     </VerticalStackLayout>

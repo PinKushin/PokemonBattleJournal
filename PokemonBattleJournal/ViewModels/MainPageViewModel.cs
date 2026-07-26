@@ -150,11 +150,20 @@ namespace PokemonBattleJournal.ViewModels
         [ObservableProperty]
         public partial bool FirstCheck { get; set; }
 
+        [RelayCommand]
+        private void ToggleFirstCheck() => FirstCheck = !FirstCheck;
+
         [ObservableProperty]
         public partial bool FirstCheck2 { get; set; }
 
+        [RelayCommand]
+        private void ToggleFirstCheck2() => FirstCheck2 = !FirstCheck2;
+
         [ObservableProperty]
         public partial bool FirstCheck3 { get; set; }
+
+        [RelayCommand]
+        private void ToggleFirstCheck3() => FirstCheck3 = !FirstCheck3;
 
         [ObservableProperty]
         public partial List<MatchResult> PossibleResults { get; set; } = [.. Enum.GetValues<MatchResult>().Cast<MatchResult>()];

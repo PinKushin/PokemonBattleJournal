@@ -50,6 +50,9 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [InlineData("SelectGame2Command")]
         [InlineData("SelectGame3Command")]
         [InlineData("ToggleBO3Command")]
+        [InlineData("ToggleFirstCheckCommand")]
+        [InlineData("ToggleFirstCheck2Command")]
+        [InlineData("ToggleFirstCheck3Command")]
         public void MainPageViewModel_HasCommand(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"MainPage.xaml binds to Command '{name}' but it was not found on MainPageViewModel");
     }
