@@ -313,6 +313,101 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.EndTime = new TimeSpan(9, 0, 0); // end < start → clamps to start
             _viewModel.EndTime.ShouldBe(new TimeSpan(10, 0, 0));
         }
+
+        // --- HasUnsavedData ---
+
+        [Fact]
+        public void HasUnsavedData_DefaultState_ReturnsFalse()
+        {
+            _viewModel.HasUnsavedData.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void HasUnsavedData_WhenPlayerSelected_ReturnsTrue()
+        {
+            _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
+            _viewModel.HasUnsavedData.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void HasUnsavedData_WhenRivalSelected_ReturnsTrue()
+        {
+            _viewModel.RivalSelected = new Archetype { Id = 2, Name = "Water" };
+            _viewModel.HasUnsavedData.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void HasUnsavedData_WhenNoteEntered_ReturnsTrue()
+        {
+            _viewModel.UserNoteInput = "some note";
+            _viewModel.HasUnsavedData.ShouldBeTrue();
+        }
+
+        // --- ToggleFirstCheck commands ---
+
+        [Fact]
+        public void ToggleFirstCheckCommand_TogglesFirstCheck()
+        {
+            _viewModel.FirstCheck = false;
+            _viewModel.ToggleFirstCheckCommand.Execute(null);
+            _viewModel.FirstCheck.ShouldBeTrue();
+            _viewModel.ToggleFirstCheckCommand.Execute(null);
+            _viewModel.FirstCheck.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void ToggleFirstCheck2Command_TogglesFirstCheck2()
+        {
+            _viewModel.FirstCheck2 = false;
+            _viewModel.ToggleFirstCheck2Command.Execute(null);
+            _viewModel.FirstCheck2.ShouldBeTrue();
+            _viewModel.ToggleFirstCheck2Command.Execute(null);
+            _viewModel.FirstCheck2.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void ToggleFirstCheck3Command_TogglesFirstCheck3()
+        {
+            _viewModel.FirstCheck3 = false;
+            _viewModel.ToggleFirstCheck3Command.Execute(null);
+            _viewModel.FirstCheck3.ShouldBeTrue();
+            _viewModel.ToggleFirstCheck3Command.Execute(null);
+            _viewModel.FirstCheck3.ShouldBeFalse();
+        }
+
+        // --- AppearingAsync ---
+
+        [Fact]
+        public async Task AppearingAsync_LoadsArchetypes()
+        {
+            var archetypes = new List<Archetype>
+            {
+                new() { Id = 1, Name = "Fire" },
+                new() { Id = 2, Name = "Water" }
+            };
+            _mockConnectionFactory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
+            _mockConnectionFactory.Tags.Returns(Substitute.For<ITagOperations>());
+            _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(archetypes));
+            _mockConnectionFactory.Tags.GetAllAsync().Returns(Task.FromResult(new List<Tags>()));
+
+            await _viewModel.AppearingAsync();
+
+            _viewModel.Archetypes.ShouldNotBeNull();
+            _viewModel.Archetypes!.Count.ShouldBe(2);
+        }
+
+        [Fact]
+        public async Task AppearingAsync_SetsWelcomeMsg()
+        {
+            _mockConnectionFactory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
+            _mockConnectionFactory.Tags.Returns(Substitute.For<ITagOperations>());
+            _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
+            _mockConnectionFactory.Tags.GetAllAsync().Returns(Task.FromResult(new List<Tags>()));
+
+            await _viewModel.AppearingAsync();
+
+            _viewModel.WelcomeMsg.ShouldNotBeNullOrEmpty();
+        }
     }
 
 }

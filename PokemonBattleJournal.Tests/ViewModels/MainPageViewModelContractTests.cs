@@ -16,7 +16,6 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [InlineData("StartTime")]
         [InlineData("EndTime")]
         [InlineData("DatePlayed")]
-        [InlineData("CurrentDateTimeDisplay")]
         [InlineData("TagCollection")]
         [InlineData("TagsSelected")]
         [InlineData("UserNoteInput")]

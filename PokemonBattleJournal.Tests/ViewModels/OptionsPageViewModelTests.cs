@@ -94,5 +94,88 @@ namespace PokemonBattleJournal.Tests.ViewModels
             // Assert
             _ = _mockConnectionFactory.Archetypes.DidNotReceive().SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>());
         }
+
+        [Fact]
+        public async Task SaveTrainerAsync_ValidInput_CallsSaveAsync()
+        {
+            _viewModel.NameInput = "Ash";
+            _mockConnectionFactory.Trainers.SaveAsync("Ash").Returns(Task.FromResult(1));
+            _mockConnectionFactory.Trainers.GetByNameAsync("Ash")
+                .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 5, Name = "Ash" }));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { new() { Id = 5, Name = "Ash" } }));
+
+            await _viewModel.SaveTrainerAsync();
+
+            _ = _mockConnectionFactory.Trainers.Received(1).SaveAsync("Ash");
+        }
+
+        [Fact]
+        public async Task SaveTrainerAsync_ValidInput_ClearsNameInput()
+        {
+            _viewModel.NameInput = "Ash";
+            _mockConnectionFactory.Trainers.SaveAsync("Ash").Returns(Task.FromResult(1));
+            _mockConnectionFactory.Trainers.GetByNameAsync("Ash")
+                .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 5, Name = "Ash" }));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { new() { Id = 5, Name = "Ash" } }));
+
+            await _viewModel.SaveTrainerAsync();
+
+            _viewModel.NameInput.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task SaveTrainerAsync_SaveReturnsZero_DoesNotLoadTrainer()
+        {
+            _viewModel.NameInput = "Ash";
+            _mockConnectionFactory.Trainers.SaveAsync("Ash").Returns(Task.FromResult(0));
+
+            await _viewModel.SaveTrainerAsync();
+
+            _ = _mockConnectionFactory.Trainers.DidNotReceive().GetByNameAsync(Arg.Any<string>());
+        }
+
+        [Fact]
+        public async Task SwitchTrainerAsync_DifferentTrainer_CallsSwitchService()
+        {
+            var target = new Trainer { Id = 99, Name = "Brock" };
+            _mockSwitchService.SwitchToAsync(target).Returns(Task.CompletedTask);
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { target }));
+
+            await _viewModel.SwitchTrainerAsync(target);
+
+            _ = _mockSwitchService.Received(1).SwitchToAsync(target);
+        }
+
+        [Fact]
+        public void OnSelectedIconItemChanged_UpdatesSelectedIconAndNewDeckIcon()
+        {
+            var item = new IconItem("Charizard", "charizard.png");
+            _viewModel.SelectedIconItem = item;
+
+            _viewModel.SelectedIcon.ShouldBe("charizard.png");
+            _viewModel.NewDeckIcon.ShouldBe("charizard.png");
+        }
+
+        [Fact]
+        public void OnSelectedIconItemChanged_NullItem_SetsDefaultIcon()
+        {
+            _viewModel.SelectedIconItem = new IconItem("Old", "old.png");
+            _viewModel.SelectedIconItem = null;
+
+            _viewModel.SelectedIcon.ShouldBe("ball_icon.png");
+            _viewModel.NewDeckIcon.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task DeleteTrainerFileAsync_NullTrainer_DoesNotCallDelete()
+        {
+            // _trainer is null by default (never loaded)
+            await _viewModel.DeleteTrainerFileAsync();
+
+            _ = _mockConnectionFactory.Trainers.DidNotReceive().DeleteAsync(Arg.Any<Trainer>());
+        }
     }
 }
