@@ -187,12 +187,27 @@ public class ComboBoxControl : ContentView
         };
         _arrowLabel.SetBinding(Label.TextColorProperty, new Binding(nameof(ArrowColor), source: this));
 
-        var contentLayout = new HorizontalStackLayout
+        var iconAndText = new HorizontalStackLayout
         {
             Spacing = 8,
-            Padding = new Thickness(12, 4),
-            Children = { _selectedIcon, _selectedLabel, _placeholderLabel, _arrowLabel }
+            VerticalOptions = LayoutOptions.Center,
+            HorizontalOptions = LayoutOptions.End,
+            Children = { _selectedIcon, _selectedLabel, _placeholderLabel }
         };
+
+        var contentLayout = new Grid
+        {
+            Padding = new Thickness(12, 4),
+            ColumnDefinitions =
+            [
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Auto)
+            ]
+        };
+        Grid.SetColumn(iconAndText, 0);
+        Grid.SetColumn(_arrowLabel, 1);
+        contentLayout.Add(iconAndText);
+        contentLayout.Add(_arrowLabel);
 
         _border = new Border
         {
