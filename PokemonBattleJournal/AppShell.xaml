@@ -30,6 +30,7 @@
                             FontFamily="SairaRegular"
                             FontSize="15"
                             Text="Switch Trainer"
+                            TextColor="{AppThemeBinding Light=Black, Dark=White}"
                             VerticalOptions="Center" />
                         <Label
                             Grid.Column="1"
@@ -89,6 +90,7 @@
                     HorizontalOptions="Fill"
                     ContentLayout="Left, 0"
                     Padding="20,14"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
                     Text="Journal Entry" />
                 <Button
                     AutomationId="Read Journal"
@@ -101,6 +103,7 @@
                     HorizontalOptions="Fill"
                     ContentLayout="Left, 0"
                     Padding="20,14"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
                     Text="Read Journal" />
                 <Button
                     AutomationId="Trainer's Profile"
@@ -113,6 +116,7 @@
                     HorizontalOptions="Fill"
                     ContentLayout="Left, 0"
                     Padding="20,14"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
                     Text="Trainer's Profile" />
                 <Button
                     AutomationId="Options"
@@ -125,6 +129,7 @@
                     HorizontalOptions="Fill"
                     ContentLayout="Left, 0"
                     Padding="20,14"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
                     Text="Options" />
                 <Button
                     AutomationId="About"
@@ -137,6 +142,7 @@
                     HorizontalOptions="Fill"
                     ContentLayout="Left, 0"
                     Padding="20,14"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
                     Text="About" />
 
 

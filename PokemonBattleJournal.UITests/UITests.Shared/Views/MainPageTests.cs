@@ -2,6 +2,12 @@
 {
     public partial class MainPageTests : BaseTest
     {
+        public MainPageTests()
+        {
+            NavigateTo("Journal Entry");
+            Thread.Sleep(1500);
+        }
+
         [Fact]
         public async Task MainPage_UserNoteInput_ShowTextEntry()
         {
@@ -21,14 +27,14 @@
         [Fact]
         public void MainPage_BallIcon_DisplayedOnPage()
         {
-            // Arrange
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             AppiumElement BallIconPng = FindUIElement("ball_icon.png");
-            // Act
-            // Assert
+            sw.Stop();
 
             _ = BallIconPng.ShouldNotBeNull();
             BallIconPng.Displayed.ShouldBeTrue();
             BallIconPng.Enabled.ShouldBeTrue();
+            sw.Elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(5));
         }
 
         [Fact]

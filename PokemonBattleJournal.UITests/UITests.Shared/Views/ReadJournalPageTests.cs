@@ -5,11 +5,10 @@ namespace UITests
         [Fact]
         public void ReadJournalPage_Loads_PageVisible()
         {
-            NavigateTo("Read Journal");
-
-            AppiumElement page = FindUIElement("ReadJournalPage");
+            var (page, elapsed) = MeasurePageLoad("Read Journal", "ReadJournalPage");
 
             page.Displayed.ShouldBeTrue();
+            elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(5));
         }
     }
 }

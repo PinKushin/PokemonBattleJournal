@@ -5,11 +5,10 @@ namespace UITests
         [Fact]
         public void TrainerPage_StatsLabels_Displayed()
         {
-            NavigateTo("Trainer's Profile");
-
-            AppiumElement winRateLabel = FindUIElement("WinRateLabel");
+            var (winRateLabel, elapsed) = MeasurePageLoad("Trainer's Profile", "WinRateLabel");
 
             winRateLabel.Displayed.ShouldBeTrue();
+            elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(5));
         }
     }
 }

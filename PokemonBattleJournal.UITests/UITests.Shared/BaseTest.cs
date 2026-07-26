@@ -29,7 +29,18 @@ namespace UITests
                 return App.FindElement(MobileBy.AccessibilityId(id));
             }
 
-            return App.FindElement(MobileBy.Id(id));
+            return App.FindElement(MobileBy.AndroidUIAutomator(
+                $"new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                $".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/{id}\"))"));
+        }
+
+        protected (AppiumElement element, TimeSpan elapsed) MeasurePageLoad(string pageTitle, string firstElementId)
+        {
+            NavigateTo(pageTitle);
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            AppiumElement element = FindUIElement(firstElementId);
+            sw.Stop();
+            return (element, sw.Elapsed);
         }
 
         protected void NavigateTo(string pageTitle)
@@ -46,13 +57,15 @@ namespace UITests
             }
             else
             {
-                var menu = App.FindElement(MobileBy.AccessibilityId("Open navigation menu"));
+                var menu = App.FindElement(MobileBy.AccessibilityId("Open navigation drawer"));
                 menu.Click();
                 Thread.Sleep(500);
-                var item = App.FindElement(MobileBy.Name(pageTitle));
+                var item = App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")"));
                 item.Click();
             }
             Thread.Sleep(500);
         }
+
+
     }
 }

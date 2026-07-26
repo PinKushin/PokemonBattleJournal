@@ -8,7 +8,8 @@ using PokemonBattleJournal.ViewModels;
 
 namespace PokemonBattleJournal.Benchmarking.ViewModels
 {
-    [MemoryDiagnoser] // Tracks memory usage during benchmarks
+    [Config(typeof(BenchmarkConfig))]
+    [MemoryDiagnoser]
     public class MainPageViewModelBenchmarks
     {
         private MainPageViewModel? _viewModel;

@@ -5,11 +5,10 @@ namespace UITests
         [Fact]
         public void AboutPage_Loads_TitleDisplayed()
         {
-            NavigateTo("About");
-
-            AppiumElement title = FindUIElement("AboutPageTitle");
+            var (title, elapsed) = MeasurePageLoad("About", "AboutPageTitle");
 
             title.Displayed.ShouldBeTrue();
+            elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(5));
         }
     }
 }
