@@ -3,13 +3,13 @@ namespace UITests
     public partial class ReadJournalPageTests : BaseTest
     {
         [Fact]
-        public void ReadJournalPage_WelcomeLabel_Displayed()
+        public void ReadJournalPage_Loads_PageVisible()
         {
             NavigateTo("Read Journal");
 
-            AppiumElement welcomeLabel = FindUIElement("JournalWelcomeLabel");
+            AppiumElement page = FindUIElement("ReadJournalPage");
 
-            welcomeLabel.Displayed.ShouldBeTrue();
+            page.Displayed.ShouldBeTrue();
         }
     }
 }

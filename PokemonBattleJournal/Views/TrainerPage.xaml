@@ -9,6 +9,9 @@
     x:Name="BasePage"
     Title="{Binding WelcomeMsg}"
     x:DataType="viewmodel:TrainerPageViewModel">
+    <Shell.TitleView>
+        <Label Style="{StaticResource ShellTitleLabel}" Text="{Binding WelcomeMsg}" />
+    </Shell.TitleView>
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
             BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType=ContentPage}"
@@ -18,13 +21,6 @@
 
     <ScrollView>
         <StackLayout Padding="16" Spacing="8">
-
-            <Label
-                AutomationId="TrainerWelcomeLabel"
-                FontSize="24"
-                FontAttributes="Bold"
-                HorizontalOptions="Center"
-                Text="{Binding WelcomeMsg}" />
 
             <Grid ColumnDefinitions="*,*,*,*" Margin="0,8,0,4">
                 <StackLayout Grid.Column="0" HorizontalOptions="Center">

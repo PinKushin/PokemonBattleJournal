@@ -3,13 +3,13 @@ namespace UITests
     public partial class OptionsPageTests : BaseTest
     {
         [Fact]
-        public void OptionsPage_TitleLabel_Displayed()
+        public void OptionsPage_Loads_PageVisible()
         {
             NavigateTo("Options");
 
-            AppiumElement titleLabel = FindUIElement("OptionsPageTitleLabel");
+            AppiumElement saveButton = FindUIElement("SaveTrainerNameButton");
 
-            titleLabel.Displayed.ShouldBeTrue();
+            saveButton.Displayed.ShouldBeTrue();
         }
 
         [Fact]

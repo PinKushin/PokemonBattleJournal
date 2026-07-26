@@ -10,6 +10,9 @@
     x:Name="BasePage"
     Title="{Binding WelcomeMsg}"
     x:DataType="viewmodel:ReadJournalPageViewModel">
+    <Shell.TitleView>
+        <Label Style="{StaticResource ShellTitleLabel}" Text="{Binding WelcomeMsg}" />
+    </Shell.TitleView>
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
             BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType=ContentPage}"
@@ -19,18 +22,8 @@
     <ContentPage.Resources>
         <toolkit:IsNotNullConverter x:Key="IsNotNullConverter" />
     </ContentPage.Resources>
-    <ScrollView Margin="16">
+    <ScrollView AutomationId="ReadJournalPage" Margin="16">
         <VerticalStackLayout Spacing="12">
-
-            <!--  Page title  -->
-            <Label
-                AutomationId="JournalWelcomeLabel"
-                FontFamily="PokemonSolid"
-                FontSize="Title"
-                HorizontalOptions="Center"
-                HorizontalTextAlignment="Center"
-                Text="Battle Journal"
-                TextColor="{StaticResource PokeYellow}" />
 
             <!--  Selected match detail card  -->
             <Border

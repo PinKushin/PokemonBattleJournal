@@ -12,6 +12,9 @@
     x:Name="BasePage"
     Title="{Binding WelcomeMsg}"
     x:DataType="viewmodel:MainPageViewModel">
+    <Shell.TitleView>
+        <Label Style="{StaticResource ShellTitleLabel}" Text="{Binding WelcomeMsg}" />
+    </Shell.TitleView>
     <ContentPage.Resources>
         <toolkit:BoolToObjectConverter
             x:Key="TabActiveBgConverter"
@@ -53,8 +56,7 @@
                     AutomationId="ball_icon.png"
                     SemanticProperties.Description="Poke-Ball Image"
                     Source="ball_icon.png"
-                    WidthRequest="{OnIdiom Default=32,
-                                           Phone=24}" />
+                    WidthRequest="{OnIdiom Default=32, Phone=24}" />
                 <Label
                     FontFamily="PokemonSolid"
                     FontSize="Title"
@@ -103,25 +105,38 @@
                 </StackLayout>
                 <!--#endregion-->
                 <!--#region BO3 Switch & Display-->
-                <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
-                    <Image
-                        AutomationId="BOSwitch"
-                        Aspect="AspectFit"
-                        HeightRequest="40"
-                        Opacity="{Binding BO3Toggle, Converter={StaticResource PokeballOpacityConverter}}"
-                        Source="ball_icon.png"
-                        VerticalOptions="Center"
-                        WidthRequest="40">
-                        <Image.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding ToggleBO3Command}" />
-                        </Image.GestureRecognizers>
-                    </Image>
-                    <Label
-                        FontAttributes="Bold"
-                        Text="{Binding BO3Toggle, Converter={StaticResource BoolToBO3TextConverter}}"
-                        TextColor="{StaticResource PokeYellow}"
-                        VerticalTextAlignment="Center" />
-                </HorizontalStackLayout>
+                <Label
+                    FontFamily="SairaRegular"
+                    FontSize="12"
+                    HorizontalOptions="Center"
+                    Text="MATCH FORMAT"
+                    TextColor="{StaticResource PokeBlue}" />
+                <Border
+                    HorizontalOptions="Center"
+                    Padding="16,8"
+                    Stroke="{StaticResource PokeYellow}"
+                    StrokeThickness="1.5"
+                    StrokeShape="RoundRectangle 20">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ToggleBO3Command}" />
+                    </Border.GestureRecognizers>
+                    <HorizontalStackLayout Spacing="10">
+                        <Image
+                            AutomationId="BOSwitch"
+                            Aspect="AspectFit"
+                            HeightRequest="32"
+                            Opacity="{Binding BO3Toggle, Converter={StaticResource PokeballOpacityConverter}}"
+                            Source="ball_icon.png"
+                            VerticalOptions="Center"
+                            WidthRequest="32" />
+                        <Label
+                            FontFamily="SairaRegular"
+                            FontAttributes="Bold"
+                            Text="{Binding BO3Toggle, Converter={StaticResource BoolToBO3TextConverter}}"
+                            TextColor="{StaticResource PokeYellow}"
+                            VerticalTextAlignment="Center" />
+                    </HorizontalStackLayout>
+                </Border>
                 <!--#endregion-->
                 <!--#region Current Time Display-->
                 <Label

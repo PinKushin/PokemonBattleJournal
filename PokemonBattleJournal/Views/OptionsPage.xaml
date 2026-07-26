@@ -10,6 +10,9 @@
     Title="{Binding Title}"
     x:DataType="viewmodel:OptionsPageViewModel"
     AutomationId="OptionsPage">
+    <Shell.TitleView>
+        <Label Style="{StaticResource ShellTitleLabel}" Text="{Binding Title}" />
+    </Shell.TitleView>
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
             BindingContext="{Binding Path=BindingContext, Source={x:Reference BasePage}, x:DataType=ContentPage}"
@@ -22,16 +25,6 @@
             HorizontalOptions="Center"
             MaximumWidthRequest="480"
             Spacing="12">
-
-            <Label
-                x:Name="OptionsPageTitleLabel"
-                AutomationId="OptionsPageTitleLabel"
-                FontFamily="PokemonSolid"
-                FontSize="Title"
-                HorizontalOptions="Center"
-                Style="{StaticResource Headline}"
-                Text="Options"
-                TextColor="{StaticResource PokeYellow}" />
 
             <!--  Trainer section  -->
             <Label
