@@ -1,0 +1,319 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<results>
+  <modules>
+    <module id="372A735A9B88E84C8810C90E9FD269F4D23937CF" name="UITests.Android.dll" path="UITests.Android.dll" block_coverage="23.60" line_coverage="31.37" blocks_covered="42" blocks_not_covered="136" lines_covered="48" lines_partially_covered="3" lines_not_covered="102">
+      <functions>
+        <function id="8284" token="0x6000003" name="get_App()" namespace="UITests" type_name="AppiumSetup" block_coverage="60.00" line_coverage="66.67" blocks_covered="3" blocks_not_covered="2" lines_covered="2" lines_partially_covered="1" lines_not_covered="0">
+          <ranges>
+            <range source_id="1" start_line="10" end_line="10" start_column="13" end_column="14" covered="yes" />
+            <range source_id="1" start_line="11" end_line="11" start_column="17" end_column="91" covered="partial" />
+            <range source_id="1" start_line="12" end_line="12" start_column="13" end_column="14" covered="yes" />
+          </ranges>
+        </function>
+        <function id="8324" token="0x6000004" name="AppiumSetup()" namespace="UITests" type_name="AppiumSetup" block_coverage="100.00" line_coverage="100.00" blocks_covered="13" blocks_not_covered="0" lines_covered="24" lines_partially_covered="0" lines_not_covered="0">
+          <ranges>
+            <range source_id="1" start_line="15" end_line="15" start_column="9" end_column="29" covered="yes" />
+            <range source_id="1" start_line="16" end_line="16" start_column="9" end_column="10" covered="yes" />
+            <range source_id="1" start_line="19" end_line="19" start_column="13" end_column="57" covered="yes" />
+            <range source_id="1" start_line="20" end_line="33" start_column="13" end_column="15" covered="yes" />
+            <range source_id="1" start_line="40" end_line="40" start_column="13" end_column="92" covered="yes" />
+            <range source_id="1" start_line="41" end_line="41" start_column="13" end_column="132" covered="yes" />
+            <range source_id="1" start_line="44" end_line="44" start_column="13" end_column="147" covered="yes" />
+            <range source_id="1" start_line="51" end_line="51" start_column="13" end_column="81" covered="yes" />
+            <range source_id="1" start_line="55" end_line="55" start_column="13" end_column="56" covered="yes" />
+            <range source_id="1" start_line="56" end_line="56" start_column="13" end_column="37" covered="yes" />
+            <range source_id="1" start_line="57" end_line="57" start_column="9" end_column="10" covered="yes" />
+          </ranges>
+        </function>
+        <function id="8486" token="0x6000005" name="Dispose()" namespace="UITests" type_name="AppiumSetup" block_coverage="83.33" line_coverage="75.00" blocks_covered="5" blocks_not_covered="1" lines_covered="3" lines_partially_covered="1" lines_not_covered="0">
+          <ranges>
+            <range source_id="1" start_line="60" end_line="60" start_column="9" end_column="10" covered="yes" />
+            <range source_id="1" start_line="61" end_line="61" start_column="13" end_column="28" covered="partial" />
+            <range source_id="1" start_line="63" end_line="63" start_column="13" end_column="59" covered="yes" />
+            <range source_id="1" start_line="64" end_line="64" start_column="9" end_column="10" covered="yes" />
+          </ranges>
+        </function>
+        <function id="8648" token="0x6000008" name="MainPage_BallIcon_DisplayedOnPage()" namespace="UITests" type_name="MainPageTests" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="7" lines_covered="0" lines_partially_covered="0" lines_not_covered="6">
+          <ranges>
+            <range source_id="2" start_line="23" end_line="23" start_column="9" end_column="10" covered="no" />
+            <range source_id="2" start_line="25" end_line="25" start_column="13" end_column="72" covered="no" />
+            <range source_id="2" start_line="29" end_line="29" start_column="13" end_column="47" covered="no" />
+            <range source_id="2" start_line="30" end_line="30" start_column="13" end_column="50" covered="no" />
+            <range source_id="2" start_line="31" end_line="31" start_column="13" end_column="48" covered="no" />
+            <range source_id="2" start_line="32" end_line="32" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="8708" token="0x6000009" name="MainPage_Pickers_DisplayedAndEnabled()" namespace="UITests" type_name="MainPageTests" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="16" lines_covered="0" lines_partially_covered="0" lines_not_covered="11">
+          <ranges>
+            <range source_id="2" start_line="36" end_line="36" start_column="9" end_column="10" covered="no" />
+            <range source_id="2" start_line="37" end_line="37" start_column="13" end_column="74" covered="no" />
+            <range source_id="2" start_line="38" end_line="38" start_column="13" end_column="70" covered="no" />
+            <range source_id="2" start_line="39" end_line="39" start_column="13" end_column="74" covered="no" />
+            <range source_id="2" start_line="41" end_line="41" start_column="13" end_column="50" covered="no" />
+            <range source_id="2" start_line="42" end_line="42" start_column="13" end_column="48" covered="no" />
+            <range source_id="2" start_line="43" end_line="43" start_column="13" end_column="48" covered="no" />
+            <range source_id="2" start_line="44" end_line="44" start_column="13" end_column="46" covered="no" />
+            <range source_id="2" start_line="45" end_line="45" start_column="13" end_column="49" covered="no" />
+            <range source_id="2" start_line="46" end_line="46" start_column="13" end_column="47" covered="no" />
+            <range source_id="2" start_line="47" end_line="47" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="8836" token="0x600000a" name="MainPage_TagsView_Displayed()" namespace="UITests" type_name="MainPageTests" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="4" lines_covered="0" lines_partially_covered="0" lines_not_covered="4">
+          <ranges>
+            <range source_id="2" start_line="51" end_line="51" start_column="9" end_column="10" covered="no" />
+            <range source_id="2" start_line="52" end_line="52" start_column="13" end_column="64" covered="no" />
+            <range source_id="2" start_line="54" end_line="54" start_column="13" end_column="47" covered="no" />
+            <range source_id="2" start_line="55" end_line="55" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="8876" token="0x600000b" name="MainPage_BOSwitch_ShowsBO3Fields()" namespace="UITests" type_name="MainPageTests" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="7" lines_covered="0" lines_partially_covered="0" lines_not_covered="7">
+          <ranges>
+            <range source_id="2" start_line="59" end_line="59" start_column="9" end_column="10" covered="no" />
+            <range source_id="2" start_line="60" end_line="60" start_column="13" end_column="64" covered="no" />
+            <range source_id="2" start_line="62" end_line="62" start_column="13" end_column="30" covered="no" />
+            <range source_id="2" start_line="63" end_line="63" start_column="13" end_column="31" covered="no" />
+            <range source_id="2" start_line="65" end_line="65" start_column="13" end_column="71" covered="no" />
+            <range source_id="2" start_line="66" end_line="66" start_column="13" end_column="48" covered="no" />
+            <range source_id="2" start_line="67" end_line="67" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="8956" token="0x600000d" name="StartAppiumLocalServer(string, int)" namespace="UITests" type_name="AppiumServerHelper" block_coverage="88.89" line_coverage="80.00" blocks_covered="8" blocks_not_covered="1" lines_covered="8" lines_partially_covered="0" lines_not_covered="2">
+          <ranges>
+            <range source_id="3" start_line="12" end_line="12" start_column="9" end_column="10" covered="yes" />
+            <range source_id="3" start_line="13" end_line="13" start_column="13" end_column="49" covered="yes" />
+            <range source_id="3" start_line="14" end_line="14" start_column="13" end_column="14" covered="no" />
+            <range source_id="3" start_line="15" end_line="15" start_column="17" end_column="24" covered="no" />
+            <range source_id="3" start_line="18" end_line="20" start_column="13" end_column="34" covered="yes" />
+            <range source_id="3" start_line="23" end_line="23" start_column="13" end_column="51" covered="yes" />
+            <range source_id="3" start_line="24" end_line="24" start_column="13" end_column="41" covered="yes" />
+            <range source_id="3" start_line="25" end_line="25" start_column="9" end_column="10" covered="yes" />
+          </ranges>
+        </function>
+        <function id="9028" token="0x600000e" name="DisposeAppiumLocalServer()" namespace="UITests" type_name="AppiumServerHelper" block_coverage="80.00" line_coverage="66.67" blocks_covered="4" blocks_not_covered="1" lines_covered="2" lines_partially_covered="1" lines_not_covered="0">
+          <ranges>
+            <range source_id="3" start_line="28" end_line="28" start_column="9" end_column="10" covered="yes" />
+            <range source_id="3" start_line="29" end_line="29" start_column="13" end_column="44" covered="partial" />
+            <range source_id="3" start_line="30" end_line="30" start_column="9" end_column="10" covered="yes" />
+          </ranges>
+        </function>
+        <function id="9048" token="0x600000f" name="AppLaunches()" namespace="UITests" type_name="AppWindowTests" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="4" lines_covered="0" lines_partially_covered="0" lines_not_covered="3">
+          <ranges>
+            <range source_id="4" start_line="14" end_line="14" start_column="9" end_column="10" covered="no" />
+            <range source_id="4" start_line="17" end_line="17" start_column="13" end_column="74" covered="no" />
+            <range source_id="4" start_line="20" end_line="20" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="9092" token="0x6000012" name="get_App()" namespace="UITests" type_name="BaseTest" block_coverage="100.00" line_coverage="100.00" blocks_covered="3" blocks_not_covered="0" lines_covered="3" lines_partially_covered="0" lines_not_covered="0">
+          <ranges>
+            <range source_id="5" start_line="19" end_line="19" start_column="13" end_column="14" covered="yes" />
+            <range source_id="5" start_line="20" end_line="20" start_column="17" end_column="40" covered="yes" />
+            <range source_id="5" start_line="21" end_line="21" start_column="13" end_column="14" covered="yes" />
+          </ranges>
+        </function>
+        <function id="9116" token="0x6000013" name="FindUIElement(string)" namespace="UITests" type_name="BaseTest" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="11" lines_covered="0" lines_partially_covered="0" lines_not_covered="6">
+          <ranges>
+            <range source_id="5" start_line="26" end_line="26" start_column="9" end_column="10" covered="no" />
+            <range source_id="5" start_line="27" end_line="27" start_column="13" end_column="38" covered="no" />
+            <range source_id="5" start_line="28" end_line="28" start_column="13" end_column="14" covered="no" />
+            <range source_id="5" start_line="29" end_line="29" start_column="17" end_column="70" covered="no" />
+            <range source_id="5" start_line="32" end_line="32" start_column="13" end_column="53" covered="no" />
+            <range source_id="5" start_line="33" end_line="33" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="9192" token="0x6000014" name="NavigateTo(string)" namespace="UITests" type_name="BaseTest" block_coverage="20.83" line_coverage="22.22" blocks_covered="5" blocks_not_covered="19" lines_covered="4" lines_partially_covered="0" lines_not_covered="14">
+          <ranges>
+            <range source_id="5" start_line="36" end_line="36" start_column="9" end_column="10" covered="yes" />
+            <range source_id="5" start_line="37" end_line="37" start_column="13" end_column="38" covered="yes" />
+            <range source_id="5" start_line="38" end_line="38" start_column="13" end_column="14" covered="no" />
+            <range source_id="5" start_line="40" end_line="40" start_column="17" end_column="76" covered="no" />
+            <range source_id="5" start_line="41" end_line="41" start_column="17" end_column="30" covered="no" />
+            <range source_id="5" start_line="42" end_line="42" start_column="17" end_column="35" covered="no" />
+            <range source_id="5" start_line="44" end_line="44" start_column="17" end_column="81" covered="no" />
+            <range source_id="5" start_line="45" end_line="45" start_column="17" end_column="30" covered="no" />
+            <range source_id="5" start_line="46" end_line="46" start_column="13" end_column="14" covered="no" />
+            <range source_id="5" start_line="48" end_line="48" start_column="13" end_column="14" covered="yes" />
+            <range source_id="5" start_line="49" end_line="49" start_column="17" end_column="94" covered="yes" />
+            <range source_id="5" start_line="50" end_line="50" start_column="17" end_column="30" covered="no" />
+            <range source_id="5" start_line="51" end_line="51" start_column="17" end_column="35" covered="no" />
+            <range source_id="5" start_line="52" end_line="52" start_column="17" end_column="70" covered="no" />
+            <range source_id="5" start_line="53" end_line="53" start_column="17" end_column="30" covered="no" />
+            <range source_id="5" start_line="54" end_line="54" start_column="13" end_column="14" covered="no" />
+            <range source_id="5" start_line="55" end_line="55" start_column="13" end_column="31" covered="no" />
+            <range source_id="5" start_line="56" end_line="56" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="9384" token="0x6000016" name="AboutPage_Loads_TitleDisplayed()" namespace="UITests" type_name="AboutPageTests" block_coverage="20.00" line_coverage="40.00" blocks_covered="1" blocks_not_covered="4" lines_covered="2" lines_partially_covered="0" lines_not_covered="3">
+          <ranges>
+            <range source_id="6" start_line="7" end_line="7" start_column="9" end_column="10" covered="yes" />
+            <range source_id="6" start_line="8" end_line="8" start_column="13" end_column="33" covered="yes" />
+            <range source_id="6" start_line="10" end_line="10" start_column="13" end_column="67" covered="no" />
+            <range source_id="6" start_line="12" end_line="12" start_column="13" end_column="44" covered="no" />
+            <range source_id="6" start_line="13" end_line="13" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="9444" token="0x6000018" name="OptionsPage_Loads_PageVisible()" namespace="UITests" type_name="OptionsPageTests" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="5" lines_covered="0" lines_partially_covered="0" lines_not_covered="5">
+          <ranges>
+            <range source_id="7" start_line="7" end_line="7" start_column="9" end_column="10" covered="no" />
+            <range source_id="7" start_line="8" end_line="8" start_column="13" end_column="35" covered="no" />
+            <range source_id="7" start_line="10" end_line="10" start_column="13" end_column="79" covered="no" />
+            <range source_id="7" start_line="12" end_line="12" start_column="13" end_column="49" covered="no" />
+            <range source_id="7" start_line="13" end_line="13" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="9576" token="0x600001b" name="ReadJournalPage_Loads_PageVisible()" namespace="UITests" type_name="ReadJournalPageTests" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="5" lines_covered="0" lines_partially_covered="0" lines_not_covered="5">
+          <ranges>
+            <range source_id="8" start_line="7" end_line="7" start_column="9" end_column="10" covered="no" />
+            <range source_id="8" start_line="8" end_line="8" start_column="13" end_column="40" covered="no" />
+            <range source_id="8" start_line="10" end_line="10" start_column="13" end_column="67" covered="no" />
+            <range source_id="8" start_line="12" end_line="12" start_column="13" end_column="43" covered="no" />
+            <range source_id="8" start_line="13" end_line="13" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="9636" token="0x600001d" name="TrainerPage_StatsLabels_Displayed()" namespace="UITests" type_name="TrainerPageTests" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="5" lines_covered="0" lines_partially_covered="0" lines_not_covered="5">
+          <ranges>
+            <range source_id="9" start_line="7" end_line="7" start_column="9" end_column="10" covered="no" />
+            <range source_id="9" start_line="8" end_line="8" start_column="13" end_column="45" covered="no" />
+            <range source_id="9" start_line="10" end_line="10" start_column="13" end_column="72" covered="no" />
+            <range source_id="9" start_line="12" end_line="12" start_column="13" end_column="51" covered="no" />
+            <range source_id="9" start_line="13" end_line="13" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="9708" token="0x6000020" name="MoveNext()" namespace="UITests" type_name="MainPageTests.&lt;MainPage_BOSwitch_DisplayedAndToggled&gt;d__0" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="22" lines_covered="0" lines_partially_covered="0" lines_not_covered="15">
+          <ranges>
+            <range source_id="10" start_line="8" end_line="8" start_column="9" end_column="10" covered="no" />
+            <range source_id="10" start_line="10" end_line="10" start_column="13" end_column="64" covered="no" />
+            <range source_id="10" start_line="11" end_line="11" start_column="13" end_column="57" covered="no" />
+            <range source_id="10" start_line="14" end_line="14" start_column="13" end_column="30" covered="no" />
+            <range source_id="10" start_line="15" end_line="15" start_column="13" end_column="64" covered="no" />
+            <range source_id="10" start_line="16" end_line="16" start_column="13" end_column="65" covered="no" />
+            <range source_id="10" start_line="17" end_line="17" start_column="13" end_column="30" covered="no" />
+            <range source_id="10" start_line="18" end_line="18" start_column="13" end_column="64" covered="no" />
+            <range source_id="10" start_line="19" end_line="19" start_column="13" end_column="66" covered="no" />
+            <range source_id="10" start_line="21" end_line="21" start_column="13" end_column="44" covered="no" />
+            <range source_id="10" start_line="22" end_line="22" start_column="13" end_column="47" covered="no" />
+            <range source_id="10" start_line="23" end_line="23" start_column="13" end_column="45" covered="no" />
+            <range source_id="10" start_line="24" end_line="24" start_column="13" end_column="40" covered="no" />
+            <range source_id="10" start_line="25" end_line="25" start_column="13" end_column="42" covered="no" />
+            <range source_id="10" start_line="27" end_line="27" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="10312" token="0x6000023" name="MoveNext()" namespace="UITests" type_name="MainPageTests.&lt;MainPage_UserNoteInput_ShowTextEntry&gt;d__1" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="11" lines_covered="0" lines_partially_covered="0" lines_not_covered="8">
+          <ranges>
+            <range source_id="2" start_line="7" end_line="7" start_column="9" end_column="10" covered="no" />
+            <range source_id="2" start_line="9" end_line="9" start_column="13" end_column="70" covered="no" />
+            <range source_id="2" start_line="10" end_line="10" start_column="13" end_column="57" covered="no" />
+            <range source_id="2" start_line="12" end_line="12" start_column="13" end_column="47" covered="no" />
+            <range source_id="2" start_line="13" end_line="13" start_column="13" end_column="64" covered="no" />
+            <range source_id="2" start_line="16" end_line="16" start_column="13" end_column="45" covered="no" />
+            <range source_id="2" start_line="17" end_line="17" start_column="13" end_column="52" covered="no" />
+            <range source_id="2" start_line="19" end_line="19" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+        <function id="10652" token="0x6000026" name="MoveNext()" namespace="UITests" type_name="OptionsPageTests.&lt;OptionsPage_ArchetypeNameInput_AcceptsText&gt;d__1" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="11" lines_covered="0" lines_partially_covered="0" lines_not_covered="8">
+          <ranges>
+            <range source_id="7" start_line="17" end_line="17" start_column="9" end_column="10" covered="no" />
+            <range source_id="7" start_line="18" end_line="18" start_column="13" end_column="35" covered="no" />
+            <range source_id="7" start_line="20" end_line="20" start_column="13" end_column="71" covered="no" />
+            <range source_id="7" start_line="21" end_line="21" start_column="13" end_column="27" covered="no" />
+            <range source_id="7" start_line="22" end_line="22" start_column="13" end_column="40" covered="no" />
+            <range source_id="7" start_line="23" end_line="23" start_column="13" end_column="35" covered="no" />
+            <range source_id="7" start_line="25" end_line="25" start_column="13" end_column="45" covered="no" />
+            <range source_id="7" start_line="26" end_line="26" start_column="9" end_column="10" covered="no" />
+          </ranges>
+        </function>
+      </functions>
+      <source_files>
+        <source_file id="1" path="C:\Users\pinku\source\repos\PinKushin\PokemonBattleJournal\PokemonBattleJournal.UITests\UITests.Android\AppiumSetup.cs" checksum_type="SHA256" checksum="2DB4969F8D26985B47D00D8EB3659B2F85FEFD9740E39D866DF8635B50892649" />
+        <source_file id="2" path="C:\Users\pinku\source\repos\PinKushin\PokemonBattleJournal\PokemonBattleJournal.UITests\UITests.Shared\Views\MainPageTests.cs" checksum_type="SHA256" checksum="238ADE4FCD0E592B9EE9F10427745D526C1B1481B5AFDF426EC00976541A27D9" />
+        <source_file id="3" path="C:\Users\pinku\source\repos\PinKushin\PokemonBattleJournal\PokemonBattleJournal.UITests\UITests.Shared\AppiumServerHelper.cs" checksum_type="SHA256" checksum="9E9418CE62E9FB080581EFE3B01D4D248B63E55BD5207ACAB15C2E1E84E52476" />
+        <source_file id="4" path="C:\Users\pinku\source\repos\PinKushin\PokemonBattleJournal\PokemonBattleJournal.UITests\UITests.Shared\AppWindowTests.cs" checksum_type="SHA256" checksum="B9562127854BC4F78BC77366F16961FF2656A9B128C99CC1CDBF83B207398735" />
+        <source_file id="5" path="C:\Users\pinku\source\repos\PinKushin\PokemonBattleJournal\PokemonBattleJournal.UITests\UITests.Shared\BaseTest.cs" checksum_type="SHA256" checksum="1034A886BAB1D8A9C37001F27750FDDF3D1ED7788A8D4CBC341F87E909A29919" />
+        <source_file id="6" path="C:\Users\pinku\source\repos\PinKushin\PokemonBattleJournal\PokemonBattleJournal.UITests\UITests.Shared\Views\AboutPageTests.cs" checksum_type="SHA256" checksum="B7235050C9E30D4BC8F0B1AF2B658F2FDE700EE9E33A25C70D21C2B59EE92645" />
+        <source_file id="7" path="C:\Users\pinku\source\repos\PinKushin\PokemonBattleJournal\PokemonBattleJournal.UITests\UITests.Shared\Views\OptionsPageTests.cs" checksum_type="SHA256" checksum="EF9744BFB512C2A6B7BFE4841B2E3F83BEE9509D745B7461F442BBD88D7C2310" />
+        <source_file id="8" path="C:\Users\pinku\source\repos\PinKushin\PokemonBattleJournal\PokemonBattleJournal.UITests\UITests.Shared\Views\ReadJournalPageTests.cs" checksum_type="SHA256" checksum="8F588F401A95205DAF9412E152FA795450716FFA64027C3345E5C8B2E69C1AAC" />
+        <source_file id="9" path="C:\Users\pinku\source\repos\PinKushin\PokemonBattleJournal\PokemonBattleJournal.UITests\UITests.Shared\Views\TrainerPageTests.cs" checksum_type="SHA256" checksum="61B187C1151C5E41CC4BDE94BC102F6A454A10137DEFFED0D2B3A5093914CF8B" />
+        <source_file id="10" path="C:\Users\pinku\source\repos\PinKushin\PokemonBattleJournal\PokemonBattleJournal.UITests\UITests.Android\Views\MainPageTests.cs" checksum_type="SHA256" checksum="7DAF92568292D8520027FE831582E0B2DBFA744C50F28042EA2FB7DF27F44E90" />
+      </source_files>
+      <skipped_functions>
+        <skipped_function id="8272" original_id="8272" token="0x6000001" name="Main(string[])" type_name="AutoGeneratedProgram" reason="attribute_excluded" />
+      </skipped_functions>
+    </module>
+  </modules>
+  <skipped_modules>
+    <skipped_module name="netstandard.dll" path="netstandard.dll" reason="path_is_excluded" />
+    <skipped_module name="system.diagnostics.tracing.dll" path="system.diagnostics.tracing.dll" reason="path_is_excluded" />
+    <skipped_module name="system.net.primitives.dll" path="system.net.primitives.dll" reason="path_is_excluded" />
+    <skipped_module name="system.xml.readerwriter.dll" path="system.xml.readerwriter.dll" reason="path_is_excluded" />
+    <skipped_module name="system.text.encodings.web.dll" path="system.text.encodings.web.dll" reason="path_is_excluded" />
+    <skipped_module name="system.componentmodel.typeconverter.dll" path="system.componentmodel.typeconverter.dll" reason="path_is_excluded" />
+    <skipped_module name="system.diagnostics.diagnosticsource.dll" path="system.diagnostics.diagnosticsource.dll" reason="path_is_excluded" />
+    <skipped_module name="system.runtime.interopservices.dll" path="system.runtime.interopservices.dll" reason="path_is_excluded" />
+    <skipped_module name="xunit.runner.visualstudio.testadapter.dll" path="xunit.runner.visualstudio.testadapter.dll" reason="path_is_excluded" />
+    <skipped_module name="system.reflection.primitives.dll" path="system.reflection.primitives.dll" reason="path_is_excluded" />
+    <skipped_module name="system.collections.nongeneric.dll" path="system.collections.nongeneric.dll" reason="path_is_excluded" />
+    <skipped_module name="system.runtime.intrinsics.dll" path="system.runtime.intrinsics.dll" reason="path_is_excluded" />
+    <skipped_module name="system.io.pipelines.dll" path="system.io.pipelines.dll" reason="path_is_excluded" />
+    <skipped_module name="system.runtime.serialization.primitives.dll" path="system.runtime.serialization.primitives.dll" reason="path_is_excluded" />
+    <skipped_module name="system.threading.tasks.extensions.dll" path="system.threading.tasks.extensions.dll" reason="path_is_excluded" />
+    <skipped_module name="system.private.corelib.dll" path="system.private.corelib.dll" reason="path_is_excluded" />
+    <skipped_module name="system.text.encoding.dll" path="system.text.encoding.dll" reason="path_is_excluded" />
+    <skipped_module name="xunit.execution.dotnet.dll" path="xunit.execution.dotnet.dll" reason="path_is_excluded" />
+    <skipped_module name="system.linq.dll" path="system.linq.dll" reason="path_is_excluded" />
+    <skipped_module name="system.numerics.vectors.dll" path="system.numerics.vectors.dll" reason="path_is_excluded" />
+    <skipped_module name="microsoft.win32.registry.dll" path="microsoft.win32.registry.dll" reason="path_is_excluded" />
+    <skipped_module name="selenium.webdriver.dll" path="selenium.webdriver.dll" reason="path_is_excluded" />
+    <skipped_module name="system.threading.overlapped.dll" path="system.threading.overlapped.dll" reason="path_is_excluded" />
+    <skipped_module name="system.private.uri.dll" path="system.private.uri.dll" reason="path_is_excluded" />
+    <skipped_module name="system.reflection.emit.ilgeneration.dll" path="system.reflection.emit.ilgeneration.dll" reason="path_is_excluded" />
+    <skipped_module name="system.reflection.extensions.dll" path="system.reflection.extensions.dll" reason="path_is_excluded" />
+    <skipped_module name="system.reflection.metadata.dll" path="system.reflection.metadata.dll" reason="path_is_excluded" />
+    <skipped_module name="microsoft.testplatform.communicationutilities.dll" path="microsoft.testplatform.communicationutilities.dll" reason="path_is_excluded" />
+    <skipped_module name="shouldly.dll" path="shouldly.dll" reason="path_is_excluded" />
+    <skipped_module name="system.io.memorymappedfiles.dll" path="system.io.memorymappedfiles.dll" reason="path_is_excluded" />
+    <skipped_module name="xunit.abstractions.dll" path="xunit.abstractions.dll" reason="path_is_excluded" />
+    <skipped_module name="microsoft.testplatform.platformabstractions.dll" path="microsoft.testplatform.platformabstractions.dll" reason="path_is_excluded" />
+    <skipped_module name="system.diagnostics.tracesource.dll" path="system.diagnostics.tracesource.dll" reason="path_is_excluded" />
+    <skipped_module name="system.collections.concurrent.dll" path="system.collections.concurrent.dll" reason="path_is_excluded" />
+    <skipped_module name="system.memory.dll" path="system.memory.dll" reason="path_is_excluded" />
+    <skipped_module name="system.xml.xdocument.dll" path="system.xml.xdocument.dll" reason="path_is_excluded" />
+    <skipped_module name="microsoft.testplatform.crossplatengine.dll" path="microsoft.testplatform.crossplatengine.dll" reason="path_is_excluded" />
+    <skipped_module name="system.net.security.dll" path="system.net.security.dll" reason="path_is_excluded" />
+    <skipped_module name="system.private.xml.linq.dll" path="system.private.xml.linq.dll" reason="path_is_excluded" />
+    <skipped_module name="system.collections.specialized.dll" path="system.collections.specialized.dll" reason="path_is_excluded" />
+    <skipped_module name="system.runtime.extensions.dll" path="system.runtime.extensions.dll" reason="path_is_excluded" />
+    <skipped_module name="system.threading.dll" path="system.threading.dll" reason="path_is_excluded" />
+    <skipped_module name="system.threading.threadpool.dll" path="system.threading.threadpool.dll" reason="path_is_excluded" />
+    <skipped_module name="system.text.regularexpressions.dll" path="system.text.regularexpressions.dll" reason="path_is_excluded" />
+    <skipped_module name="system.text.json.dll" path="system.text.json.dll" reason="path_is_excluded" />
+    <skipped_module name="system.reflection.dll" path="system.reflection.dll" reason="path_is_excluded" />
+    <skipped_module name="system.console.dll" path="system.console.dll" reason="path_is_excluded" />
+    <skipped_module name="system.collections.immutable.dll" path="system.collections.immutable.dll" reason="path_is_excluded" />
+    <skipped_module name="system.diagnostics.stacktrace.dll" path="system.diagnostics.stacktrace.dll" reason="path_is_excluded" />
+    <skipped_module name="system.globalization.dll" path="system.globalization.dll" reason="path_is_excluded" />
+    <skipped_module name="system.runtime.interopservices.runtimeinformation.dll" path="system.runtime.interopservices.runtimeinformation.dll" reason="path_is_excluded" />
+    <skipped_module name="system.drawing.primitives.dll" path="system.drawing.primitives.dll" reason="path_is_excluded" />
+    <skipped_module name="system.diagnostics.process.dll" path="system.diagnostics.process.dll" reason="path_is_excluded" />
+    <skipped_module name="system.net.sockets.dll" path="system.net.sockets.dll" reason="path_is_excluded" />
+    <skipped_module name="system.runtime.loader.dll" path="system.runtime.loader.dll" reason="path_is_excluded" />
+    <skipped_module name="system.security.cryptography.dll" path="system.security.cryptography.dll" reason="path_is_excluded" />
+    <skipped_module name="system.runtime.dll" path="system.runtime.dll" reason="path_is_excluded" />
+    <skipped_module name="system.threading.thread.dll" path="system.threading.thread.dll" reason="path_is_excluded" />
+    <skipped_module name="system.private.xml.dll" path="system.private.xml.dll" reason="path_is_excluded" />
+    <skipped_module name="system.componentmodel.primitives.dll" path="system.componentmodel.primitives.dll" reason="path_is_excluded" />
+    <skipped_module name="system.net.nameresolution.dll" path="system.net.nameresolution.dll" reason="path_is_excluded" />
+    <skipped_module name="microsoft.visualstudio.testplatform.objectmodel.dll" path="microsoft.visualstudio.testplatform.objectmodel.dll" reason="path_is_excluded" />
+    <skipped_module name="system.reflection.emit.lightweight.dll" path="system.reflection.emit.lightweight.dll" reason="path_is_excluded" />
+    <skipped_module name="xunit.core.dll" path="xunit.core.dll" reason="path_is_excluded" />
+    <skipped_module name="testhost.dll" path="testhost.dll" reason="path_is_excluded" />
+    <skipped_module name="system.net.http.dll" path="system.net.http.dll" reason="path_is_excluded" />
+    <skipped_module name="system.io.dll" path="system.io.dll" reason="path_is_excluded" />
+    <skipped_module name="appium.net.dll" path="appium.net.dll" reason="path_is_excluded" />
+    <skipped_module name="microsoft.win32.primitives.dll" path="microsoft.win32.primitives.dll" reason="path_is_excluded" />
+    <skipped_module name="system.objectmodel.dll" path="system.objectmodel.dll" reason="path_is_excluded" />
+    <skipped_module name="system.text.encoding.extensions.dll" path="system.text.encoding.extensions.dll" reason="path_is_excluded" />
+    <skipped_module name="microsoft.visualstudio.testplatform.common.dll" path="microsoft.visualstudio.testplatform.common.dll" reason="path_is_excluded" />
+    <skipped_module name="system.collections.dll" path="system.collections.dll" reason="path_is_excluded" />
+    <skipped_module name="microsoft.testplatform.coreutilities.dll" path="microsoft.testplatform.coreutilities.dll" reason="path_is_excluded" />
+    <skipped_module name="system.threading.tasks.dll" path="system.threading.tasks.dll" reason="path_is_excluded" />
+  </skipped_modules>
+</results>
