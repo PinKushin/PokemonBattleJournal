@@ -190,7 +190,7 @@ public class ComboBoxControl : ContentView
         var contentLayout = new HorizontalStackLayout
         {
             Spacing = 8,
-            Padding = new Thickness(12, 10),
+            Padding = new Thickness(12, 4),
             Children = { _selectedIcon, _selectedLabel, _placeholderLabel, _arrowLabel }
         };
 

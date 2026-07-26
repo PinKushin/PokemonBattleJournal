@@ -98,7 +98,7 @@
                 <Label Style="{StaticResource Headline}" Text="Match Format" />
                 <Border
                     HorizontalOptions="Center"
-                    Padding="16,8"
+                    Padding="16,4"
                     Stroke="{StaticResource PokeYellow}"
                     StrokeThickness="1.5"
                     StrokeShape="RoundRectangle 20">
@@ -274,7 +274,7 @@
                             Text="{Binding UserNoteInput}" />
                         <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
                             <Border
-                                Padding="16,8"
+                                Padding="16,4"
                                 Stroke="{StaticResource PokeYellow}"
                                 StrokeThickness="1.5"
                                 StrokeShape="RoundRectangle 20">
@@ -350,7 +350,7 @@
                             Text="{Binding UserNoteInput2}" />
                         <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
                             <Border
-                                Padding="16,8"
+                                Padding="16,4"
                                 Stroke="{StaticResource PokeYellow}"
                                 StrokeThickness="1.5"
                                 StrokeShape="RoundRectangle 20">
@@ -426,7 +426,7 @@
                             Text="{Binding UserNoteInput3}" />
                         <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
                             <Border
-                                Padding="16,8"
+                                Padding="16,4"
                                 Stroke="{StaticResource PokeYellow}"
                                 StrokeThickness="1.5"
                                 StrokeShape="RoundRectangle 20">
