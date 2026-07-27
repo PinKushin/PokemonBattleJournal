@@ -30,32 +30,30 @@ namespace UITests
             androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppPackage, "com.PinKushin.PokemonBattleJournal");
             androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppActivity, "com.PinKushin.PokemonBattleJournal.MainActivity");
 
-            // 3. avd causes UIAutomator2 to boot the emulator if it is not already running.
-            //    EnsureAndroidToolsInPath() ensures emulator.exe is discoverable.
+            // 3. avd causes UIAutomator2 to boot the emulator if not already running
             androidOptions.AddAdditionalAppiumOption("avd", "pixel_7_-_api_35");
             androidOptions.AddAdditionalAppiumOption("avdLaunchTimeout", 180_000);
             androidOptions.AddAdditionalAppiumOption("avdReadyTimeout", 180_000);
+            // Tell Appium to wait up to 60s for MainActivity to be in the foreground
+            androidOptions.AddAdditionalAppiumOption("appWaitActivity", "com.PinKushin.PokemonBattleJournal.MainActivity");
+            androidOptions.AddAdditionalAppiumOption("appWaitDuration", 60_000);
 
-            // 4. Create driver — this triggers Appium to boot the emulator if needed
+            // 4. Create driver — triggers Appium to boot the emulator if needed
             driver = new AndroidDriver(androidOptions);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
 
-            // 5. Emulator is now up — deploy the latest build then relaunch
+            // 5. Poll until Android reports fully booted (sys.boot_completed = 1)
+            WaitForEmulatorBoot(timeoutSeconds: 180);
+
+            // 6. Deploy the latest build now that the emulator is fully ready
             DeployToAndroid();
 
-            // 6. Relaunch app via adb so Appium session tracks the fresh instance
-            var adb = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "adb",
-                Arguments = "shell am start -n com.PinKushin.PokemonBattleJournal/com.PinKushin.PokemonBattleJournal.MainActivity",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-            };
-            using var launch = System.Diagnostics.Process.Start(adb);
-            launch?.WaitForExit(10_000);
+            // 7. Relaunch so Appium session tracks the freshly deployed instance
+            RunAdb("shell am start -n com.PinKushin.PokemonBattleJournal/com.PinKushin.PokemonBattleJournal.MainActivity",
+                   timeoutMs: 10_000);
 
-            // 7. Give the app time to finish launching
-            Task.Delay(3000).Wait();
+            // 8. Wait for the activity to be foregrounded before tests start
+            WaitForActivity("com.PinKushin.PokemonBattleJournal.MainActivity", timeoutSeconds: 60);
         }
 
         public void Dispose()
@@ -85,6 +83,49 @@ namespace UITests
             {
                 // Best effort — don't fail the test run if shutdown fails
             }
+        }
+
+        private static void WaitForEmulatorBoot(int timeoutSeconds)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+            while (DateTime.UtcNow < deadline)
+            {
+                string output = RunAdb("shell getprop sys.boot_completed", timeoutMs: 5_000);
+                if (output.Trim() == "1") return;
+                Task.Delay(2000).Wait();
+            }
+            throw new TimeoutException($"Emulator did not finish booting within {timeoutSeconds}s");
+        }
+
+        private static void WaitForActivity(string activity, int timeoutSeconds)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+            while (DateTime.UtcNow < deadline)
+            {
+                string output = RunAdb("shell dumpsys activity activities", timeoutMs: 5_000);
+                if (output.Contains(activity)) return;
+                Task.Delay(2000).Wait();
+            }
+            // Non-fatal — tests will fail naturally if app isn't up
+        }
+
+        private static string RunAdb(string arguments, int timeoutMs)
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "adb",
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                using var proc = System.Diagnostics.Process.Start(psi)!;
+                proc.WaitForExit(timeoutMs);
+                return proc.StandardOutput.ReadToEnd();
+            }
+            catch { return string.Empty; }
         }
 
         private static void EnsureAndroidToolsInPath()
