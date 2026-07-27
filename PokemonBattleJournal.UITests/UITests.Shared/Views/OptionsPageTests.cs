@@ -70,9 +70,11 @@ namespace UITests
         {
             NavigateTo("Options");
 
+            // Unique suffix prevents UNIQUE constraint failure on repeated runs
+            string tagName = $"UITestTag-{DateTime.Now:HHmmss}";
             AppiumElement tagInput = FindUIElement("TagInput");
             tagInput.Clear();
-            tagInput.SendKeys("UITestTag");
+            tagInput.SendKeys(tagName);
             await Task.Delay(300);
 
             AppiumElement saveBtn = FindUIElement("SaveTagButton");

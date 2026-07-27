@@ -66,13 +66,6 @@ namespace PokemonBattleJournal.ViewModels
                 _logger.LogError(ex, "Error loading trainers for shell picker");
             }
 
-            // Pre-warm singleton VMs so ReadJournal and TrainerPage render instantly on first visit.
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(500); // let shell finish rendering first
-                await _readJournalVm.AppearingAsync();
-                await _trainerVm.AppearingAsync();
-            });
         }
 
         private async Task SwitchTrainerAsync(Trainer trainer)

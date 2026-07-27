@@ -108,14 +108,23 @@ namespace UITests
         {
             AppiumElement boSwitch = FindUIElement("BOSwitch");
             boSwitch.Click();
-            Thread.Sleep(500);
+            Thread.Sleep(1000); // allow BO3 content to animate in
 
-            // Game3Tab only appears when a Game3 is needed (split result after Game1+Game2),
-            // so only assert Game1Tab and Game2Tab which are always visible in BO3 mode.
-            AppiumElement game1 = FindUIElement("Game1Tab");
-            AppiumElement game2 = FindUIElement("Game2Tab");
-            game1.ShouldNotBeNull();
-            game2.ShouldNotBeNull();
+            // Verify outer layout first so we know BO3 content is rendered
+            FindUIElement("BO3GamesLayout").ShouldNotBeNull();
+
+            // Game3Tab only appears with a split result — only check Game1Tab and Game2Tab.
+            // Tab elements live inside a TabBar and aren't found via UiScrollable; use direct id lookup.
+            if (App is WindowsDriver)
+            {
+                App.FindElement(MobileBy.AccessibilityId("Game1Tab")).ShouldNotBeNull();
+                App.FindElement(MobileBy.AccessibilityId("Game2Tab")).ShouldNotBeNull();
+            }
+            else
+            {
+                App.FindElement(MobileBy.Id("com.PinKushin.PokemonBattleJournal:id/Game1Tab")).ShouldNotBeNull();
+                App.FindElement(MobileBy.Id("com.PinKushin.PokemonBattleJournal:id/Game2Tab")).ShouldNotBeNull();
+            }
 
             boSwitch.Click();
             Thread.Sleep(300);
@@ -139,8 +148,8 @@ namespace UITests
             }
             else
             {
-                // Windows Picker renders as a ComboBox — select by text
-                AppiumElement winOption = App.FindElement(MobileBy.AccessibilityId("Win"));
+                // Windows MAUI Picker popup items are found by Name (displayed text), not AutomationId
+                AppiumElement winOption = App.FindElement(MobileBy.Name("Win"));
                 winOption.Click();
             }
 

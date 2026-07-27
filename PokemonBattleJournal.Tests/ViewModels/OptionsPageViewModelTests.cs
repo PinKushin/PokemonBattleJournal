@@ -27,7 +27,12 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 _mockConnectionFactory,
                 Substitute.For<IMatchResultsCalculatorFactory>(),
                 _mockSwitchService);
-            _shellVm = new AppShellViewModel(_mockSwitchService, mainPageVm, Substitute.For<ILogger<AppShellViewModel>>());
+            _shellVm = new AppShellViewModel(
+                _mockSwitchService,
+                mainPageVm,
+                new ReadJournalPageViewModel(Substitute.For<ILogger<ReadJournalPageViewModel>>(), _mockConnectionFactory, _mockSwitchService),
+                new TrainerPageViewModel(Substitute.For<ILogger<TrainerPageViewModel>>(), _mockConnectionFactory, Substitute.For<IMatchAnalysisService>(), _mockSwitchService),
+                Substitute.For<ILogger<AppShellViewModel>>());
 
             // SUT
             _viewModel = new OptionsPageViewModel(_mockLogger, _mockConnectionFactory, _mockSwitchService, _shellVm);

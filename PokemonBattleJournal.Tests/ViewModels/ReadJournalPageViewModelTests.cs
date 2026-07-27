@@ -16,7 +16,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _mockConnectionFactory.Matches.Returns(Substitute.For<IMatchOperations>());
 
             // SUT
-            _viewModel = new ReadJournalPageViewModel(_mockLogger, _mockConnectionFactory);
+            _viewModel = new ReadJournalPageViewModel(_mockLogger, _mockConnectionFactory, Substitute.For<ITrainerSwitchService>());
         }
 
         [Fact]

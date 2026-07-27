@@ -2,33 +2,32 @@ namespace UITests
 {
     public partial class ReadJournalPageTests : BaseTest
     {
+        // Use direct MobileBy.Id for ReadJournal elements — UiScrollable.scrollIntoView causes
+        // 15-30s delays because it exhausts the scroll range before finding visible elements.
+        private AppiumElement FindReadJournalElement(string id) =>
+            App is WindowsDriver
+                ? App.FindElement(MobileBy.AccessibilityId(id))
+                : App.FindElement(MobileBy.Id($"com.PinKushin.PokemonBattleJournal:id/{id}"));
+
         [Fact]
         public void ReadJournalPage_Loads_PageVisible()
         {
             NavigateTo("Read Journal");
-            // Use MobileBy.Id directly — UiScrollable.scrollIntoView hits a 30s scroll-loop
-            // when the target IS the root scrollable container (can't scroll itself into view).
-            AppiumElement page = App is WindowsDriver
-                ? App.FindElement(MobileBy.AccessibilityId("ReadJournalPage"))
-                : App.FindElement(MobileBy.Id("com.PinKushin.PokemonBattleJournal:id/ReadJournalPage"));
-
-            page.ShouldNotBeNull();
+            FindReadJournalElement("ReadJournalPage").ShouldNotBeNull();
         }
 
         [Fact]
         public void ReadJournalPage_Title_Displayed()
         {
             NavigateTo("Read Journal");
-            AppiumElement title = FindUIElement("ReadJournalTitle");
-            title.ShouldNotBeNull();
+            FindReadJournalElement("ReadJournalTitle").ShouldNotBeNull();
         }
 
         [Fact]
         public void ReadJournalPage_MatchHistoryList_Displayed()
         {
             NavigateTo("Read Journal");
-            AppiumElement list = FindUIElement("MatchHistoryList");
-            list.ShouldNotBeNull();
+            FindReadJournalElement("MatchHistoryList").ShouldNotBeNull();
         }
 
         [Fact]
@@ -38,8 +37,6 @@ namespace UITests
 
             try
             {
-                // Find the first item inside the MatchHistoryList CollectionView.
-                // UiScrollable.getChildByInstance targets children of the list, not the list itself.
                 AppiumElement firstItem = App is WindowsDriver
                     ? App.FindElement(MobileBy.AccessibilityId("MatchHistoryList"))
                     : App.FindElement(MobileBy.AndroidUIAutomator(
@@ -49,13 +46,11 @@ namespace UITests
                 firstItem.Click();
                 await Task.Delay(1000);
 
-                AppiumElement playingLabel = FindUIElement("PlayingNameLabel");
-                playingLabel.ShouldNotBeNull();
+                FindReadJournalElement("PlayingNameLabel").ShouldNotBeNull();
             }
             catch (OpenQA.Selenium.NoSuchElementException)
             {
-                // No matches in DB yet — list is empty, detail test is not applicable.
-                // The MatchHistoryList_Displayed test already proved the list rendered.
+                // No matches in DB — list is empty, detail test is not applicable.
             }
         }
     }

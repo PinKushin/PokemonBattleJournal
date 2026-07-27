@@ -68,7 +68,10 @@ namespace UITests
             CleanSeedData();
             driver?.Quit();
             AppiumServerHelper.DisposeAppiumLocalServer();
-            ShutdownEmulator();
+            // Only kill the emulator in CI — locally the AVD stays alive so the next
+            // test run can reuse it without waiting for a cold boot.
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI")))
+                ShutdownEmulator();
         }
 
         private static void SeedTestData()
@@ -120,18 +123,18 @@ namespace UITests
 
         private static void CleanSeedData()
         {
-            // Delete seeded test matches from the app's SQLite DB via adb.
+            // Delete seeded test rows from the app's SQLite DB via adb.
             // Works on debug APKs via run-as (no root required).
             try
             {
                 const string pkg = "com.PinKushin.PokemonBattleJournal";
                 const string db = "files/PokemonBattleJournal.db3";
-                string sql = "DELETE FROM MatchEntry WHERE Notes LIKE '%UITestSeed%';";
-                RunAdb($"shell run-as {pkg} sqlite3 {db} \"{sql}\"", timeoutMs: 10_000);
+                RunAdb($"shell run-as {pkg} sqlite3 {db} \"DELETE FROM MatchEntry WHERE Notes LIKE '%UITestSeed%';\"", timeoutMs: 10_000);
+                RunAdb($"shell run-as {pkg} sqlite3 {db} \"DELETE FROM Tags WHERE Name LIKE 'UITestTag%';\"", timeoutMs: 10_000);
             }
             catch
             {
-                // Best effort — leftover seed rows don't break production
+                // Best effort — leftover rows don't break production
             }
         }
 

@@ -4,15 +4,27 @@
     {
         private readonly ILogger<ReadJournalPageViewModel> _logger;
         private readonly ISqliteConnectionFactory _connection;
+        private readonly ITrainerSwitchService _switchService;
         private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-        public ReadJournalPageViewModel(ILogger<ReadJournalPageViewModel> logger, ISqliteConnectionFactory connection)
+        public ReadJournalPageViewModel(ILogger<ReadJournalPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService)
         {
             WelcomeMsg = $"{TrainerName}'s Journal";
             _logger = logger;
             _connection = connection;
+            _switchService = switchService;
+            _switchService.TrainerChanged += OnTrainerChanged;
             _logger.LogInformation("ReadJournalPageViewModel created");
+        }
 
+        private void OnTrainerChanged(object? sender, Trainer trainer)
+        {
+            MainThreadHelper.BeginInvokeOnMainThread(async () =>
+            {
+                TrainerName = trainer.Name ?? string.Empty;
+                WelcomeMsg = $"{TrainerName}'s Journal";
+                await AppearingAsync();
+            });
         }
 
 
@@ -109,14 +121,20 @@
             try
             {
                 await _semaphore.WaitAsync();
-                Trainer? trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
+                TrainerName = PreferencesHelper.GetSetting("TrainerName");
+                var activeId = PreferencesHelper.GetTrainerId();
+                Trainer? trainer = activeId > 0
+                    ? await _connection.Trainers.GetByIdAsync(activeId)
+                    : await _connection.Trainers.GetByNameAsync(TrainerName);
                 if (trainer == null)
                 {
                     _logger.LogInformation("Trainer not found: {TrainerName}", TrainerName);
                     return;
                 }
+                TrainerName = trainer.Name ?? TrainerName;
+                WelcomeMsg = $"{TrainerName}'s Journal";
                 _logger.LogInformation("Loading matches for trainer: {TrainerId} {TrainerName}", trainer.Id, trainer.Name);
-                List<MatchEntry>? matches = await _connection.Matches.GetByTrainerIdAsync(trainer.Id, includeRelated: false);
+                List<MatchEntry>? matches = await _connection.Matches.GetByTrainerIdAsync(trainer.Id, includeRelated: true);
 
                 if (matches.Count < 1 || matches is null)
                 {
