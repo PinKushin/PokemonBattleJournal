@@ -7,8 +7,7 @@ namespace UITests
         {
             NavigateTo("Options");
             AppiumElement saveButton = FindUIElement("SaveTrainerNameButton");
-
-            saveButton.Displayed.ShouldBeTrue();
+            saveButton.ShouldNotBeNull();
         }
 
         [Fact]

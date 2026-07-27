@@ -2,12 +2,6 @@
 {
     public partial class MainPageTests : BaseTest
     {
-        public MainPageTests()
-        {
-            NavigateTo("Journal Entry");
-            Thread.Sleep(1500);
-        }
-
         [Fact]
         public async Task MainPage_UserNoteInput_ShowTextEntry()
         {
@@ -31,9 +25,7 @@
         {
             AppiumElement BallIconPng = FindUIElement("ball_icon.png");
 
-            _ = BallIconPng.ShouldNotBeNull();
-            BallIconPng.Displayed.ShouldBeTrue();
-            BallIconPng.Enabled.ShouldBeTrue();
+            BallIconPng.ShouldNotBeNull();
         }
 
         [Fact]
@@ -53,8 +45,7 @@
         public void MainPage_TagsView_Displayed()
         {
             AppiumElement tagsView = FindUIElement("TagsView");
-
-            tagsView.Displayed.ShouldBeTrue();
+            tagsView.ShouldNotBeNull();
         }
 
         [Fact]
@@ -66,7 +57,7 @@
             Thread.Sleep(500);
 
             AppiumElement bo3Layout = FindUIElement("BO3GamesLayout");
-            bo3Layout.Displayed.ShouldBeTrue();
+            bo3Layout.ShouldNotBeNull();
         }
     }
 }

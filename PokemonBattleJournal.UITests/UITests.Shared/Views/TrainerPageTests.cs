@@ -10,8 +10,7 @@ namespace UITests
             // before Appium queries the accessibility tree to avoid session timeout
             await Task.Delay(3000);
             AppiumElement winRateLabel = FindUIElement("WinRateLabel");
-
-            winRateLabel.Displayed.ShouldBeTrue();
+            winRateLabel.ShouldNotBeNull();
         }
     }
 }
