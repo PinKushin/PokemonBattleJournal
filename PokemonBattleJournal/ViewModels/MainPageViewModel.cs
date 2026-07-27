@@ -63,7 +63,7 @@ namespace PokemonBattleJournal.ViewModels
 
 
         [ObservableProperty]
-        public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
+        public partial string TrainerName { get; set; } = string.Empty;
 
         [ObservableProperty]
         public partial string WelcomeMsg { get; set; }
@@ -250,17 +250,8 @@ namespace PokemonBattleJournal.ViewModels
             try
             {
                 await _semaphore.WaitAsync();
-                var activeId = PreferencesHelper.GetTrainerId();
-                _trainer = activeId > 0
-                    ? await _connection.Trainers.GetByIdAsync(activeId)
-                    : await _connection.Trainers.GetByNameAsync(TrainerName);
-                if (_trainer == null)
-                {
-                    _ = await _connection.Trainers.SaveAsync(TrainerName);
-                    _trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
-                    if (_trainer != null)
-                        PreferencesHelper.SetTrainerId(_trainer.Id);
-                }
+                _trainer = _switchService.ActiveTrainer
+                    ?? await _connection.Trainers.GetActiveAsync();
                 TrainerName = _trainer?.Name ?? TrainerName;
                 WelcomeMsg = $"Welcome {TrainerName}";
                 Archetypes = await _connection.Archetypes.GetAllAsync();
@@ -362,7 +353,7 @@ namespace PokemonBattleJournal.ViewModels
             ValidationMessage = null;
 
             // Get trainer
-            _trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
+            _trainer = _switchService.ActiveTrainer ?? await _connection.Trainers.GetActiveAsync();
             if (TrainerName == null || _trainer == null)
             {
                 ValidationMessage = "Trainer not found. Please create a trainer profile first.";

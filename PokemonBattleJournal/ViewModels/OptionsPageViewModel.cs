@@ -31,10 +31,10 @@
         }
 
         [ObservableProperty]
-        public partial string Title { get; set; } = $"{PreferencesHelper.GetSetting("TrainerName")}'s Options";
+        public partial string Title { get; set; } = "Options";
 
         [ObservableProperty]
-        public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
+        public partial string TrainerName { get; set; } = string.Empty;
 
         [ObservableProperty]
         public partial string? NameInput { get; set; }
@@ -67,22 +67,19 @@
         }
 
         [ObservableProperty]
-        public partial string FileConfirmMessage { get; set; } = $"Delete {PreferencesHelper.GetSetting("TrainerName")}'s Trainer File?";
+        public partial string FileConfirmMessage { get; set; } = "Delete Trainer File?";
 
         [RelayCommand]
         public async Task AppearingAsync()
         {
             _logger.LogInformation("OptionsPageViewModel appearing");
-            TrainerName = PreferencesHelper.GetSetting("TrainerName");
-            Title = $"{TrainerName}'s Options";
-            _logger.LogInformation("Current Trainer Name: {TrainerName}", TrainerName);
             try
             {
                 IconCollection = await PopulateIconCollectionAsync();
-                var activeId = PreferencesHelper.GetTrainerId();
-                _trainer = activeId > 0
-                    ? await _connection.Trainers.GetByIdAsync(activeId)
-                    : await _connection.Trainers.GetByNameAsync(TrainerName);
+                _trainer = _switchService.ActiveTrainer ?? await _connection.Trainers.GetActiveAsync();
+                TrainerName = _trainer?.Name ?? string.Empty;
+                Title = $"{TrainerName}'s Options";
+                _logger.LogInformation("Current Trainer Name: {TrainerName}", TrainerName);
                 AllTrainers = await _connection.Trainers.GetAllAsync();
                 SelectedSwitchTrainer = AllTrainers.FirstOrDefault(t => t.Id == (_trainer?.Id ?? 0));
                 _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
@@ -151,7 +148,6 @@
             }
 
             TrainerName = NameInput;
-            PreferencesHelper.SetSetting("TrainerName", NameInput);
             try
             {
                 await _semaphore.WaitAsync();
@@ -169,7 +165,7 @@
                     return;
                 }
                 _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
-                PreferencesHelper.SetTrainerId(_trainer.Id);
+                await _switchService.SwitchToAsync(_trainer);
                 AllTrainers = await _connection.Trainers.GetAllAsync();
                 _shellVm.OnTrainerCreated(_trainer);
 

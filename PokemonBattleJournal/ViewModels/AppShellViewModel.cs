@@ -53,19 +53,21 @@ namespace PokemonBattleJournal.ViewModels
         {
             try
             {
+                await _switchService.InitializeAsync();
                 var all = await _switchService.GetAllTrainersAsync();
                 _suppressSelectionChanged = true;
                 Trainers = new ObservableCollection<Trainer>(all);
-                var activeId = PreferencesHelper.GetTrainerId();
-                SelectedTrainer = Trainers.FirstOrDefault(t => t.Id == activeId)
+                SelectedTrainer = Trainers.FirstOrDefault(t => t.Id == (_switchService.ActiveTrainer?.Id ?? 0))
                     ?? Trainers.FirstOrDefault();
                 _suppressSelectionChanged = false;
+                // If no trainer was flagged active, persist the fallback choice
+                if (_switchService.ActiveTrainer is null && SelectedTrainer is not null)
+                    await _switchService.SwitchToAsync(SelectedTrainer);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading trainers for shell picker");
             }
-
         }
 
         private async Task SwitchTrainerAsync(Trainer trainer)
@@ -79,10 +81,8 @@ namespace PokemonBattleJournal.ViewModels
 
                 if (!confirmed)
                 {
-                    // Revert picker to current trainer without triggering the handler
                     _suppressSelectionChanged = true;
-                    var activeId = PreferencesHelper.GetTrainerId();
-                    SelectedTrainer = Trainers.FirstOrDefault(t => t.Id == activeId);
+                    SelectedTrainer = Trainers.FirstOrDefault(t => t.Id == (_switchService.ActiveTrainer?.Id ?? 0));
                     _suppressSelectionChanged = false;
                     return;
                 }

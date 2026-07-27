@@ -9,6 +9,8 @@ namespace PokemonBattleJournal.Models
         [Unique]
         public string? Name { get; set; }
 
+        public bool IsActive { get; set; }
+
         [OneToMany("TrainerId", CascadeOperations = CascadeOperation.All)]
         public List<Archetype>? Archetypes { get; set; }
         [OneToMany("Id", CascadeOperations = CascadeOperation.All)]

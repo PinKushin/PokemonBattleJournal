@@ -29,7 +29,7 @@
 
 
         [ObservableProperty]
-        public partial string TrainerName { get; set; } = PreferencesHelper.GetSetting("TrainerName");
+        public partial string TrainerName { get; set; } = string.Empty;
 
         [ObservableProperty]
         public partial string WelcomeMsg { get; set; }
@@ -121,11 +121,7 @@
             try
             {
                 await _semaphore.WaitAsync();
-                TrainerName = PreferencesHelper.GetSetting("TrainerName");
-                var activeId = PreferencesHelper.GetTrainerId();
-                Trainer? trainer = activeId > 0
-                    ? await _connection.Trainers.GetByIdAsync(activeId)
-                    : await _connection.Trainers.GetByNameAsync(TrainerName);
+                Trainer? trainer = _switchService.ActiveTrainer ?? await _connection.Trainers.GetActiveAsync();
                 if (trainer == null)
                 {
                     _logger.LogInformation("Trainer not found: {TrainerName}", TrainerName);

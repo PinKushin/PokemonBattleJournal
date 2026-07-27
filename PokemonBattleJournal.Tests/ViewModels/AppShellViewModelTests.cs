@@ -197,6 +197,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             // Set SelectedTrainer without triggering switch (use suppress via LoadAsync pattern — but easier: set directly with same id in collection)
             // We need _suppressSelectionChanged = true, which LoadAsync does; populate via mock then load
             _mockSwitchService.GetAllTrainersAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockSwitchService.ActiveTrainer.Returns(trainer);
             await _sut.LoadAsync(); // sets SelectedTrainer = trainer (Id=5) with suppression
             _sut.IsTrainerMenuOpen = true;
 

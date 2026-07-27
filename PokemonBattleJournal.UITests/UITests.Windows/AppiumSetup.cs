@@ -24,6 +24,9 @@ namespace UITests
 
             string exePath = BuildWindowsApp();
 
+            // Wipe the DB before launch so every run starts with a clean slate
+            WipeAppData();
+
             AppiumOptions windowsOptions = new()
             {
                 AutomationName = "windows",
@@ -40,9 +43,38 @@ namespace UITests
 
         public void Dispose()
         {
-            CleanSeedData();
             driver?.Quit();
+            // Force-kill the MAUI exe in case WinAppDriver left it running
+            foreach (var proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
+            {
+                try { proc.Kill(); } catch { }
+            }
             AppiumServerHelper.DisposeAppiumLocalServer();
+        }
+
+        private static void WipeAppData()
+        {
+            // Delete the SQLite DB and MAUI preferences before the app launches so every run starts clean.
+            // DB is in {LocalAppData}\...\Data\PokemonBattleJournal.db3
+            // Preferences are in {LocalAppData}\...\Settings\preferences.dat (MAUI unpackaged Windows)
+            try
+            {
+                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string[] dbs = Directory.GetFiles(localAppData, "PokemonBattleJournal.db3", SearchOption.AllDirectories);
+                foreach (string db in dbs)
+                {
+                    File.Delete(db);
+                    // preferences.dat lives in a Settings/ sibling of the Data/ folder
+                    string? dataDir = Path.GetDirectoryName(db);
+                    string? appRoot = Path.GetDirectoryName(dataDir);
+                    string prefsFile = Path.Combine(appRoot ?? "", "Settings", "preferences.dat");
+                    if (File.Exists(prefsFile)) File.Delete(prefsFile);
+                }
+            }
+            catch
+            {
+                // Best effort — if delete fails the app will just open with existing data
+            }
         }
 
         private static void SeedTestData()
@@ -96,30 +128,6 @@ namespace UITests
             catch
             {
                 // Seed failure is non-fatal — tests degrade gracefully without data
-            }
-        }
-
-        private static void CleanSeedData()
-        {
-            // Delete seeded rows from the SQLite DB directly (avoids needing sqlite3 CLI on Windows).
-            try
-            {
-                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                string[] dbs = Directory.GetFiles(localAppData, "PokemonBattleJournal.db3", SearchOption.AllDirectories);
-                string? dbPath = dbs.FirstOrDefault();
-                if (dbPath == null) return;
-
-                using var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath}");
-                connection.Open();
-                using var cmd = connection.CreateCommand();
-                cmd.CommandText = "DELETE FROM MatchEntry WHERE Notes LIKE '%UITestSeed%';";
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = "DELETE FROM Tags WHERE Name LIKE 'UITestTag%';";
-                cmd.ExecuteNonQuery();
-            }
-            catch
-            {
-                // Best effort — leftover rows don't break production
             }
         }
 

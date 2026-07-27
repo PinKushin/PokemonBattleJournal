@@ -18,14 +18,18 @@ namespace PokemonBattleJournal.Services
         public Task<List<Trainer>> GetAllTrainersAsync() =>
             _connection.Trainers.GetAllAsync();
 
-        public Task SwitchToAsync(Trainer trainer)
+        public async Task InitializeAsync()
         {
+            ActiveTrainer = await _connection.Trainers.GetActiveAsync();
+            _logger.LogInformation("Active trainer loaded: {Name} ({Id})", ActiveTrainer?.Name, ActiveTrainer?.Id);
+        }
+
+        public async Task SwitchToAsync(Trainer trainer)
+        {
+            await _connection.Trainers.SetActiveAsync(trainer);
             ActiveTrainer = trainer;
-            PreferencesHelper.SetSetting("TrainerName", trainer.Name ?? string.Empty);
-            PreferencesHelper.SetTrainerId(trainer.Id);
             _logger.LogInformation("Switched to trainer {TrainerName} ({TrainerId})", trainer.Name, trainer.Id);
             TrainerChanged?.Invoke(this, trainer);
-            return Task.CompletedTask;
         }
     }
 }

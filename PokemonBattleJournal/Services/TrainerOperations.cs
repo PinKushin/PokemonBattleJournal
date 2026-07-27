@@ -35,6 +35,50 @@
             }
         }
 
+        /// <inheritdoc/>
+        public virtual async Task<Trainer?> GetActiveAsync()
+        {
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+            try
+            {
+                await _factory.GetLock().WaitAsync();
+                return await db.Table<Trainer>().Where(t => t.IsActive).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving active trainer");
+                return null;
+            }
+            finally
+            {
+                _ = _factory.GetLock().Release();
+            }
+        }
+
+        /// <inheritdoc/>
+        public virtual async Task SetActiveAsync(Trainer trainer)
+        {
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+            try
+            {
+                await _factory.GetLock().WaitAsync();
+                await db.RunInTransactionAsync(tran =>
+                {
+                    tran.Execute("UPDATE Trainer SET IsActive = 0");
+                    tran.Execute("UPDATE Trainer SET IsActive = 1 WHERE Id = ?", trainer.Id);
+                });
+                trainer.IsActive = true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting active trainer {Id}", trainer.Id);
+            }
+            finally
+            {
+                _ = _factory.GetLock().Release();
+            }
+        }
+
         /// <summary>
         /// Retrieves a trainer by name from the database.
         /// </summary>

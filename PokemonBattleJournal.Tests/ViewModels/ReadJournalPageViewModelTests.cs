@@ -98,7 +98,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 new() { Result = MatchResult.Loss }
             ];
 
-            _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
+            _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
             _mockConnectionFactory.Matches.GetByTrainerIdAsync(1, Arg.Any<bool>())
                 .Returns(Task.FromResult(matches));
@@ -113,7 +113,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task AppearingAsync_NoTrainer_SetsEmptyMatchHistory()
         {
             // Arrange
-            _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
+            _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(null));
 
             // Act

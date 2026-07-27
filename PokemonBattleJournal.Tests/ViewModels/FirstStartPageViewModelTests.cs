@@ -2,7 +2,17 @@ namespace PokemonBattleJournal.Tests.ViewModels;
 
 public class FirstStartPageViewModelTests
 {
-    private readonly FirstStartPageViewModel _viewModel = new();
+    private readonly ISqliteConnectionFactory _mockConnection;
+    private readonly ITrainerSwitchService _mockSwitchService;
+    private readonly FirstStartPageViewModel _viewModel;
+
+    public FirstStartPageViewModelTests()
+    {
+        _mockConnection = Substitute.For<ISqliteConnectionFactory>();
+        _mockConnection.Trainers.Returns(Substitute.For<ITrainerOperations>());
+        _mockSwitchService = Substitute.For<ITrainerSwitchService>();
+        _viewModel = new FirstStartPageViewModel(_mockConnection, _mockSwitchService);
+    }
 
     [Fact]
     public void Constructor_SetsTrainerNameInputNull()
@@ -11,20 +21,17 @@ public class FirstStartPageViewModelTests
     }
 
     [Fact]
-    public void SaveTrainerName_NullInput_DoesNotThrow()
+    public async Task SaveTrainerName_NullInput_DoesNotThrow()
     {
-        // TrainerNameInput is null — guard prevents setting preferences or navigating
         _viewModel.TrainerNameInput = null;
-        Should.NotThrow(() => _viewModel.SaveTrainerName());
+        await Should.NotThrowAsync(() => _viewModel.SaveTrainerName());
     }
 
     [Fact]
-    public void SaveTrainerName_NullInput_DoesNotSetPreferences()
+    public async Task SaveTrainerName_NullInput_DoesNotSetPreferences()
     {
         _viewModel.TrainerNameInput = null;
-        // No Application.Current in test env — exercise the null guard only
-        _viewModel.SaveTrainerName();
-        // Verify input unchanged
+        await _viewModel.SaveTrainerName();
         _viewModel.TrainerNameInput.ShouldBeNull();
     }
 
@@ -36,11 +43,9 @@ public class FirstStartPageViewModelTests
     }
 
     [Fact]
-    public void SaveTrainerName_WithInputButNoApplicationCurrent_DoesNotThrow()
+    public async Task SaveTrainerName_WithInputButNoApplicationCurrent_DoesNotThrow()
     {
-        // Application.Current is null in unit tests — branch checks both TrainerNameInput != null
-        // AND Application.Current != null before navigating. Should not throw.
         _viewModel.TrainerNameInput = "Ash";
-        Should.NotThrow(() => _viewModel.SaveTrainerName());
+        await Should.NotThrowAsync(() => _viewModel.SaveTrainerName());
     }
 }

@@ -39,28 +39,24 @@ namespace PokemonBattleJournal.Tests.Services
         [Fact]
         public async Task SwitchToAsync_SetsActiveTrainer()
         {
-            // Arrange
             var trainer = new Trainer { Id = 1, Name = "Ash" };
+            _mockTrainerOps.SetActiveAsync(trainer).Returns(Task.CompletedTask);
 
-            // Act
             await _sut.SwitchToAsync(trainer);
 
-            // Assert
             _sut.ActiveTrainer.ShouldBe(trainer);
         }
 
         [Fact]
         public async Task SwitchToAsync_FiresTrainerChangedEvent()
         {
-            // Arrange
             var trainer = new Trainer { Id = 1, Name = "Ash" };
+            _mockTrainerOps.SetActiveAsync(trainer).Returns(Task.CompletedTask);
             Trainer? eventTrainer = null;
             _sut.TrainerChanged += (_, t) => eventTrainer = t;
 
-            // Act
             await _sut.SwitchToAsync(trainer);
 
-            // Assert
             eventTrainer.ShouldNotBeNull();
             eventTrainer.ShouldBe(trainer);
         }
@@ -68,11 +64,21 @@ namespace PokemonBattleJournal.Tests.Services
         [Fact]
         public async Task SwitchToAsync_WithNullName_DoesNotThrow()
         {
-            // Arrange
             var trainer = new Trainer { Id = 1, Name = null };
+            _mockTrainerOps.SetActiveAsync(trainer).Returns(Task.CompletedTask);
 
-            // Act & Assert
             await Should.NotThrowAsync(() => _sut.SwitchToAsync(trainer));
+        }
+
+        [Fact]
+        public async Task InitializeAsync_SetsActiveTrainerFromDb()
+        {
+            var trainer = new Trainer { Id = 2, Name = "Misty", IsActive = true };
+            _mockTrainerOps.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+
+            await _sut.InitializeAsync();
+
+            _sut.ActiveTrainer.ShouldBe(trainer);
         }
     }
 }

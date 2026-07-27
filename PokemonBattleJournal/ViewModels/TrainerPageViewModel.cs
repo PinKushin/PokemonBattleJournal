@@ -22,8 +22,7 @@ namespace PokemonBattleJournal.ViewModels
             _analysisService = analysisService;
             _switchService = switchService;
             _switchService.TrainerChanged += OnTrainerChanged;
-            TrainerName = PreferencesHelper.GetSetting("TrainerName");
-            WelcomeMsg = $"{TrainerName}'s Profile";
+            WelcomeMsg = "Trainer Profile";
         }
 
         private void OnTrainerChanged(object? sender, Trainer trainer)
@@ -126,20 +125,11 @@ namespace PokemonBattleJournal.ViewModels
             List<MatchEntry>? matches = null;
             try
             {
-                var activeId = PreferencesHelper.GetTrainerId();
-                Trainer? trainer = activeId > 0
-                    ? await _connection.Trainers.GetByIdAsync(activeId)
-                    : await _connection.Trainers.GetByNameAsync(TrainerName);
+                Trainer? trainer = _switchService.ActiveTrainer ?? await _connection.Trainers.GetActiveAsync();
                 if (trainer == null)
                 {
-                    _logger.LogWarning("Trainer not found: {TrainerName}", TrainerName);
-                    _ = await _connection.Trainers.SaveAsync(TrainerName);
-                    trainer = await _connection.Trainers.GetByNameAsync(TrainerName);
-                    if (trainer == null)
-                    {
-                        _logger.LogError("Failed to create trainer: {TrainerName}", TrainerName);
-                        return;
-                    }
+                    _logger.LogWarning("No active trainer set");
+                    return;
                 }
                 TrainerName = trainer.Name ?? TrainerName;
                 WelcomeMsg = $"{TrainerName}'s Profile";

@@ -52,20 +52,24 @@ namespace UITests
             // 6. Deploy the latest build now that the emulator is fully ready
             DeployToAndroid();
 
-            // 7. Relaunch so Appium session tracks the freshly deployed instance
+            // 7. Wipe DB and preferences so every run starts completely clean
+            WipeAppData();
+
+            // 8. Relaunch so Appium session tracks the freshly deployed instance
             RunAdb("shell am start -n com.PinKushin.PokemonBattleJournal/com.PinKushin.PokemonBattleJournal.MainActivity",
                    timeoutMs: 10_000);
 
-            // 8. Wait for the activity to be foregrounded before tests start
+            // 9. Wait for the activity to be foregrounded before tests start
             WaitForActivity("com.PinKushin.PokemonBattleJournal.MainActivity", timeoutSeconds: 60);
 
-            // 9. Seed known test matches so ReadJournal and TrainerPage tests always have data
+            // 10. Seed known test matches so ReadJournal and TrainerPage tests always have data
             SeedTestData();
         }
 
         public void Dispose()
         {
-            CleanSeedData();
+            // Force-stop the app before closing the session so it doesn't stay running
+            RunAdb("shell am force-stop com.PinKushin.PokemonBattleJournal", timeoutMs: 5_000);
             driver?.Quit();
             AppiumServerHelper.DisposeAppiumLocalServer();
             // Only kill the emulator in CI — locally the AVD stays alive so the next
@@ -142,21 +146,13 @@ namespace UITests
             }
         }
 
-        private static void CleanSeedData()
+        private static void WipeAppData()
         {
-            // Delete seeded test rows from the app's SQLite DB via adb.
-            // Works on debug APKs via run-as (no root required).
-            try
-            {
-                const string pkg = "com.PinKushin.PokemonBattleJournal";
-                const string db = "files/PokemonBattleJournal.db3";
-                RunAdb($"shell run-as {pkg} sqlite3 {db} \"DELETE FROM MatchEntry WHERE Notes LIKE '%UITestSeed%';\"", timeoutMs: 10_000);
-                RunAdb($"shell run-as {pkg} sqlite3 {db} \"DELETE FROM Tags WHERE Name LIKE 'UITestTag%';\"", timeoutMs: 10_000);
-            }
-            catch
-            {
-                // Best effort — leftover rows don't break production
-            }
+            // Delete DB and shared preferences so the next launch starts with a clean slate.
+            // Must be called after DeployToAndroid() so run-as works (requires debug APK installed).
+            const string pkg = "com.PinKushin.PokemonBattleJournal";
+            RunAdb($"shell run-as {pkg} rm -f files/PokemonBattleJournal.db3", timeoutMs: 5_000);
+            RunAdb($"shell run-as {pkg} sh -c 'rm -rf shared_prefs/'", timeoutMs: 5_000);
         }
 
         private static void ShutdownEmulator()
