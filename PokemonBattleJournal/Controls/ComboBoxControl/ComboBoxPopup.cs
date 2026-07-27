@@ -47,6 +47,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
                 Margin = new Thickness(10, 0, 10, 0)
             };
             image.SetBinding(Image.SourceProperty, new Binding(imageMemberPath));
+            image.SetBinding(SemanticProperties.DescriptionProperty, new Binding(displayMemberPath, stringFormat: "{0} icon"));
 
             var label = new Label
             {
@@ -77,6 +78,8 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
                 HeightRequest = itemHeight,
                 BackgroundColor = backgroundColor
             };
+            grid.SetBinding(AutomationIdProperty, new Binding(displayMemberPath, stringFormat: "ArchetypeItem_{0}"));
+            grid.SetBinding(SemanticProperties.HintProperty, new Binding(displayMemberPath, stringFormat: "Double tap to select {0}"));
             grid.GestureRecognizers.Add(tap);
             return grid;
         });

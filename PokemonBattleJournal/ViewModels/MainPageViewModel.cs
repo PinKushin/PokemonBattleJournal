@@ -460,9 +460,9 @@ namespace PokemonBattleJournal.ViewModels
                         matchEntry.Playing?.Name, matchEntry.Against?.Name, matchEntry.Result);
                     _logger.LogDebug("Created {GameCount} games for match {MatchId}", games.Count, matchEntry.Id);
 
-                    // Clear validation state
                     HasValidationErrors = false;
                     ValidationMessage = null;
+                    ResetForm();
 
                     return result;
                 }

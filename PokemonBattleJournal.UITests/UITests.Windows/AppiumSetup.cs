@@ -56,28 +56,41 @@ namespace UITests
             AppiumServerHelper.DisposeAppiumLocalServer();
         }
 
+        private static IEnumerable<string> FindFiles(string root, string pattern)
+        {
+            IEnumerable<string> entries;
+            try { entries = Directory.EnumerateFiles(root, pattern); }
+            catch { yield break; }
+            foreach (string f in entries) yield return f;
+
+            IEnumerable<string> dirs;
+            try { dirs = Directory.EnumerateDirectories(root); }
+            catch { yield break; }
+            foreach (string dir in dirs)
+                foreach (string f in FindFiles(dir, pattern))
+                    yield return f;
+        }
+
         private static void WipeAppData()
         {
             // Delete the SQLite DB and MAUI preferences before the app launches so every run starts clean.
             // DB is in {LocalAppData}\...\Data\PokemonBattleJournal.db3
             // Preferences are in {LocalAppData}\...\Settings\preferences.dat (MAUI unpackaged Windows)
-            try
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            foreach (string db in FindFiles(localAppData, "PokemonBattleJournal.db3"))
             {
-                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                string[] dbs = Directory.GetFiles(localAppData, "PokemonBattleJournal.db3", SearchOption.AllDirectories);
-                foreach (string db in dbs)
+                try
                 {
                     File.Delete(db);
-                    // preferences.dat lives in a Settings/ sibling of the Data/ folder
                     string? dataDir = Path.GetDirectoryName(db);
                     string? appRoot = Path.GetDirectoryName(dataDir);
                     string prefsFile = Path.Combine(appRoot ?? "", "Settings", "preferences.dat");
                     if (File.Exists(prefsFile)) File.Delete(prefsFile);
                 }
-            }
-            catch
-            {
-                // Best effort — if delete fails the app will just open with existing data
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"[WipeAppData] Could not delete {db}: {ex.Message}");
+                }
             }
         }
 
@@ -88,30 +101,53 @@ namespace UITests
             // creates the trainer directly.
             try
             {
-                // 1. The Welcome prompt appears immediately: type trainer name and save.
-                // On WinUI DisplayPromptAsync renders as a ContentDialog; the Entry is a TextBox.
-                var promptInput = driver!.FindElement(MobileBy.ClassName("TextBox"));
-                promptInput.SendKeys("UITestTrainer");
-                Thread.Sleep(300);
-                driver.FindElement(MobileBy.Name("Save")).Click();
-                Thread.Sleep(800);
+                // 1. Handle the Welcome prompt if it appears (first clean boot only).
+                //    Use a short timeout to detect the dialog without stalling if trainer already exists.
+                driver!.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
+                try
+                {
+                    // Confirm the ContentDialog is present by finding its Save button
+                    AppiumElement saveBtn = driver.FindElement(MobileBy.Name("Save"));
 
-                // 2. Now on Journal Entry — seed 3 matches
+                    // The dialog's TextBox has no AutomationId — all our form inputs do.
+                    // Filter to the unnamed TextBox so we don't type into UserNoteInput behind the dialog.
+                    var allBoxes = driver.FindElements(MobileBy.ClassName("TextBox"));
+                    AppiumElement dialogBox = allBoxes
+                        .FirstOrDefault(b => string.IsNullOrEmpty(b.GetAttribute("AutomationId")))
+                        ?? allBoxes.First();
+                    dialogBox.SendKeys("UITestTrainer");
+                    Thread.Sleep(200);
+                    saveBtn.Click();
+                    Thread.Sleep(800);
+                }
+                catch
+                {
+                    // No welcome dialog — trainer already exists from a previous run, continue seeding
+                }
+                finally
+                {
+                    driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
+                }
+
+                // 2. Now on Journal Entry — seed 3 matches. Save clears the form so no nav needed between iterations.
                 for (int i = 1; i <= 3; i++)
                 {
-                    if (i > 1)
-                    {
-                        // Navigate back to Journal Entry after previous save
-                        driver.FindElement(MobileBy.AccessibilityId("OK")).Click();
-                        Thread.Sleep(500);
-                        driver.FindElement(MobileBy.AccessibilityId("Journal Entry")).Click();
-                        Thread.Sleep(800);
-                    }
-
                     var resultPicker = driver.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker"));
                     resultPicker.Click();
                     Thread.Sleep(500);
                     driver.FindElement(MobileBy.Name("Win")).Click();
+                    Thread.Sleep(300);
+
+                    // Select "Other" for player archetype — SaveMatchAsync rejects null PlayerSelected
+                    driver.FindElement(MobileBy.AccessibilityId("PlayerArchetype")).Click();
+                    Thread.Sleep(500);
+                    driver.FindElement(MobileBy.AccessibilityId("ArchetypeItem_Other")).Click();
+                    Thread.Sleep(300);
+
+                    // Select "Other" for rival archetype
+                    driver.FindElement(MobileBy.AccessibilityId("RivalArchetype")).Click();
+                    Thread.Sleep(500);
+                    driver.FindElement(MobileBy.AccessibilityId("ArchetypeItem_Other")).Click();
                     Thread.Sleep(300);
 
                     var noteInput = driver.FindElement(MobileBy.AccessibilityId("UserNoteInput"));
@@ -123,9 +159,9 @@ namespace UITests
                     Thread.Sleep(800);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Seed failure is non-fatal — tests degrade gracefully without data
+                throw new InvalidOperationException($"SeedTestData failed: {ex.Message}", ex);
             }
         }
 
@@ -157,7 +193,9 @@ namespace UITests
             };
 
             using var proc = System.Diagnostics.Process.Start(psi)!;
-            proc.WaitForExit(300_000); // 5-minute cap
+            bool exited = proc.WaitForExit(300_000); // 5-minute cap
+            if (!exited)
+                throw new TimeoutException("Windows build timed out after 5 minutes.");
 
             if (proc.ExitCode != 0)
             {

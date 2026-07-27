@@ -3,21 +3,16 @@ namespace UITests
     public partial class TrainerPageTests : BaseTest
     {
         [Fact]
-        public async Task TrainerPage_StatsLabels_Displayed()
+        public void TrainerPage_StatsLabels_Displayed()
         {
             NavigateTo("Trainer's Profile");
-            // LiveCharts renders 8 charts — give them time before querying accessibility tree
-            await Task.Delay(3000);
-            AppiumElement winRateLabel = FindUIElement("WinRateLabel");
-            winRateLabel.ShouldNotBeNull();
+            FindUIElement("WinRateLabel").ShouldNotBeNull();
         }
 
         [Fact]
-        public async Task TrainerPage_AllStatsLabels_Displayed()
+        public void TrainerPage_AllStatsLabels_Displayed()
         {
             NavigateTo("Trainer's Profile");
-            await Task.Delay(3000);
-
             FindUIElement("WinsLabel").ShouldNotBeNull();
             FindUIElement("LossesLabel").ShouldNotBeNull();
             FindUIElement("TiesLabel").ShouldNotBeNull();
@@ -26,11 +21,24 @@ namespace UITests
         }
 
         [Fact]
+        public void TrainerPage_HasSeededData()
+        {
+            NavigateTo("Trainer's Profile");
+
+            // WinsLabel must be non-zero — seeding puts 3 Win matches in.
+            // Failure here means TrainerPage loaded with no active trainer or DB is empty.
+            AppiumElement winsLabel = FindUIElement("WinsLabel");
+            winsLabel.ShouldNotBeNull();
+            string winsText = winsLabel.Text;
+            int.TryParse(winsText, out int wins);
+            wins.ShouldBeGreaterThan(0, $"WinsLabel shows '{winsText}' — TrainerPage has no data");
+        }
+
+        [Fact]
         public async Task TrainerPage_Charts_Rendered()
         {
             NavigateTo("Trainer's Profile");
-            // Charts need render time before Appium can find them
-            await Task.Delay(5000);
+            await Task.Delay(1000); // allow LiveCharts to finish initial render
 
             FindUIElement("MatchupMatrixChart").ShouldNotBeNull();
             FindUIElement("WinRateOverTimeChart").ShouldNotBeNull();
@@ -42,7 +50,7 @@ namespace UITests
         public async Task TrainerPage_AllCharts_Rendered()
         {
             NavigateTo("Trainer's Profile");
-            await Task.Delay(5000);
+            await Task.Delay(1000);
 
             FindUIElement("OpponentPerformanceChart").ShouldNotBeNull();
             FindUIElement("TagUsageChart").ShouldNotBeNull();

@@ -57,6 +57,7 @@
                     Source="ball_icon.png"
                     WidthRequest="{OnIdiom Default=32, Phone=24}" />
                 <Label
+                    AutomationId="PageTitle"
                     FontFamily="PokemonSolid"
                     FontSize="Title"
                     SemanticProperties.Description="Create a Match Entry"
@@ -76,7 +77,7 @@
                 Spacing="10">
 
                 <!--#region Archetype Pickers-->
-                <Label Style="{StaticResource Headline}" Text="Select Decks" />
+                <Label AutomationId="SelectDecksHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Select Decks" />
                 <StackLayout HorizontalOptions="Center" Orientation="{OnIdiom Default=Horizontal, Phone=Vertical}" Spacing="10">
                     <!--#region Player Archetype-->
                     <controls:ComboBoxControl
@@ -103,7 +104,7 @@
                 </StackLayout>
                 <!--#endregion-->
                 <!--#region BO3 Switch & Display-->
-                <Label Style="{StaticResource Headline}" Text="Match Format" />
+                <Label AutomationId="MatchFormatHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Match Format" />
                 <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
                     <!--  Pokeball slider track  -->
                     <Border
@@ -129,6 +130,7 @@
                                 HeightRequest="24"
                                 HorizontalOptions="Center"
                                 IsVisible="{Binding BO3Toggle, Converter={StaticResource InvertedBoolConverter}}"
+                                SemanticProperties.Description="Best of 1 selected"
                                 Source="ball_icon.png"
                                 VerticalOptions="Center"
                                 WidthRequest="24" />
@@ -139,6 +141,7 @@
                                 HeightRequest="24"
                                 HorizontalOptions="Center"
                                 IsVisible="{Binding BO3Toggle}"
+                                SemanticProperties.Description="Best of 3 selected"
                                 Source="ball_icon.png"
                                 VerticalOptions="Center"
                                 WidthRequest="24" />
@@ -155,7 +158,7 @@
                 </HorizontalStackLayout>
                 <!--#endregion-->
                 <!--#region Start and End Time Pickers-->
-                <Label Style="{StaticResource Headline}" Text="Start Time" />
+                <Label AutomationId="StartTimeHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Start Time" />
                 <TimePicker
                     x:Name="StartTimePicker"
                     AutomationId="StartTimePicker"
@@ -164,7 +167,7 @@
                     HorizontalOptions="Center"
                     MaximumWidthRequest="300"
                     Time="{Binding StartTime}" />
-                <Label Style="{StaticResource Headline}" Text="End Time" />
+                <Label AutomationId="EndTimeHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="End Time" />
                 <TimePicker
                     x:Name="EndTimePicker"
                     AutomationId="EndTimePicker"
@@ -175,7 +178,7 @@
                     Time="{Binding EndTime}" />
                 <!--#endregion-->
                 <!--#region Date Played Picker-->
-                <Label Style="{StaticResource Headline}" Text="Date Played" />
+                <Label AutomationId="DatePlayedHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Date Played" />
                 <DatePicker
                     x:Name="DatePlayedPicker"
                     AutomationId="DatePlayedPicker"
@@ -328,6 +331,8 @@
                                         VerticalOptions="Center"
                                         WidthRequest="32" />
                                     <Label
+                                        AutomationId="WentFirstLabel"
+                                        SemanticProperties.Description="Went first in game 1"
                                         Style="{StaticResource BO3Label}"
                                         Text="Went first"
                                         VerticalOptions="Center" />
@@ -410,6 +415,8 @@
                                         VerticalOptions="Center"
                                         WidthRequest="32" />
                                     <Label
+                                        AutomationId="WentFirstLabel2"
+                                        SemanticProperties.Description="Went first in game 2"
                                         Style="{StaticResource BO3Label}"
                                         Text="Went first"
                                         VerticalOptions="Center" />
@@ -492,6 +499,8 @@
                                         VerticalOptions="Center"
                                         WidthRequest="32" />
                                     <Label
+                                        AutomationId="WentFirstLabel3"
+                                        SemanticProperties.Description="Went first in game 3"
                                         Style="{StaticResource BO3Label}"
                                         Text="Went first"
                                         VerticalOptions="Center" />

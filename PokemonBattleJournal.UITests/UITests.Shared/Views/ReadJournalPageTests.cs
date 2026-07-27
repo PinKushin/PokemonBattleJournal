@@ -31,27 +31,41 @@ namespace UITests
         }
 
         [Fact]
+        public void ReadJournalPage_HasSeededMatches()
+        {
+            NavigateTo("Read Journal");
+
+            // Find the first seeded match row — AutomationId is bound to match Id.
+            // SeedTestData seeds 3 matches so at least MatchRow_1 must exist.
+            // Failure here means seeding failed or data didn't load for the active trainer.
+            AppiumElement firstRow = App is WindowsDriver
+                ? App.FindElements(MobileBy.XPath("//*[contains(@AutomationId,'MatchRow_')]"))
+                    .FirstOrDefault()
+                    ?? throw new Exception("No MatchRow_ elements found — ReadJournal loaded empty")
+                : App.FindElement(MobileBy.AndroidUIAutomator(
+                    "new UiSelector().resourceIdMatches(\"com.PinKushin.PokemonBattleJournal:id/MatchRow_.*\")"));
+
+            firstRow.ShouldNotBeNull();
+        }
+
+        [Fact]
         public async Task ReadJournalPage_SelectMatch_ShowsDetail()
         {
             NavigateTo("Read Journal");
 
-            try
-            {
-                AppiumElement firstItem = App is WindowsDriver
-                    ? App.FindElement(MobileBy.AccessibilityId("MatchHistoryList"))
-                    : App.FindElement(MobileBy.AndroidUIAutomator(
-                        "new UiScrollable(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/MatchHistoryList\"))" +
-                        ".getChildByInstance(new UiSelector().clickable(true), 0)"));
+            // Find and click the first match row by its bound AutomationId.
+            // Do NOT catch NoSuchElementException — empty list is a real failure (seed broken).
+            AppiumElement firstRow = App is WindowsDriver
+                ? App.FindElements(MobileBy.XPath("//*[contains(@AutomationId,'MatchRow_')]"))
+                    .FirstOrDefault()
+                    ?? throw new Exception("No match rows found — seeded data missing")
+                : App.FindElement(MobileBy.AndroidUIAutomator(
+                    "new UiSelector().resourceIdMatches(\"com.PinKushin.PokemonBattleJournal:id/MatchRow_.*\")"));
 
-                firstItem.Click();
-                await Task.Delay(1000);
+            firstRow.Click();
+            await Task.Delay(500);
 
-                FindReadJournalElement("PlayingNameLabel").ShouldNotBeNull();
-            }
-            catch (OpenQA.Selenium.NoSuchElementException)
-            {
-                // No matches in DB — list is empty, detail test is not applicable.
-            }
+            FindReadJournalElement("PlayingNameLabel").ShouldNotBeNull();
         }
     }
 }

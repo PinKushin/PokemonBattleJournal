@@ -12,7 +12,7 @@ namespace UITests
             }
         }
 
-        private const string AvdName = "pixel_9_pro_xl_-_api_36_1";
+        private const string AvdName = "pixel_7_-_api_35";
         private const string AppPackage = "com.PinKushin.PokemonBattleJournal";
 
         public AppiumSetup()
@@ -20,10 +20,14 @@ namespace UITests
             // 1. Put emulator/adb on PATH so Appium can find them
             EnsureAndroidToolsInPath();
 
-            // 2. Start Appium server
+            // 2. Boot the emulator explicitly and wait for it to be fully ready
+            //    before starting Appium — avoids "MainActivity never started" races.
+            EnsureEmulatorRunning();
+
+            // 3. Start Appium server
             AppiumServerHelper.StartAppiumLocalServer();
 
-            // 3. Build APK (no -t:Install; Appium handles the adb install via the app capability)
+            // 4. Build APK (no -t:Install; Appium handles the adb install via the app capability)
             string apkPath = BuildAndroidApk();
 
             AppiumOptions androidOptions = new()
@@ -33,25 +37,19 @@ namespace UITests
                 App = apkPath,
             };
 
-            // avd boots the emulator if not already running
-            androidOptions.AddAdditionalAppiumOption("avd", AvdName);
-            androidOptions.AddAdditionalAppiumOption("avdLaunchTimeout", 180_000);
-            androidOptions.AddAdditionalAppiumOption("avdReadyTimeout", 180_000);
+            // Emulator is already running — no avd boot capability needed.
             androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppPackage, AppPackage);
             androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppActivity, $"{AppPackage}.MainActivity");
             androidOptions.AddAdditionalAppiumOption("appWaitActivity", $"{AppPackage}.MainActivity");
             androidOptions.AddAdditionalAppiumOption("appWaitDuration", 60_000);
 
-            // 4. Create driver — Appium installs the APK and launches the app.
+            // 5. Create driver — Appium installs the APK and launches the app.
             // Fresh install guarantees a clean DB and preferences (no wipe step needed).
             driver = new AndroidDriver(
                 new Uri("http://127.0.0.1:4723/"),
                 androidOptions,
                 TimeSpan.FromMinutes(5));
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
-
-            // 5. Poll until Android reports fully booted
-            WaitForEmulatorBoot(timeoutSeconds: 180);
 
             // 6. Wait for the activity to be foregrounded before tests start
             WaitForActivity($"{AppPackage}.MainActivity", timeoutSeconds: 60);
@@ -87,18 +85,9 @@ namespace UITests
                 driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Save\")")).Click();
                 Thread.Sleep(800);
 
-                // 2. Now on Journal Entry — seed 3 matches
+                // 2. Now on Journal Entry — seed 3 matches. Save clears the form so no nav needed between iterations.
                 for (int i = 1; i <= 3; i++)
                 {
-                    if (i > 1)
-                    {
-                        // Navigate back to Journal Entry after previous save
-                        driver.FindElement(MobileBy.AccessibilityId("Open navigation drawer")).Click();
-                        Thread.Sleep(500);
-                        driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Journal Entry\")")).Click();
-                        Thread.Sleep(800);
-                    }
-
                     // Select "Win" from result picker
                     var resultPicker = driver.FindElement(MobileBy.AndroidUIAutomator(
                         "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
@@ -106,6 +95,24 @@ namespace UITests
                     resultPicker.Click();
                     Thread.Sleep(500);
                     driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                    Thread.Sleep(300);
+
+                    // Select "Other" for player archetype — SaveMatchAsync rejects null PlayerSelected
+                    driver.FindElement(MobileBy.AndroidUIAutomator(
+                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/PlayerArchetype\"))")).Click();
+                    Thread.Sleep(600);
+                    driver.FindElement(MobileBy.AndroidUIAutomator(
+                        "new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/ArchetypeItem_Other\")")).Click();
+                    Thread.Sleep(300);
+
+                    // Select "Other" for rival archetype
+                    driver.FindElement(MobileBy.AndroidUIAutomator(
+                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/RivalArchetype\"))")).Click();
+                    Thread.Sleep(600);
+                    driver.FindElement(MobileBy.AndroidUIAutomator(
+                        "new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/ArchetypeItem_Other\")")).Click();
                     Thread.Sleep(300);
 
                     // Type seed note
@@ -122,10 +129,52 @@ namespace UITests
                     Thread.Sleep(800);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Seed failure is non-fatal — tests degrade gracefully without data
+                throw new InvalidOperationException($"SeedTestData failed: {ex.Message}", ex);
             }
+        }
+
+        private static void EnsureEmulatorRunning()
+        {
+            string androidHome = Environment.GetEnvironmentVariable("ANDROID_HOME")
+                ?? Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT")
+                ?? string.Empty;
+            string emulatorExe = string.IsNullOrEmpty(androidHome)
+                ? "emulator"
+                : Path.Combine(androidHome, "emulator", "emulator");
+
+            // Check if the correct AVD is already running.
+            string devices = RunAdb("devices", 5_000);
+            bool correctAvdRunning = false;
+            foreach (string line in devices.Split('\n'))
+            {
+                string serial = line.Split('\t')[0].Trim();
+                if (!serial.StartsWith("emulator-")) continue;
+                string avdName = RunAdb($"-s {serial} emu avd name", 5_000).Split('\n')[0].Trim();
+                if (avdName == AvdName) { correctAvdRunning = true; break; }
+            }
+
+            if (!correctAvdRunning)
+            {
+                // Launch the correct AVD — fire-and-forget; emulator stays alive until killed.
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = emulatorExe,
+                    Arguments = $"-avd {AvdName} -no-snapshot-load",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = false,
+                    RedirectStandardError = false,
+                    CreateNoWindow = true,
+                };
+                System.Diagnostics.Process.Start(psi);
+            }
+
+            // Wait until Android reports fully booted.
+            WaitForEmulatorBoot(timeoutSeconds: 240);
+
+            // Uninstall any previous version to avoid signing-conflict failures.
+            RunAdb($"uninstall {AppPackage}", timeoutMs: 15_000);
         }
 
         private static void ShutdownEmulator()
@@ -143,7 +192,10 @@ namespace UITests
                 using var proc = System.Diagnostics.Process.Start(psi);
                 proc?.WaitForExit(10_000);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[ShutdownEmulator] {ex.Message}");
+            }
         }
 
         private static void WaitForEmulatorBoot(int timeoutSeconds)
@@ -186,7 +238,12 @@ namespace UITests
                 proc.WaitForExit(timeoutMs);
                 return proc.StandardOutput.ReadToEnd();
             }
-            catch { return string.Empty; }
+            catch (Exception ex)
+            {
+                // adb not found or timed out — caller treats empty string as "not available"
+                Console.Error.WriteLine($"[RunAdb '{arguments}'] {ex.Message}");
+                return string.Empty;
+            }
         }
 
         private static void EnsureAndroidToolsInPath()
@@ -237,8 +294,9 @@ namespace UITests
             };
 
             using var proc = System.Diagnostics.Process.Start(psi)!;
-            proc.WaitForExit(180_000); // 3-minute cap
-
+            bool exited = proc.WaitForExit(600_000); // 10-minute cap
+            if (!exited)
+                throw new TimeoutException("Android build timed out after 10 minutes.");
             if (proc.ExitCode != 0)
             {
                 string err = proc.StandardError.ReadToEnd();

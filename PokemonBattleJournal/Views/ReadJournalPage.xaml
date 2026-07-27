@@ -11,7 +11,7 @@
     Title="{Binding WelcomeMsg}"
     x:DataType="viewmodel:ReadJournalPageViewModel">
     <Shell.TitleView>
-        <Label Style="{StaticResource ShellTitleLabel}" Text="{Binding WelcomeMsg}" />
+        <Label AutomationId="ReadJournalTitleBar" SemanticProperties.Description="Read Journal page title" Style="{StaticResource ShellTitleLabel}" Text="{Binding WelcomeMsg}" />
     </Shell.TitleView>
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
@@ -264,11 +264,15 @@
                 VerticalScrollBarVisibility="Always">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="model:MatchEntry">
-                        <Border Margin="4,3" Padding="12,8" Stroke="{StaticResource PokeBlue}" StrokeThickness="1">
+                        <Border
+                            AutomationId="{Binding Id, StringFormat='MatchRow_{0}'}"
+                            SemanticProperties.Description="{Binding Playing.Name, StringFormat='Match with {0}'}"
+                            Margin="4,3" Padding="12,8" Stroke="{StaticResource PokeBlue}" StrokeThickness="1">
                             <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="8">
                                 <Image
                                     Grid.Column="0"
                                     HeightRequest="32"
+                                    SemanticProperties.Description="{Binding Playing.Name, StringFormat='{0} deck icon'}"
                                     Source="{Binding Playing.ImagePath}"
                                     VerticalOptions="Center"
                                     WidthRequest="32" />

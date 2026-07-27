@@ -12,7 +12,7 @@
     x:DataType="viewmodel:OptionsPageViewModel"
     AutomationId="OptionsPage">
     <Shell.TitleView>
-        <Label Style="{StaticResource ShellTitleLabel}" Text="{Binding Title}" />
+        <Label AutomationId="OptionsTitleBar" SemanticProperties.Description="Options page title" Style="{StaticResource ShellTitleLabel}" Text="{Binding Title}" />
     </Shell.TitleView>
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
@@ -28,7 +28,7 @@
             Spacing="12">
 
             <!--  Trainer section  -->
-            <Label Style="{StaticResource Headline}" Text="Trainer" />
+            <Label AutomationId="TrainerSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Trainer" />
 
             <Border
                 Padding="12,8"
@@ -57,7 +57,7 @@
                 WidthRequest="220" />
 
             <!--  Archetype section  -->
-            <Label Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Custom Archetype" />
+            <Label AutomationId="ArchetypeSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Custom Archetype" />
 
             <Border
                 Padding="12,8"
@@ -111,7 +111,7 @@
                 WidthRequest="220" />
 
             <!--  Tags section  -->
-            <Label Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Custom Tag" />
+            <Label AutomationId="TagSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Custom Tag" />
 
             <Border
                 Padding="12,8"
@@ -168,7 +168,7 @@
                 WidthRequest="220" />
 
             <!--#region Trainer Switcher-->
-            <Label Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Switch Trainer" />
+            <Label AutomationId="SwitchTrainerHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Switch Trainer" />
 
             <Border
                 Padding="12,8"

@@ -29,8 +29,14 @@ dotnet run --project PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0
 # Unit tests only
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
 
-# Single test
+# Single unit test
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --filter "FullyQualifiedName~MethodName"
+
+# Windows UI tests (WinAppDriver + Appium — app auto-built and launched)
+dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
+
+# Android UI tests (requires pixel_7_-_api_35 AVD; emulator booted automatically)
+dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
 
 # Benchmarks (Release only)
 .\PokemonBattleJournal.Benchmarks\Run.ps1
@@ -48,7 +54,7 @@ MVVM app: `Views (XAML) → ViewModels → Services → ISqliteConnectionFactory
 - **MVVM:** CommunityToolkit.Mvvm source generators (`[ObservableProperty]`, `[RelayCommand]`)
 - **DI:** `MauiProgram.cs` — `MainPage`/`MainPageViewModel` are singletons; all other pages/VMs are transient
 - **DB concurrency:** static `SemaphoreSlim` in `SqliteConnectionFactory`; every DB operation must acquire it
-- **Error handling:** `try/catch` + `ModalErrorHandler.HandleError` in services and VMs
+- **Error handling:** `try/catch` + `ModalErrorHandler.HandleError` in services and VMs — no silent `catch {}`
 - **Test detection:** `DeviceInfo.Platform == DevicePlatform.Unknown` signals unit test environment (no MAUI runtime)
 
 ### Services
@@ -59,17 +65,45 @@ MVVM app: `Views (XAML) → ViewModels → Services → ISqliteConnectionFactory
 
 ### Custom controls
 
-`Controls/ComboBoxControl/` — archetype picker used on MainPage (icon + name popup). `Controls/ImagePicker.cs` — icon selector on OptionsPage. Both use a popup with a `CollectionView`; the `ItemsSource` must be passed via constructor (not set after init), and item templates must return `Grid` directly (not `ViewCell`).
+`Controls/ComboBoxControl/` — archetype picker used on MainPage and OptionsPage (icon + name popup). `Controls/ImagePicker.cs` — icon selector on OptionsPage. Both use a popup with a `CollectionView`; the `ItemsSource` must be passed via constructor (not set after init), and item templates must return `Grid` directly (not `ViewCell`).
+
+Popup item grids have `AutomationId` bound to `"ArchetypeItem_{Name}"` — used by Appium seed and screen readers.
+
+## Accessibility standards
+
+Every UI element must have:
+- `AutomationId` — stable, unique identifier (used by Appium and screen readers)
+- `SemanticProperties.Description` — plain-English label for screen readers
+- `SemanticProperties.Hint` on tappable non-button elements — "Double tap to …"
+- `SemanticProperties.HeadingLevel="Level2"` on section headers
+- Images: `SemanticProperties.Description` with meaningful text (e.g., `"{Name} deck icon"`); purely decorative images get `SemanticProperties.IsInAccessibleTree="False"`
+
+## TDD workflow
+
+For anything new: **write the failing test first, then write the code.**
+
+1. Write the test. Run it. Confirm it fails for the right reason.
+2. Write the minimum code to pass it.
+3. Refactor. Tests stay green.
+
+In this project:
+- New service method → unit test in `PokemonBattleJournal.Tests` first.
+- New ViewModel command → unit test asserting the expected state change first.
+- New Shell page → Appium navigation + element-visible test written before the page exists.
+- New seed assertion → data-presence test written before the seed logic is added.
+- Bug fix → regression test that reproduces the bug, confirmed failing, before the fix.
 
 ## Test conventions
 
-- Naming: `{Class}Tests`, methods `{Method}_{Scenario}_{Expected}`
-- Mocks via NSubstitute, assertions via Shouldly
-- 221 unit tests currently passing; UI tests (Appium) require a running emulator/device
+- **Unit tests:** `{Class}Tests`, methods `{Method}_{Scenario}_{Expected}`, NSubstitute mocks, Shouldly assertions
+- **UI tests (Appium):** every Shell page needs navigation + element-visible test; every data page needs a data-presence assertion test (not just "element exists")
+- `SeedTestData()` runs in `AppiumSetup` constructor: handles first-boot trainer prompt, selects "Other" for both PlayerArchetype and RivalArchetype via `ArchetypeItem_Other` AutomationId, then saves 3 Win matches. `SaveMatchAsync` clears the form on success so no navigation needed between seed iterations.
+- Seed failures throw `InvalidOperationException` — never swallowed silently
+- Windows UI tests: `WipeAppData()` deletes DB + preferences before each run so first-boot prompt always fires on a clean slate
 
 ## Platform notes
 
 - Windows: unpackaged (`WindowsPackageType=None`); debug exe at `bin\Debug\net10.0-windows10.0.19041.0\win10-x64\PokemonBattleJournal.exe`
-- Android UI tests: hardcoded to AVD `pixel_7_-_api_35`
+- Android UI tests: AVD `pixel_7_-_api_35`; `EnsureEmulatorRunning()` verifies correct AVD by name via `adb emu avd name`, boots it if absent, then uninstalls previous APK to clear signing conflicts
 - Android Release: `RunAOTCompilation=False`, `PublishTrimmed=False`
 - Benchmarks fail under Debug; always use Release + `Run.ps1`

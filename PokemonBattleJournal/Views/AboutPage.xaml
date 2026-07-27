@@ -7,7 +7,7 @@
     Title="About"
     x:DataType="viewmodel:AboutPageViewModel">
     <Shell.TitleView>
-        <Label Style="{StaticResource ShellTitleLabel}" Text="About" />
+        <Label AutomationId="AboutTitleBar" SemanticProperties.Description="About page" Style="{StaticResource ShellTitleLabel}" Text="About" />
     </Shell.TitleView>
     <ScrollView>
         <VerticalStackLayout

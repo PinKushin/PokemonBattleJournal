@@ -21,7 +21,11 @@
             <VerticalStackLayout Spacing="0">
 
                 <!--  Switch Trainer accordion — top of list  -->
-                <Border Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
+                <Border
+                    AutomationId="SwitchTrainerAccordion"
+                    SemanticProperties.Description="Switch between trainer accounts"
+                    SemanticProperties.Hint="Double tap to expand or collapse trainer list"
+                    Padding="20,14" BackgroundColor="Transparent" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding ToggleTrainerMenuCommand}" />
                     </Border.GestureRecognizers>
@@ -51,10 +55,18 @@
                     </Grid>
                 </Border>
                 <VerticalStackLayout IsVisible="{Binding IsTrainerMenuOpen}" Spacing="0">
-                    <CollectionView ItemsSource="{Binding Trainers}" SelectionMode="None">
+                    <CollectionView
+                        AutomationId="TrainerList"
+                        SemanticProperties.Description="List of trainer accounts"
+                        ItemsSource="{Binding Trainers}"
+                        SelectionMode="None">
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="models:Trainer">
-                                <Border Padding="40,12,20,12" BackgroundColor="Transparent" StrokeThickness="0">
+                                <Border
+                                    AutomationId="{Binding Name}"
+                                    SemanticProperties.Description="{Binding Name, StringFormat='Switch to trainer {0}'}"
+                                    SemanticProperties.Hint="Double tap to switch to this trainer"
+                                    Padding="40,12,20,12" BackgroundColor="Transparent" StrokeThickness="0">
                                     <Border.GestureRecognizers>
                                         <TapGestureRecognizer
                                             Command="{Binding Source={x:Reference TheShell}, Path=BindingContext.SelectTrainerCommand}"
@@ -153,13 +165,18 @@
 
         <Grid BackgroundColor="{StaticResource PokeBlue}" HeightRequest="{OnIdiom Phone=55, Default=100}">
             <Image
+                AutomationId="FlyoutHeaderBg"
                 Aspect="AspectFill"
                 Opacity="0.2"
+                SemanticProperties.Description="Decorative pokeball background"
                 Source="ball_icon.png" />
             <Label
+                AutomationId="FlyoutTitle"
                 FontFamily="PokemonSolid"
                 FontSize="Large"
                 HorizontalTextAlignment="Center"
+                SemanticProperties.Description="Pokemon TCG Battle Journal navigation menu"
+                SemanticProperties.HeadingLevel="Level1"
                 Text="PTCG Journal"
                 VerticalTextAlignment="Center" />
         </Grid>
@@ -189,8 +206,10 @@
         <Grid BackgroundColor="{StaticResource PokeBlue}" HeightRequest="50">
             <!--  Footer content, typically used for copyright or additional links  -->
             <Label
+                AutomationId="FlyoutFooter"
                 FontSize="Small"
                 HorizontalTextAlignment="Center"
+                SemanticProperties.Description="License: The Unlicense"
                 Text="© The Unlicense"
                 TextColor="{StaticResource PokeYellow}"
                 VerticalTextAlignment="Center" />
