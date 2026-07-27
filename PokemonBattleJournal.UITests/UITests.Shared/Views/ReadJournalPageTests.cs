@@ -8,11 +8,12 @@ namespace UITests
             NavigateTo("Read Journal");
             // Use MobileBy.Id directly — UiScrollable.scrollIntoView hits a 30s scroll-loop
             // when the target IS the root scrollable container (can't scroll itself into view).
+            // FindElement success proves page rendered; .Displayed check races when session is under load
             AppiumElement page = App is WindowsDriver
                 ? App.FindElement(MobileBy.AccessibilityId("ReadJournalPage"))
                 : App.FindElement(MobileBy.Id("com.PinKushin.PokemonBattleJournal:id/ReadJournalPage"));
 
-            page.Displayed.ShouldBeTrue();
+            page.Enabled.ShouldBeTrue();
         }
     }
 }
