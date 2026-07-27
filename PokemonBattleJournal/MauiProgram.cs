@@ -89,13 +89,13 @@ namespace PokemonBattleJournal
             builder.Services.AddSingleton<MainPage>();
             builder.Services.AddSingleton<MainPageViewModel>();
 
-            //Read Journal Page
-            builder.Services.AddTransient<ReadJournalPage>();
-            builder.Services.AddTransient<ReadJournalPageViewModel>();
+            //Read Journal Page — singleton so match list stays loaded between navigations
+            builder.Services.AddSingleton<ReadJournalPage>();
+            builder.Services.AddSingleton<ReadJournalPageViewModel>();
 
-            //Trainer Page
-            builder.Services.AddTransient<TrainerPage>();
-            builder.Services.AddTransient<TrainerPageViewModel>();
+            //Trainer Page — singleton so charts stay warm between navigations
+            builder.Services.AddSingleton<TrainerPage>();
+            builder.Services.AddSingleton<TrainerPageViewModel>();
 
             //Options Page
             builder.Services.AddTransient<OptionsPage>();

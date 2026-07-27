@@ -58,13 +58,81 @@ namespace UITests
 
             // 8. Wait for the activity to be foregrounded before tests start
             WaitForActivity("com.PinKushin.PokemonBattleJournal.MainActivity", timeoutSeconds: 60);
+
+            // 9. Seed known test matches so ReadJournal and TrainerPage tests always have data
+            SeedTestData();
         }
 
         public void Dispose()
         {
+            CleanSeedData();
             driver?.Quit();
             AppiumServerHelper.DisposeAppiumLocalServer();
             ShutdownEmulator();
+        }
+
+        private static void SeedTestData()
+        {
+            // Save 3 matches via the UI so ReadJournal and TrainerPage always have data.
+            // Notes contain "UITestSeed" so CleanSeedData can target exactly these rows.
+            try
+            {
+                for (int i = 1; i <= 3; i++)
+                {
+                    // Ensure we're on Journal Entry
+                    var menu = driver!.FindElement(MobileBy.AccessibilityId("Open navigation drawer"));
+                    menu.Click();
+                    Thread.Sleep(500);
+                    var item = driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Journal Entry\")"));
+                    item.Click();
+                    Thread.Sleep(800);
+
+                    // Select "Win" from result picker
+                    var resultPicker = driver.FindElement(MobileBy.AndroidUIAutomator(
+                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/PossibleResultsPicker\"))"));
+                    resultPicker.Click();
+                    Thread.Sleep(500);
+                    var winOption = driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")"));
+                    winOption.Click();
+                    Thread.Sleep(300);
+
+                    // Type seed note so we can identify and delete these rows later
+                    var noteInput = driver.FindElement(MobileBy.AndroidUIAutomator(
+                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/UserNoteInput\"))"));
+                    noteInput.SendKeys($"UITestSeed-{i}");
+                    Thread.Sleep(200);
+
+                    // Save
+                    var saveBtn = driver.FindElement(MobileBy.AndroidUIAutomator(
+                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/SaveMatchButton\"))"));
+                    saveBtn.Click();
+                    Thread.Sleep(800);
+                }
+            }
+            catch
+            {
+                // Seed failure is non-fatal — tests degrade gracefully without data
+            }
+        }
+
+        private static void CleanSeedData()
+        {
+            // Delete seeded test matches from the app's SQLite DB via adb.
+            // Works on debug APKs via run-as (no root required).
+            try
+            {
+                const string pkg = "com.PinKushin.PokemonBattleJournal";
+                const string db = "files/PokemonBattleJournal.db3";
+                string sql = "DELETE FROM MatchEntry WHERE Notes LIKE '%UITestSeed%';";
+                RunAdb($"shell run-as {pkg} sqlite3 {db} \"{sql}\"", timeoutMs: 10_000);
+            }
+            catch
+            {
+                // Best effort — leftover seed rows don't break production
+            }
         }
 
         private static void ShutdownEmulator()

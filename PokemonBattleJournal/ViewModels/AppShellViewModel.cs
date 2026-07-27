@@ -6,16 +6,22 @@ namespace PokemonBattleJournal.ViewModels
     {
         private readonly ITrainerSwitchService _switchService;
         private readonly MainPageViewModel _mainPageVm;
+        private readonly ReadJournalPageViewModel _readJournalVm;
+        private readonly TrainerPageViewModel _trainerVm;
         private readonly ILogger<AppShellViewModel> _logger;
         private bool _suppressSelectionChanged;
 
         public AppShellViewModel(
             ITrainerSwitchService switchService,
             MainPageViewModel mainPageVm,
+            ReadJournalPageViewModel readJournalVm,
+            TrainerPageViewModel trainerVm,
             ILogger<AppShellViewModel> logger)
         {
             _switchService = switchService;
             _mainPageVm = mainPageVm;
+            _readJournalVm = readJournalVm;
+            _trainerVm = trainerVm;
             _logger = logger;
             _switchService.TrainerChanged += (_, trainer) =>
             {
@@ -59,6 +65,14 @@ namespace PokemonBattleJournal.ViewModels
             {
                 _logger.LogError(ex, "Error loading trainers for shell picker");
             }
+
+            // Pre-warm singleton VMs so ReadJournal and TrainerPage render instantly on first visit.
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(500); // let shell finish rendering first
+                await _readJournalVm.AppearingAsync();
+                await _trainerVm.AppearingAsync();
+            });
         }
 
         private async Task SwitchTrainerAsync(Trainer trainer)
