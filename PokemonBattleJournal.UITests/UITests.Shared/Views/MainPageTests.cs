@@ -2,6 +2,11 @@
 {
     public partial class MainPageTests : BaseTest
     {
+        public MainPageTests()
+        {
+            NavigateTo("Journal Entry");
+        }
+
         [Fact]
         public async Task MainPage_UserNoteInput_ShowTextEntry()
         {

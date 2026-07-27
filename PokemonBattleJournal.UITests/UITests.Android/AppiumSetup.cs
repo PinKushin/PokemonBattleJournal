@@ -14,8 +14,7 @@ namespace UITests
 
         public AppiumSetup()
         {
-            // If you started an Appium server manually, make sure to comment out the next line
-            // This line starts a local Appium server for you as part of the test run
+            DeployToAndroid();
             AppiumServerHelper.StartAppiumLocalServer();
             AppiumOptions androidOptions = new()
             {
@@ -60,8 +59,35 @@ namespace UITests
         public void Dispose()
         {
             driver?.Quit();
-            // If an Appium server was started locally above, make sure we clean it up here
             AppiumServerHelper.DisposeAppiumLocalServer();
+        }
+
+        private static void DeployToAndroid()
+        {
+            // Build and fast-deploy the app to the running emulator before tests start.
+            // This ensures the emulator always has the latest code without a manual deploy step.
+            string repoRoot = Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+            string project = Path.Combine(repoRoot, "PokemonBattleJournal", "PokemonBattleJournal.csproj");
+
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = $"build \"{project}\" -f net10.0-android -t:Install",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                WorkingDirectory = repoRoot,
+            };
+
+            using var proc = System.Diagnostics.Process.Start(psi)!;
+            proc.WaitForExit(180_000); // 3-minute cap
+
+            if (proc.ExitCode != 0)
+            {
+                string err = proc.StandardError.ReadToEnd();
+                throw new InvalidOperationException($"Android deploy failed (exit {proc.ExitCode}):\n{err}");
+            }
         }
     }
 }
