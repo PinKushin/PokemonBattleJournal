@@ -46,6 +46,46 @@ public class HttpMetaDeckFetcherTests
         result.ShouldBe(string.Empty);
     }
 
+    [Fact]
+    public async Task FetchAsync_404_ReturnsEmptyString()
+    {
+        var handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.NotFound));
+
+        HttpMetaDeckFetcher fetcher = BuildFetcher(handler);
+        string result = await fetcher.FetchAsync("https://limitlesstcg.com/decks");
+
+        result.ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    public async Task FetchAsync_EmptyResponseBody_ReturnsEmptyString()
+    {
+        var handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(string.Empty)
+        });
+
+        HttpMetaDeckFetcher fetcher = BuildFetcher(handler);
+        string result = await fetcher.FetchAsync("https://limitlesstcg.com/decks");
+
+        result.ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    public async Task FetchAsync_LargeHtmlPayload_ReturnsFullContent()
+    {
+        string bigHtml = string.Concat(Enumerable.Repeat("<tr><td>row</td></tr>", 500));
+        var handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(bigHtml)
+        });
+
+        HttpMetaDeckFetcher fetcher = BuildFetcher(handler);
+        string result = await fetcher.FetchAsync("https://limitlesstcg.com/decks");
+
+        result.ShouldBe(bigHtml);
+    }
+
     private sealed class FakeHttpMessageHandler(HttpResponseMessage response) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
@@ -58,3 +98,4 @@ public class HttpMetaDeckFetcherTests
             throw new HttpRequestException("Simulated network failure");
     }
 }
+

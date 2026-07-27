@@ -177,5 +177,177 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             _ = _mockConnectionFactory.Trainers.DidNotReceive().DeleteAsync(Arg.Any<Trainer>());
         }
+
+        [Fact]
+        public async Task SaveAllAsync_AllInputsNull_DoesNotCallAnyService()
+        {
+            _viewModel.NameInput = null;
+            _viewModel.TagInput = null;
+            _viewModel.NewDeckName = null;
+
+            await _viewModel.SaveAllAsync();
+
+            _ = _mockConnectionFactory.Trainers.DidNotReceive().SaveAsync(Arg.Any<string>());
+            _ = _mockConnectionFactory.Tags.DidNotReceive().SaveAsync(Arg.Any<string>(), Arg.Any<uint>());
+            _ = _mockConnectionFactory.Archetypes.DidNotReceive().SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>());
+        }
+
+        [Fact]
+        public async Task SaveAllAsync_ValidTrainerInput_CallsTrainerSave()
+        {
+            _viewModel.NameInput = "Ash";
+            _mockConnectionFactory.Trainers.SaveAsync("Ash").Returns(Task.FromResult(1));
+            _mockConnectionFactory.Trainers.GetByNameAsync("Ash")
+                .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 5, Name = "Ash" }));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { new() { Id = 5, Name = "Ash" } }));
+
+            await _viewModel.SaveAllAsync();
+
+            _ = _mockConnectionFactory.Trainers.Received(1).SaveAsync("Ash");
+        }
+
+        [Fact]
+        public async Task SaveTagAsync_WithTrainerSet_CallsTagSave()
+        {
+            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
+                .Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Tags.SaveAsync(Arg.Any<string>(), Arg.Any<uint>())
+                .Returns(Task.FromResult(1));
+
+            await _viewModel.AppearingAsync();   // sets _trainer
+            _viewModel.TagInput = "Aggro";
+
+            await _viewModel.SaveTagAsync();
+
+            _ = _mockConnectionFactory.Tags.Received(1).SaveAsync("Aggro", trainer.Id);
+        }
+
+        [Fact]
+        public async Task SaveTagAsync_WithTrainer_ClearsTagInput()
+        {
+            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
+                .Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Tags.SaveAsync(Arg.Any<string>(), Arg.Any<uint>())
+                .Returns(Task.FromResult(1));
+
+            await _viewModel.AppearingAsync();
+            _viewModel.TagInput = "Aggro";
+
+            await _viewModel.SaveTagAsync();
+
+            _viewModel.TagInput.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task SaveArchetypeAsync_NullIcon_DoesNotSave()
+        {
+            _viewModel.NewDeckName = "Charizard";
+            _viewModel.NewDeckIcon = null;
+
+            await _viewModel.SaveArchetypeAsync();
+
+            _ = _mockConnectionFactory.Archetypes.DidNotReceive().SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>());
+        }
+
+        [Fact]
+        public async Task SaveArchetypeAsync_WithTrainer_CallsArchetypeSave()
+        {
+            var trainer = new Trainer { Id = 7, Name = "Gary" };
+            _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
+                .Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>())
+                .Returns(Task.FromResult(1));
+
+            await _viewModel.AppearingAsync();
+            _viewModel.NewDeckName = "Charizard";
+            _viewModel.NewDeckIcon = "charizard.png";
+
+            await _viewModel.SaveArchetypeAsync();
+
+            _ = _mockConnectionFactory.Archetypes.Received(1).SaveAsync("Charizard", "charizard.png", trainer.Id);
+        }
+
+        [Fact]
+        public async Task SaveArchetypeAsync_WithTrainer_ClearsInputs()
+        {
+            var trainer = new Trainer { Id = 7, Name = "Gary" };
+            _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
+                .Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>())
+                .Returns(Task.FromResult(1));
+
+            await _viewModel.AppearingAsync();
+            _viewModel.NewDeckName = "Charizard";
+            _viewModel.NewDeckIcon = "charizard.png";
+
+            await _viewModel.SaveArchetypeAsync();
+
+            _viewModel.NewDeckName.ShouldBeNull();
+            _viewModel.NewDeckIcon.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task DeleteTrainerFileAsync_WithTrainer_CallsDeleteAsync()
+        {
+            var trainer = new Trainer { Id = 9, Name = "Giovanni" };
+            _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
+                .Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Trainers.DeleteAsync(trainer)
+                .Returns(Task.FromResult(1));
+
+            await _viewModel.AppearingAsync();   // sets _trainer
+            await _viewModel.DeleteTrainerFileAsync();
+
+            _ = _mockConnectionFactory.Trainers.Received(1).DeleteAsync(trainer);
+        }
+
+        [Fact]
+        public async Task SwitchTrainerAsync_SameTrainer_DoesNotCallSwitchService()
+        {
+            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
+                .Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+
+            await _viewModel.AppearingAsync();
+
+            // Switch to the same trainer — should be a no-op
+            await _viewModel.SwitchTrainerAsync(trainer);
+
+            await _mockSwitchService.DidNotReceive().SwitchToAsync(Arg.Any<Trainer>());
+        }
+
+        [Fact]
+        public async Task SwitchTrainerAsync_DifferentTrainer_UpdatesTrainerName()
+        {
+            var original = new Trainer { Id = 1, Name = "Ash" };
+            var newTrainer = new Trainer { Id = 2, Name = "Brock" };
+            _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
+                .Returns(Task.FromResult<Trainer?>(original));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { original, newTrainer }));
+            _mockSwitchService.SwitchToAsync(newTrainer).Returns(Task.CompletedTask);
+            _mockSwitchService.GetAllTrainersAsync()
+                .Returns(Task.FromResult(new List<Trainer> { original, newTrainer }));
+
+            await _viewModel.AppearingAsync();
+            await _viewModel.SwitchTrainerAsync(newTrainer);
+
+            _viewModel.TrainerName.ShouldBe("Brock");
+        }
     }
 }

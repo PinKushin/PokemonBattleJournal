@@ -79,4 +79,100 @@ public class LimitlessDeckParserTests
         List<MetaDeck> result = _parser.Parse(string.Empty, 10);
         result.ShouldBeEmpty();
     }
+
+    [Fact]
+    public void Parse_WhitespaceOnlyHtml_ReturnsEmptyList()
+    {
+        List<MetaDeck> result = _parser.Parse("   \t\n  ", 10);
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Parse_RowMissingAnchor_SkipsRow()
+    {
+        string html =
+            "<table><tbody>" +
+            "<tr><td>1</td><td><img class=\"pokemon\" src=\"img.png\"></td><td>no link here</td></tr>" +
+            "</tbody></table>";
+        List<MetaDeck> result = _parser.Parse(html, 10);
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Parse_RowMissingImage_SkipsRow()
+    {
+        string html =
+            "<table><tbody>" +
+            "<tr><td>1</td><td></td><td><a href=\"/decks/1\">Charizard <span class=\"annotation\">ex</span></a></td></tr>" +
+            "</tbody></table>";
+        List<MetaDeck> result = _parser.Parse(html, 10);
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Parse_AnchorWithNoAnnotation_UsesFullText()
+    {
+        string html =
+            "<table><tbody>" +
+            "<tr>" +
+            "<td>1</td>" +
+            "<td><img class=\"pokemon\" src=\"snorlax.png\"></td>" +
+            "<td><a href=\"/decks/1\">Snorlax Stall</a></td>" +
+            "</tr>" +
+            "</tbody></table>";
+        List<MetaDeck> result = _parser.Parse(html, 10);
+        result.Count.ShouldBe(1);
+        result[0].Name.ShouldBe("Snorlax Stall");
+    }
+
+    [Fact]
+    public void Parse_ImageWithNoSrc_SkipsRow()
+    {
+        string html =
+            "<table><tbody>" +
+            "<tr><td>1</td><td><img class=\"pokemon\"></td><td><a href=\"/decks/1\">Dragapult <span class=\"annotation\">ex</span></a></td></tr>" +
+            "</tbody></table>";
+        List<MetaDeck> result = _parser.Parse(html, 10);
+        // img with no src returns empty string — empty imageUrl => row skipped
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Parse_MultiWordAnnotation_FormatsNameCorrectly()
+    {
+        string html =
+            "<table><tbody>" +
+            "<tr>" +
+            "<td>1</td>" +
+            "<td><img class=\"pokemon\" src=\"zoroark.png\"></td>" +
+            "<td><a href=\"/decks/300\">N's Zoroark <span class=\"annotation\">ex</span></a></td>" +
+            "</tr>" +
+            "</tbody></table>";
+        List<MetaDeck> result = _parser.Parse(html, 10);
+        result[0].Name.ShouldBe("N's Zoroark ex");
+    }
+
+    [Fact]
+    public void Parse_CountZero_ReturnsEmptyList()
+    {
+        string html = BuildHtml(5);
+        List<MetaDeck> result = _parser.Parse(html, 0);
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Parse_TableWithNoTbody_ReturnsEmptyList()
+    {
+        // QuerySelectorAll("table tbody tr") finds nothing without tbody
+        string html = "<table><tr><td>1</td></tr></table>";
+        List<MetaDeck> result = _parser.Parse(html, 10);
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Parse_NullHtml_ReturnsEmptyList()
+    {
+        List<MetaDeck> result = _parser.Parse(null!, 10);
+        result.ShouldBeEmpty();
+    }
 }

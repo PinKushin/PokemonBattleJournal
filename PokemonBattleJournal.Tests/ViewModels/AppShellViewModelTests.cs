@@ -146,6 +146,47 @@ namespace PokemonBattleJournal.Tests.ViewModels
         }
 
         [Fact]
+        public async Task SelectTrainerAsync_DifferentTrainer_CallsSwitchService()
+        {
+            // Arrange — load a trainer so SelectedTrainer is set
+            var trainer1 = new Trainer { Id = 1, Name = "Ash" };
+            var trainer2 = new Trainer { Id = 2, Name = "Misty" };
+            _mockSwitchService.GetAllTrainersAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer1, trainer2 }));
+            _mockSwitchService.SwitchToAsync(Arg.Any<Trainer>()).Returns(Task.CompletedTask);
+            await _sut.LoadAsync(); // sets SelectedTrainer = trainer1 (first; active id = 0 in test)
+
+            // Act — pick trainer2 (different id)
+            await _sut.SelectTrainerAsync(trainer2);
+
+            // Assert
+            await _mockSwitchService.Received(1).SwitchToAsync(trainer2);
+        }
+
+        [Fact]
+        public void OnTrainerCreated_MultipleTrainers_AddsAll()
+        {
+            var t1 = new Trainer { Id = 1, Name = "Ash" };
+            var t2 = new Trainer { Id = 2, Name = "Misty" };
+
+            _sut.OnTrainerCreated(t1);
+            _sut.OnTrainerCreated(t2);
+
+            _sut.Trainers.Count.ShouldBe(2);
+        }
+
+        [Fact]
+        public async Task LoadAsync_EmptyTrainerList_LeavesSelectedTrainerNull()
+        {
+            _mockSwitchService.GetAllTrainersAsync()
+                .Returns(Task.FromResult(new List<Trainer>()));
+
+            await _sut.LoadAsync();
+
+            _sut.SelectedTrainer.ShouldBeNull();
+        }
+
+        [Fact]
         public async Task SelectTrainerAsync_SameTrainer_ClosesMenu()
         {
             // Arrange

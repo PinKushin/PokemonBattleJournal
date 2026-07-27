@@ -44,4 +44,66 @@ public class LimitlessMetaServiceTests
         result.ShouldBeEmpty();
         parser.DidNotReceive().Parse(Arg.Any<string>(), Arg.Any<int>());
     }
+
+    [Fact]
+    public async Task GetTopDecksAsync_FetcherReturnsWhitespace_ReturnsEmptyListWithoutParsing()
+    {
+        IMetaDeckFetcher fetcher = Substitute.For<IMetaDeckFetcher>();
+        IMetaDeckParser parser = Substitute.For<IMetaDeckParser>();
+
+        fetcher.FetchAsync(Arg.Any<string>()).Returns("   \n  ");
+
+        LimitlessMetaService service = BuildService(fetcher, parser);
+        List<MetaDeck> result = await service.GetTopDecksAsync();
+
+        result.ShouldBeEmpty();
+        parser.DidNotReceive().Parse(Arg.Any<string>(), Arg.Any<int>());
+    }
+
+    [Fact]
+    public async Task GetTopDecksAsync_PassesDecksUrlToFetcher()
+    {
+        const string expectedUrl = "https://limitlesstcg.com/decks";
+        IMetaDeckFetcher fetcher = Substitute.For<IMetaDeckFetcher>();
+        IMetaDeckParser parser = Substitute.For<IMetaDeckParser>();
+
+        fetcher.FetchAsync(Arg.Any<string>()).Returns("<html>data</html>");
+        parser.Parse(Arg.Any<string>(), Arg.Any<int>()).Returns([]);
+
+        LimitlessMetaService service = BuildService(fetcher, parser);
+        await service.GetTopDecksAsync(5);
+
+        await fetcher.Received(1).FetchAsync(expectedUrl);
+    }
+
+    [Fact]
+    public async Task GetTopDecksAsync_DefaultCount_PassesTenToParser()
+    {
+        IMetaDeckFetcher fetcher = Substitute.For<IMetaDeckFetcher>();
+        IMetaDeckParser parser = Substitute.For<IMetaDeckParser>();
+
+        fetcher.FetchAsync(Arg.Any<string>()).Returns("<html>data</html>");
+        parser.Parse(Arg.Any<string>(), Arg.Any<int>()).Returns([]);
+
+        LimitlessMetaService service = BuildService(fetcher, parser);
+        await service.GetTopDecksAsync();
+
+        parser.Received(1).Parse(Arg.Any<string>(), 10);
+    }
+}
+
+public class MetaServiceFactoryTests
+{
+    [Fact]
+    public void Create_ReturnsLimitlessMetaService()
+    {
+        IMetaDeckFetcher fetcher = Substitute.For<IMetaDeckFetcher>();
+        IMetaDeckParser parser = Substitute.For<IMetaDeckParser>();
+        MetaServiceFactory factory = new(fetcher, parser, Microsoft.Extensions.Logging.Abstractions.NullLogger<LimitlessMetaService>.Instance);
+
+        ILimitlessMetaService service = factory.Create();
+
+        service.ShouldNotBeNull();
+        service.ShouldBeOfType<LimitlessMetaService>();
+    }
 }
