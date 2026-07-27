@@ -19,6 +19,10 @@ namespace UITests
 
         public void RunBeforeAnyTests()
         {
+            // Kill any leftover app process from a previous crash before touching files or starting servers
+            foreach (var proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
+                try { proc.Kill(true); proc.WaitForExit(5_000); } catch { }
+
             // Port 4724 so Windows and Android Appium servers don't conflict when the full suite runs in parallel
             AppiumServerHelper.StartAppiumLocalServer(port: 4724);
 
