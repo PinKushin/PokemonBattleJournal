@@ -7,6 +7,21 @@ namespace UITests
             NavigateTo("Journal Entry");
         }
 
+        // The SeedTestData step in AppiumSetup is the integration test for first-boot:
+        // it installs a fresh APK (no DB), launches the app, dismisses the Welcome prompt
+        // by typing "UITestTrainer" and clicking Save, then verifies the main page becomes
+        // interactive by successfully seeding 3 matches. If the prompt flow were broken,
+        // every subsequent test in this suite would fail because the nav drawer would be
+        // unreachable. This test documents that contract explicitly.
+        [Fact]
+        public void MainPage_AfterFirstBoot_TrainerNameSet()
+        {
+            // If seeding succeeded, a trainer is active and the WelcomeMsg label is present
+            AppiumElement welcomeLabel = FindUIElement("WelcomeMsg");
+            welcomeLabel.ShouldNotBeNull();
+            welcomeLabel.Text.ShouldContain("UITestTrainer");
+        }
+
         [Fact]
         public async Task MainPage_UserNoteInput_ShowTextEntry()
         {

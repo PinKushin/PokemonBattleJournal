@@ -73,39 +73,31 @@ namespace UITests
 
         private static void SeedTestData()
         {
-            // Save 3 matches via the UI so ReadJournal and TrainerPage always have data.
+            // Fresh install starts on Journal Entry with the first-boot Welcome prompt blocking the UI.
+            // Handle the prompt first, then seed matches. No need to visit Options — the prompt
+            // creates the trainer directly.
             try
             {
-                // 1. Set a known trainer name so ReadJournal/TrainerPage always have a trainer
-                var menu = driver!.FindElement(MobileBy.AccessibilityId("Open navigation drawer"));
-                menu.Click();
-                Thread.Sleep(500);
-                var optionsItem = driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Options\")"));
-                optionsItem.Click();
+                // 1. The Welcome prompt appears immediately: type trainer name and save
+                // DisplayPromptAsync renders as an Android AlertDialog with a single EditText
+                var promptInput = driver!.FindElement(MobileBy.AndroidUIAutomator(
+                    "new UiSelector().className(\"android.widget.EditText\")"));
+                promptInput.SendKeys("UITestTrainer");
+                Thread.Sleep(300);
+                driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Save\")")).Click();
                 Thread.Sleep(800);
 
-                var trainerInput = driver.FindElement(MobileBy.AndroidUIAutomator(
-                    "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                    ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/TrainerNameInput\"))"));
-                trainerInput.Clear();
-                trainerInput.SendKeys("UITestTrainer");
-                Thread.Sleep(300);
-
-                var saveTrainerBtn = driver.FindElement(MobileBy.AndroidUIAutomator(
-                    "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                    ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/SaveTrainerNameButton\"))"));
-                saveTrainerBtn.Click();
-                Thread.Sleep(500);
-
+                // 2. Now on Journal Entry — seed 3 matches
                 for (int i = 1; i <= 3; i++)
                 {
-                    // Ensure we're on Journal Entry
-                    var navDrawer = driver!.FindElement(MobileBy.AccessibilityId("Open navigation drawer"));
-                    navDrawer.Click();
-                    Thread.Sleep(500);
-                    var item = driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Journal Entry\")"));
-                    item.Click();
-                    Thread.Sleep(800);
+                    if (i > 1)
+                    {
+                        // Navigate back to Journal Entry after previous save
+                        driver.FindElement(MobileBy.AccessibilityId("Open navigation drawer")).Click();
+                        Thread.Sleep(500);
+                        driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Journal Entry\")")).Click();
+                        Thread.Sleep(800);
+                    }
 
                     // Select "Win" from result picker
                     var resultPicker = driver.FindElement(MobileBy.AndroidUIAutomator(
@@ -113,8 +105,7 @@ namespace UITests
                         ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/PossibleResultsPicker\"))"));
                     resultPicker.Click();
                     Thread.Sleep(500);
-                    var winOption = driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")"));
-                    winOption.Click();
+                    driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
                     Thread.Sleep(300);
 
                     // Type seed note
@@ -125,10 +116,9 @@ namespace UITests
                     Thread.Sleep(200);
 
                     // Save
-                    var saveBtn = driver.FindElement(MobileBy.AndroidUIAutomator(
+                    driver.FindElement(MobileBy.AndroidUIAutomator(
                         "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/SaveMatchButton\"))"));
-                    saveBtn.Click();
+                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/SaveMatchButton\"))")).Click();
                     Thread.Sleep(800);
                 }
             }

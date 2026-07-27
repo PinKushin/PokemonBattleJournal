@@ -13,7 +13,7 @@
     Title="{Binding WelcomeMsg}"
     x:DataType="viewmodel:MainPageViewModel">
     <Shell.TitleView>
-        <Label Style="{StaticResource ShellTitleLabel}" Text="{Binding WelcomeMsg}" />
+        <Label AutomationId="WelcomeMsg" Style="{StaticResource ShellTitleLabel}" Text="{Binding WelcomeMsg}" />
     </Shell.TitleView>
     <ContentPage.Resources>
         <toolkit:BoolToObjectConverter

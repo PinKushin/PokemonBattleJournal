@@ -83,35 +83,30 @@ namespace UITests
 
         private static void SeedTestData()
         {
-            // Set a known trainer name then seed 3 matches so ReadJournal/TrainerPage always have data.
+            // Fresh install starts on Journal Entry with the first-boot Welcome prompt blocking the UI.
+            // Handle the prompt first, then seed matches. No need to visit Options — the prompt
+            // creates the trainer directly.
             try
             {
-                // 1. Navigate to Options and set trainer name
-                var menu = driver!.FindElement(MobileBy.AccessibilityId("OK"));
-                menu.Click();
-                Thread.Sleep(500);
-                var optionsItem = driver.FindElement(MobileBy.AccessibilityId("Options"));
-                optionsItem.Click();
+                // 1. The Welcome prompt appears immediately: type trainer name and save.
+                // On WinUI DisplayPromptAsync renders as a ContentDialog; the Entry is a TextBox.
+                var promptInput = driver!.FindElement(MobileBy.ClassName("TextBox"));
+                promptInput.SendKeys("UITestTrainer");
+                Thread.Sleep(300);
+                driver.FindElement(MobileBy.Name("Save")).Click();
                 Thread.Sleep(800);
 
-                var trainerInput = driver.FindElement(MobileBy.AccessibilityId("TrainerNameInput"));
-                trainerInput.Clear();
-                trainerInput.SendKeys("UITestTrainer");
-                Thread.Sleep(300);
-
-                var saveTrainerBtn = driver.FindElement(MobileBy.AccessibilityId("SaveTrainerNameButton"));
-                saveTrainerBtn.Click();
-                Thread.Sleep(500);
-
-                // 2. Seed 3 matches on Journal Entry page
+                // 2. Now on Journal Entry — seed 3 matches
                 for (int i = 1; i <= 3; i++)
                 {
-                    menu = driver.FindElement(MobileBy.AccessibilityId("OK"));
-                    menu.Click();
-                    Thread.Sleep(500);
-                    var journalItem = driver.FindElement(MobileBy.AccessibilityId("Journal Entry"));
-                    journalItem.Click();
-                    Thread.Sleep(800);
+                    if (i > 1)
+                    {
+                        // Navigate back to Journal Entry after previous save
+                        driver.FindElement(MobileBy.AccessibilityId("OK")).Click();
+                        Thread.Sleep(500);
+                        driver.FindElement(MobileBy.AccessibilityId("Journal Entry")).Click();
+                        Thread.Sleep(800);
+                    }
 
                     var resultPicker = driver.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker"));
                     resultPicker.Click();
@@ -124,8 +119,7 @@ namespace UITests
                     noteInput.SendKeys($"UITestSeed-{i}");
                     Thread.Sleep(200);
 
-                    var saveBtn = driver.FindElement(MobileBy.AccessibilityId("SaveMatchButton"));
-                    saveBtn.Click();
+                    driver.FindElement(MobileBy.AccessibilityId("SaveMatchButton")).Click();
                     Thread.Sleep(800);
                 }
             }

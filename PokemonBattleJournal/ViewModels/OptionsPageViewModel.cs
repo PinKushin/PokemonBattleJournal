@@ -116,27 +116,34 @@
             if (!confirmed)
                 return;
 
+            bool deletedActive = trainer.Id == (_trainer?.Id ?? 0);
             try
             {
                 await _semaphore.WaitAsync();
                 _ = await _connection.Trainers.DeleteAsync(trainer);
                 AllTrainers = await _connection.Trainers.GetAllAsync();
-                await _shellVm.LoadAsync();
-
-                // If we deleted the active trainer, switch to first available
-                if (trainer.Id == (_trainer?.Id ?? 0) && AllTrainers.Count > 0)
-                    await SwitchTrainerAsync(AllTrainers[0]);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting trainer {TrainerName}", trainer.Name);
                 ModalErrorHandler modalErrorHandler = new();
                 modalErrorHandler.HandleError(ex);
+                return;
             }
             finally
             {
                 _ = _semaphore.Release();
             }
+
+            if (deletedActive)
+            {
+                _trainer = null;
+                TrainerName = string.Empty;
+                await HandleNoActiveTrainerAsync();
+            }
+
+            AllTrainers = await _connection.Trainers.GetAllAsync();
+            await _shellVm.LoadAsync();
         }
 
         [RelayCommand]
@@ -272,25 +279,84 @@
         [RelayCommand]
         public async Task DeleteTrainerFileAsync()
         {
-            if (_trainer is null)
-            {
-                return;
-            }
+            if (_trainer is null) return;
+
             try
             {
                 await _semaphore.WaitAsync();
                 _ = await _connection.Trainers.DeleteAsync(_trainer);
+                _trainer = null;
+                TrainerName = string.Empty;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting Trainer: {TrainerName}", TrainerName);
                 ModalErrorHandler modalErrorHandler = new();
                 modalErrorHandler.HandleError(ex);
+                return;
             }
             finally
             {
                 _ = _semaphore.Release();
             }
+
+            await HandleNoActiveTrainerAsync();
+            AllTrainers = await _connection.Trainers.GetAllAsync();
+            Title = _trainer is not null ? $"{TrainerName}'s Options" : "Options";
+            await _shellVm.LoadAsync();
+        }
+
+        // Called after the active trainer is deleted. Offers the user a choice:
+        // switch to an existing account, create a new one, or continue as guest
+        // (guest = null active trainer; MainPage will re-prompt on next visit).
+        private async Task HandleNoActiveTrainerAsync()
+        {
+            if (Shell.Current is null) return; // unit test environment
+
+            List<Trainer> remaining = await _connection.Trainers.GetAllAsync();
+
+            string[] options = remaining.Count > 0
+                ? [.. remaining.Select(t => t.Name ?? "Unknown"), "Create New Account"]
+                : ["Create New Account"];
+
+            string? choice = await Shell.Current.DisplayActionSheet(
+                "Choose an account", "Continue as Guest", null, options);
+
+            if (string.IsNullOrEmpty(choice) || choice == "Continue as Guest")
+                return; // guest — MainPage prompt will fire next time
+
+            if (choice == "Create New Account")
+            {
+                await PromptAndCreateTrainerAsync();
+                return;
+            }
+
+            Trainer? picked = remaining.FirstOrDefault(t => t.Name == choice);
+            if (picked is not null)
+            {
+                await _switchService.SwitchToAsync(picked);
+                _trainer = picked;
+                TrainerName = picked.Name ?? string.Empty;
+            }
+        }
+
+        private async Task PromptAndCreateTrainerAsync()
+        {
+            string? name = await Shell.Current.DisplayPromptAsync(
+                "New Account", "Enter your trainer name",
+                accept: "Save", cancel: "Skip",
+                placeholder: "Trainer name", maxLength: 50);
+
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            await _connection.Trainers.SaveAsync(name);
+            Trainer? created = await _connection.Trainers.GetByNameAsync(name);
+            if (created is null) return;
+
+            await _switchService.SwitchToAsync(created);
+            _trainer = created;
+            TrainerName = created.Name ?? string.Empty;
+            _shellVm.OnTrainerCreated(created);
         }
 
         //Icon name collection file reader
