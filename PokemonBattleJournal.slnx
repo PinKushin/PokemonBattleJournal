@@ -1,5 +1,8 @@
 <Solution>
   <Project Path="PokemonBattleJournal.Scraper/PokemonBattleJournal.Scraper.csproj" />
+  <Project Path="PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj">
+    <Build Solution="Release|*" Project="false" />
+  </Project>
   <Project Path="PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj">
     <Build Solution="Release|*" Project="false" />
   </Project>

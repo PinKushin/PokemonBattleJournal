@@ -7,8 +7,8 @@ namespace PokemonBattleJournal.Services;
 /// </summary>
 public class SqliteConnectionFactory : ISqliteConnectionFactory
 {
-    private static SQLiteAsyncConnection? _database;
-    private static readonly SemaphoreSlim _semaphore = new(1, 1);
+    private SQLiteAsyncConnection? _database;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly ILogger _logger;
 
     public SqliteConnectionFactory(ILogger logger, ILimitlessMetaService metaService)
@@ -38,7 +38,9 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
         return _semaphore;
     }
 
-    private static async Task InitAsync()
+    protected virtual string GetDbPath() => Constants.DatabasePath;
+
+    private async Task InitAsync()
     {
         if (_database is not null)
         {
@@ -50,7 +52,7 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
             await _semaphore.WaitAsync();
             if (_database is null)
             {
-                _database = new SQLiteAsyncConnection(Constants.DatabasePath, Constants.Flags);
+                _database = new SQLiteAsyncConnection(GetDbPath(), Constants.Flags);
                 // Create tables in order of dependencies
                 _ = await _database.CreateTableAsync<Trainer>();
                 _ = await _database.CreateTableAsync<Archetype>();
