@@ -116,7 +116,7 @@
                     return;
                 }
                 _logger.LogInformation("Loading matches for trainer: {TrainerId} {TrainerName}", trainer.Id, trainer.Name);
-                List<MatchEntry>? matches = await _connection.Matches.GetByTrainerIdAsync(trainer.Id);
+                List<MatchEntry>? matches = await _connection.Matches.GetByTrainerIdAsync(trainer.Id, includeRelated: false);
 
                 if (matches.Count < 1 || matches is null)
                 {

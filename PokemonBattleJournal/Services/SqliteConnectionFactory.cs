@@ -58,6 +58,10 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
                 _ = await _database.CreateTableAsync<Game>();
                 _ = await _database.CreateTableAsync<TagGame>();
                 _ = await _database.CreateTableAsync<MatchEntry>();
+                // Replace any CDN URLs stored as archetype images with ball_icon.png;
+                // ArchetypeOperations.GetAllAsync will later replace with proper local sprites.
+                await _database.ExecuteAsync(
+                    "UPDATE Archetype SET ImagePath = 'ball_icon.png' WHERE ImagePath LIKE 'http%'");
             }
         }
         finally

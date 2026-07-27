@@ -228,7 +228,7 @@
             </Border>
 
             <!--  Match list heading  -->
-            <Label Style="{StaticResource Headline}" Text="Pick a Match" />
+            <Label AutomationId="ReadJournalTitle" Style="{StaticResource Headline}" Text="Pick a Match" />
 
             <!--  Match history list  -->
             <CollectionView

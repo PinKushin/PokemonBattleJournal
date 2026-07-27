@@ -22,12 +22,14 @@ namespace PokemonBattleJournal.Services
         /// </summary>
         public async Task<List<Archetype>> GetAllAsync()
         {
+            // Fetch from network BEFORE acquiring the DB lock — Limitless HTTP can take seconds
+            List<MetaDeck> metaDecks = await _metaService.GetTopDecksAsync(10);
+
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
                 await _factory.GetLock().WaitAsync();
                 // Always try to upsert current meta decks so new archetypes appear each launch
-                List<MetaDeck> metaDecks = await _metaService.GetTopDecksAsync(10);
                 if (metaDecks.Count > 0)
                 {
                     foreach (MetaDeck deck in metaDecks)
