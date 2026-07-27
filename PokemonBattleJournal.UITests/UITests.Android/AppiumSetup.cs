@@ -14,6 +14,7 @@ namespace UITests
 
         public AppiumSetup()
         {
+            EnsureAndroidToolsInPath();
             DeployToAndroid();
             AppiumServerHelper.StartAppiumLocalServer();
             AppiumOptions androidOptions = new()
@@ -44,12 +45,12 @@ namespace UITests
             // END DEBUG BUILD SETUP
 
 
-            // Specifying the avd option will boot the emulator for you
-            // make sure there is an emulator with the name below
-            // If not specified, make sure you have an emulator booted
+            // avd tells UIAutomator2 to cold-boot the emulator if it is not already running.
+            // EnsureAndroidToolsInPath() puts emulator.exe in PATH so Appium can find it.
             androidOptions.AddAdditionalAppiumOption("avd", "pixel_7_-_api_35");
-
-            // Note there are many more options that you can use to influence the app under test according to your needs
+            // Allow up to 3 minutes for cold emulator boot before Appium gives up
+            androidOptions.AddAdditionalAppiumOption("avdLaunchTimeout", 180_000);
+            androidOptions.AddAdditionalAppiumOption("avdReadyTimeout", 180_000);
 
             driver = new AndroidDriver(androidOptions);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
@@ -60,6 +61,52 @@ namespace UITests
         {
             driver?.Quit();
             AppiumServerHelper.DisposeAppiumLocalServer();
+            ShutdownEmulator();
+        }
+
+        private static void ShutdownEmulator()
+        {
+            try
+            {
+                // adb emu kill gracefully shuts down the AVD that Appium booted
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "adb",
+                    Arguments = "emu kill",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                using var proc = System.Diagnostics.Process.Start(psi);
+                proc?.WaitForExit(10_000);
+            }
+            catch
+            {
+                // Best effort — don't fail the test run if shutdown fails
+            }
+        }
+
+        private static void EnsureAndroidToolsInPath()
+        {
+            string androidHome = Environment.GetEnvironmentVariable("ANDROID_HOME")
+                ?? Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT")
+                ?? string.Empty;
+
+            if (string.IsNullOrEmpty(androidHome)) return;
+
+            string emulatorDir = Path.Combine(androidHome, "emulator");
+            string platformToolsDir = Path.Combine(androidHome, "platform-tools");
+            string currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+
+            List<string> additions = [];
+            if (!currentPath.Contains(emulatorDir)) additions.Add(emulatorDir);
+            if (!currentPath.Contains(platformToolsDir)) additions.Add(platformToolsDir);
+
+            if (additions.Count > 0)
+            {
+                Environment.SetEnvironmentVariable("PATH",
+                    string.Join(Path.PathSeparator.ToString(), [.. additions, currentPath]));
+            }
         }
 
         private static void DeployToAndroid()
