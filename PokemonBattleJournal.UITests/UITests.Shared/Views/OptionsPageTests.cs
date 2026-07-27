@@ -13,7 +13,7 @@ namespace UITests
         [Fact]
         public async Task OptionsPage_ArchetypeNameInput_AcceptsText()
         {
-            NavigateTo("Options");
+            NavigateTo("Options"); // no-op if OptionsPage_Loads_PageVisible ran first
 
             AppiumElement input = FindUIElement("ArchetypeNameInput");
             input.Clear();

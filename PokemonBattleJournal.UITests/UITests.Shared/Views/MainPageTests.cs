@@ -63,6 +63,12 @@
 
             AppiumElement bo3Layout = FindUIElement("BO3GamesLayout");
             bo3Layout.ShouldNotBeNull();
+
+            // Toggle back so next test starts with BO1 layout; also reset page
+            // tracking since we've mutated UI state that NavigateTo can't detect.
+            boSwitch.Click();
+            Thread.Sleep(300);
+            InvalidateCurrentPage();
         }
     }
 }

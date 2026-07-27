@@ -13,21 +13,16 @@ namespace UITests
     [Collection("UITests")]
     public abstract class BaseTest
     {
-        protected AppiumDriver App
-        {
-            get
-            {
-                return AppiumSetup.App;
-            }
-        }
+        // Tracks which Shell page the app is currently on so NavigateTo can skip
+        // redundant flyout navigation within and across test classes.
+        private static string? _currentPage;
 
-        // This could also be an extension method to AppiumDriver if you prefer
+        protected AppiumDriver App => AppiumSetup.App;
+
         protected AppiumElement FindUIElement(string id)
         {
             if (App is WindowsDriver)
-            {
                 return App.FindElement(MobileBy.AccessibilityId(id));
-            }
 
             return App.FindElement(MobileBy.AndroidUIAutomator(
                 $"new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
@@ -36,13 +31,14 @@ namespace UITests
 
         protected void NavigateTo(string pageTitle)
         {
+            if (_currentPage == pageTitle)
+                return; // already on this page — skip flyout open/close round-trip
+
             if (App is WindowsDriver)
             {
-                // MAUI Shell on WinUI3 renders a NavigationView; the pane toggle has AutomationId="OK"
                 var menu = App.FindElement(MobileBy.AccessibilityId("OK"));
                 menu.Click();
                 Thread.Sleep(500);
-                // Custom FlyoutContent nav items have AutomationId matching the page title
                 var item = App.FindElement(MobileBy.AccessibilityId(pageTitle));
                 item.Click();
             }
@@ -55,8 +51,11 @@ namespace UITests
                 item.Click();
             }
             Thread.Sleep(500);
+            _currentPage = pageTitle;
         }
 
-
+        // Call this when a test intentionally navigates away from the tracked page
+        // so the next NavigateTo knows it must re-navigate.
+        protected void InvalidateCurrentPage() => _currentPage = null;
     }
 }
