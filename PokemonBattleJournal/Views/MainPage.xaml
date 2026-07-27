@@ -83,6 +83,8 @@
                         x:Name="PlayerArchetype"
                         Style="{StaticResource ArchetypePicker}"
                         AutomationId="PlayerArchetype"
+                        SemanticProperties.Description="Your deck archetype"
+                        SemanticProperties.Hint="Double tap to choose the deck you played"
                         Placeholder="Player"
                         ItemsSource="{Binding Archetypes}"
                         SelectedItem="{Binding PlayerSelected}" />
@@ -92,6 +94,8 @@
                         x:Name="RivalArchetype"
                         Style="{StaticResource ArchetypePicker}"
                         AutomationId="RivalArchetype"
+                        SemanticProperties.Description="Opponent deck archetype"
+                        SemanticProperties.Hint="Double tap to choose the deck your opponent played"
                         Placeholder="Rival"
                         ItemsSource="{Binding Archetypes}"
                         SelectedItem="{Binding RivalSelected}" />
@@ -104,6 +108,9 @@
                     <!--  Pokeball slider track  -->
                     <Border
                         AutomationId="BOSwitch"
+                        SemanticProperties.Description="Match format toggle"
+                        SemanticProperties.Hint="Double tap to switch between best of one and best of three"
+                        AutomationProperties.IsInAccessibleTree="True"
                         BackgroundColor="{Binding BO3Toggle, Converter={StaticResource BO3TrackColorConverter}}"
                         HeightRequest="32"
                         Stroke="{StaticResource PokeYellow}"
@@ -139,6 +146,7 @@
                     </Border>
                     <Label
                         AutomationId="BO3StatusLabel"
+                        SemanticProperties.Description="Current match format"
                         FontAttributes="Bold"
                         FontFamily="SairaRegular"
                         Text="{Binding BO3Toggle, Converter={StaticResource BoolToBO3TextConverter}}"
@@ -151,6 +159,7 @@
                 <TimePicker
                     x:Name="StartTimePicker"
                     AutomationId="StartTimePicker"
+                    SemanticProperties.Description="Match start time"
                     Format="h_mm tt"
                     HorizontalOptions="Center"
                     MaximumWidthRequest="300"
@@ -159,6 +168,7 @@
                 <TimePicker
                     x:Name="EndTimePicker"
                     AutomationId="EndTimePicker"
+                    SemanticProperties.Description="Match end time"
                     Format="h_mm tt"
                     HorizontalOptions="Center"
                     MaximumWidthRequest="300"
@@ -169,6 +179,7 @@
                 <DatePicker
                     x:Name="DatePlayedPicker"
                     AutomationId="DatePlayedPicker"
+                    SemanticProperties.Description="Date the match was played"
                     HorizontalOptions="Center"
                     MaximumWidthRequest="300"
                     Date="{Binding DatePlayed}" />
@@ -193,6 +204,9 @@
                         <HorizontalStackLayout Spacing="4">
                             <Border
                                 Padding="16,8"
+                                AutomationId="Game1Tab"
+                                SemanticProperties.Description="Game 1 tab"
+                                SemanticProperties.Hint="Double tap to edit game 1"
                                 BackgroundColor="{Binding IsGame1Selected, Converter={StaticResource TabActiveBgConverter}}"
                                 StrokeThickness="0"
                                 StrokeShape="RoundRectangle 6">
@@ -208,6 +222,9 @@
                             </Border>
                             <Border
                                 Padding="16,8"
+                                AutomationId="Game2Tab"
+                                SemanticProperties.Description="Game 2 tab"
+                                SemanticProperties.Hint="Double tap to edit game 2"
                                 BackgroundColor="{Binding IsGame2Selected, Converter={StaticResource TabActiveBgConverter}}"
                                 IsVisible="{Binding BO3Toggle}"
                                 StrokeThickness="0"
@@ -224,6 +241,9 @@
                             </Border>
                             <Border
                                 Padding="16,8"
+                                AutomationId="Game3Tab"
+                                SemanticProperties.Description="Game 3 tab"
+                                SemanticProperties.Hint="Double tap to edit game 3"
                                 BackgroundColor="{Binding IsGame3Selected, Converter={StaticResource TabActiveBgConverter}}"
                                 IsVisible="{Binding ShowGame3}"
                                 StrokeThickness="0"
@@ -247,6 +267,8 @@
                         <CollectionView
                             x:Name="TagsView"
                             AutomationId="TagsView"
+                            SemanticProperties.Description="Game 1 tags"
+                            SemanticProperties.Hint="Select tags that describe game 1"
                             CanReorderItems="True"
                             ItemSizingStrategy="MeasureAllItems"
                             ItemsSource="{Binding TagCollection}"
@@ -279,6 +301,7 @@
                         <Editor
                             AutoSize="TextChanges"
                             AutomationId="UserNoteInput"
+                            SemanticProperties.Description="Game 1 notes"
                             HeightRequest="200"
                             IsSpellCheckEnabled="True"
                             MinimumWidthRequest="350"
@@ -296,6 +319,8 @@
                                 <HorizontalStackLayout Spacing="10">
                                     <Image
                                         AutomationId="FirstCheck"
+                                        SemanticProperties.Description="Went first in game 1"
+                                        SemanticProperties.Hint="Double tap to toggle whether you went first"
                                         Aspect="AspectFit"
                                         HeightRequest="32"
                                         Opacity="{Binding FirstCheck, Converter={StaticResource PokeballOpacityConverter}}"
@@ -310,6 +335,7 @@
                             </Border>
                             <Picker
                                 AutomationId="PossibleResultsPicker"
+                                SemanticProperties.Description="Game 1 result"
                                 HorizontalOptions="Center"
                                 ItemsSource="{Binding PossibleResults}"
                                 SelectedItem="{Binding Result}"
@@ -323,6 +349,8 @@
                     <VerticalStackLayout IsVisible="{Binding IsGame2Selected}">
                         <CollectionView
                             AutomationId="Match2Tags"
+                            SemanticProperties.Description="Game 2 tags"
+                            SemanticProperties.Hint="Select tags that describe game 2"
                             CanReorderItems="True"
                             ItemSizingStrategy="MeasureAllItems"
                             ItemsSource="{Binding TagCollection}"
@@ -355,6 +383,7 @@
                         <Editor
                             AutoSize="TextChanges"
                             AutomationId="UserNoteInput2"
+                            SemanticProperties.Description="Game 2 notes"
                             HeightRequest="200"
                             IsSpellCheckEnabled="True"
                             MinimumWidthRequest="350"
@@ -372,6 +401,8 @@
                                 <HorizontalStackLayout Spacing="10">
                                     <Image
                                         AutomationId="FirstCheck2"
+                                        SemanticProperties.Description="Went first in game 2"
+                                        SemanticProperties.Hint="Double tap to toggle whether you went first"
                                         Aspect="AspectFit"
                                         HeightRequest="32"
                                         Opacity="{Binding FirstCheck2, Converter={StaticResource PokeballOpacityConverter}}"
@@ -386,6 +417,7 @@
                             </Border>
                             <Picker
                                 AutomationId="PossibleResultsPicker2"
+                                SemanticProperties.Description="Game 2 result"
                                 HorizontalOptions="Center"
                                 ItemsSource="{Binding PossibleResults}"
                                 SelectedItem="{Binding Result2}"
@@ -399,6 +431,8 @@
                     <VerticalStackLayout IsVisible="{Binding IsGame3Selected}">
                         <CollectionView
                             AutomationId="Match3Tags"
+                            SemanticProperties.Description="Game 3 tags"
+                            SemanticProperties.Hint="Select tags that describe game 3"
                             CanReorderItems="True"
                             ItemSizingStrategy="MeasureAllItems"
                             ItemsSource="{Binding TagCollection}"
@@ -431,6 +465,7 @@
                         <Editor
                             AutoSize="TextChanges"
                             AutomationId="UserNoteInput3"
+                            SemanticProperties.Description="Game 3 notes"
                             HeightRequest="200"
                             IsSpellCheckEnabled="True"
                             MinimumWidthRequest="350"
@@ -448,6 +483,8 @@
                                 <HorizontalStackLayout Spacing="10">
                                     <Image
                                         AutomationId="FirstCheck3"
+                                        SemanticProperties.Description="Went first in game 3"
+                                        SemanticProperties.Hint="Double tap to toggle whether you went first"
                                         Aspect="AspectFit"
                                         HeightRequest="32"
                                         Opacity="{Binding FirstCheck3, Converter={StaticResource PokeballOpacityConverter}}"
@@ -462,6 +499,7 @@
                             </Border>
                             <Picker
                                 AutomationId="PossibleResultsPicker3"
+                                SemanticProperties.Description="Game 3 result"
                                 HorizontalOptions="Center"
                                 ItemsSource="{Binding PossibleResults}"
                                 SelectedItem="{Binding Result3}"
@@ -480,6 +518,8 @@
 
             <!--#region Save Button-->
             <Button
+                AutomationId="SaveMatchButton"
+                SemanticProperties.Description="Save match"
                 BackgroundColor="{StaticResource PokeBlue}"
                 Command="{Binding SaveMatchCommand}"
                 HorizontalOptions="Fill"

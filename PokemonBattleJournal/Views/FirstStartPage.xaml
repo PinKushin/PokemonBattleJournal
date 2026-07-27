@@ -14,11 +14,14 @@
             VerticalOptions="Center">
 
             <Image
+                AutomationId="FirstStartLogo"
+                SemanticProperties.Description="Pokemon Battle Journal logo"
                 HorizontalOptions="Center"
                 Source="ball_icon.png"
                 WidthRequest="120" />
 
             <Label
+                AutomationId="FirstStartTitle"
                 FontFamily="PokemonSolid"
                 FontSize="Title"
                 HorizontalOptions="Center"
@@ -27,6 +30,7 @@
                 TextColor="{StaticResource PokeYellow}" />
 
             <Label
+                AutomationId="FirstStartPrompt"
                 FontFamily="SairaRegular"
                 FontSize="Body"
                 HorizontalOptions="Center"
@@ -42,6 +46,7 @@
                 WidthRequest="320">
                 <VerticalStackLayout Spacing="4">
                     <Label
+                        AutomationId="TrainerNameLabel"
                         FontFamily="SairaRegular"
                         FontSize="12"
                         Text="Trainer Name"
@@ -49,6 +54,8 @@
                     <Entry
                         x:Name="TrainerNameInput"
                         AutomationId="TrainerNameInput"
+                        SemanticProperties.Description="Trainer name"
+                        SemanticProperties.Hint="Enter the name you want to save matches under"
                         FontFamily="SairaRegular"
                         Placeholder="Enter your name"
                         Text="{Binding TrainerNameInput}" />
@@ -57,6 +64,8 @@
 
             <Button
                 x:Name="InputButton"
+                AutomationId="SaveTrainerNameButton"
+                SemanticProperties.Description="Save trainer name"
                 Command="{Binding SaveTrainerNameCommand}"
                 HorizontalOptions="Center"
                 Text="Save Trainer Name"

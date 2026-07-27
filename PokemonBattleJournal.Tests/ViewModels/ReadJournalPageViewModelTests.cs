@@ -100,7 +100,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
                 .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
-            _mockConnectionFactory.Matches.GetByTrainerIdAsync(1)
+            _mockConnectionFactory.Matches.GetByTrainerIdAsync(1, Arg.Any<bool>())
                 .Returns(Task.FromResult(matches));
 
             await _viewModel.AppearingAsync();

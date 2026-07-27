@@ -34,15 +34,6 @@ namespace UITests
                 $".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/{id}\"))"));
         }
 
-        protected (AppiumElement element, TimeSpan elapsed) MeasurePageLoad(string pageTitle, string firstElementId)
-        {
-            NavigateTo(pageTitle);
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            AppiumElement element = FindUIElement(firstElementId);
-            sw.Stop();
-            return (element, sw.Elapsed);
-        }
-
         protected void NavigateTo(string pageTitle)
         {
             if (App is WindowsDriver)

@@ -17,7 +17,9 @@
             VerticalOptions="Center">
 
             <Image
+                AutomationId="AboutPageLogo"
                 HorizontalOptions="Center"
+                SemanticProperties.Description="Pokemon Battle Journal logo"
                 Source="ball_icon.png"
                 WidthRequest="96" />
 
@@ -37,6 +39,7 @@
                 WidthRequest="200" />
 
             <Label
+                AutomationId="AboutPageAuthor"
                 FontFamily="SairaRegular"
                 FontSize="Body"
                 HorizontalOptions="Center"
@@ -45,6 +48,7 @@
                 TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource Gray200}}" />
 
             <Label
+                AutomationId="AboutPageTagline"
                 FontFamily="SairaRegular"
                 FontSize="Small"
                 HorizontalOptions="Center"

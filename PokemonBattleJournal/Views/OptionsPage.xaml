@@ -39,6 +39,8 @@
                     <Entry
                         x:Name="TrainerNameInput"
                         AutomationId="TrainerNameInput"
+                        SemanticProperties.Description="Trainer name"
+                        SemanticProperties.Hint="Enter the trainer name to save under"
                         FontFamily="SairaRegular"
                         Placeholder="Enter New Trainer Name"
                         Text="{Binding NameInput}" />
@@ -48,6 +50,7 @@
             <Button
                 x:Name="SaveTrainerNameButton"
                 AutomationId="SaveTrainerNameButton"
+                        SemanticProperties.Description="Save trainer name"
                 Command="{Binding SaveTrainerCommand}"
                 HorizontalOptions="Center"
                 Text="Create New Trainer"
@@ -65,6 +68,8 @@
                     <controls:ComboBoxControl
                         x:Name="NewArchetypeIcon"
                         AutomationId="ArchetypeIconPicker"
+                        SemanticProperties.Description="Archetype icon"
+                        SemanticProperties.Hint="Pick an icon for the new archetype"
                         Style="{StaticResource ArchetypePicker}"
                         DisplayMemberPath="Name"
                         ImageMemberPath="ImagePath"
@@ -88,6 +93,8 @@
                     <Entry
                         x:Name="ArchetypeNameInput"
                         AutomationId="ArchetypeNameInput"
+                        SemanticProperties.Description="Archetype name"
+                        SemanticProperties.Hint="Enter a name for the new archetype"
                         FontFamily="SairaRegular"
                         Placeholder="Enter New Archetype's Name"
                         Text="{Binding NewDeckName}" />
@@ -97,6 +104,7 @@
             <Button
                 x:Name="SaveArchetypeButton"
                 AutomationId="SaveArchetypeButton"
+                        SemanticProperties.Description="Save archetype"
                 Command="{Binding SaveArchetypeCommand}"
                 HorizontalOptions="Center"
                 Text="Save Archetype"
@@ -114,6 +122,8 @@
                     <Entry
                         x:Name="TagInput"
                         AutomationId="TagInput"
+                        SemanticProperties.Description="Tag name"
+                        SemanticProperties.Hint="Enter a name for the new tag"
                         FontFamily="SairaRegular"
                         Placeholder="Enter New Tag"
                         Text="{Binding TagInput}" />
@@ -123,6 +133,7 @@
             <Button
                 x:Name="SaveTagButton"
                 AutomationId="SaveTagButton"
+                        SemanticProperties.Description="Save tag"
                 Command="{Binding SaveTagCommand}"
                 HorizontalOptions="Center"
                 Text="Save New Tag"
@@ -138,6 +149,7 @@
             <Button
                 x:Name="SaveAllButton"
                 AutomationId="SaveAllButton"
+                        SemanticProperties.Description="Save all options"
                 Command="{Binding SaveAllCommand}"
                 HorizontalOptions="Center"
                 Text="Save All"
@@ -146,6 +158,8 @@
             <Button
                 x:Name="DeleteTrainer"
                 AutomationId="DeleteTrainer"
+                        SemanticProperties.Description="Delete trainer"
+                        SemanticProperties.Hint="Permanently removes this trainer and their matches"
                 BackgroundColor="{StaticResource BostonRed}"
                 Command="{Binding DeleteTrainerFileCommand}"
                 HorizontalOptions="Center"
@@ -164,6 +178,8 @@
                     <Label Style="{StaticResource FieldLabel}" Text="Active Trainer" />
                     <Picker
                         AutomationId="TrainerSwitchPicker"
+                        SemanticProperties.Description="Switch trainer"
+                        SemanticProperties.Hint="Choose which trainer profile is active"
                         FontFamily="SairaRegular"
                         ItemDisplayBinding="{Binding Name}"
                         ItemsSource="{Binding AllTrainers}"

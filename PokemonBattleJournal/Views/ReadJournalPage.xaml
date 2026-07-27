@@ -38,12 +38,16 @@
                         HorizontalOptions="Center"
                         Spacing="8">
                         <Image
+                            AutomationId="PlayingIcon"
+                            SemanticProperties.Description="Your deck icon"
                             HeightRequest="48"
                             Source="{Binding PlayingIconSource}"
                             WidthRequest="48" />
                         <Label
                             FontFamily="SairaRegular"
                             FontSize="Body"
+                            AutomationId="PlayingNameLabel"
+                            SemanticProperties.Description="Your deck"
                             Text="{Binding PlayingName}"
                             TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
                             VerticalOptions="Center" />
@@ -56,10 +60,14 @@
                         <Label
                             FontFamily="SairaRegular"
                             FontSize="Body"
+                            AutomationId="AgainstNameLabel"
+                            SemanticProperties.Description="Opponent deck"
                             Text="{Binding AgainstName}"
                             TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
                             VerticalOptions="Center" />
                         <Image
+                            AutomationId="AgainstIcon"
+                            SemanticProperties.Description="Opponent deck icon"
                             HeightRequest="48"
                             Source="{Binding AgainstIconSource}"
                             WidthRequest="48" />
@@ -67,6 +75,8 @@
 
                     <!--  Notes  -->
                     <Editor
+                        AutomationId="SelectedMatchNotes"
+                        SemanticProperties.Description="Notes for the selected match"
                         HeightRequest="120"
                         IsReadOnly="True"
                         MaximumWidthRequest="700"
@@ -81,6 +91,8 @@
                             Grid.Row="0"
                             Margin="0,4"
                             ItemSizingStrategy="MeasureAllItems"
+                            AutomationId="Game1TagsView"
+                            SemanticProperties.Description="Tags for game 1"
                             ItemsSource="{Binding TagsSelectedGame1}"
                             ToolTipProperties.Text="Tags for game 1">
                             <CollectionView.EmptyView>
@@ -130,6 +142,8 @@
                             Margin="0,4"
                             IsVisible="{Binding SelectedMatch.Game2, Converter={StaticResource IsNotNullConverter}}"
                             ItemSizingStrategy="MeasureAllItems"
+                            AutomationId="Game2TagsView"
+                            SemanticProperties.Description="Tags for game 2"
                             ItemsSource="{Binding TagsSelectedGame2}"
                             ToolTipProperties.Text="Tags for game 2">
                             <CollectionView.EmptyView>
@@ -179,6 +193,8 @@
                             Margin="0,4"
                             IsVisible="{Binding SelectedMatch.Game3, Converter={StaticResource IsNotNullConverter}}"
                             ItemSizingStrategy="MeasureAllItems"
+                            AutomationId="Game3TagsView"
+                            SemanticProperties.Description="Tags for game 3"
                             ItemsSource="{Binding TagsSelectedGame3}"
                             ToolTipProperties.Text="Tags for game 3">
                             <CollectionView.EmptyView>
@@ -232,6 +248,8 @@
 
             <!--  Match history list  -->
             <CollectionView
+                AutomationId="MatchHistoryList"
+                SemanticProperties.Description="Match history"
                 EmptyView="No Matches Found"
                 HeightRequest="300"
                 HorizontalOptions="Center"
