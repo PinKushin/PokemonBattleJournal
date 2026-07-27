@@ -80,11 +80,32 @@ namespace UITests
             // Notes contain "UITestSeed" so CleanSeedData can target exactly these rows.
             try
             {
+                // 1. Set a known trainer name so ReadJournal/TrainerPage always have a trainer
+                var menu = driver!.FindElement(MobileBy.AccessibilityId("Open navigation drawer"));
+                menu.Click();
+                Thread.Sleep(500);
+                var optionsItem = driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Options\")"));
+                optionsItem.Click();
+                Thread.Sleep(800);
+
+                var trainerInput = driver.FindElement(MobileBy.AndroidUIAutomator(
+                    "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                    ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/TrainerNameInput\"))"));
+                trainerInput.Clear();
+                trainerInput.SendKeys("UITestTrainer");
+                Thread.Sleep(300);
+
+                var saveTrainerBtn = driver.FindElement(MobileBy.AndroidUIAutomator(
+                    "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                    ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/SaveTrainerNameButton\"))"));
+                saveTrainerBtn.Click();
+                Thread.Sleep(500);
+
                 for (int i = 1; i <= 3; i++)
                 {
                     // Ensure we're on Journal Entry
-                    var menu = driver!.FindElement(MobileBy.AccessibilityId("Open navigation drawer"));
-                    menu.Click();
+                    var navDrawer = driver!.FindElement(MobileBy.AccessibilityId("Open navigation drawer"));
+                    navDrawer.Click();
                     Thread.Sleep(500);
                     var item = driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Journal Entry\")"));
                     item.Click();
