@@ -14,47 +14,48 @@ namespace UITests
 
         public AppiumSetup()
         {
+            // 1. Put emulator/adb on PATH so Appium can find them
             EnsureAndroidToolsInPath();
-            DeployToAndroid();
+
+            // 2. Start Appium server (must exist before creating a driver)
             AppiumServerHelper.StartAppiumLocalServer();
+
             AppiumOptions androidOptions = new()
             {
-                // Specify UIAutomator2 as the driver, typically don't need to change this
                 AutomationName = "UIAutomator2",
-                // Always Android for Android
                 PlatformName = "Android",
-
-                // RELEASE BUILD SETUP
-                // The full path to the .apk file
-                // This only works with release builds because debug builds have fast deployment enabled
-                // and Appium isn't compatible with fast deployment
-                // App = Path.Join(TestContext.CurrentContext.TestDirectory, "../../../../MauiApp/bin/Release/net8.0-android/com.PinKushin.PokemonBattleJournal-Signed.apk"),
-                // END RELEASE BUILD SETUP
             };
 
-            // DEBUG BUILD SETUP
-            // If you're running your tests against debug builds you'll need to set NoReset to true
-            // otherwise appium will delete all the libraries used for Fast Deployment on Android
-            // Release builds have Fast Deployment disabled
-            // https://learn.microsoft.com/xamarin/android/deploy-test/building-apps/build-process#fast-deployment
             androidOptions.AddAdditionalAppiumOption(MobileCapabilityType.NoReset, "true");
             androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppPackage, "com.PinKushin.PokemonBattleJournal");
+            androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppActivity, "com.PinKushin.PokemonBattleJournal.MainActivity");
 
-            //Make sure to set [Register("com.PinKushin.PokemonBattleJournal.MainActivity")] on the MainActivity of your android application
-            androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppActivity, $"com.PinKushin.PokemonBattleJournal.MainActivity");
-            // END DEBUG BUILD SETUP
-
-
-            // avd tells UIAutomator2 to cold-boot the emulator if it is not already running.
-            // EnsureAndroidToolsInPath() puts emulator.exe in PATH so Appium can find it.
+            // 3. avd causes UIAutomator2 to boot the emulator if it is not already running.
+            //    EnsureAndroidToolsInPath() ensures emulator.exe is discoverable.
             androidOptions.AddAdditionalAppiumOption("avd", "pixel_7_-_api_35");
-            // Allow up to 3 minutes for cold emulator boot before Appium gives up
             androidOptions.AddAdditionalAppiumOption("avdLaunchTimeout", 180_000);
             androidOptions.AddAdditionalAppiumOption("avdReadyTimeout", 180_000);
 
+            // 4. Create driver — this triggers Appium to boot the emulator if needed
             driver = new AndroidDriver(androidOptions);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
-            Task.Delay(2000).Wait(); // Wait for the app to load
+
+            // 5. Emulator is now up — deploy the latest build then relaunch
+            DeployToAndroid();
+
+            // 6. Relaunch app via adb so Appium session tracks the fresh instance
+            var adb = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "adb",
+                Arguments = "shell am start -n com.PinKushin.PokemonBattleJournal/com.PinKushin.PokemonBattleJournal.MainActivity",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+            };
+            using var launch = System.Diagnostics.Process.Start(adb);
+            launch?.WaitForExit(10_000);
+
+            // 7. Give the app time to finish launching
+            Task.Delay(3000).Wait();
         }
 
         public void Dispose()
