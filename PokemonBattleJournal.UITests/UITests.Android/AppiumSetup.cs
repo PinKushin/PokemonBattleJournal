@@ -38,8 +38,12 @@ namespace UITests
             androidOptions.AddAdditionalAppiumOption("appWaitActivity", "com.PinKushin.PokemonBattleJournal.MainActivity");
             androidOptions.AddAdditionalAppiumOption("appWaitDuration", 60_000);
 
-            // 4. Create driver — triggers Appium to boot the emulator if needed
-            driver = new AndroidDriver(androidOptions);
+            // 4. Create driver — triggers Appium to boot the emulator if needed.
+            // Cold boot takes 2-3 min; default 60s command timeout is too short.
+            driver = new AndroidDriver(
+                new Uri("http://127.0.0.1:4723/"),
+                androidOptions,
+                TimeSpan.FromMinutes(5));
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
 
             // 5. Poll until Android reports fully booted (sys.boot_completed = 1)
