@@ -286,7 +286,10 @@ namespace UITests
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"build \"{project}\" -f net10.0-android -c {config}",
+                // EmbedAssembliesIntoApk disables Fast Deployment so the APK is self-contained.
+                // Without it, Debug builds expect a separate adb push of assemblies that Appium never does,
+                // causing monodroid to abort with "No assemblies found".
+                Arguments = $"build \"{project}\" -f net10.0-android -c {config} -p:EmbedAssembliesIntoApk=true",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
