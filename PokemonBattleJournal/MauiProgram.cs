@@ -82,9 +82,6 @@ namespace PokemonBattleJournal
             builder.Services.AddSingleton<AppShell>();
 
             //Link Pages and ViewModels
-            //First Start Page
-            builder.Services.AddTransient<FirstStartPage>();
-            builder.Services.AddTransient<FirstStartPageViewModel>();
             //Main Page
             builder.Services.AddSingleton<MainPage>();
             builder.Services.AddSingleton<MainPageViewModel>();

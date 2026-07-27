@@ -252,6 +252,30 @@ namespace PokemonBattleJournal.ViewModels
                 await _semaphore.WaitAsync();
                 _trainer = _switchService.ActiveTrainer
                     ?? await _connection.Trainers.GetActiveAsync();
+
+                // First boot or fresh install: no trainers exist — ask for a name
+                if (_trainer is null && Shell.Current is not null)
+                {
+                    string? name = await Shell.Current.DisplayPromptAsync(
+                        "Welcome",
+                        "Enter your trainer name to get started",
+                        accept: "Save",
+                        cancel: null,
+                        placeholder: "Trainer name",
+                        maxLength: 50);
+
+                    if (!string.IsNullOrWhiteSpace(name))
+                    {
+                        await _connection.Trainers.SaveAsync(name);
+                        Trainer? created = await _connection.Trainers.GetByNameAsync(name);
+                        if (created is not null)
+                        {
+                            await _switchService.SwitchToAsync(created);
+                            _trainer = created;
+                        }
+                    }
+                }
+
                 TrainerName = _trainer?.Name ?? TrainerName;
                 WelcomeMsg = $"Welcome {TrainerName}";
                 Archetypes = await _connection.Archetypes.GetAllAsync();
