@@ -3,6 +3,7 @@ namespace UITests
     public class AppiumSetup : IDisposable
     {
         private static AppiumDriver? driver;
+        private bool _attachedToExisting;
 
         public static AppiumDriver App
         {
@@ -19,25 +20,41 @@ namespace UITests
 
         public void RunBeforeAnyTests()
         {
-            // Kill any leftover app process from a previous crash before touching files or starting servers
-            foreach (var proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
-                try { proc.Kill(true); proc.WaitForExit(5_000); } catch { }
-
             // Port 4724 so Windows and Android Appium servers don't conflict when the full suite runs in parallel
             AppiumServerHelper.StartAppiumLocalServer(port: 4724);
 
-            string exePath = BuildWindowsApp();
+            var runningProc = System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal")
+                .FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero);
 
-            // Wipe the DB before launch so every run starts with a clean slate
-            WipeAppData();
+            _attachedToExisting = runningProc != null;
 
             AppiumOptions windowsOptions = new()
             {
                 AutomationName = "windows",
                 PlatformName = "Windows",
                 DeviceName = "WindowsPC",
-                App = exePath,
             };
+
+            if (_attachedToExisting)
+            {
+                // Attach to VS-launched app — no wipe, no build
+                windowsOptions.AddAdditionalAppiumOption(
+                    "appium:appTopLevelWindow",
+                    "0x" + runningProc!.MainWindowHandle.ToString("X"));
+            }
+            else
+            {
+                // Kill any leftover crash remnants before touching files
+                foreach (var proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
+                    try { proc.Kill(true); proc.WaitForExit(5_000); } catch { }
+
+                string exePath = BuildWindowsApp();
+
+                // Wipe the DB before launch so every run starts with a clean slate
+                WipeAppData();
+
+                windowsOptions.App = exePath;
+            }
 
             driver = new WindowsDriver(new Uri("http://127.0.0.1:4724/"), windowsOptions);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
@@ -48,10 +65,13 @@ namespace UITests
         public void Dispose()
         {
             driver?.Quit();
-            // Force-kill the MAUI exe in case WinAppDriver left it running
-            foreach (var proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
+            if (!_attachedToExisting)
             {
-                try { proc.Kill(); } catch { }
+                // Only kill if we launched it — don't kill the debugger session
+                foreach (var proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
+                {
+                    try { proc.Kill(); } catch { }
+                }
             }
             AppiumServerHelper.DisposeAppiumLocalServer();
         }

@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 9bcb5645-bb7a-4eb5-8136-ff774166a95e
-  modified: 2026-07-27T19:42:47.257Z
+  modified: 2026-07-27T21:36:03.276Z
 ---
 
 Apply every principle below to all code written in this project. These are not optional polish — they are baseline expectations.
@@ -71,6 +71,7 @@ Every interactive and informational UI element must have:
 - All errors surface through `ModalErrorHandler.HandleError` in services and ViewModels.
 - `catch {}` and `catch (Exception) { }` with no logging are banned. Every catch either rethrows, logs to `Console.Error` (test infra), or calls `ModalErrorHandler`.
 - Test setup exceptions (seed failures, wipe failures) must throw or log — never swallow silently.
+- **Optional UI element detection** (e.g. "dialog may or may not appear"): catch ONLY `OpenQA.Selenium.NoSuchElementException` — not bare `catch {}` or `catch (Exception)`. Any other exception (driver crash, timeout, render failure) must propagate so the seed fails loudly instead of silently skipping the dialog and corrupting all downstream steps.
 - `WaitForExit(int)` return value must always be checked; reading `ExitCode` on a still-running process throws.
 
 ## TDD (Test-Driven Development)
