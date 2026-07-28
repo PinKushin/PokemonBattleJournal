@@ -58,14 +58,14 @@ namespace UITests
                 Log("4. BuildAndroidApk");
                 string apkPath = BuildAndroidApk();
                 Log($"4. BuildAndroidApk done: {apkPath}");
-                androidOptions.App = apkPath;
 
-                // Install APK — #if DEBUG seeding creates UITestTrainer on startup if absent (idempotent)
+                // Install manually via adb — do NOT set androidOptions.App.
+                // When App is set, Appium takes ownership of the lifecycle and uninstalls on Quit().
+                // Without App, Appium launches the already-installed package by AppPackage/AppActivity.
                 Log("4b. Installing APK via adb");
                 RunAdb($"install -r \"{apkPath}\"", timeoutMs: 120_000);
                 Log("4b. APK installed");
 
-                // Tell Appium not to reinstall since we already did
                 androidOptions.AddAdditionalAppiumOption("noReset", true);
                 androidOptions.AddAdditionalAppiumOption("skipDeviceInitialization", true);
             }

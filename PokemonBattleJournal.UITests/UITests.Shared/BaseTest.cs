@@ -24,11 +24,8 @@ namespace UITests
             if (App is WindowsDriver)
                 return App.FindElement(MobileBy.AccessibilityId(id));
 
-            // Target the root ScrollView explicitly — instance(0) can pick an inner
-            // RecyclerView (CollectionView/TagsView) first, causing scrollIntoView to fail
-            // for elements that live outside that nested scrollable.
             return App.FindElement(MobileBy.AndroidUIAutomator(
-                $"new UiScrollable(new UiSelector().className(\"android.widget.ScrollView\"))" +
+                $"new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
                 $".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/{id}\"))"));
         }
 
