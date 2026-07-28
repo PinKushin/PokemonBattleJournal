@@ -258,9 +258,13 @@ namespace UITests
             string apkPath = Path.Combine(repoRoot, "PokemonBattleJournal", "bin", config,
                 "net10.0-android", "com.PinKushin.PokemonBattleJournal-Signed.apk");
 
-            // Skip rebuild if APK is newer than every source file — EmbedAssembliesIntoApk builds
-            // are slow (~7-18 min cold); skipping saves time when nothing changed.
-            if (File.Exists(apkPath))
+            // Skip rebuild only if:
+            //   (a) APK exists AND was produced by this test runner (sentinel present), AND
+            //   (b) no source file is newer than the APK.
+            // Without (a), a VS fast-deploy build (no EmbedAssembliesIntoApk) would be reused
+            // and the app would crash with "No assemblies found" at runtime.
+            string sentinelPath = apkPath + ".uitest";
+            if (File.Exists(apkPath) && File.Exists(sentinelPath))
             {
                 DateTime apkTime = File.GetLastWriteTimeUtc(apkPath);
                 string srcDir = Path.Combine(repoRoot, "PokemonBattleJournal");
@@ -269,7 +273,7 @@ namespace UITests
                     .Any(f => File.GetLastWriteTimeUtc(f) > apkTime);
                 if (!anyNewer)
                 {
-                    Log($"4. BuildAndroidApk skipped — APK is fresh ({apkPath})");
+                    Log($"4. BuildAndroidApk skipped — APK is fresh and test-built ({apkPath})");
                     return apkPath;
                 }
             }
@@ -300,6 +304,9 @@ namespace UITests
 
             if (!File.Exists(apkPath))
                 throw new FileNotFoundException($"APK not found at expected path: {apkPath}");
+
+            // Mark this APK as test-built so the skip check won't confuse it with a VS fast-deploy build.
+            File.WriteAllText(sentinelPath, DateTime.UtcNow.ToString("O"));
 
             return apkPath;
         }
