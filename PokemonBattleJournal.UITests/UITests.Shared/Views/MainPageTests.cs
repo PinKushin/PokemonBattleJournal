@@ -25,7 +25,9 @@ namespace UITests
         [Fact]
         public void MainPage_UserNoteInput_ShowTextEntry()
         {
-            AppiumElement userEntry = FindUIElement("UserNoteInput");
+            // Editor AutomationId maps to content-desc on Android, not resourceId,
+            // so AccessibilityId works correctly on both platforms.
+            AppiumElement userEntry = App.FindElement(MobileBy.AccessibilityId("UserNoteInput"));
             userEntry.SendKeys("Hello World");
             userEntry.ShouldNotBeNull();
             userEntry.Text.ShouldEndWith("Hello World");
@@ -122,17 +124,10 @@ namespace UITests
             FindUIElement("BO3GamesLayout").ShouldNotBeNull();
 
             // Game3Tab only appears with a split result — only check Game1Tab and Game2Tab.
-            // Tab elements live inside a TabBar and aren't found via UiScrollable; use direct id lookup.
-            if (App is WindowsDriver)
-            {
-                App.FindElement(MobileBy.AccessibilityId("Game1Tab")).ShouldNotBeNull();
-                App.FindElement(MobileBy.AccessibilityId("Game2Tab")).ShouldNotBeNull();
-            }
-            else
-            {
-                App.FindElement(MobileBy.Id("com.PinKushin.PokemonBattleJournal:id/Game1Tab")).ShouldNotBeNull();
-                App.FindElement(MobileBy.Id("com.PinKushin.PokemonBattleJournal:id/Game2Tab")).ShouldNotBeNull();
-            }
+            // Border elements get content-desc (not a native resource ID) on Android,
+            // so AccessibilityId is the correct cross-platform selector.
+            App.FindElement(MobileBy.AccessibilityId("Game1Tab")).ShouldNotBeNull();
+            App.FindElement(MobileBy.AccessibilityId("Game2Tab")).ShouldNotBeNull();
 
             boSwitch.Click();
             InvalidateCurrentPage();
@@ -160,11 +155,8 @@ namespace UITests
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
 
-                // Game3Tab must now be visible — AutomationId per accessibility standards
-                if (App is WindowsDriver)
-                    App.FindElement(MobileBy.AccessibilityId("Game3Tab")).ShouldNotBeNull();
-                else
-                    App.FindElement(MobileBy.Id("com.PinKushin.PokemonBattleJournal:id/Game3Tab")).ShouldNotBeNull();
+                // Game3Tab must now be visible — Border gets content-desc not resource ID on Android
+                App.FindElement(MobileBy.AccessibilityId("Game3Tab")).ShouldNotBeNull();
             }
             finally
             {
