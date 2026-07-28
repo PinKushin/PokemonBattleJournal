@@ -25,9 +25,9 @@ namespace UITests
         [Fact]
         public void MainPage_UserNoteInput_ShowTextEntry()
         {
-            // Editor AutomationId maps to content-desc on Android, not resourceId,
-            // so AccessibilityId works correctly on both platforms.
-            AppiumElement userEntry = App.FindElement(MobileBy.AccessibilityId("UserNoteInput"));
+            // Editor's SemanticProperties.Description ("Game 1 notes") is the content-desc
+            // on Android — use FindByDescription so both screen readers and automation agree.
+            AppiumElement userEntry = FindByDescription("UserNoteInput", "Game 1 notes");
             userEntry.SendKeys("Hello World");
             userEntry.ShouldNotBeNull();
             userEntry.Text.ShouldEndWith("Hello World");
@@ -124,10 +124,10 @@ namespace UITests
             FindUIElement("BO3GamesLayout").ShouldNotBeNull();
 
             // Game3Tab only appears with a split result — only check Game1Tab and Game2Tab.
-            // Border elements get content-desc (not a native resource ID) on Android,
-            // so AccessibilityId is the correct cross-platform selector.
-            App.FindElement(MobileBy.AccessibilityId("Game1Tab")).ShouldNotBeNull();
-            App.FindElement(MobileBy.AccessibilityId("Game2Tab")).ShouldNotBeNull();
+            // Border elements expose content-desc = SemanticProperties.Description on Android,
+            // not resource-id. Use FindByDescription so automation matches what screen readers use.
+            FindByDescription("Game1Tab", "Game 1 tab").ShouldNotBeNull();
+            FindByDescription("Game2Tab", "Game 2 tab").ShouldNotBeNull();
 
             boSwitch.Click();
             InvalidateCurrentPage();
@@ -147,7 +147,7 @@ namespace UITests
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
 
-                FindUIElement("Game2Tab").Click();
+                FindByDescription("Game2Tab", "Game 2 tab").Click();
 
                 FindUIElement("PossibleResultsPicker2").Click();
                 if (App is WindowsDriver)
@@ -155,8 +155,8 @@ namespace UITests
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
 
-                // Game3Tab must now be visible — Border gets content-desc not resource ID on Android
-                App.FindElement(MobileBy.AccessibilityId("Game3Tab")).ShouldNotBeNull();
+                // Game3Tab must now be visible — Border uses content-desc on Android
+                FindByDescription("Game3Tab", "Game 3 tab").ShouldNotBeNull();
             }
             finally
             {

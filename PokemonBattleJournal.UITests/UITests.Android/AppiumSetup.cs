@@ -75,6 +75,12 @@ namespace UITests
             androidOptions.AddAdditionalAppiumOption("appWaitActivity", $"{AppPackage}.MainActivity");
             androidOptions.AddAdditionalAppiumOption("appWaitDuration", 60_000);
 
+            // Clear app data so seed always starts from a known state.
+            // Prevents stale data from a VS debug session (VS does not uninstall on stop).
+            Log("4d. pm clear app data");
+            RunAdb($"shell pm clear {AppPackage}", timeoutMs: 10_000);
+            Log("4d. pm clear done");
+
             Log("5. new AndroidDriver");
             driver = new AndroidDriver(
                 new Uri("http://127.0.0.1:4723/"),

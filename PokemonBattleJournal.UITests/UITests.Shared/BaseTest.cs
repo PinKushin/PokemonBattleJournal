@@ -24,10 +24,22 @@ namespace UITests
             if (App is WindowsDriver)
                 return App.FindElement(MobileBy.AccessibilityId(id));
 
+            // Target the root ScrollView explicitly — instance(0) can pick an inner
+            // RecyclerView (CollectionView/TagsView) first, causing scrollIntoView to fail
+            // for elements that live outside that nested scrollable.
             return App.FindElement(MobileBy.AndroidUIAutomator(
-                $"new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                $"new UiScrollable(new UiSelector().className(\"android.widget.ScrollView\"))" +
                 $".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/{id}\"))"));
         }
+
+        // MAUI Border and Editor receive content-desc from SemanticProperties.Description
+        // on Android (not from AutomationId). Screen readers use content-desc, so use it
+        // for automation too. Windows still uses AutomationId via AccessibilityId.
+        protected AppiumElement FindByDescription(string windowsId, string androidDescription) =>
+            App is WindowsDriver
+                ? App.FindElement(MobileBy.AccessibilityId(windowsId))
+                : App.FindElement(MobileBy.AndroidUIAutomator(
+                    $"new UiSelector().description(\"{androidDescription}\")"));
 
         protected void NavigateTo(string pageTitle)
         {
