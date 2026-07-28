@@ -15,20 +15,33 @@ namespace UITests
         private const string AvdName = "pixel_7_-_api_35";
         private const string AppPackage = "com.PinKushin.PokemonBattleJournal";
 
+        private static readonly string SetupLogPath = Path.Combine(
+            Path.GetTempPath(), "UITests.Android.setup.log");
+
+        private static void Log(string message)
+        {
+            string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+            File.AppendAllText(SetupLogPath, line + Environment.NewLine);
+        }
+
         public AppiumSetup()
         {
-            // 1. Put emulator/adb on PATH so Appium can find them
+            File.WriteAllText(SetupLogPath, $"=== AppiumSetup start {DateTime.Now:O} ==={Environment.NewLine}");
+
+            Log("1. EnsureAndroidToolsInPath");
             EnsureAndroidToolsInPath();
 
-            // 2. Boot the emulator explicitly and wait for it to be fully ready
-            //    before starting Appium — avoids "MainActivity never started" races.
+            Log("2. EnsureEmulatorRunning");
             EnsureEmulatorRunning();
+            Log("2. EnsureEmulatorRunning done");
 
-            // 3. Start Appium server
+            Log("3. StartAppiumLocalServer");
             AppiumServerHelper.StartAppiumLocalServer();
+            Log("3. StartAppiumLocalServer done");
 
-            // 4. Build APK (no -t:Install; Appium handles the adb install via the app capability)
+            Log("4. BuildAndroidApk");
             string apkPath = BuildAndroidApk();
+            Log($"4. BuildAndroidApk done: {apkPath}");
 
             AppiumOptions androidOptions = new()
             {
@@ -37,25 +50,26 @@ namespace UITests
                 App = apkPath,
             };
 
-            // Emulator is already running — no avd boot capability needed.
             androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppPackage, AppPackage);
             androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppActivity, $"{AppPackage}.MainActivity");
             androidOptions.AddAdditionalAppiumOption("appWaitActivity", $"{AppPackage}.MainActivity");
             androidOptions.AddAdditionalAppiumOption("appWaitDuration", 60_000);
 
-            // 5. Create driver — Appium installs the APK and launches the app.
-            // Fresh install guarantees a clean DB and preferences (no wipe step needed).
+            Log("5. new AndroidDriver");
             driver = new AndroidDriver(
                 new Uri("http://127.0.0.1:4723/"),
                 androidOptions,
                 TimeSpan.FromMinutes(5));
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
+            Log("5. AndroidDriver created");
 
-            // 6. Wait for the activity to be foregrounded before tests start
+            Log("6. WaitForActivity");
             WaitForActivity($"{AppPackage}.MainActivity", timeoutSeconds: 60);
+            Log("6. WaitForActivity done");
 
-            // 7. Seed known test matches so ReadJournal and TrainerPage tests always have data
+            Log("7. SeedTestData");
             SeedTestData();
+            Log("7. SeedTestData done");
         }
 
         public void Dispose()
@@ -232,8 +246,10 @@ namespace UITests
                     RedirectStandardError = true,
                 };
                 using var proc = System.Diagnostics.Process.Start(psi)!;
+                // Read concurrently — WaitForExit deadlocks if output buffer fills (e.g. dumpsys output)
+                var stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
                 proc.WaitForExit(timeoutMs);
-                return proc.StandardOutput.ReadToEnd();
+                return stdoutTask.Result;
             }
             catch (Exception ex)
             {
@@ -283,9 +299,9 @@ namespace UITests
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "dotnet",
-                // EmbedAssembliesIntoApk disables Fast Deployment so the APK is self-contained.
-                // Without it, Debug builds expect a separate adb push of assemblies that Appium never does,
-                // causing monodroid to abort with "No assemblies found".
+                // EmbedAssembliesIntoApk: Appium only does adb install, never pushes Fast Deployment
+                // assemblies separately. Without this, monodroid aborts "No assemblies found".
+                // Not set in the .csproj so VS debug/hot-reload stays unaffected.
                 Arguments = $"build \"{project}\" -f net10.0-android -c {config} -p:EmbedAssembliesIntoApk=true",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -294,14 +310,15 @@ namespace UITests
             };
 
             using var proc = System.Diagnostics.Process.Start(psi)!;
+            // Read stdout/stderr concurrently — WaitForExit blocks if output buffer fills (deadlock)
+            var stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
+            var stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
             bool exited = proc.WaitForExit(600_000); // 10-minute cap
+            string stderr = stderrTask.Result;
             if (!exited)
                 throw new TimeoutException("Android build timed out after 10 minutes.");
             if (proc.ExitCode != 0)
-            {
-                string err = proc.StandardError.ReadToEnd();
-                throw new InvalidOperationException($"Android build failed (exit {proc.ExitCode}):\n{err}");
-            }
+                throw new InvalidOperationException($"Android build failed (exit {proc.ExitCode}):\n{stderr}");
 
             string apkPath = Path.Combine(repoRoot, "PokemonBattleJournal", "bin", config,
                 "net10.0-android", "com.PinKushin.PokemonBattleJournal-Signed.apk");
