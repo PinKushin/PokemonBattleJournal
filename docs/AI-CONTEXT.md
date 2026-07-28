@@ -1,6 +1,6 @@
 # PokemonBattleJournal — AI Context
 
-> **Last updated:** 2026-07-26 (Trainer switching shipped — see session log)
+> **Last updated:** 2026-07-28 (In-app DEBUG seeding + first-boot prompt crash fixed — see session log)
 > **Solution file:** `PokemonBattleJournal.slnx` (not `.sln`)  
 > **Read this first** when working in this repo. Update the [Session log](#session-log) whenever scope, decisions, or blockers change — especially before long multi-step work.
 
@@ -22,46 +22,30 @@ Chronological notes for the current / recent work. **Append or edit this section
 | 2026-07-25 | **docs/ reorganization + ROADMAP.md** | Moved AI files to `docs/`; README moved to `docs/README.md` (root deleted). Created `docs/ROADMAP.md` with all features (F-01→F-22) and bugs (B-01→B-05). |
 | 2026-07-26 | **Page styling pass** | AboutPage, FirstStartPage, OptionsPage, ReadJournalPage all restyled: PokeYellow/PokeBlue palette, PokemonSolid/SairaRegular fonts, PokeYellow-bordered input sections. Match list cards in ReadJournalPage use PokeBlue border + result badge chips. Delete button on OptionsPage uses BostonRed. |
 | 2026-07-26 | **OptionsPage icon picker → ComboBoxControl** | Replaced native `Picker` with `ComboBoxControl` (same searchable dropdown as MainPage). Added `IconItem` record (`Name`, `ImagePath`), `IconItems`/`SelectedIconItem` VM properties. `OnSelectedIconItemChanged` syncs `SelectedIcon` (image preview) and `NewDeckIcon` (save path) — also fixed pre-existing bug where `NewDeckIcon` was never set from UI. `ToDisplayName` helper strips `.png` and title-cases filename for display. 223 unit tests (2 new contract tests). |
-| 2026-07-26 | **Trainer switching — shipped** | Full multi-trainer switching via `ITrainerSwitchService` (singleton event bus). `TrainerSwitchService.SwitchToAsync` sets Preferences (name + Id), fires `TrainerChanged` event. `AppShellViewModel` subscribes and syncs the flyout. `MainPageViewModel` and `TrainerPageViewModel` subscribe and reload on switch. `OptionsPageViewModel.SwitchTrainerAsync` calls the service directly (earlier attempt routing through `_shellVm.SelectedTrainer` failed due to object reference mismatch). New singleton registrations: `ITrainerSwitchService`, `AppShellViewModel`, `AppShell`. `PreferencesHelper` now stores `TrainerId` (uint) as well as `TrainerName` for stable Id-based lookup. All VMs resolve trainer by Id first, fall back to name. Unsaved-data warning in `AppShellViewModel.SwitchTrainerAsync` (checks `MainPageViewModel.HasUnsavedData`). |
-| 2026-07-26 | **Shell flyout — accordion trainer submenu** | Replaced broken `Shell.TitleView` Picker (BindingContext always inherited from current page VM, never the Shell) with `Shell.FlyoutContent` accordion. Single-column list: nav items (SairaRegular labels, TapGestureRecognizer → NavigateCommand), separator, "Switch Trainer ▶/▼" row (toggles `IsTrainerMenuOpen` via `ToggleTrainerMenuCommand`), indented CollectionView of trainers (visible when open, items call `SelectTrainerCommand`). `AppShellViewModel` gets: `IsTrainerMenuOpen`, `ToggleTrainerMenuCommand`, `SelectTrainerCommand(Trainer)`, `NavigateCommand(string route)`, `TrainerChanged` event subscription to sync picker without re-triggering the switch chain. FlyoutHeader (logo) and FlyoutFooter (copyright) unchanged. |
-| 2026-07-26 | **TrainerPage DateTime crash — fixed** | `BuildWinRateOverTimeChart` labeler `new DateTime((long)value)` threw `ArgumentOutOfRangeException` when LiveCharts probed with out-of-range tick values during label size measurement. Fixed with ticks range guard: return `string.Empty` when value is outside `DateTime.MinValue.Ticks..MaxValue.Ticks`. |
-| 2026-07-26 | **Pokeball "Went first" toggle — shipped** | Replaced native WinUI3 `CheckBox` (shifted horizontally ~6–8px when switching BO3 tabs due to FlexLayout JustifyContent="Center" re-centering when content width changed). Replaced with tappable `ball_icon.png` `Image` + `BoolToObjectConverter` for opacity (same pattern as BO3 toggle). Three relay commands: `ToggleFirstCheckCommand`, `ToggleFirstCheck2Command`, `ToggleFirstCheck3Command`. Padding on both toggle pills and ComboBoxes reduced to `16,4` to match a tighter height. Added `Margin="0,10,0,0"` to the Went First row to separate it from the note input. |
-| 2026-07-26 | **ComboBox layout — left-aligned icon+text, right-pinned arrow** | Inner layout changed from `HorizontalStackLayout` to `Grid(*, Auto)`: icon+text `HorizontalStackLayout` in column 0 (`HOptions=Start`), arrow label in column 1. `MinimumWidthRequest=130`, `MaximumWidthRequest=260` (covers ~80% of real Limitless meta archetype names). ComboBoxes auto-size to content between these bounds. |
-| 2026-07-26 | **Checkbox shift bug — UNRESOLVED, investigation paused** | In BO3 mode, the CheckBox in the "Went first" row shifts horizontally by ~6–8 px when switching between Game 1 and Game 2 tabs. **Confirmed above-panel cause:** replacing Game 1's entire panel XAML with Game 2's code still reproduced the shift — the cause is in the container hierarchy above the panels, not inside any game panel. **Fixes tried (none worked):** (1) removed `GameCheckBox` named style entirely — all checkboxes now use implicit style; (2) removed `HorizontalOptions="Center"` from `RightColumn` VerticalStackLayout; (3) removed `HorizontalOptions="Center"` from the Tab Bar Border (user kept this change — prefers tabs left-aligned); (4) replaced `HorizontalOptions="Center"` on the "Went first" Grid with `HorizontalOptions="Fill"` across all 3 panels (replace_all). **Leading hypothesis:** FlexLayout (`JustifyContent="Center"`) re-centers `RightColumn` when its natural width changes between tabs (e.g., CollectionView measuring differently due to `x:Name="TagsView"` only on Game 1, or async tag loading timing). **Suggested next debug step:** use VS Live Visual Tree (Debug → Windows → Live Visual Tree) to compare the `ActualOffset.X` of the CheckBox element in Game 1 vs Game 2 — this will show which layer in the hierarchy is actually moving. App crashed before we could do this. **Current XAML state:** all 3 game panels are structurally identical; no `HorizontalOptions="Center"` on any "Went first" Grid; Tab Bar Border has no `HorizontalOptions`. |
-| 2026-07-26 | **UI test coverage: all Shell pages** | Every Shell page now has a navigation + element-visible Appium test. AboutPage was the only missing one — added `AboutPageTests.cs` (Shared) with `AboutPage_Loads_TitleDisplayed`; added `AutomationId="AboutPageTitle"` to the title label. Strategy: `FindUIElement` timeouts if a page hangs, failing the test. |
-| 2026-07-25 | **ShowGame3 Tie+Tie rule** | `ShowGame3 = BO3Toggle && Result != null && Result2 != null && (Result != Result2 || (Result == Tie && Result2 == Tie))`. Tie+Tie requires Game 3 under official Pokemon TCG tournament rules (neither player has won 2 games). |
-| 2026-07-25 | **TrainerPage hang — root cause found** | `lvc:CartesianChart` (LiveCharts2 2.0.5) deadlocks the WinUI3 message pump during initialization, even with `AnimationsSpeed="0" EasingFunction="{x:Null}"`. Confirmed by replacing all 8 charts with Label placeholders — page loads instantly. Fix: chart controls must be lazy-loaded or virtualized so they don't all initialize at once on navigation. **TrainerPage.xaml currently uses placeholder Labels; charts not restored yet.** |
-| 2026-07-25 | **UraniumUI experiment — tried and reverted** | Installed `UraniumUI.Material` to get styled `TextField`/`PickerField`/`TimePickerField`/`DatePickerField`. Blockers: `PickerField` has no image support (no item templates), `material:CheckBox` doesn't exist, MD3 color system didn't pick up app colors. Reverted cleanly via `git revert 68adcb9 --no-edit`. All pages, controls, MauiProgram restored. |
-| 2026-07-25 | **LiveCharts2 installed** | Added `LiveChartsCore.SkiaSharpView.Maui 2.0.5`. `UseLiveCharts()` in MauiProgram. `TrainerPageViewModel` has 8 chart property sets (ISeries[], ICartesianAxis[]) and all 8 `Build*Chart` private methods — they are correct and ready. Only the XAML is using placeholders pending the safe lazy-load implementation. |
-| 2026-07-25 | **Concurrency architecture concerns** | `TrainerPageViewModel._semaphore` is `static` on a `Transient` VM — shared across all instances, counter can get stuck at 0 if an instance is GC'd while holding the lock. `AsyncRelayCommand` already prevents concurrent invocations, so the VM-level semaphore may be redundant. DB semaphore in `SqliteConnectionFactory` is correct (static on a singleton). **Next: audit and harden concurrency throughout ViewModels.** |
-| 2026-07-25 | **ViewModel contract tests** | Adding reflection-based contract tests to `PokemonBattleJournal.Tests/ViewModels/` — one file per page VM pinning all XAML-bound property/command names. Strategy: AI guardrail so renames break tests. Binding lists captured in AI-CONTEXT.md. In progress. |
-| 2026-07-25 | **Package updates + SQLite vuln fix** | **Done.** All packages updated to latest. SQLite vulnerability (GHSA-2m69-gcr7-jv3q) fixed by pinning `SQLitePCLRaw.lib.e_sqlite3` → 3.53.3 and `SQLitePCLRaw.lib.e_sqlite3.android` → 2.1.12 as direct refs. `sqlite-net-pcl` → 1.11.285. `Microsoft.NET.Test.Sdk` → 18.8.1. `Appium.WebDriver` → 8.3.2. Serilog family updated. 78 tests pass. |
-| 2026-07-25 | **.NET 10 migration** | **Done.** All projects updated to `net10.0` TFMs. CommunityToolkit.Maui → 15.0.0 (Popup API: `Popup<T>` for typed results, `CloseAsync(null/result)`, `ShowPopupAsync<T>(page, popup, new PopupOptions())` from `CommunityToolkit.Maui.Extensions`). CommunityToolkit.Mvvm → 8.4.2. Sentry → 6.7.0. Microsoft.Maui.Controls → 10.0.90. 78 unit tests pass on net10.0. |
-| 2026-07-25 | Solution contextualization + living AI docs | User requested full solution map and `docs/AI-CONTEXT.md` kept current for future AI sessions (Claude, Cursor, etc.). |
-| 2026-07-25 | **Top priority: MainPage archetype picker** | `ComboBoxControl` dropdown should show icon + name. **Fixed:** (1) `ComboBoxPopup` used object initializer for `ItemsSource` *after* ctor — `CollectionView` always got `null`; now passed via ctor. (2) `ViewCell` in `CollectionView.ItemTemplate` — invalid in MAUI; return `Grid` directly. Same fix applied to `ImagePickerPopup`. |
-| 2026-07-25 | IDE run/debug broken | **Cause:** stale `PokemonBattleJournal.sln` referenced deleted `PokemonBattleJournal.UI.Tests` project; Cursor/VS Code tasks pointed at `.sln`. **Fix:** removed `.sln`; use `PokemonBattleJournal.slnx` only. Updated `.vscode/settings.json` (`dotnet.defaultSolution`), `tasks.json`, `launch.json` (Windows MAUI exe). |
-| 2026-07-25 | Orphan processes after UI tests | Appium Windows tests can leave `PokemonBattleJournal.exe` running and lock rebuilds. Kill manually: `Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue` |
-| 2026-07-25 | Unit tests | **78 passing** (`PokemonBattleJournal.Tests`). |
-| 2026-07-25 | Android Appium UI tests | **4 passing** with local emulator `pixel_7_-_api_35`. Hardcoded to user's setup — note for later: make AVD/path configurable (VS 2026 + MAUI). |
-| 2026-07-25 | Benchmarks | Fail under Debug; use Release + `Run.ps1`. |
-| — | Syncfusion removal | **Done.** Native MAUI + custom controls only. |
-| — | .NET 10 upgrade | **Planned next phase** after picker/stabilization. User open to adding a shared picker dependency post-.NET 10 if custom controls remain painful. |
-| — | TrainerPage visualizations | Lists/labels only; richer visuals deferred. |
-| — | Multi-trainer | **Planned.** Options page already has **Create New Trainer** (`SaveTrainerAsync` + `PreferencesHelper`). Not a trainer switcher yet — only creates/renames via preferences. |
-| — | `origin/sqlite` branch | **Ignore** — SQLite work merged to master. |
-| — | Cursor rules | `.cursor/` added to `.gitignore`; local rule points here. Shared doc is this file. |
+| 2026-07-26 | **Trainer switching — shipped** | Full multi-trainer switching via `ITrainerSwitchService` (singleton event bus). `TrainerSwitchService.SwitchToAsync` sets Preferences (name + Id), fires `TrainerChanged` event. `AppShellViewModel` subscribes and syncs the flyout. `MainPageViewModel` and `TrainerPageViewModel` subscribe and reload on switch. `OptionsPageViewModel.SwitchTrainerAsync` calls the service directly. New singleton registrations: `ITrainerSwitchService`, `AppShellViewModel`, `AppShell`. `PreferencesHelper` now stores `TrainerId` (uint) as well as `TrainerName` for stable Id-based lookup. All VMs resolve trainer by Id first, fall back to name. Unsaved-data warning in `AppShellViewModel.SwitchTrainerAsync` (checks `MainPageViewModel.HasUnsavedData`). |
+| 2026-07-26 | **Shell flyout — accordion trainer submenu** | Replaced broken `Shell.TitleView` Picker with `Shell.FlyoutContent` accordion. Single-column list: nav items, separator, "Switch Trainer ▶/▼" row (`ToggleTrainerMenuCommand`), indented CollectionView of trainers (`SelectTrainerCommand`). FlyoutHeader (logo) and FlyoutFooter (copyright) unchanged. |
+| 2026-07-26 | **TrainerPage DateTime crash — fixed** | `BuildWinRateOverTimeChart` labeler `new DateTime((long)value)` threw `ArgumentOutOfRangeException` when LiveCharts probed with out-of-range tick values. Fixed with ticks range guard: return `string.Empty` when outside `DateTime.MinValue.Ticks..MaxValue.Ticks`. |
+| 2026-07-26 | **Pokeball "Went first" toggle — shipped** | Replaced native WinUI3 `CheckBox` (shifted horizontally ~6–8px on tab switch). Replaced with tappable `ball_icon.png` `Image` + `BoolToObjectConverter` for opacity. Three relay commands: `ToggleFirstCheckCommand`, `ToggleFirstCheck2Command`, `ToggleFirstCheck3Command`. |
+| 2026-07-26 | **ComboBox layout — left-aligned icon+text, right-pinned arrow** | Inner layout changed from `HorizontalStackLayout` to `Grid(*, Auto)`. `MinimumWidthRequest=130`, `MaximumWidthRequest=260`. |
+| 2026-07-26 | **Checkbox shift bug — UNRESOLVED** | In BO3 mode, the CheckBox in the "Went first" row shifts ~6–8 px when switching Game tabs. Confirmed above-panel cause. Fixes tried: removed named style, removed `HorizontalOptions="Center"` from RightColumn, Tab Bar Border, game panel Grid. Leading hypothesis: FlexLayout (`JustifyContent="Center"`) re-centers `RightColumn` when natural width changes between tabs. **Next debug step:** VS Live Visual Tree to compare `ActualOffset.X` of CheckBox in Game 1 vs Game 2. |
+| 2026-07-26 | **UI test coverage: all Shell pages** | Every Shell page has a navigation + element-visible Appium test. `AboutPageTests.cs` added; `AutomationId="AboutPageTitle"` added to title label. |
+| 2026-07-28 | **In-app DEBUG seeding** | `App.xaml.cs` `SeedDebugDataAsync()` (compiled `#if DEBUG`) runs in App constructor via `Task.Run(...).GetAwaiter().GetResult()` — completes before MAUI visual tree starts. Seeds UITestTrainer + 3 Win matches (idempotent: if UITestTrainer exists and inactive, activates it and returns; if exists and active, returns; otherwise creates). Replaces deleted `TestSeedService`. Android AppiumSetup simplified to `adb install -r` only — no more `pm clear` or `SeedAndPushDb`. |
+| 2026-07-28 | **WinUI XamlRoot crash fixed** | `MainPageViewModel.AppearingAsync()` calls `DisplayPromptAsync` (first-boot trainer-name prompt) when `_trainer == null`. On WinUI 3, `ContentDialog.ShowAsync()` requires `XamlRoot` to be set — crashes before window is composed. Root cause: `TrainerOperations.SaveAsync` inserts with `IsActive=0`; seed was not calling `SetActiveAsync`; `GetActiveAsync()` returned null; prompt fired. **Fix:** (1) Seed always calls `SetActiveAsync` after creating or finding UITestTrainer (handles crash-leftover inactive trainer). (2) `MainPageViewModel.AppearingAsync` skips prompt when `%TEMP%\PokemonBattleJournal.uitest` sentinel file present. VS `App.g.cs:71` `Debugger.Break()` is just the debug hook — not the error itself. |
+| 2026-07-28 | **Sentinel file pattern** | `UITests.Windows/AppiumSetup.RunBeforeAnyTests()` writes `%TEMP%\PokemonBattleJournal.uitest` before launching; `Dispose()` deletes it. App reads `File.Exists(...)` to skip first-boot prompt under test without blocking manual debug testing. Android doesn't need it — sentinel path doesn't cross emulator boundary; in-app seed activates UITestTrainer so prompt never fires. |
+| 2026-07-28 | **Serilog logs path** | Moved from `{AppDataDirectory}/log.txt` to `{AppDataDirectory}/Logs/log.txt` (rolling daily). Directory created in `MauiProgram.cs` before Serilog init. |
+| 2026-07-28 | **All UI tests passing** | Windows + Android Appium tests all green in VS test runner. |
 
-### User decisions (2026-07-25)
+### User decisions
 
 | Topic | Decision |
 |---|---|
-| **Top priority** | Fix MainPage archetype `ComboBoxControl` (image + name dropdown). Avoid new dependency unless migrating everything to a library post-.NET 10. |
-| **Release platforms** | All 4 MAUI targets matter. User tests on **Windows** and **Android** only (no Mac hardware). Support as far back as MAUI allows on those two. |
-| **Multi-trainer** | Planned. Options page has create-trainer flow; full multi-trainer UX (switch/list) not built yet. |
-| **Android UI tests** | Tied to `pixel_7_-_api_35` — OK for now; refactor later if needed. |
-| **AI onboarding** | `docs/AI-CONTEXT.md` is the canonical context doc (not Cursor-specific). |
+| **Release platforms** | Windows and Android (user tests both; no Mac hardware). |
+| **Multi-trainer** | Full switching shipped. |
+| **Android UI tests** | Tied to `pixel_7_-_api_35` — OK for now. |
+| **AI onboarding** | `docs/AI-CONTEXT.md` is the canonical context doc. |
 | **TrainerPage stats UI** | Not current priority. |
-| **Windows Appium** | Fix path quoting — done. |
+| **Test environment isolation** | Sentinel file pattern — not `#if DEBUG`. Manual debug sessions must still see first-boot prompt. |
+| **Seeding** | In-app `#if DEBUG` in `App.xaml.cs` — no external DB manipulation, no TestSeedService. |
 
 ### Active work
 
@@ -73,23 +57,23 @@ Chronological notes for the current / recent work. **Append or edit this section
 - [x] BO3 tab switcher (Game 1/2/3 tabs, ShowGame3, progressive reveal)
 - [x] Pokeball BO3 toggle (replace native Switch with tappable Image)
 - [x] StartTime/EndTime TimeSpan fix; AppearingAsync refresh
-- [x] 178 unit tests passing
-- [x] **`PokemonBattleJournal.Scraper` project** — shipped; upserts top-10 on every launch; CDN images; offline fallback
-- [x] **Test coverage for BO3 tab features** — ShowGame3, SelectGameN commands, ToggleBO3Command, time guards; 221 tests passing
-- [x] **Archetype picker search** — `ComboBoxPopup.FilterItems` extracted + tested (8 tests)
-- [x] **B-01/B-02/B-03** — dropdown spacing, placeholder text, width reduced to 180
-- [x] **Page styling pass** — AboutPage, FirstStartPage, OptionsPage, ReadJournalPage
-- [x] **OptionsPage icon picker** — replaced native Picker with ComboBoxControl; fixed NewDeckIcon wiring bug
-- [x] **UI test coverage** — all 5 Shell pages have navigation + element-visible Appium tests
-- [x] **223 unit tests passing**
-- [x] **Trainer switching** — ITrainerSwitchService, AppShellViewModel, flyout accordion submenu, Options page switch
-- [x] **TrainerPage DateTime crash** — labeler ticks range guard
-- [x] **Pokeball "Went first" toggle** — replaces native CheckBox (shift bug)
-- [x] **ComboBox layout** — left-align icon+text, right-pin arrow, auto-size 130–260px
+- [x] `PokemonBattleJournal.Scraper` project — shipped; upserts top-10 on every launch; CDN images; offline fallback
+- [x] Test coverage for BO3 tab features — 221+ tests passing
+- [x] Archetype picker search — `ComboBoxPopup.FilterItems` extracted + tested
+- [x] B-01/B-02/B-03 — dropdown spacing, placeholder text, width reduced to 180
+- [x] Page styling pass — AboutPage, FirstStartPage, OptionsPage, ReadJournalPage
+- [x] OptionsPage icon picker — replaced native Picker with ComboBoxControl; fixed NewDeckIcon wiring bug
+- [x] UI test coverage — all 5 Shell pages have navigation + element-visible Appium tests
+- [x] Trainer switching — ITrainerSwitchService, AppShellViewModel accordion flyout, Options page list
+- [x] TrainerPage DateTime crash — labeler ticks range guard
+- [x] Pokeball "Went first" toggle — replaces native CheckBox
+- [x] ComboBox layout — left-align icon+text, right-pin arrow, auto-size 130–260px
+- [x] WinUI XamlRoot crash — sentinel file + SetActiveAsync in seed
+- [x] In-app DEBUG seeding — replaces TestSeedService; idempotent UITestTrainer creation
+- [x] All UI tests passing (2026-07-28)
 - [ ] **Fix TrainerPage charts** — lazy/virtualized `CartesianChart` loading to avoid WinUI3 deadlock
 - [ ] **Harden concurrency** — fix static semaphore on transient `TrainerPageViewModel`
 - [ ] Configurable Android Appium emulator (future)
-
 
 ---
 
@@ -100,7 +84,7 @@ Chronological notes for the current / recent work. **Append or edit this section
 - **Author / package id:** `com.PinKushin.PokemonBattleJournal`
 - **License:** The Unlicense (`LICENSE.txt`)
 - **Pattern:** MVVM with CommunityToolkit.Mvvm source generators
-- **Data:** Local SQLite (`PokemonBattleJournal.db3` in app data)
+- **Data:** Local SQLite (`PokemonBattleJournal.db3` in app data — GUID-based path on Windows unpackaged)
 
 ---
 
@@ -109,18 +93,18 @@ Chronological notes for the current / recent work. **Append or edit this section
 | Area | Technology |
 |---|---|
 | Runtime | .NET 10.0 + MAUI |
-| Platforms | Android 21+, iOS 15+, MacCatalyst 15+, Windows 10 19041+ (Tizen scaffold present, not in active TFM list) |
+| Platforms | Android 21+, iOS 15+, MacCatalyst 15+, Windows 10 19041+ |
 | Database | `sqlite-net-pcl`, `SQLite.Net.Extensions.Async`, `SQLitePCLRaw.bundle_green` |
 | MVVM | CommunityToolkit.Maui 15.x, CommunityToolkit.Mvvm 8.x |
 | UI | Native MAUI controls + custom `ComboBoxControl`, `ImagePicker` |
-| Charts | `LiveChartsCore.SkiaSharpView.Maui` 2.0.5 — `CartesianChart` (8 on TrainerPage); currently using Label placeholders due to WinUI3 init deadlock |
-| Logging | Serilog → debug + rolling file (`log.txt` in app data) |
+| Charts | `LiveChartsCore.SkiaSharpView.Maui` 2.0.5 — 8 `CartesianChart` on TrainerPage; currently Label placeholders due to WinUI3 init deadlock |
+| Logging | Serilog → debug + rolling file (`{AppDataDirectory}/Logs/log.txt`) |
 | Errors | Sentry.Maui (DSN in `MauiProgram.cs`) |
 | Unit tests | xUnit, Shouldly, NSubstitute |
 | UI tests | Appium (Windows + Android runners, shared tests) |
 | Benchmarks | BenchmarkDotNet |
 
-**Syncfusion:** fully removed. No Syncfusion packages in `PokemonBattleJournal.csproj`.
+**Syncfusion:** fully removed.
 
 ---
 
@@ -139,31 +123,33 @@ PokemonBattleJournal.slnx
 │   ├── Platforms/                        # Android, iOS, MacCatalyst, Windows, Tizen
 │   └── Resources/                        # Fonts, sprites, styles, images
 ├── PokemonBattleJournal.Tests/           # Unit tests (excluded from Release solution build)
-├── PokemonBattleJournal.Scraper/         # [PLANNED] SOLID scraper library — Limitless TCG meta service
+├── PokemonBattleJournal.Scraper/         # SOLID scraper library — Limitless TCG meta service
 ├── PokemonBattleJournal.Benchmarks/      # BenchmarkDotNet (PokemonBattleJournal.Benchmarking.csproj)
 └── PokemonBattleJournal.UITests/
     ├── UITests.Shared/                   # Shared Appium tests + server helper
-    ├── UITests.Windows/                  # Windows Appium runner
+    ├── UITests.Windows/                  # Windows Appium runner (port 4724)
     └── UITests.Android/                  # Android Appium runner
 ```
 
 **Build notes**
 
-- Open/build with **`PokemonBattleJournal.slnx` only**. Do **not** recreate `PokemonBattleJournal.sln` — the old file referenced removed projects (`PokemonBattleJournal.UI.Tests`) and broke IDE build/debug.
-- Cursor/VS Code: `.vscode/settings.json` sets `dotnet.defaultSolution` → `PokemonBattleJournal.slnx`.
-- Debug profile launches the Windows **`.exe`**, not the `.dll` (`launch.json` → "Windows (MAUI)").
-- `PokemonBattleJournal.Tests` has `<Build Solution="Release|*" Project="false" />` — Release solution builds skip unit tests; run tests explicitly.
+- Open/build with **`PokemonBattleJournal.slnx` only**. Do **not** recreate `PokemonBattleJournal.sln`.
+- Debug profile launches the Windows **`.exe`** at `bin\Debug\net10.0-windows10.0.19041.0\win10-x64\PokemonBattleJournal.exe`.
+- `PokemonBattleJournal.Tests` has `<Build Solution="Release|*" Project="false" />` — Release solution builds skip unit tests.
 - Main app: `WindowsPackageType=None` (unpackaged Windows).
-- After failed Appium runs, kill orphaned app: `Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue`
+- Windows DB path is GUID-based (`%LOCALAPPDATA%\User Name\{GUID}\Data\PokemonBattleJournal.db3`) — external processes can't compute it; use in-app seeding.
+- After failed Appium runs: `Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue`
 
 ---
 
 ## App navigation & lifecycle
 
 ```
+App constructor
+  └─ SeedDebugDataAsync()  (#if DEBUG — blocks until done)
+       └─ UITestTrainer created/activated + 3 Win matches inserted
 App.CreateWindow()
-  ├─ FirstStartPage (if Preferences "FirstStart" != "false")
-  └─ AppShell (flyout) otherwise
+  └─ AppShell (flyout)
        ├─ MainPage          — create match entries
        ├─ ReadJournalPage   — browse past matches
        ├─ TrainerPage       — stats dashboard
@@ -172,8 +158,8 @@ App.CreateWindow()
 ```
 
 - **Shell:** flyout navigation (`AppShell.xaml`).
-- **DI:** `MauiProgram.cs` registers singletons for DB factory, analysis, calculators; `MainPage`+VM singleton; other pages transient.
-- **First start:** `FirstStartPageViewModel` saves trainer name to `PreferencesHelper` and opens `AppShell`.
+- **DI:** `MauiProgram.cs` registers singletons for DB factory, analysis, calculators, trainer switch service, AppShellViewModel, AppShell, MainPage+VM; other pages transient.
+- **First-boot prompt:** `MainPageViewModel.AppearingAsync()` shows `DisplayPromptAsync` when `_trainer == null` AND sentinel file `%TEMP%\PokemonBattleJournal.uitest` is absent. In DEBUG + test runs, UITestTrainer is active so `_trainer != null` and sentinel also suppresses it as a second guard.
 - **Windows-only:** `CollectionViewHandler` mapping disables multi-select checkbox.
 
 ---
@@ -184,12 +170,14 @@ App.CreateWindow()
 
 | Entity | Key fields | Relationships |
 |---|---|---|
-| `Trainer` | `Id`, `Name` (unique) | → Archetypes, Tags, MatchEntries |
+| `Trainer` | `Id`, `Name` (unique), `IsActive` | → Archetypes, Tags, MatchEntries |
 | `Archetype` | `Id`, `Name`, `ImagePath`, `TrainerId` | → Trainer; used in matches (Playing/Against) |
 | `Tags` | `Id`, `Name`, `TrainerId` | → Trainer; M2M → `Game` via `TagGame` |
 | `Game` | `Id`, `Result?`, `Turn`, `Notes?` | M2M → Tags |
 | `TagGame` | `GameId`, `TagId` | Junction |
 | `MatchEntry` | `Id`, trainer/archetype FKs, `Result?`, `Game1/2/3Id`, times, `DatePlayed` | → Trainer, archetypes, games |
+
+**Important:** `TrainerOperations.SaveAsync` inserts with `IsActive=false` (default). Must always call `SetActiveAsync` immediately after to make the trainer visible to `GetActiveAsync()`.
 
 ### Enums & chart DTOs
 
@@ -198,8 +186,6 @@ public enum MatchResult { Win, Loss, Tie }
 public class ChartDataPoint { string? Label; double Value; }
 public class TimeDataPoint { DateTime Date; double Value; }
 ```
-
-Default archetypes/tags are seeded when tables are empty (`ArchetypeOperations`, `TagOperations`).
 
 ---
 
@@ -211,11 +197,11 @@ Views (XAML) ──bind──► ViewModels ──call──► Services ──�
                               └── ModalErrorHandler (alerts on errors)
 ```
 
-- **Concurrency:** static `SemaphoreSlim` on `SqliteConnectionFactory` (correct — singleton); **WARNING:** `TrainerPageViewModel` also has `static SemaphoreSlim _semaphore` but is registered Transient — shared across instances, can deadlock if counter hits 0 at GC. `AsyncRelayCommand` already prevents concurrent calls. Hardening planned.
+- **Concurrency:** static `SemaphoreSlim` on `SqliteConnectionFactory` (correct — singleton); **WARNING:** `TrainerPageViewModel` also has `static SemaphoreSlim _semaphore` but is registered Transient — shared across instances, can deadlock if counter hits 0 at GC. Hardening planned.
 - **Transactions:** `RunInTransactionAsync` for multi-step saves/deletes.
 - **Match results:** `MatchResultCalculatorFactory` → `BO1ResultCalculator` or `BO3ResultCalculator`.
 - **Stats:** `MatchAnalysisService` (11 calculation methods) feeds `TrainerPageViewModel`.
-- **Test detection:** `DeviceInfo.Platform == DevicePlatform.Unknown` ⇒ unit test environment (no MAUI runtime).
+- **Test detection:** `DeviceInfo.Platform == DevicePlatform.Unknown` ⇒ unit test environment.
 
 ### DI registration (`MauiProgram.cs`)
 
@@ -230,14 +216,11 @@ Views (XAML) ──bind──► ViewModels ──call──► Services ──�
 
 | Page | VM | Purpose | Notable UI |
 |---|---|---|---|
-| `FirstStartPage` | `FirstStartPageViewModel` | Onboarding — trainer name | `Border`+`Entry`, `Button` |
 | `MainPage` | `MainPageViewModel` | Log BO1/BO3 matches | 2× `ComboBoxControl` (archetypes), native `TimePicker`/`DatePicker`/`Picker`, tag `CollectionView`, save/validate |
 | `ReadJournalPage` | `ReadJournalPageViewModel` | Match history browser | `CollectionView`, game/tag detail panels |
 | `TrainerPage` | `TrainerPageViewModel` | Stats dashboard | Stat labels + 8 `lvc:CartesianChart` sections (**currently Label placeholders** — charts deadlock WinUI3 on init; lazy loading needed) |
-| `OptionsPage` | `OptionsPageViewModel` | Trainer, archetype, tag CRUD | `Border`+`Entry`, `Picker`, `ImagePicker`, buttons |
+| `OptionsPage` | `OptionsPageViewModel` | Trainer, archetype, tag CRUD | `Border`+`Entry`, `ComboBoxControl` icon picker, buttons |
 | `AboutPage` | `AboutPageViewModel` | Credits | Static content |
-
-**MainPageViewModel highlights:** `AppearingAsync`, `Disappearing`, `SaveMatchAsync`, `ValidateMatchData`, BO3 toggle, per-game tags/results/first-turn flags.
 
 ---
 
@@ -247,40 +230,26 @@ Views (XAML) ──bind──► ViewModels ──call──► Services ──�
 |---|---|
 | `SqliteConnectionFactory` | Connection init, table creation, exposes `Trainers`/`Matches`/`Archetypes`/`Tags` ops |
 | `MatchOperations` | Save/get/delete matches + games + tag links (transactional) |
-| `TrainerOperations` | Trainer CRUD; delete cascades via SQL on FK ids |
+| `TrainerOperations` | Trainer CRUD; `SaveAsync` inserts `IsActive=0`; must call `SetActiveAsync` separately |
 | `ArchetypeOperations` | CRUD; blocks delete if used; seeds defaults |
 | `TagOperations` | CRUD; cascades `TagGame`; seeds defaults |
 | `MatchAnalysisService` | Win rate, archetypes, tags, opponents, streaks, duration, etc. |
-| `TrainerSwitchService` | Singleton event bus for trainer switching. `SwitchToAsync` sets Preferences (name + Id), fires `TrainerChanged(Trainer)`. VMs subscribe in constructor, reload data on event. |
+| `TrainerSwitchService` | Singleton event bus. `SwitchToAsync` sets Preferences (name + Id), fires `TrainerChanged(Trainer)`. VMs subscribe in constructor, reload data on event. |
 | `BO1ResultCalculator` / `BO3ResultCalculator` | Aggregate game results into match result |
 | `ModalErrorHandler` | Shows error alerts (`IErrorHandler`) |
 
-**Win rate formula (canonical):** `(wins + 0.5 * ties) / total * 100` in `Calculations.CalculateWinRate`. Align any new stats code with this.
+**Win rate formula (canonical):** `(wins + 0.5 * ties) / total * 100` in `Calculations.CalculateWinRate`.
 
 ---
 
 ## Custom controls
 
-| Control | Location | Purpose | Known issues |
-|---|---|---|---|
-| `ComboBoxControl` | `Controls/ComboBoxControl/` | MainPage archetype picker (icon + name popup) | Fixed 2026-07-25: popup ItemsSource + ViewCell template bugs |
-| `ImagePicker` | `Controls/ImagePicker.cs` | Options page icon selection | Same ViewCell fix applied to popup |
+| Control | Location | Purpose |
+|---|---|---|
+| `ComboBoxControl` | `Controls/ComboBoxControl/` | MainPage + OptionsPage archetype/icon picker (icon + name popup, searchable) |
+| `ImagePicker` | `Controls/ImagePicker.cs` | Options page icon selection |
 
 Text inputs use **Border + Label + Entry** (not a separate `HintedEntry` control).
-
----
-
-## Resolved bugs (historical)
-
-All fixed in recent commits on `master`:
-
-1. Win rate formula inconsistency — aligned to standard formula with half-weight ties.
-2. `TrainerOperations.DeleteAsync` orphaned games — SQL delete via `Game1/2/3Id` FKs.
-3. `MatchOperations.DeleteAsync` deadlock — sync SQL inside transactions.
-4. `OptionsPageViewModel.SaveAllAsync` deadlock — removed outer semaphore.
-5. `FirstStartPageViewModel` logging — accepted minimal logging in onboarding.
-6. Dead update branches in Save methods — removed unreachable `Id != 0` paths.
-7. Race in `TrainerOperations.SaveAsync` — duplicate check moved inside lock.
 
 ---
 
@@ -288,9 +257,9 @@ All fixed in recent commits on `master`:
 
 ### ViewModel binding contracts
 
-Each page ViewModel has a `{VM}ContractTests.cs` in `PokemonBattleJournal.Tests/ViewModels/` that uses reflection to assert every XAML-bound property and command still exists. **Do not rename or remove any of these members without updating the contract tests.** This is the primary AI guardrail for XAML/ViewModel consistency.
+Each page ViewModel has a `{VM}ContractTests.cs` in `PokemonBattleJournal.Tests/ViewModels/` that uses reflection to assert every XAML-bound property and command still exists. **Do not rename or remove any of these members without updating the contract tests.**
 
-XAML bindings by page (source of truth for contract tests):
+XAML bindings by page:
 
 | Page | ViewModel | Bound properties | Bound commands |
 |---|---|---|---|
@@ -300,38 +269,36 @@ XAML bindings by page (source of truth for contract tests):
 | TrainerPage | `TrainerPageViewModel` | WelcomeMsg, WinAverage, Wins, Losses, Ties, AverageMatchDuration, FirstTurnAdvantage, StreakInfo, MostPlayedArchetypes, ArchetypeWinRates, OpponentPerformance, TagUsage, WinRateOverTime, WinRateByMatchLength | AppearingCommand |
 | FirstStartPage | `FirstStartPageViewModel` | TrainerNameInput | SaveTrainerNameCommand |
 
-### Unit tests — 178 total (all passing)
+### Unit tests
 
-| Area | File(s) | Count |
-|---|---|---|
-| BO1/BO3 calculators | `BO1ResultCalculatorTests`, `BO3ResultCalculatorTests`, `MatchResultCalculatorFactoryTests` | 20 |
-| Match analysis | `MatchAnalysisServiceTests` | 11 |
-| DB services | `MatchOperationsTests`, `TrainerOperationsTests`, `ArchetypeOperationsTests`, `TagOperationsTests` | 21 |
-| ViewModels | `MainPage`, `TrainerPage`, `OptionsPage`, `ReadJournalPage` ViewModel tests | 19 |
-| Utilities | `CalculationsTests`, `TaskUtilitiesTests` | 7 |
+221+ passing (xUnit, NSubstitute, Shouldly).
 
-**Still lightly covered or untested**
-
+**Still lightly covered:**
 - `SqliteConnectionFactory` init (integration-style)
 - `ModalErrorHandler`, `FileHelper`, `PreferencesHelper`, `MainThreadHelper`
-- End-to-end UI flows (save match, pick archetype) beyond basic Appium smoke tests
+- End-to-end UI flows beyond basic Appium smoke tests
 
 ### UI tests (Appium)
 
-| Runner | Tests | Status (2026-07-25) |
-|---|---|---|
-| `UITests.Android` | 4 | Pass with configured emulator + debug app |
-| `UITests.Windows` | 4 | Path quoting fixed; requires built exe at hardcoded path + Appium |
-| `UITests.Shared` | Shared by both | `AppWindowTests`, `MainPageTests` |
+| Runner | Status |
+|---|---|
+| `UITests.Windows` | Passing. Port 4724. Sentinel file written before launch. `CleanupTestTrainer()` in Dispose deletes UITestTrainer + cascade. SQLite packages in csproj for teardown. |
+| `UITests.Android` | Passing. `adb install -r` only; in-app seed handles data idempotently. AVD `pixel_7_-_api_35`. |
+| `UITests.Shared` | `AppWindowTests`, `MainPageTests`, `AboutPageTests`, `OptionsPageTests`, `ReadJournalPageTests`, `TrainerPageTests` |
 
-**Windows Appium setup:** hardcoded exe path in `UITests.Windows/AppiumSetup.cs` — update when machine/output path changes. Do **not** wrap path in extra quote characters.
+**Seeding flow:**
+1. Windows `AppiumSetup.RunBeforeAnyTests()` writes sentinel file, starts Appium (port 4724), launches exe.
+2. App constructor runs `SeedDebugDataAsync()` — creates/activates UITestTrainer + 3 Win matches.
+3. `MainPageViewModel.AppearingAsync()` finds active UITestTrainer, skips first-boot prompt (sentinel also guards).
+4. Tests run against seeded state.
+5. `Dispose()`: kills app, calls `CleanupTestTrainer()` (deletes only UITestTrainer data), deletes sentinel.
 
-**Android Appium setup:** hardcoded AVD `pixel_7_-_api_35` — matches author's machine; make configurable later.
+**Android seeding:** same in-app seed runs on install. No sentinel needed — `DisplayPromptAsync` uses native Android dialogs (no XamlRoot requirement); UITestTrainer active means prompt doesn't fire anyway.
 
 ### Benchmarks
 
 - Project: `PokemonBattleJournal.Benchmarks` / `ViewModels/MainPageViewModelBenchmarks`
-- Requires **Release** build of main app; use `Run.ps1`.
+- Requires **Release** build; use `Run.ps1`.
 
 ---
 
@@ -339,8 +306,8 @@ XAML bindings by page (source of truth for contract tests):
 
 | Platform | Notes |
 |---|---|
-| Windows | Unpackaged; Appium path points to `bin\Debug\net9.0-windows10.0.19041.0\win10-x64\PokemonBattleJournal.exe` |
-| Android | `RunAOTCompilation=False`, `PublishTrimmed=False` in Release |
+| Windows | Unpackaged; exe at `bin\Debug\net10.0-windows10.0.19041.0\win10-x64\PokemonBattleJournal.exe`; DB at `%LOCALAPPDATA%\User Name\{GUID}\Data\PokemonBattleJournal.db3` |
+| Android | `RunAOTCompilation=False`, `PublishTrimmed=False` in Release; AVD `pixel_7_-_api_35` |
 | iOS / MacCatalyst | Min OS 15.0 |
 
 ---
@@ -349,8 +316,8 @@ XAML bindings by page (source of truth for contract tests):
 
 - `[ObservableProperty]` / `[RelayCommand]` — CommunityToolkit source generators
 - Async DB access always under `SemaphoreSlim`
-- Errors: `try/catch` + `ModalErrorHandler.HandleError` (often returns defaults)
-- Logging: `_logger.LogInformation/Debug/Warning/Error` throughout services/VMs
+- Errors: `try/catch` + `ModalErrorHandler.HandleError`
+- Logging: `_logger.LogInformation/Debug/Warning/Error` throughout services/VMs; logs at `{AppDataDirectory}/Logs/log.txt`
 - Tests: `{Class}Tests`, methods `{Method}_{Scenario}_{Expected}`
 
 ---
@@ -360,14 +327,18 @@ XAML bindings by page (source of truth for contract tests):
 | Item | Status |
 |---|---|
 | Remove Syncfusion | ✅ Done |
-| Expand unit tests | ✅ 178 tests passing; BO3 tab features still need coverage |
-| Fix MainPage archetype ComboBoxControl | ✅ Done (2026-07-25) |
-| Fix Windows Appium path | ✅ Done (2026-07-25) |
-| Multi-trainer switcher UI | ✅ Shipped — ITrainerSwitchService, AppShellViewModel accordion flyout, Options page list with Switch/Delete, unsaved-data warning |
-| TrainerPage charts (LiveCharts2) | 🔲 In progress — VM ready, XAML has placeholders; lazy loading needed to avoid WinUI3 deadlock |
+| Expand unit tests | ✅ 221+ tests passing |
+| Fix MainPage archetype ComboBoxControl | ✅ Done |
+| Fix Windows Appium path | ✅ Done |
+| Multi-trainer switcher UI | ✅ Shipped |
+| In-app DEBUG seeding | ✅ Shipped (2026-07-28) |
+| WinUI XamlRoot crash fix | ✅ Shipped (2026-07-28) |
+| TrainerPage charts (LiveCharts2) | 🔲 In progress — VM ready, XAML has placeholders; lazy loading needed |
 | Configurable Android Appium AVD | 🔲 Deferred |
-| .NET 10 upgrade | ✅ Done (2026-07-25) |
-| Branch `origin/sqlite` | Ignore — merged |
+| .NET 10 upgrade | ✅ Done |
+| JSON import/export (TrainerHill format) | 🔲 Planned |
+| Deck maker (deck lists tied to archetypes) | 🔲 Planned |
+| Deck comparer (side-by-side diff) | 🔲 Planned |
 
 ---
 
@@ -380,8 +351,14 @@ dotnet build PokemonBattleJournal.slnx -f net10.0-windows10.0.19041.0
 # Unit tests only
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
 
-# Full test run (includes UI tests — needs Appium + emulator/device)
-dotnet test PokemonBattleJournal.slnx
+# Windows UI tests
+dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
+
+# Android UI tests (needs pixel_7_-_api_35 AVD)
+dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
+
+# Kill orphaned app after failed Appium run
+Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 
 # Benchmarks (Release)
 .\PokemonBattleJournal.Benchmarks\Run.ps1
@@ -391,12 +368,11 @@ dotnet test PokemonBattleJournal.slnx
 
 ## For AI assistants — maintenance rules
 
-1. **Read `AI-CONTEXT.md`** (this file, at repo root) at the start of a session.
-2. **Update [Session log](#session-log)** when:
-   - User states a new goal or priority
-   - You discover a bug, blocker, or environment constraint
-   - You finish a significant chunk of work
-   - Before starting a long multi-file refactor
-3. **Keep facts accurate:** prefer reading code over trusting stale sections.
-4. **Do not commit** unless the user asks.
-5. **Minimize scope** — match existing patterns; don't reintroduce Syncfusion or heavy dependencies without explicit approval.
+1. **Read `AI-CONTEXT.md`** (this file) at the start of a session.
+2. **Read `docs/memory/`** — persistent memory files for user preferences, feedback, and project decisions.
+3. **Update [Session log](#session-log)** when: user states a new goal, you discover a bug/blocker, you finish significant work, before a long multi-file refactor.
+4. **Keep facts accurate:** prefer reading code over trusting stale sections.
+5. **Do not commit** unless the user asks.
+6. **Minimize scope** — match existing patterns; don't reintroduce Syncfusion or heavy dependencies without explicit approval.
+7. **TrainerOperations.SaveAsync** always creates `IsActive=false` — always call `SetActiveAsync` after programmatic trainer creation.
+8. **Sentinel file** (`%TEMP%\PokemonBattleJournal.uitest`) suppresses first-boot prompt under test — never use `#if DEBUG` for this guard.

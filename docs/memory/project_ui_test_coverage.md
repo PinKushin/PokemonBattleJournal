@@ -1,8 +1,11 @@
 ---
 name: project_ui_test_coverage
 description: Every Shell page must have a navigation + element-visible Appium UI test to catch page hangs before they reach production.
-metadata:
+metadata: 
+  node_type: memory
   type: project
+  originSessionId: 9bcb5645-bb7a-4eb5-8136-ff774166a95e
+  modified: 2026-07-26T10:53:48.031Z
 ---
 
 Every Shell page must have at least one Appium UI test that navigates to the page and asserts a key element is visible. `FindUIElement` will timeout if the page hangs, failing the test immediately.

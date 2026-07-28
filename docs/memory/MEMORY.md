@@ -1,5 +1,10 @@
 # Memory Index
 
+- [In-app DEBUG seeding](project_in_app_seeding.md) — App.xaml.cs seeds UITestTrainer on startup in #if DEBUG; must call SetActiveAsync after create/find; bypasses MAUI's GUID DB path problem.
+- [WinUI XamlRoot crash from ContentDialog](project_winui_xamlroot_crash.md) — DisplayPromptAsync before window is composed crashes with "no XamlRoot"; root cause is inactive UITestTrainer; fix is SetActiveAsync in seed + sentinel file.
+- [UI test sentinel file pattern](project_uitest_sentinel_file.md) — %TEMP%\PokemonBattleJournal.uitest written by AppiumSetup, read by app to suppress first-boot prompt without blocking manual dev testing.
+- [Trainer IsActive=0 after SaveAsync](project_trainer_active_state.md) — SaveAsync always inserts inactive; must call SetActiveAsync separately; seed handles exists-but-inactive case too.
+- [ComboBox popup platform incompatibilities](feedback_combobox_popup_platforms.md) — SelectionMode.Single breaks Windows; platform-specific implementations required for Android/Windows clickability.
 - [ViewModel contract tests as AI guardrails](feedback_contract_tests.md) — Reflection-based tests pinning XAML binding names to ViewModel members; user's explicit strategy for constraining AI changes.
 - [Check docs first before debugging library issues](feedback_check_docs_first.md) — Always verify official setup/installation docs before investigating mysterious third-party library failures.
 - [UI test coverage for every Shell page](project_ui_test_coverage.md) — Every Shell page must have a navigation + element-visible Appium test; FindUIElement timeout catches page hangs.
@@ -7,5 +12,7 @@
 - [Engineering principles](feedback_engineering_principles.md) — DRY, SOLID, design patterns (factory/strategy/repository/command), extensibility, composition over inheritance, full accessibility (AutomationId + SemanticProperties on all elements), error surfacing (no silent catch), and test best practices.
 - [Project roadmap](project_roadmap.md) — Planned features: JSON import/export (TrainerHill format with archetype slug resolution), deck maker (deck lists tied to archetypes), deck comparer (side-by-side diff).
 - [Theme switcher goal](project_theme_switcher.md) — Long-term: in-app theme switcher; Android emulator defaults light; never hardcode colors.
+- [Open source control references](reference_open_source_controls.md) — UraniumUI + Controls.UserDialogs.Maui; key: Button subclass = native Android clickable; CollectionView SelectionMode for list items.
 - [Security standards](feedback_security.md) — Never introduce SQL injection, XSS, command injection, path traversal, or insecure deserialization. Verify before marking any task done that touches SQL, file I/O, HTTP clients, or user-supplied data.
-- [ComboBox fix plan + test seeding](project_combobox_fix_plan.md) — Button overlay fix for Android clickability, XAML popup rewrite, CloseAsync(result) pattern, TestDbSeeder SQL approach, WinAppDriver NoSuchWindowException workaround, archetype click test plan.
+- [SQLite only — no Preferences](project_sqlite_only.md) — Preferences API is not used; all state is in the .db3 file. CLAUDE.md reference to preferences.dat is stale.
+- [No sleeps in UI tests](feedback_no_sleeps_in_tests.md) — Never use Thread.Sleep/Task.Delay in Appium tests or seed setup; sync on element discovery via implicit wait instead.
