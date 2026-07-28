@@ -18,8 +18,14 @@ namespace UITests
             RunBeforeAnyTests();
         }
 
+        private static readonly string UiTestSentinelPath =
+            Path.Combine(Path.GetTempPath(), "PokemonBattleJournal.uitest");
+
         public void RunBeforeAnyTests()
         {
+            // Signal the app to suppress the first-boot prompt (avoids XamlRoot crash)
+            File.WriteAllText(UiTestSentinelPath, "1");
+
             // Port 4724 so Windows and Android Appium servers don't conflict when the full suite runs in parallel
             AppiumServerHelper.StartAppiumLocalServer(port: 4724);
 
@@ -37,29 +43,24 @@ namespace UITests
 
             if (_attachedToExisting)
             {
-                // Attach to VS-launched app — no wipe, no build
+                // Attach to VS-launched app — skip build
                 windowsOptions.AddAdditionalAppiumOption(
                     "appium:appTopLevelWindow",
                     "0x" + runningProc!.MainWindowHandle.ToString("X"));
             }
             else
             {
-                // Kill any leftover crash remnants before touching files
+                // Kill any leftover crash remnants
                 foreach (var proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
                     try { proc.Kill(true); proc.WaitForExit(5_000); } catch { }
 
                 string exePath = BuildWindowsApp();
-
-                // Wipe the DB before launch so every run starts with a clean slate
-                WipeAppData();
-
+                // No pre-wipe — app seeds UITestTrainer in #if DEBUG if absent (idempotent)
                 windowsOptions.App = exePath;
             }
 
             driver = new WindowsDriver(new Uri("http://127.0.0.1:4724/"), windowsOptions);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
-
-            SeedTestData();
         }
 
         public void Dispose()
@@ -67,13 +68,14 @@ namespace UITests
             driver?.Quit();
             if (!_attachedToExisting)
             {
-                // Only kill if we launched it — don't kill the debugger session
                 foreach (var proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
-                {
                     try { proc.Kill(); } catch { }
-                }
             }
             AppiumServerHelper.DisposeAppiumLocalServer();
+            // Delete UITestTrainer (and its matches) after app stops — preserves manually-added trainers
+            CleanupTestTrainer();
+            // Remove sentinel so normal debug runs see the first-boot prompt
+            try { File.Delete(UiTestSentinelPath); } catch { }
         }
 
         private static IEnumerable<string> FindFiles(string root, string pattern)
@@ -91,91 +93,40 @@ namespace UITests
                     yield return f;
         }
 
-        private static void WipeAppData()
+        private static void CleanupTestTrainer()
         {
-            // Delete the SQLite DB and MAUI preferences before the app launches so every run starts clean.
-            // DB is in {LocalAppData}\...\Data\PokemonBattleJournal.db3
-            // Preferences are in {LocalAppData}\...\Settings\preferences.dat (MAUI unpackaged Windows)
             string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            foreach (string db in FindFiles(localAppData, "PokemonBattleJournal.db3"))
-            {
-                try
-                {
-                    File.Delete(db);
-                    string? dataDir = Path.GetDirectoryName(db);
-                    string? appRoot = Path.GetDirectoryName(dataDir);
-                    string prefsFile = Path.Combine(appRoot ?? "", "Settings", "preferences.dat");
-                    if (File.Exists(prefsFile)) File.Delete(prefsFile);
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"[WipeAppData] Could not delete {db}: {ex.Message}");
-                }
-            }
-        }
-
-        private static void SeedTestData()
-        {
-            // Fresh install starts on Journal Entry with the first-boot Welcome prompt blocking the UI.
-            // Handle the prompt first, then seed matches. No need to visit Options — the prompt
-            // creates the trainer directly.
+            string? dbPath = FindFiles(localAppData, "PokemonBattleJournal.db3").FirstOrDefault();
+            if (dbPath == null) return;
             try
             {
-                // 1. Handle the Welcome prompt if it appears (first clean boot only).
-                //    Use a short timeout to detect the dialog without stalling if trainer already exists.
-                driver!.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
-                try
-                {
-                    // Confirm the ContentDialog is present by finding its Save button
-                    AppiumElement saveBtn = driver.FindElement(MobileBy.Name("Save"));
+                SQLitePCL.Batteries_V2.Init();
+                using var conn = new SQLite.SQLiteConnection(dbPath);
+                int trainerId = conn.ExecuteScalar<int>(
+                    "SELECT COALESCE(Id, 0) FROM Trainer WHERE Name = 'UITestTrainer'");
+                if (trainerId == 0) return;
 
-                    // The dialog's TextBox has no AutomationId — all our form inputs do.
-                    // Filter to the unnamed TextBox so we don't type into UserNoteInput behind the dialog.
-                    var allBoxes = driver.FindElements(MobileBy.ClassName("TextBox"));
-                    AppiumElement dialogBox = allBoxes
-                        .FirstOrDefault(b => string.IsNullOrEmpty(b.GetAttribute("AutomationId")))
-                        ?? allBoxes.First();
-                    dialogBox.SendKeys("UITestTrainer");
-                    saveBtn.Click();
-                    // Wait for the trainer to be created before proceeding — find a known MainPage element
-                    driver.FindElement(MobileBy.AccessibilityId("SaveMatchButton"));
-                }
-                catch (OpenQA.Selenium.NoSuchElementException)
-                {
-                    // No welcome dialog — trainer already exists from a previous run, continue seeding
-                }
-                finally
-                {
-                    driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
-                }
-
-                // 2. Now on Journal Entry — seed 3 matches. Save clears the form so no nav needed between iterations.
-                for (int i = 1; i <= 3; i++)
-                {
-                    var resultPicker = driver.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker"));
-                    resultPicker.Click();
-                    driver.FindElement(MobileBy.Name("Win")).Click();
-
-                    // Select "Other" for player archetype — SaveMatchAsync rejects null PlayerSelected
-                    driver.FindElement(MobileBy.AccessibilityId("PlayerArchetype")).Click();
-                    driver.FindElement(MobileBy.AccessibilityId("ArchetypeItem_Other")).Click();
-
-                    // Select "Other" for rival archetype
-                    driver.FindElement(MobileBy.AccessibilityId("RivalArchetype")).Click();
-                    driver.FindElement(MobileBy.AccessibilityId("ArchetypeItem_Other")).Click();
-
-                    var noteInput = driver.FindElement(MobileBy.AccessibilityId("UserNoteInput"));
-                    noteInput.Clear();
-                    noteInput.SendKeys($"UITestSeed-{i}");
-
-                    driver.FindElement(MobileBy.AccessibilityId("SaveMatchButton")).Click();
-                    // Wait for save to complete — form clears and SaveMatchButton reappears
-                    driver.FindElement(MobileBy.AccessibilityId("SaveMatchButton"));
-                }
+                // Delete games linked to UITestTrainer's matches
+                conn.Execute(
+                    "DELETE FROM TagGame WHERE GameId IN (" +
+                    "SELECT Game1Id FROM MatchEntry WHERE TrainerId = ? AND Game1Id IS NOT NULL UNION ALL " +
+                    "SELECT Game2Id FROM MatchEntry WHERE TrainerId = ? AND Game2Id IS NOT NULL UNION ALL " +
+                    "SELECT Game3Id FROM MatchEntry WHERE TrainerId = ? AND Game3Id IS NOT NULL)",
+                    trainerId, trainerId, trainerId);
+                conn.Execute(
+                    "DELETE FROM Game WHERE Id IN (" +
+                    "SELECT Game1Id FROM MatchEntry WHERE TrainerId = ? AND Game1Id IS NOT NULL UNION ALL " +
+                    "SELECT Game2Id FROM MatchEntry WHERE TrainerId = ? AND Game2Id IS NOT NULL UNION ALL " +
+                    "SELECT Game3Id FROM MatchEntry WHERE TrainerId = ? AND Game3Id IS NOT NULL)",
+                    trainerId, trainerId, trainerId);
+                conn.Execute("DELETE FROM MatchEntry WHERE TrainerId = ?", trainerId);
+                conn.Execute("DELETE FROM Archetype WHERE TrainerId = ?", trainerId);
+                conn.Execute("DELETE FROM Tags WHERE TrainerId = ?", trainerId);
+                conn.Execute("DELETE FROM Trainer WHERE Id = ?", trainerId);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"SeedTestData failed: {ex.Message}", ex);
+                Console.Error.WriteLine($"[CleanupTestTrainer] {ex.Message}");
             }
         }
 

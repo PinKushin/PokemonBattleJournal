@@ -59,6 +59,15 @@ namespace UITests
                 string apkPath = BuildAndroidApk();
                 Log($"4. BuildAndroidApk done: {apkPath}");
                 androidOptions.App = apkPath;
+
+                // Install APK — #if DEBUG seeding creates UITestTrainer on startup if absent (idempotent)
+                Log("4b. Installing APK via adb");
+                RunAdb($"install -r \"{apkPath}\"", timeoutMs: 120_000);
+                Log("4b. APK installed");
+
+                // Tell Appium not to reinstall since we already did
+                androidOptions.AddAdditionalAppiumOption("noReset", true);
+                androidOptions.AddAdditionalAppiumOption("skipDeviceInitialization", true);
             }
 
             androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppPackage, AppPackage);
@@ -77,10 +86,6 @@ namespace UITests
             Log("6. WaitForActivity");
             WaitForActivity($"{AppPackage}.MainActivity", timeoutSeconds: 60);
             Log("6. WaitForActivity done");
-
-            Log("7. SeedTestData");
-            SeedTestData();
-            Log("7. SeedTestData done");
         }
 
         public void Dispose()
@@ -92,69 +97,6 @@ namespace UITests
             // Only kill the emulator in CI — locally the AVD stays alive for the next run
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI")))
                 ShutdownEmulator();
-        }
-
-        private static void SeedTestData()
-        {
-            // Fresh install starts on Journal Entry with the first-boot Welcome prompt blocking the UI.
-            // Handle the prompt first, then seed matches. No need to visit Options — the prompt
-            // creates the trainer directly.
-            try
-            {
-                // 1. The Welcome prompt appears immediately: type trainer name and save
-                // DisplayPromptAsync renders as an Android AlertDialog with a single EditText
-                var promptInput = driver!.FindElement(MobileBy.AndroidUIAutomator(
-                    "new UiSelector().className(\"android.widget.EditText\")"));
-                promptInput.SendKeys("UITestTrainer");
-                driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Save\")")).Click();
-                // Wait for trainer creation to complete — SaveMatchButton appears when main page is ready
-                driver.FindElement(MobileBy.AndroidUIAutomator(
-                    "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                    ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/SaveMatchButton\"))"));
-
-                // 2. Now on Journal Entry — seed 3 matches. Save clears the form so no nav needed between iterations.
-                for (int i = 1; i <= 3; i++)
-                {
-                    // Select "Win" from result picker
-                    var resultPicker = driver.FindElement(MobileBy.AndroidUIAutomator(
-                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/PossibleResultsPicker\"))"));
-                    resultPicker.Click();
-                    driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
-
-                    // Select "Other" for player archetype — SaveMatchAsync rejects null PlayerSelected
-                    driver.FindElement(MobileBy.AndroidUIAutomator(
-                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/PlayerArchetype\"))")).Click();
-                    driver.FindElement(MobileBy.AndroidUIAutomator(
-                        "new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/ArchetypeItem_Other\")")).Click();
-
-                    // Select "Other" for rival archetype
-                    driver.FindElement(MobileBy.AndroidUIAutomator(
-                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/RivalArchetype\"))")).Click();
-                    driver.FindElement(MobileBy.AndroidUIAutomator(
-                        "new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/ArchetypeItem_Other\")")).Click();
-
-                    // Type seed note
-                    var noteInput = driver.FindElement(MobileBy.AndroidUIAutomator(
-                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/UserNoteInput\"))"));
-                    noteInput.SendKeys($"UITestSeed-{i}");
-
-                    // Save — wait for completion by confirming SaveMatchButton reappears (form cleared)
-                    driver.FindElement(MobileBy.AndroidUIAutomator(
-                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/SaveMatchButton\"))")).Click();
-                    driver.FindElement(MobileBy.AndroidUIAutomator(
-                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/SaveMatchButton\"))"));
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"SeedTestData failed: {ex.Message}", ex);
-            }
         }
 
         private static void EnsureEmulatorRunning()

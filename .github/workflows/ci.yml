@@ -30,6 +30,23 @@ jobs:
           name: unit-coverage
           path: PokemonBattleJournal.Tests/TestResults/**/*.coverage
 
+  # ── Integration tests ─────────────────────────────────────────────────────
+  integration-tests:
+    name: Integration Tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Restore
+        run: dotnet restore PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj
+
+      - name: Test
+        run: dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj --no-restore
+
   # ── Windows UI tests ──────────────────────────────────────────────────────
   windows-ui-tests:
     name: Windows UI Tests

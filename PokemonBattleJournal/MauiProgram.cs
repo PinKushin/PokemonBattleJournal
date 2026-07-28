@@ -52,9 +52,11 @@ namespace PokemonBattleJournal
                     options.MaxBreadcrumbs = 300;
 #endif
                 });
+            string logsDir = Path.Combine(FileHelper.GetAppDataPath(), "Logs");
+            Directory.CreateDirectory(logsDir);
             Serilog.ILogger serilogLogger = new LoggerConfiguration()
                 .WriteTo.Debug()
-                .WriteTo.File(Path.Combine(FileHelper.GetAppDataPath(), "log.txt"),
+                .WriteTo.File(Path.Combine(logsDir, "log.txt"),
                 rollingInterval: RollingInterval.Day)
             .CreateLogger();
 #if DEBUG

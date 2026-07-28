@@ -253,7 +253,11 @@ namespace PokemonBattleJournal.ViewModels
                     ?? await _connection.Trainers.GetActiveAsync();
 
                 // First boot or fresh install: no trainers exist — ask for a name
-                if (_trainer is null && Shell.Current is not null)
+                // Suppressed when UI tests are running (sentinel file present) to avoid
+                // ContentDialog.ShowAsync crashing before the WinUI XamlRoot is ready
+                bool isUiTestRun = File.Exists(
+                    Path.Combine(Path.GetTempPath(), "PokemonBattleJournal.uitest"));
+                if (_trainer is null && Shell.Current is not null && !isUiTestRun)
                 {
                     string? name = await Shell.Current.DisplayPromptAsync(
                         "Welcome",
