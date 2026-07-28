@@ -23,14 +23,11 @@ namespace UITests
         }
 
         [Fact]
-        public async Task MainPage_UserNoteInput_ShowTextEntry()
+        public void MainPage_UserNoteInput_ShowTextEntry()
         {
             AppiumElement userEntry = FindUIElement("UserNoteInput");
-            CancellationToken cancellationToken = new();
             userEntry.SendKeys("Hello World");
-            await Task.Delay(500).WaitAsync(cancellationToken);
-
-            _ = userEntry.ShouldNotBeNull();
+            userEntry.ShouldNotBeNull();
             userEntry.Text.ShouldEndWith("Hello World");
         }
 
@@ -64,15 +61,12 @@ namespace UITests
         public void MainPage_BOSwitch_ShowsBO3Fields()
         {
             AppiumElement boSwitch = FindUIElement("BOSwitch");
-
             boSwitch.Click();
-            Thread.Sleep(500);
 
             AppiumElement bo3Layout = FindUIElement("BO3GamesLayout");
             bo3Layout.ShouldNotBeNull();
 
             boSwitch.Click();
-            Thread.Sleep(300);
             InvalidateCurrentPage();
         }
 
@@ -123,7 +117,6 @@ namespace UITests
         {
             AppiumElement boSwitch = FindUIElement("BOSwitch");
             boSwitch.Click();
-            Thread.Sleep(1000); // allow BO3 content to animate in
 
             // Verify outer layout first so we know BO3 content is rendered
             FindUIElement("BO3GamesLayout").ShouldNotBeNull();
@@ -142,41 +135,61 @@ namespace UITests
             }
 
             boSwitch.Click();
-            Thread.Sleep(300);
             InvalidateCurrentPage();
         }
 
         [Fact]
-        public async Task MainPage_SaveMatch_WithResult_Saves()
+        public void MainPage_Game3Tab_ShowsWhenGame1IsTie()
         {
-            // Select "Win" from the result picker
+            AppiumElement boSwitch = FindUIElement("BOSwitch");
+            try
+            {
+                boSwitch.Click();
+
+                FindUIElement("PossibleResultsPicker").Click();
+                if (App is WindowsDriver)
+                    App.FindElement(MobileBy.Name("Tie")).Click();
+                else
+                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
+
+                FindUIElement("Game2Tab").Click();
+
+                FindUIElement("PossibleResultsPicker2").Click();
+                if (App is WindowsDriver)
+                    App.FindElement(MobileBy.Name("Win")).Click();
+                else
+                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+
+                // Game3Tab must now be visible — AutomationId per accessibility standards
+                if (App is WindowsDriver)
+                    App.FindElement(MobileBy.AccessibilityId("Game3Tab")).ShouldNotBeNull();
+                else
+                    App.FindElement(MobileBy.Id("com.PinKushin.PokemonBattleJournal:id/Game3Tab")).ShouldNotBeNull();
+            }
+            finally
+            {
+                try { boSwitch.Click(); } catch { }
+                InvalidateCurrentPage();
+            }
+        }
+
+        [Fact]
+        public void MainPage_SaveMatch_WithResult_Saves()
+        {
             AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
             resultPicker.Click();
-            Thread.Sleep(500);
 
             // On Android the MAUI Picker opens a native AlertDialog — find "Win" by text
             if (App is not WindowsDriver)
-            {
-                AppiumElement winOption = App.FindElement(
-                    MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")"));
-                winOption.Click();
-            }
+                App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
             else
-            {
-                // Windows MAUI Picker popup items are found by Name (displayed text), not AutomationId
-                AppiumElement winOption = App.FindElement(MobileBy.Name("Win"));
-                winOption.Click();
-            }
-
-            await Task.Delay(300);
+                App.FindElement(MobileBy.Name("Win")).Click();
 
             AppiumElement saveButton = FindUIElement("SaveMatchButton");
             saveButton.Click();
-            await Task.Delay(1000);
 
             // Button still present means save didn't crash
-            AppiumElement saveButtonAfter = FindUIElement("SaveMatchButton");
-            saveButtonAfter.ShouldNotBeNull();
+            FindUIElement("SaveMatchButton").ShouldNotBeNull();
 
             InvalidateCurrentPage();
         }

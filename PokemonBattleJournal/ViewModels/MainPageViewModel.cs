@@ -204,13 +204,12 @@ namespace PokemonBattleJournal.ViewModels
         [ObservableProperty]
         public partial MatchResult? Result3 { get; set; }
 
-        // Game 3 needed only when match winner can't be determined:
-        // split (Win+Loss or Loss+Win) OR both tied (neither player won a game)
+        // Game 3 needed when winner can't be determined: split result OR either game is a tie
         public bool ShowGame3 =>
             BO3Toggle && Result != null && Result2 != null &&
             ((Result == MatchResult.Win && Result2 == MatchResult.Loss) ||
              (Result == MatchResult.Loss && Result2 == MatchResult.Win) ||
-             (Result == MatchResult.Tie && Result2 == MatchResult.Tie));
+             Result == MatchResult.Tie || Result2 == MatchResult.Tie);
 
         [RelayCommand]
         private void ToggleBO3() => BO3Toggle = !BO3Toggle;

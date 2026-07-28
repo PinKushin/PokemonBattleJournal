@@ -38,7 +38,6 @@ namespace UITests
             {
                 var menu = App.FindElement(MobileBy.AccessibilityId("OK"));
                 menu.Click();
-                Thread.Sleep(500);
                 var item = App.FindElement(MobileBy.AccessibilityId(pageTitle));
                 item.Click();
             }
@@ -46,11 +45,9 @@ namespace UITests
             {
                 var menu = App.FindElement(MobileBy.AccessibilityId("Open navigation drawer"));
                 menu.Click();
-                Thread.Sleep(500);
                 var item = App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")"));
                 item.Click();
             }
-            Thread.Sleep(500);
             _currentPage = pageTitle;
         }
 

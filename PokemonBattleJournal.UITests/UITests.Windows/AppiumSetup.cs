@@ -136,11 +136,11 @@ namespace UITests
                         .FirstOrDefault(b => string.IsNullOrEmpty(b.GetAttribute("AutomationId")))
                         ?? allBoxes.First();
                     dialogBox.SendKeys("UITestTrainer");
-                    Thread.Sleep(200);
                     saveBtn.Click();
-                    Thread.Sleep(800);
+                    // Wait for the trainer to be created before proceeding — find a known MainPage element
+                    driver.FindElement(MobileBy.AccessibilityId("SaveMatchButton"));
                 }
-                catch
+                catch (OpenQA.Selenium.NoSuchElementException)
                 {
                     // No welcome dialog — trainer already exists from a previous run, continue seeding
                 }
@@ -154,29 +154,23 @@ namespace UITests
                 {
                     var resultPicker = driver.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker"));
                     resultPicker.Click();
-                    Thread.Sleep(500);
                     driver.FindElement(MobileBy.Name("Win")).Click();
-                    Thread.Sleep(300);
 
                     // Select "Other" for player archetype — SaveMatchAsync rejects null PlayerSelected
                     driver.FindElement(MobileBy.AccessibilityId("PlayerArchetype")).Click();
-                    Thread.Sleep(500);
                     driver.FindElement(MobileBy.AccessibilityId("ArchetypeItem_Other")).Click();
-                    Thread.Sleep(300);
 
                     // Select "Other" for rival archetype
                     driver.FindElement(MobileBy.AccessibilityId("RivalArchetype")).Click();
-                    Thread.Sleep(500);
                     driver.FindElement(MobileBy.AccessibilityId("ArchetypeItem_Other")).Click();
-                    Thread.Sleep(300);
 
                     var noteInput = driver.FindElement(MobileBy.AccessibilityId("UserNoteInput"));
                     noteInput.Clear();
                     noteInput.SendKeys($"UITestSeed-{i}");
-                    Thread.Sleep(200);
 
                     driver.FindElement(MobileBy.AccessibilityId("SaveMatchButton")).Click();
-                    Thread.Sleep(800);
+                    // Wait for save to complete — form clears and SaveMatchButton reappears
+                    driver.FindElement(MobileBy.AccessibilityId("SaveMatchButton"));
                 }
             }
             catch (Exception ex)
@@ -213,15 +207,16 @@ namespace UITests
             };
 
             using var proc = System.Diagnostics.Process.Start(psi)!;
+            // Read stdout and stderr concurrently — reading after WaitForExit deadlocks when buffers fill
+            var stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
+            var stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
             bool exited = proc.WaitForExit(300_000); // 5-minute cap
+            string stderr = stderrTask.Result;
             if (!exited)
                 throw new TimeoutException("Windows build timed out after 5 minutes.");
 
             if (proc.ExitCode != 0)
-            {
-                string err = proc.StandardError.ReadToEnd();
-                throw new InvalidOperationException($"Windows build failed (exit {proc.ExitCode}):\n{err}");
-            }
+                throw new InvalidOperationException($"Windows build failed (exit {proc.ExitCode}):\n{stderr}");
 
             string exePath = Path.Combine(repoRoot, "PokemonBattleJournal", "bin", config, framework, rid, "PokemonBattleJournal.exe");
 

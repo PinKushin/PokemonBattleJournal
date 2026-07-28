@@ -81,9 +81,11 @@ namespace UITests
                 var promptInput = driver!.FindElement(MobileBy.AndroidUIAutomator(
                     "new UiSelector().className(\"android.widget.EditText\")"));
                 promptInput.SendKeys("UITestTrainer");
-                Thread.Sleep(300);
                 driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Save\")")).Click();
-                Thread.Sleep(800);
+                // Wait for trainer creation to complete — SaveMatchButton appears when main page is ready
+                driver.FindElement(MobileBy.AndroidUIAutomator(
+                    "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                    ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/SaveMatchButton\"))"));
 
                 // 2. Now on Journal Entry — seed 3 matches. Save clears the form so no nav needed between iterations.
                 for (int i = 1; i <= 3; i++)
@@ -93,40 +95,35 @@ namespace UITests
                         "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
                         ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/PossibleResultsPicker\"))"));
                     resultPicker.Click();
-                    Thread.Sleep(500);
                     driver.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
-                    Thread.Sleep(300);
 
                     // Select "Other" for player archetype — SaveMatchAsync rejects null PlayerSelected
                     driver.FindElement(MobileBy.AndroidUIAutomator(
                         "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
                         ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/PlayerArchetype\"))")).Click();
-                    Thread.Sleep(600);
                     driver.FindElement(MobileBy.AndroidUIAutomator(
                         "new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/ArchetypeItem_Other\")")).Click();
-                    Thread.Sleep(300);
 
                     // Select "Other" for rival archetype
                     driver.FindElement(MobileBy.AndroidUIAutomator(
                         "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
                         ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/RivalArchetype\"))")).Click();
-                    Thread.Sleep(600);
                     driver.FindElement(MobileBy.AndroidUIAutomator(
                         "new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/ArchetypeItem_Other\")")).Click();
-                    Thread.Sleep(300);
 
                     // Type seed note
                     var noteInput = driver.FindElement(MobileBy.AndroidUIAutomator(
                         "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
                         ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/UserNoteInput\"))"));
                     noteInput.SendKeys($"UITestSeed-{i}");
-                    Thread.Sleep(200);
 
-                    // Save
+                    // Save — wait for completion by confirming SaveMatchButton reappears (form cleared)
                     driver.FindElement(MobileBy.AndroidUIAutomator(
                         "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
                         ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/SaveMatchButton\"))")).Click();
-                    Thread.Sleep(800);
+                    driver.FindElement(MobileBy.AndroidUIAutomator(
+                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                        ".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/SaveMatchButton\"))"));
                 }
             }
             catch (Exception ex)

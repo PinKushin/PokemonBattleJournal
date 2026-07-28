@@ -210,12 +210,41 @@ namespace PokemonBattleJournal.Tests.ViewModels
         }
 
         [Fact]
-        public void ShowGame3_WinAndTie_ReturnsFalse()
+        public void ShowGame3_Game1Tie_ReturnsTrue()
         {
+            // Tie in Game 1 means winner undecided regardless of Game 2 — Game 3 required
+            _viewModel.BO3Toggle = true;
+            _viewModel.Result = MatchResult.Tie;
+            _viewModel.Result2 = MatchResult.Win;
+            _viewModel.ShowGame3.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void ShowGame3_Game2Tie_ReturnsTrue()
+        {
+            // Tie in Game 2 means winner undecided regardless of Game 1 — Game 3 required
             _viewModel.BO3Toggle = true;
             _viewModel.Result = MatchResult.Win;
             _viewModel.Result2 = MatchResult.Tie;
-            _viewModel.ShowGame3.ShouldBeFalse();
+            _viewModel.ShowGame3.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void ShowGame3_Game1TieGame2Loss_ReturnsTrue()
+        {
+            _viewModel.BO3Toggle = true;
+            _viewModel.Result = MatchResult.Tie;
+            _viewModel.Result2 = MatchResult.Loss;
+            _viewModel.ShowGame3.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void ShowGame3_Game1LossGame2Tie_ReturnsTrue()
+        {
+            _viewModel.BO3Toggle = true;
+            _viewModel.Result = MatchResult.Loss;
+            _viewModel.Result2 = MatchResult.Tie;
+            _viewModel.ShowGame3.ShouldBeTrue();
         }
 
         // --- SelectGame commands ---
