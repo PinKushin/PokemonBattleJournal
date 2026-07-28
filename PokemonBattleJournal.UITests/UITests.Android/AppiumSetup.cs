@@ -39,16 +39,27 @@ namespace UITests
             AppiumServerHelper.StartAppiumLocalServer();
             Log("3. StartAppiumLocalServer done");
 
-            Log("4. BuildAndroidApk");
-            string apkPath = BuildAndroidApk();
-            Log($"4. BuildAndroidApk done: {apkPath}");
+            bool useInstalled = !string.IsNullOrEmpty(
+                Environment.GetEnvironmentVariable("ANDROID_USE_INSTALLED"));
 
             AppiumOptions androidOptions = new()
             {
                 AutomationName = "UIAutomator2",
                 PlatformName = "Android",
-                App = apkPath,
             };
+
+            if (useInstalled)
+            {
+                Log("4. Skipping build — using app deployed by VS");
+                androidOptions.AddAdditionalAppiumOption("noReset", true);
+            }
+            else
+            {
+                Log("4. BuildAndroidApk");
+                string apkPath = BuildAndroidApk();
+                Log($"4. BuildAndroidApk done: {apkPath}");
+                androidOptions.App = apkPath;
+            }
 
             androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppPackage, AppPackage);
             androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppActivity, $"{AppPackage}.MainActivity");
@@ -184,8 +195,8 @@ namespace UITests
             // Wait until Android reports fully booted.
             WaitForEmulatorBoot(timeoutSeconds: 240);
 
-            // Uninstall any previous version to avoid signing-conflict failures.
-            RunAdb($"uninstall {AppPackage}", timeoutMs: 15_000);
+            // Skip uninstall — same debug keystore every run, no signing conflict.
+            // MSBuild incremental build handles changed files; adb install -r replaces in place.
         }
 
         private static void ShutdownEmulator()
@@ -296,6 +307,25 @@ namespace UITests
 #else
             const string config = "Release";
 #endif
+            string apkPath = Path.Combine(repoRoot, "PokemonBattleJournal", "bin", config,
+                "net10.0-android", "com.PinKushin.PokemonBattleJournal-Signed.apk");
+
+            // Skip rebuild if APK is newer than every source file — EmbedAssembliesIntoApk builds
+            // are slow (~7-18 min cold); skipping saves time when nothing changed.
+            if (File.Exists(apkPath))
+            {
+                DateTime apkTime = File.GetLastWriteTimeUtc(apkPath);
+                string srcDir = Path.Combine(repoRoot, "PokemonBattleJournal");
+                bool anyNewer = Directory.EnumerateFiles(srcDir, "*", SearchOption.AllDirectories)
+                    .Where(f => f.EndsWith(".cs") || f.EndsWith(".xaml") || f.EndsWith(".csproj"))
+                    .Any(f => File.GetLastWriteTimeUtc(f) > apkTime);
+                if (!anyNewer)
+                {
+                    Log($"4. BuildAndroidApk skipped — APK is fresh ({apkPath})");
+                    return apkPath;
+                }
+            }
+
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "dotnet",
@@ -319,9 +349,6 @@ namespace UITests
                 throw new TimeoutException("Android build timed out after 10 minutes.");
             if (proc.ExitCode != 0)
                 throw new InvalidOperationException($"Android build failed (exit {proc.ExitCode}):\n{stderr}");
-
-            string apkPath = Path.Combine(repoRoot, "PokemonBattleJournal", "bin", config,
-                "net10.0-android", "com.PinKushin.PokemonBattleJournal-Signed.apk");
 
             if (!File.Exists(apkPath))
                 throw new FileNotFoundException($"APK not found at expected path: {apkPath}");

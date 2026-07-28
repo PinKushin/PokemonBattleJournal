@@ -29,10 +29,20 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
         var collectionView = new CollectionView
         {
             ItemsSource = filteredItems,
-            SelectionMode = SelectionMode.None,
+            // SelectionMode.Single makes each item natively clickable on Android (UIAutomator2 sees
+            // clickable=true). TapGestureRecognizer on a Grid does NOT — UIAutomator ignores those.
+            SelectionMode = SelectionMode.Single,
             HeightRequest = 250,
             BackgroundColor = backgroundColor,
             WidthRequest = (float)popupWidth
+        };
+
+        collectionView.SelectionChanged += async (s, e) =>
+        {
+            if (closing) return;
+            closing = true;
+            var item = e.CurrentSelection.FirstOrDefault();
+            await CloseAsync(item is null ? null : new PickerResult(item));
         };
 
         collectionView.ItemTemplate = new DataTemplate(() =>
@@ -58,15 +68,6 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             label.SetBinding(Label.TextProperty, new Binding(displayMemberPath));
             Grid.SetColumn(label, 1);
 
-            var tap = new TapGestureRecognizer();
-            tap.Tapped += async (s, e) =>
-            {
-                if (closing) return;
-                closing = true;
-                if (s is Grid g && g.BindingContext is { } item)
-                    await CloseAsync(new PickerResult(item));
-            };
-
             var grid = new Grid
             {
                 ColumnDefinitions =
@@ -80,7 +81,6 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             };
             grid.SetBinding(AutomationIdProperty, new Binding(displayMemberPath, stringFormat: "ArchetypeItem_{0}"));
             grid.SetBinding(SemanticProperties.HintProperty, new Binding(displayMemberPath, stringFormat: "Double tap to select {0}"));
-            grid.GestureRecognizers.Add(tap);
             return grid;
         });
 
