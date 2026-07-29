@@ -295,11 +295,12 @@ namespace UITests
             var stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
             var stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
             bool exited = proc.WaitForExit(600_000); // 10-minute cap
+            string stdout = stdoutTask.Result;
             string stderr = stderrTask.Result;
             if (!exited)
                 throw new TimeoutException("Android build timed out after 10 minutes.");
             if (proc.ExitCode != 0)
-                throw new InvalidOperationException($"Android build failed (exit {proc.ExitCode}):\n{stderr}");
+                throw new InvalidOperationException($"Android build failed (exit {proc.ExitCode}):\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}");
 
             if (!File.Exists(apkPath))
                 throw new FileNotFoundException($"APK not found at expected path: {apkPath}");

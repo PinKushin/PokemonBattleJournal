@@ -142,7 +142,7 @@ namespace UITests
 
                 FindUIElement("PossibleResultsPicker").Click();
                 if (App is WindowsDriver)
-                    App.FindElement(MobileBy.Name("Tie")).Click();
+                    App.FindElement(By.XPath("//*[@Name='Tie']")).Click();
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
 
@@ -150,7 +150,7 @@ namespace UITests
 
                 FindUIElement("PossibleResultsPicker2").Click();
                 if (App is WindowsDriver)
-                    App.FindElement(MobileBy.Name("Win")).Click();
+                    App.FindElement(By.XPath("//*[@Name='Win']")).Click();
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
 
@@ -173,7 +173,7 @@ namespace UITests
             if (App is not WindowsDriver)
                 App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
             else
-                App.FindElement(MobileBy.Name("Win")).Click();
+                App.FindElement(By.XPath("//*[@Name='Win']")).Click();
 
             AppiumElement saveButton = FindUIElement("SaveMatchButton");
             saveButton.Click();
