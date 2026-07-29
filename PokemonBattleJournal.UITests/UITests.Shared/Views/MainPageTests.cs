@@ -139,10 +139,12 @@ namespace UITests
             try
             {
                 boSwitch.Click();
+                // Wait for BO3 layout to fully render before interacting with pickers
+                FindUIElement("BO3GamesLayout");
 
                 FindUIElement("PossibleResultsPicker").Click();
                 if (App is WindowsDriver)
-                    App.FindElement(OpenQA.Selenium.By.XPath("//*[contains(@Name,'Tie')]")).Click();
+                    App.FindElement(OpenQA.Selenium.By.XPath("//ListItem[contains(@Name,'Tie')]")).Click();
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
 
@@ -150,7 +152,7 @@ namespace UITests
 
                 FindUIElement("PossibleResultsPicker2").Click();
                 if (App is WindowsDriver)
-                    App.FindElement(OpenQA.Selenium.By.XPath("//*[contains(@Name,'Win')]")).Click();
+                    App.FindElement(OpenQA.Selenium.By.XPath("//ListItem[contains(@Name,'Win')]")).Click();
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
 
@@ -176,7 +178,7 @@ namespace UITests
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
                 else
-                    App.FindElement(OpenQA.Selenium.By.XPath("//*[contains(@Name,'Win')]")).Click();
+                    App.FindElement(OpenQA.Selenium.By.XPath("//ListItem[contains(@Name,'Win')]")).Click();
             }
             catch (OpenQA.Selenium.NoSuchElementException)
             {
