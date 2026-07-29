@@ -124,6 +124,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             // Assert
             result.ShouldBe(0);
             _viewModel.HasValidationErrors.ShouldBeTrue();
+            _viewModel.ValidationMessage.ShouldNotBeNull();
             _viewModel.ValidationMessage.ShouldContain("Game 2 result is required");
         }
 
@@ -141,7 +142,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             // Assert — validation passes, DB save runs (no real DB so 0 rows affected)
             result.ShouldBe(0);
-            _viewModel.ValidationMessage.ShouldNotContain("End time cannot be before start time");
+            (_viewModel.ValidationMessage ?? string.Empty).ShouldNotContain("End time cannot be before start time");
         }
 
         [Fact]
@@ -158,6 +159,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             // Assert
             result.ShouldBe(0);
             _viewModel.HasValidationErrors.ShouldBeTrue();
+            _viewModel.ValidationMessage.ShouldNotBeNull();
             _viewModel.ValidationMessage.ShouldContain("Game 1 result is required");
         }
 

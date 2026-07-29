@@ -4,11 +4,16 @@ using PokemonBattleJournal.Scraper.Interfaces;
 using PokemonBattleJournal.Scraper.Services;
 using Serilog;
 using SkiaSharp.Views.Maui.Controls.Hosting;
+using System.Runtime.Versioning;
 
 namespace PokemonBattleJournal
 {
     public static class MauiProgram
     {
+        [SupportedOSPlatform("android21.0")]
+        [SupportedOSPlatform("ios15.0")]
+        [SupportedOSPlatform("maccatalyst15.0")]
+        [SupportedOSPlatform("windows10.0.17763.0")]
         public static MauiApp CreateMauiApp()
         {
             MauiAppBuilder builder = MauiApp.CreateBuilder();
