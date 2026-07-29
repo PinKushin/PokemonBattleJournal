@@ -25,13 +25,16 @@ namespace UITests
         {
             NavigateTo("Trainer's Profile");
 
-            // WinsLabel must be non-zero — seeding puts 3 Win matches in.
-            // Failure here means TrainerPage loaded with no active trainer or DB is empty.
-            AppiumElement winsLabel = FindUIElement("WinsLabel");
-            winsLabel.ShouldNotBeNull();
-            string winsText = winsLabel.Text;
+            // TrainerPageViewModel loads stats asynchronously — poll until WinsLabel shows non-zero.
+            // Seeding puts 3 Win matches in; zero means no active trainer or async load not complete.
+            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(20));
+            string winsText = wait.Until(_ =>
+            {
+                string text = FindUIElement("WinsLabel").Text;
+                return int.TryParse(text, out int v) && v > 0 ? text : null;
+            });
             int.TryParse(winsText, out int wins);
-            wins.ShouldBeGreaterThan(0, $"WinsLabel shows '{winsText}' — TrainerPage has no data");
+            wins.ShouldBeGreaterThan(0, $"WinsLabel shows '{winsText}' after 20s — TrainerPage has no data");
         }
 
         [Fact]

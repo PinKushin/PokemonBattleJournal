@@ -124,10 +124,9 @@ namespace UITests
             FindUIElement("BO3GamesLayout").ShouldNotBeNull();
 
             // Game3Tab only appears with a split result — only check Game1Tab and Game2Tab.
-            // Border elements expose content-desc = SemanticProperties.Description on Android,
-            // not resource-id. Use FindByDescription so automation matches what screen readers use.
-            FindByDescription("Game1Tab", "Game 1 tab").ShouldNotBeNull();
-            FindByDescription("Game2Tab", "Game 2 tab").ShouldNotBeNull();
+            // Border elements have resource-id from AutomationId on Android — use FindUIElement.
+            FindUIElement("Game1Tab").ShouldNotBeNull();
+            FindUIElement("Game2Tab").ShouldNotBeNull();
 
             boSwitch.Click();
             InvalidateCurrentPage();
@@ -147,7 +146,7 @@ namespace UITests
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
 
-                FindByDescription("Game2Tab", "Game 2 tab").Click();
+                FindUIElement("Game2Tab").Click();
 
                 FindUIElement("PossibleResultsPicker2").Click();
                 if (App is WindowsDriver)
@@ -155,8 +154,7 @@ namespace UITests
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
 
-                // Game3Tab must now be visible — Border uses content-desc on Android
-                FindByDescription("Game3Tab", "Game 3 tab").ShouldNotBeNull();
+                FindUIElement("Game3Tab").ShouldNotBeNull();
             }
             finally
             {
