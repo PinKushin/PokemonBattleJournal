@@ -117,7 +117,7 @@
         [RelayCommand]
         public async Task DeleteTrainerFromListAsync(Trainer trainer)
         {
-            bool confirmed = await Shell.Current.DisplayAlert(
+            bool confirmed = await Shell.Current.DisplayAlertAsync(
                 "Delete Trainer",
                 $"Delete '{trainer.Name}' and all their match data?",
                 "Delete", "Cancel");
@@ -381,7 +381,7 @@
                 ? [.. remaining.Select(t => t.Name ?? "Unknown"), "Create New Account"]
                 : ["Create New Account"];
 
-            string? choice = await Shell.Current.DisplayActionSheet(
+            string? choice = await Shell.Current.DisplayActionSheetAsync(
                 "Choose an account", "Continue as Guest", null, options);
 
             if (string.IsNullOrEmpty(choice) || choice == "Continue as Guest")

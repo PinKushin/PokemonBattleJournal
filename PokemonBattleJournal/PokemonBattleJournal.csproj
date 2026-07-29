@@ -91,8 +91,8 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.10" />
         <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="10.0.90" />
         <PackageReference Include="Plugin.Maui.DebugRainbows" Version="1.2.2" />
-        <PackageReference Include="Sentry.Maui" Version="6.7.0" />
-        <PackageReference Include="Sentry.Serilog" Version="6.7.0" />
+        <PackageReference Include="Sentry.Maui" Version="6.8.0" />
+        <PackageReference Include="Sentry.Serilog" Version="6.8.0" />
         <PackageReference Include="Serilog" Version="4.4.0" />
         <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />

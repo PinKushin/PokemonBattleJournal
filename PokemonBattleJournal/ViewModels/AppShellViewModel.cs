@@ -74,7 +74,7 @@ namespace PokemonBattleJournal.ViewModels
         {
             if (_mainPageVm.HasUnsavedData)
             {
-                bool confirmed = await Shell.Current.DisplayAlert(
+                bool confirmed = await Shell.Current.DisplayAlertAsync(
                     "Switch Trainer",
                     "You have unsaved match data. Switch anyway?",
                     "Switch", "Cancel");
