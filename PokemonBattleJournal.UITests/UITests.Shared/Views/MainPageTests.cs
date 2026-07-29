@@ -2,10 +2,8 @@ namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {
-        public MainPageTests()
-        {
-            NavigateTo("Journal Entry");
-        }
+        // No constructor navigation — WinAppDriver/Appium starts the app on MainPage already.
+        // Tests that need a specific Shell page navigate explicitly.
 
         // The SeedTestData step in AppiumSetup is the integration test for first-boot:
         // it installs a fresh APK (no DB), launches the app, dismisses the Welcome prompt
@@ -16,7 +14,6 @@ namespace UITests
         [Fact]
         public void MainPage_AfterFirstBoot_TrainerNameSet()
         {
-            // If seeding succeeded, a trainer is active and the WelcomeMsg label is present
             AppiumElement welcomeLabel = FindUIElement("WelcomeMsg");
             welcomeLabel.ShouldNotBeNull();
             welcomeLabel.Text.ShouldContain("UITestTrainer");
@@ -28,9 +25,17 @@ namespace UITests
             // Editor (EditText) gets resource-id from AutomationId on Android — use FindUIElement.
             // SemanticProperties.Description on EditText maps to hint, not content-desc.
             AppiumElement userEntry = FindUIElement("UserNoteInput");
-            userEntry.SendKeys("Hello World");
-            userEntry.ShouldNotBeNull();
-            userEntry.Text.ShouldEndWith("Hello World");
+            try
+            {
+                userEntry.SendKeys("Hello World");
+                userEntry.ShouldNotBeNull();
+                userEntry.Text.ShouldEndWith("Hello World");
+            }
+            finally
+            {
+                // Clear so later tests don't see stale note text
+                try { userEntry.Clear(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+            }
         }
 
         [Fact]
@@ -63,13 +68,16 @@ namespace UITests
         public void MainPage_BOSwitch_ShowsBO3Fields()
         {
             AppiumElement boSwitch = FindUIElement("BOSwitch");
-            boSwitch.Click();
-
-            AppiumElement bo3Layout = FindUIElement("BO3GamesLayout");
-            bo3Layout.ShouldNotBeNull();
-
-            boSwitch.Click();
-            InvalidateCurrentPage();
+            try
+            {
+                boSwitch.Click();
+                FindUIElement("BO3GamesLayout").ShouldNotBeNull();
+            }
+            finally
+            {
+                // Disable BO3 regardless of pass/fail so next test starts clean
+                try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+            }
         }
 
         [Fact]
@@ -117,28 +125,29 @@ namespace UITests
         [Fact]
         public void MainPage_BO3GameTabs_DisplayedWhenBO3Active()
         {
-            AppiumElement boSwitch = FindUIElement("BOSwitch");
-            boSwitch.Click();
+            try
+            {
+                FindUIElement("BOSwitch").Click();
 
-            // Verify outer layout first so we know BO3 content is rendered
-            FindUIElement("BO3GamesLayout").ShouldNotBeNull();
+                // Verify outer layout first so we know BO3 content is rendered
+                FindUIElement("BO3GamesLayout").ShouldNotBeNull();
 
-            // Game3Tab only appears with a split result — only check Game1Tab and Game2Tab.
-            // Border elements have resource-id from AutomationId on Android — use FindUIElement.
-            FindUIElement("Game1Tab").ShouldNotBeNull();
-            FindUIElement("Game2Tab").ShouldNotBeNull();
-
-            boSwitch.Click();
-            InvalidateCurrentPage();
+                // Game3Tab only appears with a split result — only check Game1Tab and Game2Tab.
+                FindUIElement("Game1Tab").ShouldNotBeNull();
+                FindUIElement("Game2Tab").ShouldNotBeNull();
+            }
+            finally
+            {
+                try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+            }
         }
 
         [Fact]
         public void MainPage_Game3Tab_ShowsWhenGame1IsTie()
         {
-            AppiumElement boSwitch = FindUIElement("BOSwitch");
             try
             {
-                boSwitch.Click();
+                FindUIElement("BOSwitch").Click();
                 // Wait for BO3 layout to fully render before interacting with pickers
                 FindUIElement("BO3GamesLayout");
 
@@ -160,18 +169,30 @@ namespace UITests
             }
             finally
             {
-                try { boSwitch.Click(); } catch { }
-                InvalidateCurrentPage();
+                // Dismiss any open picker dropdown, return to Game1Tab, disable BO3
+                try
+                {
+                    if (App is WindowsDriver)
+                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker")).SendKeys(OpenQA.Selenium.Keys.Escape);
+                }
+                catch (OpenQA.Selenium.NoSuchElementException) { }
+                try
+                {
+                    if (App is WindowsDriver)
+                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker2")).SendKeys(OpenQA.Selenium.Keys.Escape);
+                }
+                catch (OpenQA.Selenium.NoSuchElementException) { }
+                try { FindUIElement("Game1Tab").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+                try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
             }
         }
 
         [Fact]
         public void MainPage_SaveMatch_WithResult_Saves()
         {
-            AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
             try
             {
-                resultPicker.Click();
+                FindUIElement("PossibleResultsPicker").Click();
 
                 // On Android the MAUI Picker opens a native AlertDialog — find "Win" by text.
                 // On Windows, MAUI Picker may open its dropdown as a child popup window on CI —
@@ -184,17 +205,19 @@ namespace UITests
             catch (OpenQA.Selenium.NoSuchElementException)
             {
                 // Close picker before re-throwing so subsequent tests aren't left with an open popup
-                try { App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker")).SendKeys(OpenQA.Selenium.Keys.Escape); } catch (OpenQA.Selenium.NoSuchElementException) { }
+                try
+                {
+                    if (App is WindowsDriver)
+                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker")).SendKeys(OpenQA.Selenium.Keys.Escape);
+                }
+                catch (OpenQA.Selenium.NoSuchElementException) { }
                 throw;
             }
 
-            AppiumElement saveButton = FindUIElement("SaveMatchButton");
-            saveButton.Click();
+            FindUIElement("SaveMatchButton").Click();
 
             // Button still present means save didn't crash
             FindUIElement("SaveMatchButton").ShouldNotBeNull();
-
-            InvalidateCurrentPage();
         }
     }
 }
