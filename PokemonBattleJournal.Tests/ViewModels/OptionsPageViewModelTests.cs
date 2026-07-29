@@ -483,5 +483,140 @@ namespace PokemonBattleJournal.Tests.ViewModels
             // NewDeckIcon resets to SelectedIcon (not null) so the next save still has a default icon
             _viewModel.NewDeckIcon.ShouldBe(_viewModel.SelectedIcon);
         }
+
+        [Fact]
+        public async Task AppearingAsync_LoadsAllArchetypesAndTags()
+        {
+            var trainer = new Trainer { Id = 1, Name = "Ash" };
+            var archetypes = new List<Archetype> { new() { Id = 1, Name = "Fire" }, new() { Id = 2, Name = "Water" } };
+            var tags = new List<Tags> { new() { Id = 1, Name = "Aggro" } };
+
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(archetypes));
+            _mockConnectionFactory.Tags.GetAllAsync().Returns(Task.FromResult(tags));
+
+            await _viewModel.AppearingAsync();
+
+            _viewModel.AllArchetypes.Count.ShouldBe(2);
+            _viewModel.AllTags.Count.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task DeleteArchetypeAsync_CallsDeleteAndRefreshesList()
+        {
+            var trainer = new Trainer { Id = 1, Name = "Ash" };
+            var archetype = new Archetype { Id = 5, Name = "Fire" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype> { archetype }));
+            _mockConnectionFactory.Tags.GetAllAsync().Returns(Task.FromResult(new List<Tags>()));
+            _mockConnectionFactory.Archetypes.DeleteAsync(archetype).Returns(Task.FromResult(1));
+
+            await _viewModel.AppearingAsync();
+            await _viewModel.DeleteArchetypeAsync(archetype);
+
+            _ = _mockConnectionFactory.Archetypes.Received(1).DeleteAsync(archetype);
+        }
+
+        [Fact]
+        public async Task DeleteArchetypeAsync_AfterDelete_RefreshesAllArchetypes()
+        {
+            var trainer = new Trainer { Id = 1, Name = "Ash" };
+            var archetype = new Archetype { Id = 5, Name = "Fire" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.GetAllAsync()
+                .Returns(Task.FromResult(new List<Archetype> { archetype }),
+                         Task.FromResult(new List<Archetype>()));
+            _mockConnectionFactory.Tags.GetAllAsync().Returns(Task.FromResult(new List<Tags>()));
+            _mockConnectionFactory.Archetypes.DeleteAsync(archetype).Returns(Task.FromResult(1));
+
+            await _viewModel.AppearingAsync();
+            await _viewModel.DeleteArchetypeAsync(archetype);
+
+            _viewModel.AllArchetypes.Count.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task DeleteTagAsync_CallsDeleteAndRefreshesList()
+        {
+            var trainer = new Trainer { Id = 1, Name = "Ash" };
+            var tag = new Tags { Id = 3, Name = "Lucky" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
+            _mockConnectionFactory.Tags.GetAllAsync().Returns(Task.FromResult(new List<Tags> { tag }));
+            _mockConnectionFactory.Tags.DeleteAsync(tag).Returns(Task.FromResult(1));
+
+            await _viewModel.AppearingAsync();
+            await _viewModel.DeleteTagAsync(tag);
+
+            _ = _mockConnectionFactory.Tags.Received(1).DeleteAsync(tag);
+        }
+
+        [Fact]
+        public async Task DeleteTagAsync_AfterDelete_RefreshesAllTags()
+        {
+            var trainer = new Trainer { Id = 1, Name = "Ash" };
+            var tag = new Tags { Id = 3, Name = "Lucky" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
+            _mockConnectionFactory.Tags.GetAllAsync()
+                .Returns(Task.FromResult(new List<Tags> { tag }),
+                         Task.FromResult(new List<Tags>()));
+            _mockConnectionFactory.Tags.DeleteAsync(tag).Returns(Task.FromResult(1));
+
+            await _viewModel.AppearingAsync();
+            await _viewModel.DeleteTagAsync(tag);
+
+            _viewModel.AllTags.Count.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task SaveArchetypeAsync_OnSuccess_RefreshesAllArchetypes()
+        {
+            var trainer = new Trainer { Id = 7, Name = "Gary" };
+            var saved = new Archetype { Id = 10, Name = "Charizard" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.GetAllAsync()
+                .Returns(Task.FromResult(new List<Archetype>()),
+                         Task.FromResult(new List<Archetype> { saved }));
+            _mockConnectionFactory.Tags.GetAllAsync().Returns(Task.FromResult(new List<Tags>()));
+            _mockConnectionFactory.Archetypes.SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>())
+                .Returns(Task.FromResult(1));
+
+            await _viewModel.AppearingAsync();
+            _viewModel.NewDeckName = "Charizard";
+            _viewModel.NewDeckIcon = "charizard.png";
+
+            await _viewModel.SaveArchetypeAsync();
+
+            _viewModel.AllArchetypes.Count.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task SaveTagAsync_OnSuccess_RefreshesAllTags()
+        {
+            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            var saved = new Tags { Id = 5, Name = "Aggro" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
+            _mockConnectionFactory.Tags.GetAllAsync()
+                .Returns(Task.FromResult(new List<Tags>()),
+                         Task.FromResult(new List<Tags> { saved }));
+            _mockConnectionFactory.Tags.SaveAsync(Arg.Any<string>(), Arg.Any<uint>())
+                .Returns(Task.FromResult(1));
+
+            await _viewModel.AppearingAsync();
+            _viewModel.TagInput = "Aggro";
+
+            await _viewModel.SaveTagAsync();
+
+            _viewModel.AllTags.Count.ShouldBe(1);
+        }
     }
 }

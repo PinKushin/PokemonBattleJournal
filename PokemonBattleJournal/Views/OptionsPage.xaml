@@ -110,6 +110,47 @@
                 Text="Save Archetype"
                 WidthRequest="220" />
 
+            <CollectionView
+                AutomationId="ArchetypeList"
+                SemanticProperties.Description="Saved archetypes"
+                ItemsSource="{Binding AllArchetypes}"
+                SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Archetype">
+                        <Grid
+                            AutomationId="{Binding Name, StringFormat='ArchetypeItem_{0}'}"
+                            Padding="4,2"
+                            ColumnDefinitions="Auto,*,Auto"
+                            ColumnSpacing="8">
+                            <Image
+                                Grid.Column="0"
+                                HeightRequest="24"
+                                WidthRequest="24"
+                                SemanticProperties.IsInAccessibleTree="False"
+                                Source="{Binding ImagePath}" />
+                            <Label
+                                Grid.Column="1"
+                                FontFamily="SairaRegular"
+                                FontSize="13"
+                                Text="{Binding Name}"
+                                VerticalOptions="Center" />
+                            <Button
+                                Grid.Column="2"
+                                AutomationId="{Binding Name, StringFormat='DeleteArchetype_{0}'}"
+                                SemanticProperties.Description="{Binding Name, StringFormat='Delete {0} archetype'}"
+                                BackgroundColor="{StaticResource BostonRed}"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:OptionsPageViewModel}}, Path=DeleteArchetypeCommand}"
+                                CommandParameter="{Binding .}"
+                                FontSize="11"
+                                HeightRequest="28"
+                                Padding="8,0"
+                                Text="Delete"
+                                TextColor="{StaticResource White}" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
             <!--  Tags section  -->
             <Label AutomationId="TagSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Custom Tag" />
 
@@ -138,6 +179,41 @@
                 HorizontalOptions="Center"
                 Text="Save New Tag"
                 WidthRequest="220" />
+
+            <CollectionView
+                AutomationId="TagList"
+                SemanticProperties.Description="Saved tags"
+                ItemsSource="{Binding AllTags}"
+                SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Tags">
+                        <Grid
+                            AutomationId="{Binding Name, StringFormat='TagItem_{0}'}"
+                            Padding="4,2"
+                            ColumnDefinitions="*,Auto"
+                            ColumnSpacing="8">
+                            <Label
+                                Grid.Column="0"
+                                FontFamily="SairaRegular"
+                                FontSize="13"
+                                Text="{Binding Name}"
+                                VerticalOptions="Center" />
+                            <Button
+                                Grid.Column="1"
+                                AutomationId="{Binding Name, StringFormat='DeleteTag_{0}'}"
+                                SemanticProperties.Description="{Binding Name, StringFormat='Delete {0} tag'}"
+                                BackgroundColor="{StaticResource BostonRed}"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:OptionsPageViewModel}}, Path=DeleteTagCommand}"
+                                CommandParameter="{Binding .}"
+                                FontSize="11"
+                                HeightRequest="28"
+                                Padding="8,0"
+                                Text="Delete"
+                                TextColor="{StaticResource White}" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
 
             <!--  Save all / danger zone  -->
             <BoxView

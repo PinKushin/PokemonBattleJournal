@@ -67,6 +67,12 @@
         }
 
         [ObservableProperty]
+        public partial List<Archetype> AllArchetypes { get; set; } = [];
+
+        [ObservableProperty]
+        public partial List<Tags> AllTags { get; set; } = [];
+
+        [ObservableProperty]
         public partial string FileConfirmMessage { get; set; } = "Delete Trainer File?";
 
         [RelayCommand]
@@ -82,6 +88,8 @@
                 _logger.LogInformation("Current Trainer Name: {TrainerName}", TrainerName);
                 AllTrainers = await _connection.Trainers.GetAllAsync();
                 SelectedSwitchTrainer = AllTrainers.FirstOrDefault(t => t.Id == (_trainer?.Id ?? 0));
+                AllArchetypes = await _connection.Archetypes.GetAllAsync();
+                AllTags = await _connection.Tags.GetAllAsync();
                 _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
             }
             catch (Exception ex)
@@ -209,6 +217,7 @@
                     return;
                 }
                 _logger.LogInformation("Tag saved: {TagInput}", TagInput);
+                AllTags = await _connection.Tags.GetAllAsync();
             }
             catch (Exception ex)
             {
@@ -241,6 +250,7 @@
                     return;
                 }
                 _logger.LogInformation("Archetype saved: {DeckName} {DeckIcon}", NewDeckName, NewDeckIcon);
+                AllArchetypes = await _connection.Archetypes.GetAllAsync();
             }
             catch (Exception ex)
             {
@@ -252,6 +262,60 @@
             {
                 NewDeckName = null;
                 NewDeckIcon = SelectedIcon; // reset to current icon selection (default: ball_icon.png)
+                _ = _semaphore.Release();
+            }
+        }
+
+        [RelayCommand]
+        public async Task DeleteArchetypeAsync(Archetype archetype)
+        {
+            try
+            {
+                await _semaphore.WaitAsync();
+                int affected = await _connection.Archetypes.DeleteAsync(archetype);
+                if (affected == 0)
+                {
+                    _logger.LogInformation("Archetype not deleted: {Name}", archetype.Name);
+                    return;
+                }
+                _logger.LogInformation("Archetype deleted: {Name}", archetype.Name);
+                AllArchetypes = await _connection.Archetypes.GetAllAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting Archetype: {Name}", archetype.Name);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+            }
+            finally
+            {
+                _ = _semaphore.Release();
+            }
+        }
+
+        [RelayCommand]
+        public async Task DeleteTagAsync(Tags tag)
+        {
+            try
+            {
+                await _semaphore.WaitAsync();
+                int affected = await _connection.Tags.DeleteAsync(tag);
+                if (affected == 0)
+                {
+                    _logger.LogInformation("Tag not deleted: {Name}", tag.Name);
+                    return;
+                }
+                _logger.LogInformation("Tag deleted: {Name}", tag.Name);
+                AllTags = await _connection.Tags.GetAllAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting Tag: {Name}", tag.Name);
+                ModalErrorHandler modalErrorHandler = new();
+                modalErrorHandler.HandleError(ex);
+            }
+            finally
+            {
                 _ = _semaphore.Release();
             }
         }

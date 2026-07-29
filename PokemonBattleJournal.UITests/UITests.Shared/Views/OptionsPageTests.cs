@@ -62,6 +62,9 @@ namespace UITests
             // Input cleared means save path ran (not early-returned due to missing icon or null trainer).
             AppiumElement clearedInput = FindUIElement("ArchetypeNameInput");
             clearedInput.Text.ShouldBeNullOrEmpty();
+
+            // Clean up — delete the saved archetype so it doesn't accumulate in the DB.
+            try { FindUIElement($"DeleteArchetype_{deckName}").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
         }
 
         [Fact]
@@ -89,6 +92,9 @@ namespace UITests
             await Task.Delay(500);
 
             FindUIElement("SaveTagButton").ShouldNotBeNull();
+
+            // Clean up — delete the saved tag so it doesn't accumulate in the DB.
+            try { FindUIElement($"DeleteTag_{tagName}").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
         }
 
         [Fact]

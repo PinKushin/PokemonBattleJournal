@@ -13,6 +13,9 @@ namespace UITests
             await Task.Delay(300);
 
             input.GetAttribute("Value.Value").ShouldBe("Ash");
+
+            // Clear so later tests don't see stale trainer name
+            try { input.Clear(); } catch (OpenQA.Selenium.NoSuchElementException) { }
         }
     }
 }
