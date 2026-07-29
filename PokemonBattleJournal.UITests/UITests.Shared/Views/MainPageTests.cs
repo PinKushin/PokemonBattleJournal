@@ -25,9 +25,9 @@ namespace UITests
         [Fact]
         public void MainPage_UserNoteInput_ShowTextEntry()
         {
-            // Editor's SemanticProperties.Description ("Game 1 notes") is the content-desc
-            // on Android — use FindByDescription so both screen readers and automation agree.
-            AppiumElement userEntry = FindByDescription("UserNoteInput", "Game 1 notes");
+            // Editor (EditText) gets resource-id from AutomationId on Android — use FindUIElement.
+            // SemanticProperties.Description on EditText maps to hint, not content-desc.
+            AppiumElement userEntry = FindUIElement("UserNoteInput");
             userEntry.SendKeys("Hello World");
             userEntry.ShouldNotBeNull();
             userEntry.Text.ShouldEndWith("Hello World");

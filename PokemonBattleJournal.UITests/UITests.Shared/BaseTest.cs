@@ -36,7 +36,8 @@ namespace UITests
             App is WindowsDriver
                 ? App.FindElement(MobileBy.AccessibilityId(windowsId))
                 : App.FindElement(MobileBy.AndroidUIAutomator(
-                    $"new UiSelector().description(\"{androidDescription}\")"));
+                    $"new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                    $".scrollIntoView(new UiSelector().description(\"{androidDescription}\"))"));
 
         protected void NavigateTo(string pageTitle)
         {
