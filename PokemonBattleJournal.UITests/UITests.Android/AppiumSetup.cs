@@ -75,11 +75,11 @@ namespace UITests
             androidOptions.AddAdditionalAppiumOption("appWaitActivity", $"{AppPackage}.MainActivity");
             androidOptions.AddAdditionalAppiumOption("appWaitDuration", 60_000);
 
-            // Clear app data so seed always starts from a known state.
-            // Prevents stale data from a VS debug session (VS does not uninstall on stop).
-            Log("4d. pm clear app data");
-            RunAdb($"shell pm clear {AppPackage}", timeoutMs: 10_000);
-            Log("4d. pm clear done");
+            // Delete only the DB so seed starts from a known state.
+            // pm clear would wipe files/.__override__/ (fast-deploy assemblies) causing monodroid crash.
+            Log("4d. Delete DB only");
+            RunAdb($"shell run-as {AppPackage} rm -f /data/data/{AppPackage}/files/PokemonBattleJournal.db3", timeoutMs: 10_000);
+            Log("4d. DB deleted");
 
             Log("5. new AndroidDriver");
             driver = new AndroidDriver(
@@ -261,8 +261,7 @@ namespace UITests
             // Skip rebuild only if:
             //   (a) APK exists AND was produced by this test runner (sentinel present), AND
             //   (b) no source file is newer than the APK.
-            // Without (a), a VS fast-deploy build (no EmbedAssembliesIntoApk) would be reused
-            // and the app would crash with "No assemblies found" at runtime.
+            // Sentinel prevents a VS fast-deploy APK (different build flags/state) from being reused.
             string sentinelPath = apkPath + ".uitest";
             if (File.Exists(apkPath) && File.Exists(sentinelPath))
             {
@@ -281,10 +280,7 @@ namespace UITests
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "dotnet",
-                // EmbedAssembliesIntoApk: Appium only does adb install, never pushes Fast Deployment
-                // assemblies separately. Without this, monodroid aborts "No assemblies found".
-                // Not set in the .csproj so VS debug/hot-reload stays unaffected.
-                Arguments = $"build \"{project}\" -f net10.0-android -c {config} -p:EmbedAssembliesIntoApk=true",
+                Arguments = $"build \"{project}\" -f net10.0-android -c {config}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
