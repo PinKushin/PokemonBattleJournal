@@ -283,7 +283,9 @@ namespace UITests
                 // EmbedAssembliesIntoApk required: Appium installs via adb but never pushes
                 // fast-deploy assemblies to files/.__override__/. Without this flag, monodroid
                 // aborts "No assemblies found" on launch. Not set in .csproj so VS stays unaffected.
-                Arguments = $"build \"{project}\" -f net10.0-android -c {config} -p:EmbedAssembliesIntoApk=true",
+                // TargetFrameworks override restricts workload validation to Android only.
+                // Without it, MSBuild validates all TFMs (incl. net10.0-ios) and fails on Linux CI.
+                Arguments = $"build \"{project}\" -f net10.0-android -c {config} -p:EmbedAssembliesIntoApk=true -p:TargetFrameworks=net10.0-android",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,

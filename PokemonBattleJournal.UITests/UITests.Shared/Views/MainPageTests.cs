@@ -142,7 +142,7 @@ namespace UITests
 
                 FindUIElement("PossibleResultsPicker").Click();
                 if (App is WindowsDriver)
-                    App.FindElement(OpenQA.Selenium.By.XPath("//*[@Name='Tie']")).Click();
+                    App.FindElement(OpenQA.Selenium.By.XPath("//*[contains(@Name,'Tie')]")).Click();
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
 
@@ -150,7 +150,7 @@ namespace UITests
 
                 FindUIElement("PossibleResultsPicker2").Click();
                 if (App is WindowsDriver)
-                    App.FindElement(OpenQA.Selenium.By.XPath("//*[@Name='Win']")).Click();
+                    App.FindElement(OpenQA.Selenium.By.XPath("//*[contains(@Name,'Win')]")).Click();
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
 
@@ -167,13 +167,23 @@ namespace UITests
         public void MainPage_SaveMatch_WithResult_Saves()
         {
             AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
-            resultPicker.Click();
+            try
+            {
+                resultPicker.Click();
 
-            // On Android the MAUI Picker opens a native AlertDialog — find "Win" by text
-            if (App is not WindowsDriver)
-                App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
-            else
-                App.FindElement(OpenQA.Selenium.By.XPath("//*[@Name='Win']")).Click();
+                // On Android the MAUI Picker opens a native AlertDialog — find "Win" by text.
+                // On Windows CI, picker items may have trailing whitespace — use contains() for robustness.
+                if (App is not WindowsDriver)
+                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                else
+                    App.FindElement(OpenQA.Selenium.By.XPath("//*[contains(@Name,'Win')]")).Click();
+            }
+            catch (OpenQA.Selenium.NoSuchElementException)
+            {
+                // Close picker before re-throwing so subsequent tests aren't left with an open popup
+                try { App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker")).SendKeys(OpenQA.Selenium.Keys.Escape); } catch (OpenQA.Selenium.NoSuchElementException) { }
+                throw;
+            }
 
             AppiumElement saveButton = FindUIElement("SaveMatchButton");
             saveButton.Click();
