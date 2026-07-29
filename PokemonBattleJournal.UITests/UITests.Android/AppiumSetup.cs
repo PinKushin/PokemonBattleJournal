@@ -75,11 +75,11 @@ namespace UITests
             androidOptions.AddAdditionalAppiumOption("appWaitActivity", $"{AppPackage}.MainActivity");
             androidOptions.AddAdditionalAppiumOption("appWaitDuration", 60_000);
 
-            // Delete only the DB so seed starts from a known state.
-            // pm clear would wipe files/.__override__/ (fast-deploy assemblies) causing monodroid crash.
-            Log("4d. Delete DB only");
-            RunAdb($"shell run-as {AppPackage} rm -f /data/data/{AppPackage}/files/PokemonBattleJournal.db3", timeoutMs: 10_000);
-            Log("4d. DB deleted");
+            // pm clear wipes all app data so seed always starts from a known state.
+            // Safe with EmbedAssembliesIntoApk=true — assemblies are in the APK, not .__override__/.
+            Log("4d. pm clear app data");
+            RunAdb($"shell pm clear {AppPackage}", timeoutMs: 10_000);
+            Log("4d. pm clear done");
 
             Log("5. new AndroidDriver");
             driver = new AndroidDriver(
@@ -280,7 +280,10 @@ namespace UITests
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"build \"{project}\" -f net10.0-android -c {config}",
+                // EmbedAssembliesIntoApk required: Appium installs via adb but never pushes
+                // fast-deploy assemblies to files/.__override__/. Without this flag, monodroid
+                // aborts "No assemblies found" on launch. Not set in .csproj so VS stays unaffected.
+                Arguments = $"build \"{project}\" -f net10.0-android -c {config} -p:EmbedAssembliesIntoApk=true",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
