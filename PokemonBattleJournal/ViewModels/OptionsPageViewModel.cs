@@ -46,7 +46,7 @@
         public partial string? NewDeckName { get; set; }
 
         [ObservableProperty]
-        public partial string? NewDeckIcon { get; set; }
+        public partial string? NewDeckIcon { get; set; } = "ball_icon.png";
 
         [ObservableProperty]
         public partial List<string> IconCollection { get; set; } = new List<string>();
@@ -251,7 +251,7 @@
             finally
             {
                 NewDeckName = null;
-                NewDeckIcon = null;
+                NewDeckIcon = SelectedIcon; // reset to current icon selection (default: ball_icon.png)
                 _ = _semaphore.Release();
             }
         }

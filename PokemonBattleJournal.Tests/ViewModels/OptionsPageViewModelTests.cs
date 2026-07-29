@@ -251,10 +251,11 @@ namespace PokemonBattleJournal.Tests.ViewModels
         }
 
         [Fact]
-        public async Task SaveArchetypeAsync_NullIcon_DoesNotSave()
+        public async Task SaveArchetypeAsync_NullIconExplicitlySet_DoesNotSave()
         {
+            // Icon guard still fires if caller explicitly clears NewDeckIcon to null
             _viewModel.NewDeckName = "Charizard";
-            _viewModel.NewDeckIcon = null;
+            _viewModel.NewDeckIcon = null; // explicit null overrides the default
 
             await _viewModel.SaveArchetypeAsync();
 
@@ -299,7 +300,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             await _viewModel.SaveArchetypeAsync();
 
             _viewModel.NewDeckName.ShouldBeNull();
-            _viewModel.NewDeckIcon.ShouldBeNull();
+            _viewModel.NewDeckIcon.ShouldBe(_viewModel.SelectedIcon); // resets to default, not null
         }
 
         [Fact]
@@ -479,7 +480,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
             await _viewModel.SaveArchetypeAsync();
 
             _viewModel.NewDeckName.ShouldBeNull();
-            _viewModel.NewDeckIcon.ShouldBeNull();
+            // NewDeckIcon resets to SelectedIcon (not null) so the next save still has a default icon
+            _viewModel.NewDeckIcon.ShouldBe(_viewModel.SelectedIcon);
         }
     }
 }

@@ -40,21 +40,20 @@ namespace UITests
         }
 
         [Fact]
-        public async Task OptionsPage_SaveArchetype_WithName_Saves()
+        public void OptionsPage_SaveArchetype_WithName_ClearsInput()
         {
             NavigateTo("Options");
 
             AppiumElement input = FindUIElement("ArchetypeNameInput");
             input.Clear();
             input.SendKeys("UITestDeck");
-            await Task.Delay(300);
 
-            AppiumElement saveBtn = FindUIElement("SaveArchetypeButton");
-            saveBtn.Click();
-            await Task.Delay(500);
+            // No explicit icon selection needed — VM falls back to SelectedIcon default ("ball_icon.png").
+            FindUIElement("SaveArchetypeButton").Click();
 
-            // Button still present means command completed without crash
-            FindUIElement("SaveArchetypeButton").ShouldNotBeNull();
+            // Input cleared in finally means the save path ran (not an early return due to missing icon).
+            AppiumElement clearedInput = FindUIElement("ArchetypeNameInput");
+            clearedInput.Text.ShouldBeNullOrEmpty();
         }
 
         [Fact]
