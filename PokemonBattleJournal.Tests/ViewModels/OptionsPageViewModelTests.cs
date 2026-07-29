@@ -354,5 +354,132 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             _viewModel.TrainerName.ShouldBe("Brock");
         }
+
+        [Fact]
+        public async Task SwitchTrainerAsync_DifferentTrainer_UpdatesTitle()
+        {
+            var newTrainer = new Trainer { Id = 2, Name = "Brock" };
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { newTrainer }));
+            _mockSwitchService.SwitchToAsync(newTrainer).Returns(Task.CompletedTask);
+
+            await _viewModel.SwitchTrainerAsync(newTrainer);
+
+            _viewModel.Title.ShouldBe("Brock's Options");
+        }
+
+        [Fact]
+        public async Task SwitchTrainerAsync_DifferentTrainer_UpdatesFileConfirmMessage()
+        {
+            var newTrainer = new Trainer { Id = 2, Name = "Brock" };
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { newTrainer }));
+            _mockSwitchService.SwitchToAsync(newTrainer).Returns(Task.CompletedTask);
+
+            await _viewModel.SwitchTrainerAsync(newTrainer);
+
+            _viewModel.FileConfirmMessage.ShouldBe("Delete Brock's Trainer File?");
+        }
+
+        [Fact]
+        public async Task SaveTrainerAsync_SaveReturnsZero_StillClearsNameInput()
+        {
+            // NameInput always cleared in finally regardless of save outcome
+            _viewModel.NameInput = "Ash";
+            _mockConnectionFactory.Trainers.SaveAsync("Ash").Returns(Task.FromResult(0));
+
+            await _viewModel.SaveTrainerAsync();
+
+            _viewModel.NameInput.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task SaveTrainerAsync_ValidInput_UpdatesTitle()
+        {
+            _viewModel.NameInput = "Ash";
+            _mockConnectionFactory.Trainers.SaveAsync("Ash").Returns(Task.FromResult(1));
+            _mockConnectionFactory.Trainers.GetByNameAsync("Ash")
+                .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 5, Name = "Ash" }));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { new() { Id = 5, Name = "Ash" } }));
+
+            await _viewModel.SaveTrainerAsync();
+
+            _viewModel.Title.ShouldBe("Ash's Options");
+        }
+
+        [Fact]
+        public async Task DeleteTrainerFileAsync_WithTrainer_ClearsTrainerName()
+        {
+            var trainer = new Trainer { Id = 9, Name = "Giovanni" };
+            _mockConnectionFactory.Trainers.GetActiveAsync()
+                .Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Trainers.DeleteAsync(trainer)
+                .Returns(Task.FromResult(1));
+
+            await _viewModel.AppearingAsync();
+            await _viewModel.DeleteTrainerFileAsync();
+
+            _viewModel.TrainerName.ShouldBe(string.Empty);
+        }
+
+        [Fact]
+        public async Task AppearingAsync_SetsSelectedSwitchTrainerToActiveTrainer()
+        {
+            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            _mockConnectionFactory.Trainers.GetActiveAsync()
+                .Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+
+            await _viewModel.AppearingAsync();
+
+            _viewModel.SelectedSwitchTrainer.ShouldNotBeNull();
+            _viewModel.SelectedSwitchTrainer!.Id.ShouldBe(trainer.Id);
+        }
+
+        [Fact]
+        public async Task SaveTagAsync_SaveReturnsZero_StillClearsTagInput()
+        {
+            // TagInput always cleared in finally — even when DB save reports 0 affected
+            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            _mockConnectionFactory.Trainers.GetActiveAsync()
+                .Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Tags.SaveAsync(Arg.Any<string>(), Arg.Any<uint>())
+                .Returns(Task.FromResult(0));
+
+            await _viewModel.AppearingAsync();
+            _viewModel.TagInput = "Aggro";
+
+            await _viewModel.SaveTagAsync();
+
+            _viewModel.TagInput.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task SaveArchetypeAsync_SaveReturnsZero_StillClearsInputs()
+        {
+            // NewDeckName/Icon always cleared in finally — even when DB save reports 0 affected
+            var trainer = new Trainer { Id = 7, Name = "Gary" };
+            _mockConnectionFactory.Trainers.GetActiveAsync()
+                .Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>())
+                .Returns(Task.FromResult(0));
+
+            await _viewModel.AppearingAsync();
+            _viewModel.NewDeckName = "Charizard";
+            _viewModel.NewDeckIcon = "charizard.png";
+
+            await _viewModel.SaveArchetypeAsync();
+
+            _viewModel.NewDeckName.ShouldBeNull();
+            _viewModel.NewDeckIcon.ShouldBeNull();
+        }
     }
 }

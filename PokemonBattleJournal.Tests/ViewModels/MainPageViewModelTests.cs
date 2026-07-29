@@ -404,6 +404,62 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.FirstCheck3.ShouldBeFalse();
         }
 
+        // --- SaveMatchAsync success path ---
+
+        private void SetupSuccessfulSave()
+        {
+            var mockCalculator = Substitute.For<IMatchResultCalculator>();
+            mockCalculator.CalculateResult(Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>())
+                .Returns(MatchResult.Win);
+            _mockCalculatorFactory.GetCalculator(Arg.Any<bool>()).Returns(mockCalculator);
+            _mockTrainerOps.GetActiveAsync()
+                .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
+            _viewModel.TrainerName = "Test";
+            _mockMatchOps.SaveAsync(Arg.Any<MatchEntry>(), Arg.Any<List<Game>>())
+                .Returns(Task.FromResult(1));
+        }
+
+        [Fact]
+        public async Task SaveMatchAsync_SuccessfulSave_ClearsFormFields()
+        {
+            SetupSuccessfulSave();
+            _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
+            _viewModel.RivalSelected = new Archetype { Id = 2, Name = "Water" };
+            _viewModel.Result = MatchResult.Win;
+            _viewModel.UserNoteInput = "good game";
+            _viewModel.FirstCheck = true;
+
+            await _viewModel.SaveMatchAsync();
+
+            _viewModel.PlayerSelected.ShouldBeNull();
+            _viewModel.RivalSelected.ShouldBeNull();
+            _viewModel.Result.ShouldBeNull();
+            _viewModel.UserNoteInput.ShouldBeEmpty();
+            _viewModel.FirstCheck.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task SaveMatchAsync_BO3SuccessfulSave_ResetsBO3State()
+        {
+            SetupSuccessfulSave();
+            _viewModel.BO3Toggle = true;
+            _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
+            _viewModel.RivalSelected = new Archetype { Id = 2, Name = "Water" };
+            _viewModel.Result = MatchResult.Win;
+            _viewModel.Result2 = MatchResult.Loss;
+            _viewModel.Result3 = MatchResult.Win;
+            _viewModel.UserNoteInput2 = "game 2 note";
+            _viewModel.FirstCheck2 = true;
+
+            await _viewModel.SaveMatchAsync();
+
+            _viewModel.BO3Toggle.ShouldBeFalse();
+            _viewModel.Result2.ShouldBeNull();
+            _viewModel.Result3.ShouldBeNull();
+            _viewModel.UserNoteInput2.ShouldBeNull();
+            _viewModel.FirstCheck2.ShouldBeFalse();
+        }
+
         // --- AppearingAsync ---
 
         [Fact]

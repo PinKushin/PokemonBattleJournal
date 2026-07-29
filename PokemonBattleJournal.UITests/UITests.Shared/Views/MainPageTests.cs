@@ -144,7 +144,7 @@ namespace UITests
 
                 FindUIElement("PossibleResultsPicker").Click();
                 if (App is WindowsDriver)
-                    App.FindElement(OpenQA.Selenium.By.XPath("//ListItem[contains(@Name,'Tie')]")).Click();
+                    SelectWindowsPickerItem("Tie");
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
 
@@ -152,7 +152,7 @@ namespace UITests
 
                 FindUIElement("PossibleResultsPicker2").Click();
                 if (App is WindowsDriver)
-                    App.FindElement(OpenQA.Selenium.By.XPath("//ListItem[contains(@Name,'Win')]")).Click();
+                    SelectWindowsPickerItem("Win");
                 else
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
 
@@ -174,11 +174,12 @@ namespace UITests
                 resultPicker.Click();
 
                 // On Android the MAUI Picker opens a native AlertDialog — find "Win" by text.
-                // On Windows CI, picker items may have trailing whitespace — use contains() for robustness.
+                // On Windows, MAUI Picker may open its dropdown as a child popup window on CI —
+                // SelectWindowsPickerItem checks all window handles before falling back to main window.
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
                 else
-                    App.FindElement(OpenQA.Selenium.By.XPath("//ListItem[contains(@Name,'Win')]")).Click();
+                    SelectWindowsPickerItem("Win");
             }
             catch (OpenQA.Selenium.NoSuchElementException)
             {

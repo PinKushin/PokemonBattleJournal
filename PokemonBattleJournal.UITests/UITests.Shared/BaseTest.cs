@@ -64,5 +64,44 @@ namespace UITests
         // Call this when a test intentionally navigates away from the tracked page
         // so the next NavigateTo knows it must re-navigate.
         protected void InvalidateCurrentPage() => _currentPage = null;
+
+        // Clicks a Picker/ComboBox control and selects the named item from its dropdown.
+        // On Windows, MAUI's Picker may open its dropdown as a child window — this helper
+        // checks all window handles and searches each one for the list item, then restores
+        // the main window context after the selection.
+        protected void SelectWindowsPickerItem(string itemName)
+        {
+            if (App is not WindowsDriver)
+                throw new InvalidOperationException("SelectWindowsPickerItem is Windows-only");
+
+            string mainWindow = App.CurrentWindowHandle;
+
+            // Try all handles — the dropdown popup is often a child window on Windows Server CI.
+            var handles = App.WindowHandles.ToList();
+            foreach (string handle in handles)
+            {
+                if (handle != mainWindow)
+                    App.SwitchTo().Window(handle);
+
+                try
+                {
+                    AppiumElement item = App.FindElement(
+                        OpenQA.Selenium.By.XPath($"//ListItem[contains(@Name,'{itemName}')]"));
+                    item.Click();
+                    if (App.CurrentWindowHandle != mainWindow)
+                        App.SwitchTo().Window(mainWindow);
+                    return;
+                }
+                catch (OpenQA.Selenium.NoSuchElementException)
+                {
+                    if (App.CurrentWindowHandle != mainWindow)
+                        App.SwitchTo().Window(mainWindow);
+                }
+            }
+
+            // Final fallback: throw so the test fails with a clear message.
+            throw new OpenQA.Selenium.NoSuchElementException(
+                $"Picker item '{itemName}' not found in any window handle.");
+        }
     }
 }

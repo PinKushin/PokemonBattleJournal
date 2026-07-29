@@ -202,8 +202,7 @@
             try
             {
                 await _semaphore.WaitAsync();
-                int affected = 0;
-                _ = await _connection.Tags.SaveAsync(TagInput, _trainer.Id);
+                int affected = await _connection.Tags.SaveAsync(TagInput, _trainer.Id);
                 if (affected == 0)
                 {
                     _logger.LogInformation("Tag not saved: {TagInput}", TagInput);
@@ -235,8 +234,7 @@
             try
             {
                 await _semaphore.WaitAsync();
-                int affected = 0;
-                _ = await _connection.Archetypes.SaveAsync(NewDeckName, NewDeckIcon, _trainer.Id);
+                int affected = await _connection.Archetypes.SaveAsync(NewDeckName, NewDeckIcon, _trainer.Id);
                 if (affected == 0)
                 {
                     _logger.LogInformation("Archetype not saved: {DeckName} {DeckIcon}", NewDeckName, NewDeckIcon);
