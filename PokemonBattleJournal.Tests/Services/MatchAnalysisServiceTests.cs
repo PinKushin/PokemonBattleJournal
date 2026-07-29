@@ -379,5 +379,36 @@ namespace PokemonBattleJournal.Tests.Services
             lossStreak.ShouldBe(2);
             tieStreak.ShouldBe(1);
         }
+
+        [Fact]
+        public void CalculateAverageMatchDuration_EmptyList_ReturnsZero()
+        {
+            TimeSpan result = _service.CalculateAverageMatchDuration([]);
+
+            result.ShouldBe(TimeSpan.Zero);
+        }
+
+        [Fact]
+        public void CalculateWinRateOverTime_EmptyList_ReturnsEmpty()
+        {
+            ObservableCollection<TimeDataPoint> result = _service.CalculateWinRateOverTime([]);
+
+            result.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public void CalculateWinRateOverTime_SingleDate_ReturnsSinglePoint()
+        {
+            List<MatchEntry> matches =
+            [
+                new() { Result = MatchResult.Win, DatePlayed = new DateTime(2026, 3, 1) }
+            ];
+
+            ObservableCollection<TimeDataPoint> result = _service.CalculateWinRateOverTime(matches);
+
+            result.Count.ShouldBe(1);
+            result[0].Date.ShouldBe(new DateTime(2026, 3, 1));
+            result[0].Value.ShouldBe(100);
+        }
     }
 }

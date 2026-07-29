@@ -493,6 +493,25 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             _viewModel.WelcomeMsg.ShouldNotBeNullOrEmpty();
         }
+
+        [Fact]
+        public async Task AppearingAsync_LoadsTags()
+        {
+            var tags = new List<Tags>
+            {
+                new() { Id = 1, Name = "Aggro" },
+                new() { Id = 2, Name = "Lucky" }
+            };
+            _mockConnectionFactory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
+            _mockConnectionFactory.Tags.Returns(Substitute.For<ITagOperations>());
+            _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
+            _mockConnectionFactory.Tags.GetAllAsync().Returns(Task.FromResult(tags));
+
+            await _viewModel.AppearingAsync();
+
+            _viewModel.TagCollection.ShouldNotBeNull();
+            _viewModel.TagCollection!.Count.ShouldBe(2);
+        }
     }
 
 }

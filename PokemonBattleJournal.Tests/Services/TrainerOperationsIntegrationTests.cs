@@ -1,0 +1,132 @@
+using SQLite;
+
+namespace PokemonBattleJournal.Tests.Services
+{
+    public class TrainerOperationsIntegrationTests : IAsyncLifetime
+    {
+        private TestSqliteConnectionFactory _factory = null!;
+        private TrainerOperations _sut = null!;
+
+        public async Task InitializeAsync()
+        {
+            _factory = new TestSqliteConnectionFactory();
+            _sut = new TrainerOperations(_factory, Substitute.For<ILogger>());
+            _ = await _factory.GetDatabaseAsync();
+        }
+
+        public async Task DisposeAsync()
+        {
+            await _factory.CloseAndDeleteAsync();
+        }
+
+        [Fact]
+        public async Task SaveAsync_NewTrainer_PersistsToDatabase()
+        {
+            int affected = await _sut.SaveAsync("Ash");
+
+            affected.ShouldBeGreaterThan(0);
+            List<Trainer> all = await _sut.GetAllAsync();
+            all.ShouldContain(t => t.Name == "Ash");
+        }
+
+        [Fact]
+        public async Task SaveAsync_DuplicateName_ReturnsZero()
+        {
+            _ = await _sut.SaveAsync("Misty");
+
+            int affected = await _sut.SaveAsync("Misty");
+
+            affected.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task GetAllAsync_AfterSave_ReturnsTrainer()
+        {
+            _ = await _sut.SaveAsync("Brock");
+
+            List<Trainer> all = await _sut.GetAllAsync();
+
+            all.ShouldNotBeEmpty();
+            all.ShouldContain(t => t.Name == "Brock");
+        }
+
+        [Fact]
+        public async Task GetByNameAsync_AfterSave_ReturnsCorrectTrainer()
+        {
+            _ = await _sut.SaveAsync("Gary");
+
+            Trainer? found = await _sut.GetByNameAsync("Gary");
+
+            found.ShouldNotBeNull();
+            found!.Name.ShouldBe("Gary");
+        }
+
+        [Fact]
+        public async Task GetActiveAsync_AfterSetActive_ReturnsActiveTrainer()
+        {
+            _ = await _sut.SaveAsync("Giovanni");
+            Trainer? trainer = await _sut.GetByNameAsync("Giovanni");
+            trainer.ShouldNotBeNull();
+            await _sut.SetActiveAsync(trainer!);
+
+            Trainer? active = await _sut.GetActiveAsync();
+
+            active.ShouldNotBeNull();
+            active!.Name.ShouldBe("Giovanni");
+        }
+
+        [Fact]
+        public async Task SetActiveAsync_SwitchBetweenTrainers_OnlyOneActive()
+        {
+            _ = await _sut.SaveAsync("TrainerA");
+            _ = await _sut.SaveAsync("TrainerB");
+            Trainer? trainerA = await _sut.GetByNameAsync("TrainerA");
+            Trainer? trainerB = await _sut.GetByNameAsync("TrainerB");
+            trainerA.ShouldNotBeNull();
+            trainerB.ShouldNotBeNull();
+
+            await _sut.SetActiveAsync(trainerA!);
+            await _sut.SetActiveAsync(trainerB!);
+
+            Trainer? active = await _sut.GetActiveAsync();
+            active.ShouldNotBeNull();
+            active!.Name.ShouldBe("TrainerB");
+
+            List<Trainer> all = await _sut.GetAllAsync();
+            all.Count(t => t.IsActive).ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_AfterSave_RemovesTrainer()
+        {
+            _ = await _sut.SaveAsync("Erika");
+            Trainer? trainer = await _sut.GetByNameAsync("Erika");
+            trainer.ShouldNotBeNull();
+
+            int deleted = await _sut.DeleteAsync(trainer!);
+
+            deleted.ShouldBeGreaterThan(0);
+            List<Trainer> remaining = await _sut.GetAllAsync();
+            remaining.ShouldNotContain(t => t.Name == "Erika");
+        }
+
+        private sealed class TestSqliteConnectionFactory : SqliteConnectionFactory
+        {
+            private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"pbj_trainer_test_{Guid.NewGuid():N}.db3");
+
+            public TestSqliteConnectionFactory()
+                : base(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>())
+            { }
+
+            protected override string GetDbPath() => _dbPath;
+
+            public async Task CloseAndDeleteAsync()
+            {
+                SQLiteAsyncConnection db = await GetDatabaseAsync();
+                await db.CloseAsync();
+                if (File.Exists(_dbPath))
+                    File.Delete(_dbPath);
+            }
+        }
+    }
+}

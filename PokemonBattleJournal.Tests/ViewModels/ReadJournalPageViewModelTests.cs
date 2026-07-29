@@ -122,5 +122,65 @@ namespace PokemonBattleJournal.Tests.ViewModels
             // Assert
             _viewModel.MatchHistory.ShouldBeNull();
         }
+
+        [Fact]
+        public void LoadMatch_BO3AllThreeGames_PopulatesAllGameResults()
+        {
+            _viewModel.SelectedMatch = new MatchEntry
+            {
+                Result = MatchResult.Win,
+                Playing = new Archetype { Name = "Fire" },
+                Against = new Archetype { Name = "Water" },
+                Game1 = new Game { Result = MatchResult.Win, Tags = [] },
+                Game2 = new Game { Result = MatchResult.Loss, Tags = [] },
+                Game3 = new Game { Result = MatchResult.Win, Tags = [new Tags { Name = "Clutch" }] }
+            };
+
+            _viewModel.LoadMatch();
+
+            _viewModel.ResultGame1.ShouldBe(MatchResult.Win);
+            _viewModel.ResultGame2.ShouldBe(MatchResult.Loss);
+            _viewModel.ResultGame3.ShouldBe(MatchResult.Win);
+            _viewModel.HasGame3Tags.ShouldBeTrue();
+            _viewModel.Game3TagsInfo.ShouldBe("Game 3: 1 tags");
+        }
+
+        [Fact]
+        public void LoadMatch_Game1WithTags_PopulatesTagsSelectedGame1()
+        {
+            _viewModel.SelectedMatch = new MatchEntry
+            {
+                Result = MatchResult.Win,
+                Playing = new Archetype { Name = "Fire" },
+                Against = new Archetype { Name = "Water" },
+                Game1 = new Game
+                {
+                    Result = MatchResult.Win,
+                    Tags = [new Tags { Name = "Aggro" }, new Tags { Name = "Lucky" }]
+                }
+            };
+
+            _viewModel.LoadMatch();
+
+            _viewModel.TagsSelectedGame1.ShouldNotBeNull();
+            _viewModel.TagsSelectedGame1!.Count.ShouldBe(2);
+            _viewModel.TagsSelectedGame1.ShouldContain(t => t.Name == "Aggro");
+        }
+
+        [Fact]
+        public void LoadMatch_NullArchetype_FallsBackToUnknown()
+        {
+            _viewModel.SelectedMatch = new MatchEntry
+            {
+                Result = MatchResult.Loss,
+                Playing = null,
+                Against = null
+            };
+
+            _viewModel.LoadMatch();
+
+            _viewModel.PlayingName.ShouldBe("Unknown");
+            _viewModel.AgainstName.ShouldBe("Unknown");
+        }
     }
 }

@@ -85,14 +85,17 @@ namespace UITests
 
                 try
                 {
-                    AppiumElement item = App.FindElement(
-                        OpenQA.Selenium.By.XPath($"//ListItem[contains(@Name,'{itemName}')]"));
-                    item.Click();
-                    if (App.CurrentWindowHandle != mainWindow)
-                        App.SwitchTo().Window(mainWindow);
-                    return;
+                    AppiumElement? item = TryFindPickerItem(itemName);
+                    if (item is not null)
+                    {
+                        item.Click();
+                        if (App.CurrentWindowHandle != mainWindow)
+                            App.SwitchTo().Window(mainWindow);
+                        return;
+                    }
                 }
-                catch (OpenQA.Selenium.NoSuchElementException)
+                catch (OpenQA.Selenium.NoSuchElementException) { }
+                finally
                 {
                     if (App.CurrentWindowHandle != mainWindow)
                         App.SwitchTo().Window(mainWindow);
@@ -102,6 +105,39 @@ namespace UITests
             // Final fallback: throw so the test fails with a clear message.
             throw new OpenQA.Selenium.NoSuchElementException(
                 $"Picker item '{itemName}' not found in any window handle.");
+        }
+
+        // Tries multiple UIA element locators for a ComboBox/Picker dropdown item.
+        // Primary: By.Name (UIA Name property, control-type agnostic, uses full implicit wait).
+        // Fallbacks: XPath with common control type names, run with 0ms implicit wait so they fail fast.
+        private AppiumElement? TryFindPickerItem(string itemName)
+        {
+            // Primary: wait up to the full implicit-wait timeout using Name property search.
+            // This is control-type agnostic and handles WinUI3 ComboBoxItem / ListItem / etc.
+            try { return App.FindElement(OpenQA.Selenium.By.Name(itemName)); }
+            catch (OpenQA.Selenium.NoSuchElementException) { }
+
+            // Fallbacks: fast (0ms) XPath attempts for common control type names.
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
+            {
+                string[] xpaths =
+                [
+                    $"//ListItem[@Name='{itemName}']",
+                    $"//ComboBoxItem[@Name='{itemName}']",
+                    $"//ListItem[contains(@Name,'{itemName}')]",
+                ];
+                foreach (string xpath in xpaths)
+                {
+                    try { return App.FindElement(OpenQA.Selenium.By.XPath(xpath)); }
+                    catch (OpenQA.Selenium.NoSuchElementException) { }
+                }
+                return null;
+            }
+            finally
+            {
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
+            }
         }
     }
 }

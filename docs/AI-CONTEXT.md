@@ -34,6 +34,11 @@ Chronological notes for the current / recent work. **Append or edit this section
 | 2026-07-28 | **Sentinel file pattern** | `UITests.Windows/AppiumSetup.RunBeforeAnyTests()` writes `%TEMP%\PokemonBattleJournal.uitest` before launching; `Dispose()` deletes it. App reads `File.Exists(...)` to skip first-boot prompt under test without blocking manual debug testing. Android doesn't need it — sentinel path doesn't cross emulator boundary; in-app seed activates UITestTrainer so prompt never fires. |
 | 2026-07-28 | **Serilog logs path** | Moved from `{AppDataDirectory}/log.txt` to `{AppDataDirectory}/Logs/log.txt` (rolling daily). Directory created in `MauiProgram.cs` before Serilog init. |
 | 2026-07-28 | **All UI tests passing** | Windows + Android Appium tests all green in VS test runner. |
+| 2026-07-29 | **Android CI build fixed** | `<MauiIcon>` path had `Resources\Appicon\` (lowercase 'i') — Linux CI case-sensitive, failed. Fixed to `Resources\AppIcon\appicon.svg`. CI now builds Android successfully. |
+| 2026-07-29 | **Windows CI picker tests fixed** | MAUI Picker on Windows Server opens as child window. Added `SelectWindowsPickerItem(string)` helper to `BaseTest` — iterates all `App.WindowHandles`, switches contexts, catches only `NoSuchElementException`. `MainPageTests` updated to use it. |
+| 2026-07-29 | **OptionsPageViewModel bugs fixed** | `SaveTagAsync` + `SaveArchetypeAsync` discarded return values (`_ = await SaveAsync()`). Fixed to assign. `NewDeckIcon` now pre-initialized to `"ball_icon.png"` so icon null-guard never fires silently; `finally` resets to `SelectedIcon`. UI test `OptionsPage_SaveArchetype_WithName_ClearsInput` now passes. |
+| 2026-07-29 | **Integration tests added** | `TagOperationsIntegrationTests` (5 tests), `ArchetypeOperationsIntegrationTests` (6 tests), `MatchOperationsIntegrationTests` (6 tests). Pattern: `TestSqliteConnectionFactory` overrides `GetDbPath()` with unique GUID temp file; `IAsyncLifetime` for setup/teardown. `ArchetypeOperations.GetAllAsync` needs `metaService.GetTopDecksAsync` configured to return empty list — substitute returns null by default causing silent empty-list return. Tags model property is `Name` not `TagTxt`. |
+| 2026-07-29 | **OptionsPageViewModel + MainPageViewModel unit tests expanded** | 8 new tests for OptionsPageVM (SwitchTrainerAsync, SaveTrainerAsync, DeleteTrainerFileAsync, AppearingAsync, SaveTagAsync/SaveArchetypeAsync zero returns). 2 new tests for MainPageVM (SaveMatchAsync success paths — BO1 and BO3). `SaveMatchAsync` uses `GetActiveAsync()` not `GetByNameAsync()`; `SetupSuccessfulSave()` helper configures both calculator and trainer mocks. Unit test count: 329 passing. |
 
 ### User decisions
 
@@ -271,7 +276,7 @@ XAML bindings by page:
 
 ### Unit tests
 
-221+ passing (xUnit, NSubstitute, Shouldly).
+329 passing (xUnit, NSubstitute, Shouldly).
 
 **Still lightly covered:**
 - `SqliteConnectionFactory` init (integration-style)
