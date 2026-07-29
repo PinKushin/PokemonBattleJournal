@@ -18,11 +18,24 @@ jobs:
         with:
           dotnet-version: '10.x'
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-windows-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
+          restore-keys: nuget-windows-
+
       - name: Install MAUI Windows workload
         run: dotnet workload install maui-windows
 
       - name: Enable Developer Mode (required for unpackaged MAUI)
         run: reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v AllowDevelopmentWithoutDevLicense /d 1
+
+      - name: Cache npm / Appium
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Roaming\npm
+          key: appium-windows-${{ hashFiles('.github/workflows/ui-tests.yml') }}
 
       - uses: actions/setup-node@v4
         with:
@@ -58,6 +71,13 @@ jobs:
         with:
           dotnet-version: '10.x'
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-android-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
+          restore-keys: nuget-android-
+
       - uses: actions/setup-java@v4
         with:
           java-version: '21'
@@ -65,6 +85,12 @@ jobs:
 
       - name: Install MAUI Android workload
         run: dotnet workload install maui-android
+
+      - name: Cache npm / Appium
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: appium-android-${{ hashFiles('.github/workflows/ui-tests.yml') }}
 
       - uses: actions/setup-node@v4
         with:

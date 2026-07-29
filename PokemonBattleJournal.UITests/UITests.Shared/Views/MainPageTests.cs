@@ -151,19 +151,21 @@ namespace UITests
                 // Wait for BO3 layout to fully render before interacting with pickers
                 FindUIElement("BO3GamesLayout");
 
-                FindUIElement("PossibleResultsPicker").Click();
-                if (App is WindowsDriver)
-                    SelectWindowsPickerItem("Tie");
-                else
+                AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
+                picker1.Click();
+                if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
+                else
+                    picker1.SendKeys("T" + OpenQA.Selenium.Keys.Enter); // 'T' navigates to Tie, Enter confirms + closes dropdown
 
                 FindUIElement("Game2Tab").Click();
 
-                FindUIElement("PossibleResultsPicker2").Click();
-                if (App is WindowsDriver)
-                    SelectWindowsPickerItem("Win");
-                else
+                AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
+                picker2.Click();
+                if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                else
+                    picker2.SendKeys("W" + OpenQA.Selenium.Keys.Enter); // 'W' navigates to Win, Enter confirms
 
                 FindUIElement("Game3Tab").ShouldNotBeNull();
             }
@@ -188,19 +190,68 @@ namespace UITests
         }
 
         [Fact]
+        public void MainPage_Game3Tab_ShowsGamePanel()
+        {
+            // ShowGame3 requires Result AND Result2 set + split/tie combination.
+            // Set game1=Win, game2=Loss to produce a split result, then click Game3Tab.
+            try
+            {
+                FindUIElement("BOSwitch").Click();
+                FindUIElement("BO3GamesLayout");
+
+                AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
+                picker1.Click();
+                if (App is not WindowsDriver)
+                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                else
+                    picker1.SendKeys("W" + OpenQA.Selenium.Keys.Enter);
+
+                FindUIElement("Game2Tab").Click();
+
+                AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
+                picker2.Click();
+                if (App is not WindowsDriver)
+                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Loss\")")).Click();
+                else
+                    picker2.SendKeys("L" + OpenQA.Selenium.Keys.Enter);
+
+                FindUIElement("Game3Tab").Click();
+
+                FindUIElement("Match3Tags").ShouldNotBeNull();
+                FindUIElement("UserNoteInput3").ShouldNotBeNull();
+                FindUIElement("WentFirstLabel3").ShouldNotBeNull();
+                FindUIElement("PossibleResultsPicker3").ShouldNotBeNull();
+            }
+            finally
+            {
+                try
+                {
+                    if (App is WindowsDriver)
+                    {
+                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker")).SendKeys(OpenQA.Selenium.Keys.Escape);
+                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker2")).SendKeys(OpenQA.Selenium.Keys.Escape);
+                    }
+                }
+                catch (OpenQA.Selenium.NoSuchElementException) { }
+                try { FindUIElement("Game1Tab").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+                try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+            }
+        }
+
+        [Fact]
         public void MainPage_SaveMatch_WithResult_Saves()
         {
             try
             {
-                FindUIElement("PossibleResultsPicker").Click();
+                AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
+                resultPicker.Click();
 
-                // On Android the MAUI Picker opens a native AlertDialog — find "Win" by text.
-                // On Windows, MAUI Picker may open its dropdown as a child popup window on CI —
-                // SelectWindowsPickerItem checks all window handles before falling back to main window.
+                // Android: MAUI Picker opens native AlertDialog — find by text.
+                // Windows: send first letter to ComboBox element; UIA tree search is unreliable on CI.
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
                 else
-                    SelectWindowsPickerItem("Win");
+                    resultPicker.SendKeys("W" + OpenQA.Selenium.Keys.Enter); // 'W' navigates to Win, Enter confirms + closes
             }
             catch (OpenQA.Selenium.NoSuchElementException)
             {
