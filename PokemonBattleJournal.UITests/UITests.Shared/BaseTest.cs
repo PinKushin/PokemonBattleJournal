@@ -112,12 +112,13 @@ namespace UITests
         // Fallbacks: XPath with common control type names, run with 0ms implicit wait so they fail fast.
         private AppiumElement? TryFindPickerItem(string itemName)
         {
-            // Primary: wait up to the full implicit-wait timeout using Name property search.
-            // This is control-type agnostic and handles WinUI3 ComboBoxItem / ListItem / etc.
-            try { return App.FindElement(OpenQA.Selenium.By.Name(itemName)); }
+            // WinAppDriver supports XPath with exact @Name match but NOT contains().
+            // By.Name() maps to CSS selector which WinAppDriver rejects entirely.
+            // Primary: wildcard type + exact name, full 15s implicit wait.
+            try { return App.FindElement(OpenQA.Selenium.By.XPath($"//*[@Name='{itemName}']")); }
             catch (OpenQA.Selenium.NoSuchElementException) { }
 
-            // Fallbacks: fast (0ms) XPath attempts for common control type names.
+            // Fallbacks: specific control type names, fast fail (0ms).
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
             try
             {
@@ -125,7 +126,6 @@ namespace UITests
                 [
                     $"//ListItem[@Name='{itemName}']",
                     $"//ComboBoxItem[@Name='{itemName}']",
-                    $"//ListItem[contains(@Name,'{itemName}')]",
                 ];
                 foreach (string xpath in xpaths)
                 {

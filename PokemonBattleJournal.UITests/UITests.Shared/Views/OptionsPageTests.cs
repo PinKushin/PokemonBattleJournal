@@ -21,6 +21,9 @@ namespace UITests
             await Task.Delay(300);
 
             input.Text.ShouldEndWith("TestDeck");
+
+            // Clear so subsequent tests don't see stale name in the input
+            input.Clear();
         }
 
         [Fact]
@@ -40,18 +43,23 @@ namespace UITests
         }
 
         [Fact]
-        public void OptionsPage_SaveArchetype_WithName_ClearsInput()
+        public async Task OptionsPage_SaveArchetype_WithName_ClearsInput()
         {
             NavigateTo("Options");
 
+            // Unique suffix avoids UNIQUE constraint failure on repeated local runs
+            string deckName = $"UITestDeck-{DateTime.Now:HHmmss}";
             AppiumElement input = FindUIElement("ArchetypeNameInput");
             input.Clear();
-            input.SendKeys("UITestDeck");
+            input.SendKeys(deckName);
 
             // No explicit icon selection needed — VM falls back to SelectedIcon default ("ball_icon.png").
             FindUIElement("SaveArchetypeButton").Click();
 
-            // Input cleared in finally means the save path ran (not an early return due to missing icon).
+            // Async save command — wait for VM to clear the name field before asserting.
+            await Task.Delay(500);
+
+            // Input cleared means save path ran (not early-returned due to missing icon or null trainer).
             AppiumElement clearedInput = FindUIElement("ArchetypeNameInput");
             clearedInput.Text.ShouldBeNullOrEmpty();
         }
