@@ -10,10 +10,7 @@ jobs:
   # ── Windows UI Tests ──────────────────────────────────────────────────────
   ui-tests-windows:
     name: Windows UI Tests
-    runs-on: [self-hosted, windows, x64]
-    env:
-      DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
-      DOTNET_ROOT: ${{ runner.temp }}/.dotnet
+    runs-on: [self-hosted, Windows, X64]
     steps:
       - uses: actions/checkout@v7
 
@@ -66,10 +63,7 @@ jobs:
   # ── Android UI Tests ──────────────────────────────────────────────────────
   ui-tests-android:
     name: Android UI Tests
-    runs-on: [self-hosted, linux, x64]
-    env:
-      DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
-      DOTNET_ROOT: ${{ runner.temp }}/.dotnet
+    runs-on: [self-hosted, Linux, X64]
     steps:
       - uses: actions/checkout@v7
 

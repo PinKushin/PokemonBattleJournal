@@ -10,10 +10,7 @@ jobs:
   # ── Unit tests ────────────────────────────────────────────────────────────
   unit-tests:
     name: Unit Tests
-    runs-on: [self-hosted, windows, x64]
-    env:
-      DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
-      DOTNET_ROOT: ${{ runner.temp }}/.dotnet
+    runs-on: [self-hosted, Windows, X64]
     steps:
       - uses: actions/checkout@v7
 
@@ -36,10 +33,7 @@ jobs:
   # ── Integration tests ─────────────────────────────────────────────────────
   integration-tests:
     name: Integration Tests
-    runs-on: [self-hosted, windows, x64]
-    env:
-      DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
-      DOTNET_ROOT: ${{ runner.temp }}/.dotnet
+    runs-on: [self-hosted, Windows, X64]
     steps:
       - uses: actions/checkout@v7
 
