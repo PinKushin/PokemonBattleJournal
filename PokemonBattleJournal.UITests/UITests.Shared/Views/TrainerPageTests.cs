@@ -1,18 +1,19 @@
-namespace UITests
+﻿namespace UITests
 {
     public partial class TrainerPageTests : BaseTest
     {
-        [Fact]
+        [OneTimeSetUp]
+        public void SetUp() => NavigateTo("Trainer's Profile");
+
+        [Test]
         public void TrainerPage_StatsLabels_Displayed()
         {
-            NavigateTo("Trainer's Profile");
             FindUIElement("WinRateLabel").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void TrainerPage_AllStatsLabels_Displayed()
         {
-            NavigateTo("Trainer's Profile");
             FindUIElement("WinsLabel").ShouldNotBeNull();
             FindUIElement("LossesLabel").ShouldNotBeNull();
             FindUIElement("TiesLabel").ShouldNotBeNull();
@@ -20,10 +21,9 @@ namespace UITests
             FindUIElement("StreakInfoLabel").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void TrainerPage_HasSeededData()
         {
-            NavigateTo("Trainer's Profile");
 
             // TrainerPageViewModel loads stats asynchronously — poll until WinsLabel shows non-zero.
             // Seeding puts 3 Win matches in; zero means no active trainer or async load not complete.
@@ -37,10 +37,9 @@ namespace UITests
             wins.ShouldBeGreaterThan(0, $"WinsLabel shows '{winsText}' after 20s — TrainerPage has no data");
         }
 
-        [Fact]
+        [Test]
         public async Task TrainerPage_Charts_Rendered()
         {
-            NavigateTo("Trainer's Profile");
             await Task.Delay(1000); // allow LiveCharts to finish initial render
 
             FindUIElement("MatchupMatrixChart").ShouldNotBeNull();
@@ -49,10 +48,9 @@ namespace UITests
             FindUIElement("ArchetypeWinRateChart").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public async Task TrainerPage_AllCharts_Rendered()
         {
-            NavigateTo("Trainer's Profile");
             await Task.Delay(1000);
 
             FindUIElement("OpponentPerformanceChart").ShouldNotBeNull();

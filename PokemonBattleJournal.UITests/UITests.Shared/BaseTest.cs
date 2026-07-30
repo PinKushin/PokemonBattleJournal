@@ -1,16 +1,5 @@
 namespace UITests
 {
-    // Add a CollectionDefinition together with a ICollectionFixture
-    // to ensure that the setup only runs once
-    // xUnit does not have a built-in concept of a fixture that only runs once for the whole test set.
-    [CollectionDefinition("UITests")]
-    public sealed class UITestsCollectionDefinition : ICollectionFixture<AppiumSetup>
-    {
-
-    }
-
-    // Add all tests to the same collection as above so that the Appium server is only setup once
-    [Collection("UITests")]
     public abstract class BaseTest
     {
         private static string? _currentPage;
@@ -121,7 +110,7 @@ namespace UITests
 
         // Selects an item in a Windows MAUI Picker/ComboBox by keyboard navigation.
         // Clicks the element to open the dropdown, then uses the first letter to jump
-        // to the matching item and Enter to confirm. Split into separate SendKeys calls
+        // to the matching item and Tab to confirm. Split into separate SendKeys calls
         // to avoid the combined-string stall seen on Windows.
         protected static void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName)
         {

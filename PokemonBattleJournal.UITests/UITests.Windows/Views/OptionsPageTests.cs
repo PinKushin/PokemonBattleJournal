@@ -2,11 +2,9 @@ namespace UITests
 {
     public partial class OptionsPageTests : BaseTest
     {
-        [Fact]
+        [Test]
         public async Task OptionsPage_TrainerNameInput_AcceptsText()
         {
-            NavigateTo("Options");
-
             AppiumElement input = FindUIElement("TrainerNameInput");
             input.Clear();
             input.SendKeys("Ash");

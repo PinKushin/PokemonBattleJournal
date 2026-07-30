@@ -1,11 +1,10 @@
-namespace UITests
+﻿namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {
-        [Fact]
+        [Test]
         public void MainPage_BOSwitch_DisplayedAndToggled()
         {
-            NavigateTo("Journal Entry");
             AppiumElement boSwitch = FindUIElement("BOSwitch");
             AppiumElement statusLabel = FindUIElement("BO3StatusLabel");
 

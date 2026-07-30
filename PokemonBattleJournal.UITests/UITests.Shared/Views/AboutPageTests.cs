@@ -1,11 +1,13 @@
-namespace UITests
+﻿namespace UITests
 {
     public partial class AboutPageTests : BaseTest
     {
-        [Fact]
+        [OneTimeSetUp]
+        public void SetUp() => NavigateTo("About");
+
+        [Test]
         public void AboutPage_Loads_TitleDisplayed()
         {
-            NavigateTo("About");
             AppiumElement title = FindUIElement("AboutPageTitle");
             title.ShouldNotBeNull();
         }

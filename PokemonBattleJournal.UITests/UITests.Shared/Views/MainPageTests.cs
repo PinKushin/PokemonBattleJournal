@@ -1,20 +1,21 @@
-namespace UITests
+﻿namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {
-        [Fact]
+        [OneTimeSetUp]
+        public void SetUp() => NavigateTo("Journal Entry");
+
+        [Test]
         public void MainPage_AfterFirstBoot_TrainerNameSet()
         {
-            NavigateTo("Journal Entry");
             AppiumElement welcomeLabel = FindUIElement("WelcomeMsg");
             welcomeLabel.ShouldNotBeNull();
             welcomeLabel.Text.ShouldContain("UITestTrainer");
         }
 
-        [Fact]
+        [Test]
         public void MainPage_UserNoteInput_ShowTextEntry()
         {
-            NavigateTo("Journal Entry");
             AppiumElement userEntry = FindUIElement("UserNoteInput");
             try
             {
@@ -39,18 +40,16 @@ namespace UITests
             }
         }
 
-        [Fact]
+        [Test]
         public void MainPage_BallIcon_DisplayedOnPage()
         {
-            NavigateTo("Journal Entry");
             AppiumElement BallIconPng = FindUIElement("ball_icon.png");
             BallIconPng.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_Pickers_DisplayedAndEnabled()
         {
-            NavigateTo("Journal Entry");
             AppiumElement startPicker = FindUIElement("StartTimePicker");
             AppiumElement endPicker = FindUIElement("EndTimePicker");
             AppiumElement datePicker = FindUIElement("DatePlayedPicker");
@@ -60,18 +59,16 @@ namespace UITests
             datePicker.Enabled.ShouldBeTrue();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_TagsView_Displayed()
         {
-            NavigateTo("Journal Entry");
             AppiumElement tagsView = FindUIElement("TagsView");
             tagsView.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_BOSwitch_ShowsBO3Fields()
         {
-            NavigateTo("Journal Entry");
             AppiumElement boSwitch = FindUIElement("BOSwitch");
             try
             {
@@ -84,58 +81,51 @@ namespace UITests
             }
         }
 
-        [Fact]
+        [Test]
         public void MainPage_PlayerArchetype_Displayed()
         {
-            NavigateTo("Journal Entry");
             AppiumElement picker = FindUIElement("PlayerArchetype");
             picker.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_RivalArchetype_Displayed()
         {
-            NavigateTo("Journal Entry");
             AppiumElement picker = FindUIElement("RivalArchetype");
             picker.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_BO3StatusLabel_Displayed()
         {
-            NavigateTo("Journal Entry");
             AppiumElement label = FindUIElement("BO3StatusLabel");
             label.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_ResultPicker_Displayed()
         {
-            NavigateTo("Journal Entry");
             AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
             resultPicker.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_FirstCheck_Displayed()
         {
-            NavigateTo("Journal Entry");
             AppiumElement firstCheck = FindUIElement("FirstCheck");
             firstCheck.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_SaveMatchButton_Displayed()
         {
-            NavigateTo("Journal Entry");
             AppiumElement saveButton = FindUIElement("SaveMatchButton");
             saveButton.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_BO3GameTabs_DisplayedWhenBO3Active()
         {
-            NavigateTo("Journal Entry");
             try
             {
                 FindUIElement("BOSwitch").Click();
@@ -149,10 +139,9 @@ namespace UITests
             }
         }
 
-        [Fact]
+        [Test]
         public void MainPage_Game3Tab_ShowsWhenGame1IsTie()
         {
-            NavigateTo("Journal Entry");
             try
             {
                 FindUIElement("BOSwitch").Click();
@@ -201,10 +190,9 @@ namespace UITests
             }
         }
 
-        [Fact]
+        [Test]
         public void MainPage_Game3Tab_ShowsGamePanel()
         {
-            NavigateTo("Journal Entry");
             try
             {
                 FindUIElement("BOSwitch").Click();
@@ -254,10 +242,9 @@ namespace UITests
             }
         }
 
-        [Fact]
+        [Test]
         public void MainPage_SaveMatch_WithResult_Saves()
         {
-            NavigateTo("Journal Entry");
             try
             {
                 AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");

@@ -1,19 +1,20 @@
-namespace UITests
+﻿namespace UITests
 {
     public partial class OptionsPageTests : BaseTest
     {
-        [Fact]
+        [OneTimeSetUp]
+        public void SetUp() => NavigateTo("Options");
+
+        [Test]
         public void OptionsPage_Loads_PageVisible()
         {
-            NavigateTo("Options");
             AppiumElement saveButton = FindUIElement("SaveTrainerNameButton");
             saveButton.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public async Task OptionsPage_ArchetypeNameInput_AcceptsText()
         {
-            NavigateTo("Options");
 
             AppiumElement input = FindUIElement("ArchetypeNameInput");
             input.Clear();
@@ -25,26 +26,23 @@ namespace UITests
             input.Clear();
         }
 
-        [Fact]
+        [Test]
         public void OptionsPage_ArchetypeIconPicker_Displayed()
         {
-            NavigateTo("Options");
             AppiumElement picker = FindUIElement("ArchetypeIconPicker");
             picker.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void OptionsPage_SaveArchetypeButton_Displayed()
         {
-            NavigateTo("Options");
             AppiumElement btn = FindUIElement("SaveArchetypeButton");
             btn.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public async Task OptionsPage_SaveArchetype_WithName_ClearsInput()
         {
-            NavigateTo("Options");
 
             // Unique suffix avoids UNIQUE constraint failure on repeated local runs
             string deckName = $"UITestDeck-{DateTime.Now:HHmmss}";
@@ -71,28 +69,25 @@ namespace UITests
             finally { App.Manage().Timeouts().ImplicitWait = App is WindowsDriver ? TimeSpan.FromSeconds(5) : TimeSpan.FromSeconds(10); }
         }
 
-        [Fact]
+        [Test]
         public void OptionsPage_ArchetypeList_ShowsSeededItems()
         {
             // SeedTestData selects "Other" for both archetypes, so DeleteArchetype_Other must be visible.
             // This test catches the ScrollView+BindableLayout collapse bug where items are in the UIA
             // tree but have zero height and are visually invisible.
-            NavigateTo("Options");
             FindUIElement("DeleteArchetype_Other").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void OptionsPage_TagInput_Displayed()
         {
-            NavigateTo("Options");
             AppiumElement tagInput = FindUIElement("TagInput");
             tagInput.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public async Task OptionsPage_SaveTag_WithName_Saves()
         {
-            NavigateTo("Options");
 
             // Unique suffix prevents UNIQUE constraint failure on repeated runs
             string tagName = $"UITestTag-{DateTime.Now:HHmmss}";
@@ -114,26 +109,23 @@ namespace UITests
             finally { App.Manage().Timeouts().ImplicitWait = App is WindowsDriver ? TimeSpan.FromSeconds(5) : TimeSpan.FromSeconds(10); }
         }
 
-        [Fact]
+        [Test]
         public void OptionsPage_TrainerSwitchPicker_Displayed()
         {
-            NavigateTo("Options");
             AppiumElement picker = FindUIElement("TrainerSwitchPicker");
             picker.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void OptionsPage_SaveAllButton_Displayed()
         {
-            NavigateTo("Options");
             AppiumElement btn = FindUIElement("SaveAllButton");
             btn.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void OptionsPage_TrainerNameInput_Displayed()
         {
-            NavigateTo("Options");
             AppiumElement input = FindUIElement("TrainerNameInput");
             input.ShouldNotBeNull();
         }
