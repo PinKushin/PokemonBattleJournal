@@ -23,7 +23,11 @@ namespace UITests
                     App.FindElement(MobileBy.AccessibilityId("BOSwitch")).Click();
             }
             catch (OpenQA.Selenium.NoSuchElementException) { }
-            finally { RestoreImplicitWait(); }
+            finally
+            {
+                AndroidScrollToTop();
+                RestoreImplicitWait();
+            }
         }
 
         private void ResetGame1Tab()
@@ -31,7 +35,23 @@ namespace UITests
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
             try { App.FindElement(MobileBy.AccessibilityId("Game1Tab")).Click(); }
             catch (OpenQA.Selenium.NoSuchElementException) { }
-            finally { RestoreImplicitWait(); }
+            finally
+            {
+                AndroidScrollToTop();
+                RestoreImplicitWait();
+            }
+        }
+
+        // scrollToBeginning returns UiScrollable not an element — exception is expected and ignored.
+        private void AndroidScrollToTop()
+        {
+            if (App is not AndroidDriver) return;
+            try
+            {
+                App.FindElement(MobileBy.AndroidUIAutomator(
+                    "new UiScrollable(new UiSelector().scrollable(true).instance(0)).scrollToBeginning(100)"));
+            }
+            catch { }
         }
 
         private void CloseWindowsPickers(params string[] ids)
