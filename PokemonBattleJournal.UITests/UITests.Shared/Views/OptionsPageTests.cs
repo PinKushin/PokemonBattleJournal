@@ -63,8 +63,24 @@ namespace UITests
             AppiumElement clearedInput = FindUIElement("ArchetypeNameInput");
             clearedInput.Text.ShouldBeNullOrEmpty();
 
-            // Clean up — delete the saved archetype so it doesn't accumulate in the DB.
-            try { FindUIElement($"DeleteArchetype_{deckName}").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+            // Verify the new archetype row is visible in the list (regression for ScrollView+CollectionView collapse bug).
+            FindUIElement($"DeleteArchetype_{deckName}").ShouldNotBeNull();
+
+            // Clean up — delete immediately; use 0ms timeout so a missing button fails fast rather than waiting 15s.
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try { FindUIElement($"DeleteArchetype_{deckName}").Click(); }
+            catch (OpenQA.Selenium.NoSuchElementException) { }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15); }
+        }
+
+        [Fact]
+        public void OptionsPage_ArchetypeList_ShowsSeededItems()
+        {
+            // SeedTestData selects "Other" for both archetypes, so DeleteArchetype_Other must be visible.
+            // This test catches the ScrollView+BindableLayout collapse bug where items are in the UIA
+            // tree but have zero height and are visually invisible.
+            NavigateTo("Options");
+            FindUIElement("DeleteArchetype_Other").ShouldNotBeNull();
         }
 
         [Fact]
@@ -93,8 +109,14 @@ namespace UITests
 
             FindUIElement("SaveTagButton").ShouldNotBeNull();
 
-            // Clean up — delete the saved tag so it doesn't accumulate in the DB.
-            try { FindUIElement($"DeleteTag_{tagName}").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+            // Verify the new tag row is visible in the list.
+            FindUIElement($"DeleteTag_{tagName}").ShouldNotBeNull();
+
+            // Clean up with 0ms timeout so a missing button fails fast rather than waiting 15s.
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try { FindUIElement($"DeleteTag_{tagName}").Click(); }
+            catch (OpenQA.Selenium.NoSuchElementException) { }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15); }
         }
 
         [Fact]
