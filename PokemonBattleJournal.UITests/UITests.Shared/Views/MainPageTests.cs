@@ -213,7 +213,10 @@ namespace UITests
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Loss\")")).Click();
                 else
-                    picker2.SendKeys("L" + OpenQA.Selenium.Keys.Enter);
+                {
+                    picker2.SendKeys("L");
+                    picker2.SendKeys(OpenQA.Selenium.Keys.Enter);
+                }
 
                 FindUIElement("Game3Tab").Click();
 

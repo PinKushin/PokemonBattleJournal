@@ -397,20 +397,11 @@ namespace PokemonBattleJournal.Services
         {
             HashSet<uint> allTagIds = [];
 
-            // Collect all tag IDs from games
-            foreach (Game game in games)
-            {
-                if (game.Tags != null)
-                {
-                    foreach (Tags tag in game.Tags)
-                    {
-                        if (tag.Id != 0) // Only check existing tags
-                        {
-                            _ = allTagIds.Add(tag.Id);
-                        }
-                    }
-                }
-            }
+            allTagIds.UnionWith(games
+                .Where(g => g.Tags != null)
+                .SelectMany(g => g.Tags!)
+                .Where(t => t.Id != 0)
+                .Select(t => t.Id));
 
             // Verify all tags exist
             if (allTagIds.Count > 0)
@@ -442,7 +433,7 @@ namespace PokemonBattleJournal.Services
             if (matchExists is null)
             {
                 _logger.LogError("Match entry {Id} was not saved properly", matchEntry.Id);
-                throw new Exception("Failed to save match entry");
+                throw new InvalidOperationException("Failed to save match entry");
             }
 
             // Check if all games were saved
@@ -452,12 +443,13 @@ namespace PokemonBattleJournal.Services
                 if (gameExists is null)
                 {
                     _logger.LogError("Game {Id} was not saved properly", game.Id);
-                    throw new Exception("Failed to save game");
+                    throw new InvalidOperationException("Failed to save game");
                 }
 
                 // Check tag relationships
                 if (game.Tags is not null && game.Tags.Count > 0)
                 {
+#pragma warning disable S3267 // Loop body contains awaits; cannot be replaced with LINQ Select
                     foreach (Tags tag in game.Tags)
                     {
                         TagGame? relationExists = await db.Table<TagGame>()
@@ -475,6 +467,7 @@ namespace PokemonBattleJournal.Services
                             _ = await db.InsertAsync(tagGame);
                         }
                     }
+#pragma warning restore S3267
                 }
             }
 

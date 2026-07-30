@@ -174,7 +174,7 @@
                     if (remainingCount > 0)
                     {
                         _logger.LogError("Tag {TagId} was not deleted properly", tag.Id);
-                        throw new Exception("Failed to delete tag");
+                        throw new InvalidOperationException("Failed to delete tag");
                     }
 
                     // Verify relationship deletion

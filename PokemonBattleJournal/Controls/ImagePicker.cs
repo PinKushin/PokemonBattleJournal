@@ -5,11 +5,13 @@ using CommunityToolkit.Maui.Views;
 
 namespace PokemonBattleJournal.Controls;
 
+#pragma warning disable S1450 // MAUI UI elements must be fields to prevent GC when added to the visual tree
 public class ImagePicker : ContentView
 {
     private readonly Button _button;
     private readonly Label _hintLabel;
     private readonly Label _helperLabel;
+#pragma warning restore S1450
 
     public static readonly BindableProperty ItemsSourceProperty =
         BindableProperty.Create(nameof(ItemsSource), typeof(System.Collections.IEnumerable), typeof(ImagePicker), null);

@@ -6,22 +6,16 @@ namespace PokemonBattleJournal.ViewModels
     {
         private readonly ITrainerSwitchService _switchService;
         private readonly MainPageViewModel _mainPageVm;
-        private readonly ReadJournalPageViewModel _readJournalVm;
-        private readonly TrainerPageViewModel _trainerVm;
         private readonly ILogger<AppShellViewModel> _logger;
         private bool _suppressSelectionChanged;
 
         public AppShellViewModel(
             ITrainerSwitchService switchService,
             MainPageViewModel mainPageVm,
-            ReadJournalPageViewModel readJournalVm,
-            TrainerPageViewModel trainerVm,
             ILogger<AppShellViewModel> logger)
         {
             _switchService = switchService;
             _mainPageVm = mainPageVm;
-            _readJournalVm = readJournalVm;
-            _trainerVm = trainerVm;
             _logger = logger;
             _switchService.TrainerChanged += (_, trainer) =>
             {

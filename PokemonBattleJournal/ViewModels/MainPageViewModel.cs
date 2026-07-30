@@ -7,7 +7,6 @@ namespace PokemonBattleJournal.ViewModels
         private readonly ILogger<MainPageViewModel> _logger;
         private readonly ISqliteConnectionFactory _connection;
         private readonly SemaphoreSlim _semaphore = new(1, 1);
-        private readonly Lock _lock = new();
         private Trainer? _trainer;
         private readonly IMatchResultsCalculatorFactory _calculatorFactory;
         private readonly ITrainerSwitchService _switchService;
@@ -27,7 +26,7 @@ namespace PokemonBattleJournal.ViewModels
             _switchService.TrainerChanged += OnTrainerChanged;
 
 
-            _logger.LogInformation("Created Main Page ViewModel{this}", this);
+            _logger.LogInformation("Created Main Page ViewModel {This}", this);
             WelcomeMsg = $"Welcome {TrainerName}";
         }
 
@@ -191,7 +190,7 @@ namespace PokemonBattleJournal.ViewModels
         private void ToggleFirstCheck3() => FirstCheck3 = !FirstCheck3;
 
         [ObservableProperty]
-        public partial List<MatchResult> PossibleResults { get; set; } = [.. Enum.GetValues<MatchResult>().Cast<MatchResult>()];
+        public partial List<MatchResult> PossibleResults { get; set; } = [.. Enum.GetValues<MatchResult>()];
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(ShowGame3))]
@@ -391,7 +390,7 @@ namespace PokemonBattleJournal.ViewModels
             try
             {
                 await _semaphore.WaitAsync();
-                DateTime startTimestamp = DateTime.Now;
+                DateTime startTimestamp = DateTime.UtcNow;
 
                 _logger.LogInformation("Starting match save process for trainer {TrainerId} ({TrainerName})",
                     _trainer.Id, _trainer.Name);
@@ -453,7 +452,7 @@ namespace PokemonBattleJournal.ViewModels
                 _logger.LogInformation("Saving match entry and {GameCount} games to database...", games.Count);
                 int result = await _connection.Matches.SaveAsync(matchEntry, games);
 
-                double elapsedMs = (DateTime.Now - startTimestamp).TotalMilliseconds;
+                double elapsedMs = (DateTime.UtcNow - startTimestamp).TotalMilliseconds;
 
                 if (result > 0)
                 {

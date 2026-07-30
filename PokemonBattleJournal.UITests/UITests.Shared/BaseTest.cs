@@ -44,21 +44,29 @@ namespace UITests
             if (_currentPage == pageTitle)
                 return; // already on this page — skip flyout open/close round-trip
 
-            if (App is WindowsDriver)
+            try
             {
-                var menu = App.FindElement(MobileBy.AccessibilityId("OK"));
-                menu.Click();
-                var item = App.FindElement(MobileBy.AccessibilityId(pageTitle));
-                item.Click();
+                if (App is WindowsDriver)
+                {
+                    var menu = App.FindElement(MobileBy.AccessibilityId("OK"));
+                    menu.Click();
+                    var item = App.FindElement(MobileBy.AccessibilityId(pageTitle));
+                    item.Click();
+                }
+                else
+                {
+                    var menu = App.FindElement(MobileBy.AccessibilityId("Open navigation drawer"));
+                    menu.Click();
+                    var item = App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")"));
+                    item.Click();
+                }
+                _currentPage = pageTitle;
             }
-            else
+            catch
             {
-                var menu = App.FindElement(MobileBy.AccessibilityId("Open navigation drawer"));
-                menu.Click();
-                var item = App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")"));
-                item.Click();
+                _currentPage = null; // navigation failed — force re-attempt on next call
+                throw;
             }
-            _currentPage = pageTitle;
         }
 
         // Call this when a test intentionally navigates away from the tracked page

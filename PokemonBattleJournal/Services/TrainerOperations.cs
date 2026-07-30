@@ -397,7 +397,7 @@
             if (trainerExists > 0)
             {
                 _logger.LogError("Trainer {TrainerId} was not deleted properly", trainer.Id);
-                throw new Exception($"Failed to delete trainer with ID {trainer.Id}");
+                throw new InvalidOperationException($"Failed to delete trainer with ID {trainer.Id}");
             }
         }
     }

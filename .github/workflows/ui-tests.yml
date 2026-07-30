@@ -10,7 +10,7 @@ jobs:
   # ── Windows UI Tests ──────────────────────────────────────────────────────
   ui-tests-windows:
     name: Windows UI Tests
-    runs-on: windows-latest
+    runs-on: [self-hosted, PinPC]
     steps:
       - uses: actions/checkout@v7
 
@@ -63,7 +63,7 @@ jobs:
   # ── Android UI Tests ──────────────────────────────────────────────────────
   ui-tests-android:
     name: Android UI Tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, UbuntuBox]
     steps:
       - uses: actions/checkout@v7
 

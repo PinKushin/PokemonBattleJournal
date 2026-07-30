@@ -28,8 +28,6 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _sut = new AppShellViewModel(
                 _mockSwitchService,
                 _mainPageVm,
-                new ReadJournalPageViewModel(Substitute.For<ILogger<ReadJournalPageViewModel>>(), _mockConnectionFactory, _mockSwitchService),
-                new TrainerPageViewModel(Substitute.For<ILogger<TrainerPageViewModel>>(), _mockConnectionFactory, Substitute.For<IMatchAnalysisService>(), _mockSwitchService),
                 Substitute.For<ILogger<AppShellViewModel>>());
         }
 

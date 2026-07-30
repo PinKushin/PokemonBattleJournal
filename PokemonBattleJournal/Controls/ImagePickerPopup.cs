@@ -64,7 +64,7 @@ public class ImagePickerPopup : Popup<ImagePickerPopup.PickerResult?>
         {
             if (e.CurrentSelection.FirstOrDefault() != null)
             {
-                await CloseAsync(new PickerResult(e.CurrentSelection.First()));
+                await CloseAsync(new PickerResult(e.CurrentSelection[0]));
             }
         };
 

@@ -8,6 +8,7 @@ using Microsoft.Maui.Controls;
 
 namespace PokemonBattleJournal.Controls;
 
+#pragma warning disable S1450 // MAUI UI elements must be fields to prevent GC when added to the visual tree
 public class ComboBoxControl : ContentView
 {
     private readonly Border _border;
@@ -15,6 +16,7 @@ public class ComboBoxControl : ContentView
     private readonly Image _selectedIcon;
     private readonly Label _arrowLabel;
     private readonly Label _placeholderLabel;
+#pragma warning restore S1450
 
     public static readonly BindableProperty ItemsSourceProperty =
         BindableProperty.Create(nameof(ItemsSource), typeof(IEnumerable), typeof(ComboBoxControl), null);

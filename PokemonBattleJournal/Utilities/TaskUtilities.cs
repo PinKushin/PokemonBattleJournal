@@ -12,6 +12,8 @@
         /// <param name="handler">Error Handler.</param>
 
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("S3168", "S3168:\"async\" methods should not return \"void\"",
+            Justification = "Intentional fire-and-forget extension method; async void is the correct pattern here.")]
         public static async void FireAndForgetSafeAsync(this Task task, IErrorHandler? handler = null)
 
         {

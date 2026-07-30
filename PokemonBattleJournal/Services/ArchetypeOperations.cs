@@ -32,6 +32,7 @@ namespace PokemonBattleJournal.Services
                 // Always try to upsert current meta decks so new archetypes appear each launch
                 if (metaDecks.Count > 0)
                 {
+#pragma warning disable S3267 // Loop body contains awaits; cannot be replaced with LINQ Select
                     foreach (MetaDeck deck in metaDecks)
                     {
                         string imagePath = TryResolveLocalSprite(deck.Name);
@@ -43,6 +44,7 @@ namespace PokemonBattleJournal.Services
                             "UPDATE Archetype SET ImagePath = ? WHERE Name = ? AND ImagePath LIKE 'http%'",
                             imagePath, deck.Name);
                     }
+#pragma warning restore S3267
                 }
                 else if (await db.Table<Archetype>().CountAsync() == 0)
                 {
@@ -174,8 +176,8 @@ namespace PokemonBattleJournal.Services
         private static string TryResolveLocalSprite(string deckName)
         {
             string name = deckName.Split('&')[0].Trim();
-            name = Regex.Replace(name, @"\s+(ex|EX|GX|V|VMAX|VSTAR|VUNION|tera|Tera)$", "", RegexOptions.IgnoreCase).Trim();
-            return Regex.Replace(name.ToLowerInvariant(), @"\s+", "_") + ".png";
+            name = Regex.Replace(name, @"\s+(ex|EX|GX|V|VMAX|VSTAR|VUNION|tera|Tera)$", "", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)).Trim();
+            return Regex.Replace(name.ToLowerInvariant(), @"\s+", "_", RegexOptions.None, TimeSpan.FromSeconds(1)) + ".png";
         }
 
         /// <summary>
@@ -222,7 +224,7 @@ namespace PokemonBattleJournal.Services
                     if (remainingCount > 0)
                     {
                         _logger.LogError("Archetype {ArchetypeId} was not deleted properly", archetype.Id);
-                        throw new Exception("Failed to delete archetype");
+                        throw new InvalidOperationException("Failed to delete archetype");
                     }
                 });
 

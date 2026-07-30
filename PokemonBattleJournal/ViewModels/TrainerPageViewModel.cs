@@ -309,7 +309,7 @@ namespace PokemonBattleJournal.ViewModels
                         long ticks = (long)value;
                         if (ticks < DateTime.MinValue.Ticks || ticks > DateTime.MaxValue.Ticks)
                             return string.Empty;
-                        return new DateTime(ticks).ToString("MM/dd");
+                        return new DateTime(ticks, DateTimeKind.Utc).ToString("MM/dd");
                     },
                     UnitWidth = TimeSpan.FromDays(1).Ticks,
                     MinStep = TimeSpan.FromDays(1).Ticks,

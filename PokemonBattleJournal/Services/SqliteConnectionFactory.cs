@@ -9,11 +9,9 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
 {
     private SQLiteAsyncConnection? _database;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
-    private readonly ILogger _logger;
 
     public SqliteConnectionFactory(ILogger logger, ILimitlessMetaService metaService)
     {
-        _logger = logger;
         Trainers = new TrainerOperations(this, logger);
         Matches = new MatchOperations(this, logger);
         Archetypes = new ArchetypeOperations(this, logger, metaService);
@@ -60,8 +58,8 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
                 _ = await _database.CreateTableAsync<Game>();
                 _ = await _database.CreateTableAsync<TagGame>();
                 _ = await _database.CreateTableAsync<MatchEntry>();
-                // Replace any CDN URLs stored as archetype images with ball_icon.png;
-                // ArchetypeOperations.GetAllAsync will later replace with proper local sprites.
+                // Migrate any CDN URLs left over from an old import to the default ball icon.
+                // ArchetypeOperations.GetAllAsync resolves proper local sprites on next load.
                 await _database.ExecuteAsync(
                     "UPDATE Archetype SET ImagePath = 'ball_icon.png' WHERE ImagePath LIKE 'http%'");
             }

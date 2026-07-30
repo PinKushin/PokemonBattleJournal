@@ -114,7 +114,7 @@ namespace PokemonBattleJournal.Services
 
         public ObservableCollection<ChartDataPoint> CalculateFirstTurnAdvantage(List<MatchEntry> matches)
         {
-            var allGames = matches.SelectMany(m => new[] { m.Game1, m.Game2, m.Game3 }).Where(g => g != null).Select(g => g!);
+            var allGames = matches.SelectMany(m => new[] { m.Game1, m.Game2, m.Game3 }).OfType<Game>();
 
             var firstTurnGames = allGames.Where(g => g.Turn == 1).ToList();
             var secondTurnGames = allGames.Where(g => g.Turn == 2).ToList();
@@ -133,14 +133,14 @@ namespace PokemonBattleJournal.Services
         {
             var relevant = matches.Where(m => m.Playing?.Name != null && m.Against?.Name != null).ToList();
 
-            var played = relevant.Select(m => m.Playing!.Name!).Distinct().OrderBy(x => x).ToArray();
-            var opponents = relevant.Select(m => m.Against!.Name!).Distinct().OrderBy(x => x).ToArray();
+            var played = relevant.Select(m => m.Playing?.Name).OfType<string>().Distinct().OrderBy(x => x).ToArray();
+            var opponents = relevant.Select(m => m.Against?.Name).OfType<string>().Distinct().OrderBy(x => x).ToArray();
 
             var playedIdx = played.Select((n, i) => (n, i)).ToDictionary(x => x.n, x => x.i);
             var opponentIdx = opponents.Select((n, i) => (n, i)).ToDictionary(x => x.n, x => x.i);
 
             var cells = relevant
-                .GroupBy(m => (m.Playing!.Name!, m.Against!.Name!))
+                .GroupBy(m => (Playing: m.Playing?.Name ?? string.Empty, Against: m.Against?.Name ?? string.Empty))
                 .Select(g => (
                     PlayedIdx: playedIdx[g.Key.Item1],
                     OpponentIdx: opponentIdx[g.Key.Item2],
@@ -157,6 +157,7 @@ namespace PokemonBattleJournal.Services
             int currentLossStreak = 0, longestLossStreak = 0;
             int currentTieStreak = 0, longestTieStreak = 0;
 
+#pragma warning disable S3267 // Mutable streak accumulators cannot be expressed with LINQ Select
             foreach (MatchEntry? match in matches.OrderBy(m => m.DatePlayed))
             {
                 if (match.Result == MatchResult.Win)
@@ -181,6 +182,7 @@ namespace PokemonBattleJournal.Services
                     currentLossStreak = 0;
                 }
             }
+#pragma warning restore S3267
 
             return (longestWinStreak, longestLossStreak, longestTieStreak);
         }
