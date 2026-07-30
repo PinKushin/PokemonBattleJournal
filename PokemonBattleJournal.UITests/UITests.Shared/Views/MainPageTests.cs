@@ -5,6 +5,31 @@
         [OneTimeSetUp]
         public void SetUp() => NavigateTo("Journal Entry");
 
+        [OneTimeTearDown]
+        public void TearDown()
+        {
+            // MainPage/MainPageViewModel is a singleton — state persists across tests.
+            // Reset all form fields so other fixtures don't inherit dirty state.
+            try
+            {
+                // Ensure BO3 is off
+                AppiumElement label = FindUIElement("BO3StatusLabel");
+                if (label.Text == "Best of 3")
+                    FindUIElement("BOSwitch").Click();
+            }
+            catch (OpenQA.Selenium.NoSuchElementException) { }
+
+            try
+            {
+                if (App is AndroidDriver androidDriver)
+                    androidDriver.HideKeyboard();
+                FindUIElement("UserNoteInput").Clear();
+            }
+            catch (OpenQA.Selenium.NoSuchElementException) { }
+
+            InvalidateCurrentPage();
+        }
+
         [Test]
         public void MainPage_AfterFirstBoot_TrainerNameSet()
         {
