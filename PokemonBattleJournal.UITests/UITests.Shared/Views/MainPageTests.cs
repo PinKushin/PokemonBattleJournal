@@ -87,6 +87,14 @@ namespace UITests
                 ? TimeSpan.FromSeconds(5)
                 : TimeSpan.FromSeconds(10);
 
+        // Ensures BO3 is ON regardless of current state (safe to call when BO3 may already be on).
+        private void EnsureBO3On()
+        {
+            AppiumElement label = FindUIElement("BO3StatusLabel");
+            if (label.Text != "Best of 3")
+                FindUIElement("BOSwitch").Click();
+        }
+
         // ---------------------------------------------------------------------------
         // Tests
         // ---------------------------------------------------------------------------
@@ -139,7 +147,7 @@ namespace UITests
         {
             try
             {
-                FindUIElement("BOSwitch").Click();
+                EnsureBO3On();
                 FindUIElement("BO3GamesLayout").ShouldNotBeNull();
             }
             finally { ResetBOSwitch(); }
@@ -186,7 +194,7 @@ namespace UITests
         {
             try
             {
-                FindUIElement("BOSwitch").Click();
+                EnsureBO3On();
                 FindUIElement("BO3GamesLayout").ShouldNotBeNull();
                 FindUIElement("Game1Tab").ShouldNotBeNull();
                 FindUIElement("Game2Tab").ShouldNotBeNull();
@@ -199,7 +207,7 @@ namespace UITests
         {
             try
             {
-                FindUIElement("BOSwitch").Click();
+                EnsureBO3On();
                 FindUIElement("BO3GamesLayout");
 
                 AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
@@ -240,7 +248,7 @@ namespace UITests
         {
             try
             {
-                FindUIElement("BOSwitch").Click();
+                EnsureBO3On();
                 FindUIElement("BO3GamesLayout");
 
                 AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
