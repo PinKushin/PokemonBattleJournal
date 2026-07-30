@@ -73,84 +73,15 @@ namespace UITests
         // so the next NavigateTo knows it must re-navigate.
         protected void InvalidateCurrentPage() => _currentPage = null;
 
-        // Clicks a Picker/ComboBox control and selects the named item from its dropdown.
-        // On Windows, MAUI's Picker may open its dropdown as a child window — this helper
-        // checks all window handles and searches each one for the list item, then restores
-        // the main window context after the selection.
-        // If the popup isn't found in any handle (e.g. Windows Server CI where the popup
-        // may not appear in WindowHandles), falls back to keyboard navigation on the picker
-        // element: first letter of itemName jumps to the matching item, Enter confirms.
-        protected void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName)
+        // Selects an item in a Windows MAUI Picker/ComboBox by keyboard navigation.
+        // Clicks the element to open the dropdown, then uses the first letter to jump
+        // to the matching item and Enter to confirm. Split into separate SendKeys calls
+        // to avoid the combined-string stall seen on Windows.
+        protected static void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName)
         {
-            if (App is not WindowsDriver)
-                throw new InvalidOperationException("SelectWindowsPickerItem is Windows-only");
-
-            string mainWindow = App.CurrentWindowHandle;
-
-            // Try all handles — the dropdown popup is often a child window on Windows Server CI.
-            var handles = App.WindowHandles.ToList();
-            foreach (string handle in handles)
-            {
-                if (handle != mainWindow)
-                    App.SwitchTo().Window(handle);
-
-                try
-                {
-                    AppiumElement? item = TryFindPickerItem(itemName);
-                    if (item is not null)
-                    {
-                        item.Click();
-                        if (App.CurrentWindowHandle != mainWindow)
-                            App.SwitchTo().Window(mainWindow);
-                        return;
-                    }
-                }
-                catch (OpenQA.Selenium.NoSuchElementException) { }
-                finally
-                {
-                    if (App.CurrentWindowHandle != mainWindow)
-                        App.SwitchTo().Window(mainWindow);
-                }
-            }
-
-            // Popup not reachable via any window handle — fall back to keyboard navigation.
-            // WinUI3 ComboBox: the first letter of an item name jumps to it; Enter confirms.
-            // Split into two SendKeys calls to avoid the combined-string stall on Windows.
+            pickerElement.Click();
             pickerElement.SendKeys(itemName[0].ToString());
-            pickerElement.SendKeys(OpenQA.Selenium.Keys.Enter);
-        }
-
-        // Tries multiple UIA element locators for a ComboBox/Picker dropdown item.
-        // Primary: By.Name (UIA Name property, control-type agnostic, uses full implicit wait).
-        // Fallbacks: XPath with common control type names, run with 0ms implicit wait so they fail fast.
-        private AppiumElement? TryFindPickerItem(string itemName)
-        {
-            // WinAppDriver supports XPath with exact @Name match but NOT contains().
-            // By.Name() maps to CSS selector which WinAppDriver rejects entirely.
-            // Primary: wildcard type + exact name, full 15s implicit wait.
-            try { return App.FindElement(OpenQA.Selenium.By.XPath($"//*[@Name='{itemName}']")); }
-            catch (OpenQA.Selenium.NoSuchElementException) { }
-
-            // Fallbacks: specific control type names, fast fail (0ms).
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            try
-            {
-                string[] xpaths =
-                [
-                    $"//ListItem[@Name='{itemName}']",
-                    $"//ComboBoxItem[@Name='{itemName}']",
-                ];
-                foreach (string xpath in xpaths)
-                {
-                    try { return App.FindElement(OpenQA.Selenium.By.XPath(xpath)); }
-                    catch (OpenQA.Selenium.NoSuchElementException) { }
-                }
-                return null;
-            }
-            finally
-            {
-                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
-            }
+            pickerElement.SendKeys(OpenQA.Selenium.Keys.Tab);
         }
     }
 }

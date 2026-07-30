@@ -152,18 +152,22 @@ namespace UITests
                 FindUIElement("BO3GamesLayout");
 
                 AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
-                picker1.Click();
                 if (App is not WindowsDriver)
+                {
+                    picker1.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
+                }
                 else
                     SelectWindowsPickerItem(picker1, "Tie");
 
                 FindUIElement("Game2Tab").Click();
 
                 AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
-                picker2.Click();
                 if (App is not WindowsDriver)
+                {
+                    picker2.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                }
                 else
                     SelectWindowsPickerItem(picker2, "Win");
 
@@ -200,18 +204,22 @@ namespace UITests
                 FindUIElement("BO3GamesLayout");
 
                 AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
-                picker1.Click();
                 if (App is not WindowsDriver)
+                {
+                    picker1.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                }
                 else
                     SelectWindowsPickerItem(picker1, "Win");
 
                 FindUIElement("Game2Tab").Click();
 
                 AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
-                picker2.Click();
                 if (App is not WindowsDriver)
+                {
+                    picker2.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Loss\")")).Click();
+                }
                 else
                     SelectWindowsPickerItem(picker2, "Loss");
 
@@ -244,12 +252,14 @@ namespace UITests
             try
             {
                 AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
-                resultPicker.Click();
 
-                // Android: MAUI Picker opens native AlertDialog — find by text.
-                // Windows: SelectWindowsPickerItem searches all window handles for the dropdown item.
+                // Android: click picker to open AlertDialog, then find by text.
+                // Windows: keyboard nav on closed ComboBox — no click needed before SendKeys.
                 if (App is not WindowsDriver)
+                {
+                    resultPicker.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                }
                 else
                     SelectWindowsPickerItem(resultPicker, "Win");
             }
