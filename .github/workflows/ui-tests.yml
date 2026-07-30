@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master, main]
 
+env:
+  DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
+  DOTNET_ROOT: ${{ runner.temp }}/.dotnet
+
 jobs:
   # ── Windows UI Tests ──────────────────────────────────────────────────────
   ui-tests-windows:
