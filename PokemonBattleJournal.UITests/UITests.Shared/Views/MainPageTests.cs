@@ -156,7 +156,7 @@ namespace UITests
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
                 else
-                    SelectWindowsPickerItem("Tie");
+                    SelectWindowsPickerItem(picker1, "Tie");
 
                 FindUIElement("Game2Tab").Click();
 
@@ -165,7 +165,7 @@ namespace UITests
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
                 else
-                    SelectWindowsPickerItem("Win");
+                    SelectWindowsPickerItem(picker2, "Win");
 
                 FindUIElement("Game3Tab").ShouldNotBeNull();
             }
@@ -204,7 +204,7 @@ namespace UITests
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
                 else
-                    SelectWindowsPickerItem("Win");
+                    SelectWindowsPickerItem(picker1, "Win");
 
                 FindUIElement("Game2Tab").Click();
 
@@ -213,7 +213,7 @@ namespace UITests
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Loss\")")).Click();
                 else
-                    SelectWindowsPickerItem("Loss");
+                    SelectWindowsPickerItem(picker2, "Loss");
 
                 FindUIElement("Game3Tab").Click();
 
@@ -251,7 +251,7 @@ namespace UITests
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
                 else
-                    SelectWindowsPickerItem("Win");
+                    SelectWindowsPickerItem(resultPicker, "Win");
             }
             catch (OpenQA.Selenium.NoSuchElementException)
             {

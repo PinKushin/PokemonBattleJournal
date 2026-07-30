@@ -77,7 +77,10 @@ namespace UITests
         // On Windows, MAUI's Picker may open its dropdown as a child window — this helper
         // checks all window handles and searches each one for the list item, then restores
         // the main window context after the selection.
-        protected void SelectWindowsPickerItem(string itemName)
+        // If the popup isn't found in any handle (e.g. Windows Server CI where the popup
+        // may not appear in WindowHandles), falls back to keyboard navigation on the picker
+        // element: first letter of itemName jumps to the matching item, Enter confirms.
+        protected void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName)
         {
             if (App is not WindowsDriver)
                 throw new InvalidOperationException("SelectWindowsPickerItem is Windows-only");
@@ -110,9 +113,11 @@ namespace UITests
                 }
             }
 
-            // Final fallback: throw so the test fails with a clear message.
-            throw new OpenQA.Selenium.NoSuchElementException(
-                $"Picker item '{itemName}' not found in any window handle.");
+            // Popup not reachable via any window handle — fall back to keyboard navigation.
+            // WinUI3 ComboBox: the first letter of an item name jumps to it; Enter confirms.
+            // Split into two SendKeys calls to avoid the combined-string stall on Windows.
+            pickerElement.SendKeys(itemName[0].ToString());
+            pickerElement.SendKeys(OpenQA.Selenium.Keys.Enter);
         }
 
         // Tries multiple UIA element locators for a ComboBox/Picker dropdown item.
