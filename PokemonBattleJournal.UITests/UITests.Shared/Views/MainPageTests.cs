@@ -1,24 +1,36 @@
-﻿namespace UITests
+namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {
         [OneTimeSetUp]
         public void SetUp() => NavigateTo("Journal Entry");
 
-        [OneTimeTearDown]
-        public void TearDown()
+        [TearDown]
+        public void AfterEach()
         {
-            // MainPage/MainPageViewModel is a singleton — state persists across tests.
-            // Reset all form fields so other fixtures don't inherit dirty state.
+            // Close any open Windows dropdowns first — open pickers block tab clicks and switch toggles.
+            if (App is WindowsDriver)
+            {
+                foreach (string id in new[] { "PossibleResultsPicker", "PossibleResultsPicker2", "PossibleResultsPicker3" })
+                {
+                    try { App.FindElement(MobileBy.AccessibilityId(id)).SendKeys(OpenQA.Selenium.Keys.Escape); }
+                    catch (OpenQA.Selenium.NoSuchElementException) { }
+                }
+            }
+
+            // Return to Game1 tab if a BO3 tab test left us on Game2/Game3.
+            try { FindUIElement("Game1Tab").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+
+            // Turn off BO3 if a test left the switch on.
             try
             {
-                // Ensure BO3 is off
                 AppiumElement label = FindUIElement("BO3StatusLabel");
                 if (label.Text == "Best of 3")
                     FindUIElement("BOSwitch").Click();
             }
             catch (OpenQA.Selenium.NoSuchElementException) { }
 
+            // Hide soft keyboard then clear note input.
             try
             {
                 if (App is AndroidDriver androidDriver)
@@ -26,9 +38,10 @@
                 FindUIElement("UserNoteInput").Clear();
             }
             catch (OpenQA.Selenium.NoSuchElementException) { }
-
-            InvalidateCurrentPage();
         }
+
+        [OneTimeTearDown]
+        public void TearDown() => InvalidateCurrentPage();
 
         [Test]
         public void MainPage_AfterFirstBoot_TrainerNameSet()
@@ -42,27 +55,12 @@
         public void MainPage_UserNoteInput_ShowTextEntry()
         {
             AppiumElement userEntry = FindUIElement("UserNoteInput");
-            try
-            {
-                userEntry.Click();
-                userEntry.SendKeys("Hello World");
-                userEntry.ShouldNotBeNull();
-                // Re-fetch element so WinAppDriver returns current Value, not cached state.
-                AppiumElement refetched = FindUIElement("UserNoteInput");
-                refetched.Text.ShouldContain("Hello World");
-            }
-            finally
-            {
-                try
-                {
-                    // Hide soft keyboard before clearing — leaving it open causes the next
-                    // SendKeys to land in the wrong view (notification shade, etc.)
-                    if (App is AndroidDriver androidDriver)
-                        androidDriver.HideKeyboard();
-                    FindUIElement("UserNoteInput").Clear();
-                }
-                catch (OpenQA.Selenium.NoSuchElementException) { }
-            }
+            userEntry.Click();
+            userEntry.SendKeys("Hello World");
+            userEntry.ShouldNotBeNull();
+            // Re-fetch element so WinAppDriver returns current Value, not cached state.
+            AppiumElement refetched = FindUIElement("UserNoteInput");
+            refetched.Text.ShouldContain("Hello World");
         }
 
         [Test]
@@ -94,16 +92,8 @@
         [Test]
         public void MainPage_BOSwitch_ShowsBO3Fields()
         {
-            AppiumElement boSwitch = FindUIElement("BOSwitch");
-            try
-            {
-                boSwitch.Click();
-                FindUIElement("BO3GamesLayout").ShouldNotBeNull();
-            }
-            finally
-            {
-                try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
-            }
+            FindUIElement("BOSwitch").Click();
+            FindUIElement("BO3GamesLayout").ShouldNotBeNull();
         }
 
         [Test]
@@ -151,146 +141,89 @@
         [Test]
         public void MainPage_BO3GameTabs_DisplayedWhenBO3Active()
         {
-            try
-            {
-                FindUIElement("BOSwitch").Click();
-                FindUIElement("BO3GamesLayout").ShouldNotBeNull();
-                FindUIElement("Game1Tab").ShouldNotBeNull();
-                FindUIElement("Game2Tab").ShouldNotBeNull();
-            }
-            finally
-            {
-                try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
-            }
+            FindUIElement("BOSwitch").Click();
+            FindUIElement("BO3GamesLayout").ShouldNotBeNull();
+            FindUIElement("Game1Tab").ShouldNotBeNull();
+            FindUIElement("Game2Tab").ShouldNotBeNull();
         }
 
         [Test]
         public void MainPage_Game3Tab_ShowsWhenGame1IsTie()
         {
-            try
+            FindUIElement("BOSwitch").Click();
+            FindUIElement("BO3GamesLayout");
+
+            AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
+            if (App is not WindowsDriver)
             {
-                FindUIElement("BOSwitch").Click();
-                FindUIElement("BO3GamesLayout");
-
-                AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
-                if (App is not WindowsDriver)
-                {
-                    picker1.Click();
-                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
-                }
-                else
-                    SelectWindowsPickerItem(picker1, "Tie");
-
-                ClickTab(FindUIElement("Game2Tab"));
-                // Sync on Game 2 panel visibility — TapGestureRecognizer fires async command.
-                FindUIElement("FirstCheck2");
-
-                AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
-                if (App is not WindowsDriver)
-                {
-                    picker2.Click();
-                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
-                }
-                else
-                    SelectWindowsPickerItem(picker2, "Win");
-
-                FindUIElement("Game3Tab").ShouldNotBeNull();
+                picker1.Click();
+                App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
             }
-            finally
+            else
+                SelectWindowsPickerItem(picker1, "Tie");
+
+            ClickTab(FindUIElement("Game2Tab"));
+            // Sync on Game 2 panel visibility — TapGestureRecognizer fires async command.
+            FindUIElement("FirstCheck2");
+
+            AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
+            if (App is not WindowsDriver)
             {
-                try
-                {
-                    if (App is WindowsDriver)
-                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker")).SendKeys(OpenQA.Selenium.Keys.Escape);
-                }
-                catch (OpenQA.Selenium.NoSuchElementException) { }
-                try
-                {
-                    if (App is WindowsDriver)
-                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker2")).SendKeys(OpenQA.Selenium.Keys.Escape);
-                }
-                catch (OpenQA.Selenium.NoSuchElementException) { }
-                try { FindUIElement("Game1Tab").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
-                try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+                picker2.Click();
+                App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
             }
+            else
+                SelectWindowsPickerItem(picker2, "Win");
+
+            FindUIElement("Game3Tab").ShouldNotBeNull();
         }
 
         [Test]
         public void MainPage_Game3Tab_ShowsGamePanel()
         {
-            try
+            FindUIElement("BOSwitch").Click();
+            FindUIElement("BO3GamesLayout");
+
+            AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
+            if (App is not WindowsDriver)
             {
-                FindUIElement("BOSwitch").Click();
-                FindUIElement("BO3GamesLayout");
-
-                AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
-                if (App is not WindowsDriver)
-                {
-                    picker1.Click();
-                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
-                }
-                else
-                    SelectWindowsPickerItem(picker1, "Win");
-
-                ClickTab(FindUIElement("Game2Tab"));
-                // Sync on Game 2 panel visibility — TapGestureRecognizer fires async command.
-                FindUIElement("FirstCheck2");
-
-                AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
-                if (App is not WindowsDriver)
-                {
-                    picker2.Click();
-                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Loss\")")).Click();
-                }
-                else
-                    SelectWindowsPickerItem(picker2, "Loss");
-
-                ClickTab(FindUIElement("Game3Tab"));
-                FindUIElement("Match3Tags").ShouldNotBeNull();
-                FindUIElement("UserNoteInput3").ShouldNotBeNull();
-                FindUIElement("WentFirstLabel3").ShouldNotBeNull();
-                FindUIElement("PossibleResultsPicker3").ShouldNotBeNull();
+                picker1.Click();
+                App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
             }
-            finally
+            else
+                SelectWindowsPickerItem(picker1, "Win");
+
+            ClickTab(FindUIElement("Game2Tab"));
+            // Sync on Game 2 panel visibility — TapGestureRecognizer fires async command.
+            FindUIElement("FirstCheck2");
+
+            AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
+            if (App is not WindowsDriver)
             {
-                try
-                {
-                    if (App is WindowsDriver)
-                    {
-                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker")).SendKeys(OpenQA.Selenium.Keys.Escape);
-                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker2")).SendKeys(OpenQA.Selenium.Keys.Escape);
-                    }
-                }
-                catch (OpenQA.Selenium.NoSuchElementException) { }
-                try { FindUIElement("Game1Tab").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
-                try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+                picker2.Click();
+                App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Loss\")")).Click();
             }
+            else
+                SelectWindowsPickerItem(picker2, "Loss");
+
+            ClickTab(FindUIElement("Game3Tab"));
+            FindUIElement("Match3Tags").ShouldNotBeNull();
+            FindUIElement("UserNoteInput3").ShouldNotBeNull();
+            FindUIElement("WentFirstLabel3").ShouldNotBeNull();
+            FindUIElement("PossibleResultsPicker3").ShouldNotBeNull();
         }
 
         [Test]
         public void MainPage_SaveMatch_WithResult_Saves()
         {
-            try
+            AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
+            if (App is not WindowsDriver)
             {
-                AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
-                if (App is not WindowsDriver)
-                {
-                    resultPicker.Click();
-                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
-                }
-                else
-                    SelectWindowsPickerItem(resultPicker, "Win");
+                resultPicker.Click();
+                App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
             }
-            catch (OpenQA.Selenium.NoSuchElementException)
-            {
-                try
-                {
-                    if (App is WindowsDriver)
-                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker")).SendKeys(OpenQA.Selenium.Keys.Escape);
-                }
-                catch (OpenQA.Selenium.NoSuchElementException) { }
-                throw;
-            }
+            else
+                SelectWindowsPickerItem(resultPicker, "Win");
 
             FindUIElement("SaveMatchButton").Click();
             FindUIElement("SaveMatchButton").ShouldNotBeNull();
