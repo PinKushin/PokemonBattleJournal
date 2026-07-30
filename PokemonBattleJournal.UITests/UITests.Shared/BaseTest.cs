@@ -7,10 +7,36 @@ namespace UITests
         private static readonly string NavLogPath = Path.Combine(
             Path.GetTempPath(), "UITests.NavLog.txt");
 
+        private static readonly string PerfLogPath = Path.Combine(
+            Path.GetTempPath(), "UITests.PerfLog.txt");
+
+        private System.Diagnostics.Stopwatch _testTimer = new();
+
         private static void NavLog(string message)
         {
             try { File.AppendAllText(NavLogPath, $"[{DateTime.Now:HH:mm:ss.fff}] {message}{Environment.NewLine}"); }
             catch { }
+        }
+
+        private static void PerfLog(string message)
+        {
+            try { File.AppendAllText(PerfLogPath, $"[{DateTime.Now:HH:mm:ss.fff}] {message}{Environment.NewLine}"); }
+            catch { }
+        }
+
+        [SetUp]
+        public void BaseSetUp()
+        {
+            _testTimer = System.Diagnostics.Stopwatch.StartNew();
+            PerfLog($"START {TestContext.CurrentContext.Test.FullName}");
+        }
+
+        [TearDown]
+        public void BaseTearDown()
+        {
+            _testTimer.Stop();
+            string result = TestContext.CurrentContext.Result.Outcome.Status.ToString();
+            PerfLog($"END   {TestContext.CurrentContext.Test.FullName} [{result}] {_testTimer.ElapsedMilliseconds}ms");
         }
 
         protected AppiumDriver App => AppiumSetup.App;
@@ -23,10 +49,8 @@ namespace UITests
             string resourceId = $"com.PinKushin.PokemonBattleJournal:id/{id}";
             // Three-stage lookup:
             // 1. Direct 3s — instant for already-visible elements.
-            // 2. Direct 10s — for elements in non-scrollable containers that appear after a binding update
-            //    (e.g. tabs inside HorizontalStackLayout with IsVisible bound to a toggle).
-            //    UiScrollable cannot reach these because their parent is not scrollable.
-            // 3. UiScrollable 10s — for elements that are off-screen and need scrolling to reach.
+            // 2. Direct 10s — for elements in non-scrollable containers that appear after a binding update.
+            // 3. UiScrollable 10s — for elements off-screen that need scrolling.
             try
             {
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
@@ -44,8 +68,6 @@ namespace UITests
                 catch (OpenQA.Selenium.NoSuchElementException)
                 {
                     App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-                    // Scope scrollable to app package — prevents UiScrollable grabbing the
-                    // notification shade or system scroll views above the app content.
                     return App.FindElement(MobileBy.AndroidUIAutomator(
                         $"new UiScrollable(new UiSelector().scrollable(true).packageName(\"com.PinKushin.PokemonBattleJournal\").instance(0))" +
                         $".scrollIntoView(new UiSelector().resourceId(\"{resourceId}\"))"));
@@ -57,9 +79,6 @@ namespace UITests
             }
         }
 
-        // MAUI Border and Editor receive content-desc from SemanticProperties.Description
-        // on Android (not from AutomationId). Screen readers use content-desc, so use it
-        // for automation too. Windows still uses AutomationId via AccessibilityId.
         protected AppiumElement FindByDescription(string windowsId, string androidDescription) =>
             App is WindowsDriver
                 ? App.FindElement(MobileBy.AccessibilityId(windowsId))
@@ -77,41 +96,35 @@ namespace UITests
             }
 
             NavLog($"NAV   [{caller}] '{_currentPage ?? "null"}' -> '{pageTitle}'");
+            var navTimer = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 if (App is WindowsDriver)
                 {
-                    var menu = App.FindElement(MobileBy.AccessibilityId("OK"));
-                    menu.Click();
-                    var item = App.FindElement(MobileBy.AccessibilityId(pageTitle));
-                    item.Click();
+                    App.FindElement(MobileBy.AccessibilityId("OK")).Click();
+                    App.FindElement(MobileBy.AccessibilityId(pageTitle)).Click();
                 }
                 else
                 {
-                    var menu = App.FindElement(MobileBy.AccessibilityId("Open navigation drawer"));
-                    menu.Click();
-                    var item = App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")"));
-                    item.Click();
+                    App.FindElement(MobileBy.AccessibilityId("Open navigation drawer")).Click();
+                    App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")")).Click();
                 }
+                navTimer.Stop();
                 _currentPage = pageTitle;
-                NavLog($"OK    [{caller}] now on '{pageTitle}'");
+                NavLog($"OK    [{caller}] now on '{pageTitle}' ({navTimer.ElapsedMilliseconds}ms)");
+                PerfLog($"NAV   '{pageTitle}' {navTimer.ElapsedMilliseconds}ms");
             }
             catch (Exception ex)
             {
-                NavLog($"FAIL  [{caller}] navigating to '{pageTitle}': {ex.GetType().Name}: {ex.Message.Split('\n')[0]}");
+                navTimer.Stop();
+                NavLog($"FAIL  [{caller}] navigating to '{pageTitle}': {ex.GetType().Name}: {ex.Message.Split('\n')[0]} ({navTimer.ElapsedMilliseconds}ms)");
                 _currentPage = null;
                 throw;
             }
         }
 
-        // Call this when a test intentionally navigates away from the tracked page
-        // so the next NavigateTo knows it must re-navigate.
         protected void InvalidateCurrentPage() => _currentPage = null;
 
-        // Selects an item in a Windows MAUI Picker/ComboBox by keyboard navigation.
-        // Clicks the element to open the dropdown, then uses the first letter to jump
-        // to the matching item and Tab to confirm. Split into separate SendKeys calls
-        // to avoid the combined-string stall seen on Windows.
         protected static void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName)
         {
             pickerElement.Click();
@@ -119,9 +132,6 @@ namespace UITests
             pickerElement.SendKeys(OpenQA.Selenium.Keys.Tab);
         }
 
-        // Clicks a MAUI Border tab that uses TapGestureRecognizer.
-        // WinAppDriver only supports pen/touch pointer in Actions (not mouse), so we use
-        // a touch tap sequence. On Android, plain .Click() works fine via UIAutomator2.
         protected void ClickTab(AppiumElement tabElement)
         {
             if (App is not WindowsDriver)
@@ -130,7 +140,6 @@ namespace UITests
                 return;
             }
 
-            // WinAppDriver: use touch pointer action (mouse Actions throw UnsupportedOperationException)
             var touch = new OpenQA.Selenium.Appium.Interactions.PointerInputDevice(
                 OpenQA.Selenium.Interactions.PointerKind.Touch, "touch");
             var seq = new OpenQA.Selenium.Interactions.ActionSequence(touch, 0);
