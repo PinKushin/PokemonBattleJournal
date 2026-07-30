@@ -27,6 +27,8 @@ namespace UITests
         public AppiumSetup()
         {
             File.WriteAllText(SetupLogPath, $"=== AppiumSetup start {DateTime.Now:O} ==={Environment.NewLine}");
+            File.WriteAllText(Path.Combine(Path.GetTempPath(), "UITests.NavLog.txt"),
+                $"=== Nav log start {DateTime.Now:O} ==={Environment.NewLine}");
 
             Log("1. EnsureAndroidToolsInPath");
             EnsureAndroidToolsInPath();

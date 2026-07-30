@@ -25,6 +25,8 @@ namespace UITests
         {
             // Signal the app to suppress the first-boot prompt (avoids XamlRoot crash)
             File.WriteAllText(UiTestSentinelPath, "1");
+            File.WriteAllText(Path.Combine(Path.GetTempPath(), "UITests.NavLog.txt"),
+                $"=== Nav log start {DateTime.Now:O} ==={Environment.NewLine}");
 
             // Port 4724 so Windows and Android Appium servers don't conflict when the full suite runs in parallel
             AppiumServerHelper.StartAppiumLocalServer(port: 4724);

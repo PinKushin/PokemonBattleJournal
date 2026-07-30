@@ -13,9 +13,16 @@ namespace UITests
     [Collection("UITests")]
     public abstract class BaseTest
     {
-        // Tracks which Shell page the app is currently on so NavigateTo can skip
-        // redundant flyout navigation within and across test classes.
         private static string? _currentPage;
+
+        private static readonly string NavLogPath = Path.Combine(
+            Path.GetTempPath(), "UITests.NavLog.txt");
+
+        private static void NavLog(string message)
+        {
+            try { File.AppendAllText(NavLogPath, $"[{DateTime.Now:HH:mm:ss.fff}] {message}{Environment.NewLine}"); }
+            catch { }
+        }
 
         protected AppiumDriver App => AppiumSetup.App;
 
@@ -41,9 +48,14 @@ namespace UITests
 
         protected void NavigateTo(string pageTitle)
         {
+            string caller = new System.Diagnostics.StackTrace().GetFrame(1)?.GetMethod()?.Name ?? "?";
             if (_currentPage == pageTitle)
-                return; // already on this page — skip flyout open/close round-trip
+            {
+                NavLog($"SKIP  [{caller}] already on '{pageTitle}'");
+                return;
+            }
 
+            NavLog($"NAV   [{caller}] '{_currentPage ?? "null"}' -> '{pageTitle}'");
             try
             {
                 if (App is WindowsDriver)
@@ -61,10 +73,12 @@ namespace UITests
                     item.Click();
                 }
                 _currentPage = pageTitle;
+                NavLog($"OK    [{caller}] now on '{pageTitle}'");
             }
-            catch
+            catch (Exception ex)
             {
-                _currentPage = null; // navigation failed — force re-attempt on next call
+                NavLog($"FAIL  [{caller}] navigating to '{pageTitle}': {ex.GetType().Name}: {ex.Message.Split('\n')[0]}");
+                _currentPage = null;
                 throw;
             }
         }
