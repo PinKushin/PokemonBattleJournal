@@ -207,9 +207,7 @@ namespace UITests
                 {
                     picker1.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
-                    // Picker dismissal leaves resourceId accessibility tree in a transient state.
-                    // Game2Tab is in the viewport — AccessibilityId (content-desc) resolves reliably.
-                    ClickTab(App.FindElement(MobileBy.AccessibilityId("Game2Tab")));
+                    ClickTab(FindUIElement("Game2Tab"));
                 }
                 else
                 {
@@ -250,7 +248,7 @@ namespace UITests
                 {
                     picker1.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
-                    ClickTab(App.FindElement(MobileBy.AccessibilityId("Game2Tab")));
+                    ClickTab(FindUIElement("Game2Tab"));
                 }
                 else
                 {
@@ -265,7 +263,7 @@ namespace UITests
                 {
                     picker2.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Loss\")")).Click();
-                    ClickTab(App.FindElement(MobileBy.AccessibilityId("Game3Tab")));
+                    ClickTab(FindUIElement("Game3Tab"));
                 }
                 else
                 {
