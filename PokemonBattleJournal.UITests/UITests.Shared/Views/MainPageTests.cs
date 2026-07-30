@@ -157,6 +157,8 @@ namespace UITests
                     SelectWindowsPickerItem(picker1, "Tie");
 
                 FindUIElement("Game2Tab").Click();
+                // Sync on Game 2 panel visibility — TapGestureRecognizer fires async command.
+                FindUIElement("FirstCheck2");
 
                 AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
                 if (App is not WindowsDriver)
@@ -207,6 +209,8 @@ namespace UITests
                     SelectWindowsPickerItem(picker1, "Win");
 
                 FindUIElement("Game2Tab").Click();
+                // Sync on Game 2 panel visibility — TapGestureRecognizer fires async command.
+                FindUIElement("FirstCheck2");
 
                 AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
                 if (App is not WindowsDriver)
