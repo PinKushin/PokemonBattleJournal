@@ -6,15 +6,14 @@ on:
   pull_request:
     branches: [master, main]
 
-env:
-  DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
-  DOTNET_ROOT: ${{ runner.temp }}/.dotnet
-
 jobs:
   # ── Unit tests ────────────────────────────────────────────────────────────
   unit-tests:
     name: Unit Tests
     runs-on: [self-hosted, Windows, X64]
+    env:
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
+      DOTNET_ROOT: ${{ runner.temp }}/.dotnet
     steps:
       - uses: actions/checkout@v7
 
@@ -38,6 +37,9 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: [self-hosted, Windows, X64]
+    env:
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
+      DOTNET_ROOT: ${{ runner.temp }}/.dotnet
     steps:
       - uses: actions/checkout@v7
 

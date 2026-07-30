@@ -6,15 +6,14 @@ on:
   pull_request:
     branches: [master, main]
 
-env:
-  DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
-  DOTNET_ROOT: ${{ runner.temp }}/.dotnet
-
 jobs:
   # ── Windows UI Tests ──────────────────────────────────────────────────────
   ui-tests-windows:
     name: Windows UI Tests
     runs-on: [self-hosted, Windows, X64]
+    env:
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
+      DOTNET_ROOT: ${{ runner.temp }}/.dotnet
     steps:
       - uses: actions/checkout@v7
 
@@ -68,6 +67,9 @@ jobs:
   ui-tests-android:
     name: Android UI Tests
     runs-on: [self-hosted, Linux, X64]
+    env:
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
+      DOTNET_ROOT: ${{ runner.temp }}/.dotnet
     steps:
       - uses: actions/checkout@v7
 
