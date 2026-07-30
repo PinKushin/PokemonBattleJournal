@@ -31,9 +31,27 @@ namespace UITests
             if (App is WindowsDriver)
                 return App.FindElement(MobileBy.AccessibilityId(id));
 
-            return App.FindElement(MobileBy.AndroidUIAutomator(
-                $"new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                $".scrollIntoView(new UiSelector().resourceId(\"com.PinKushin.PokemonBattleJournal:id/{id}\"))"));
+            string resourceId = $"com.PinKushin.PokemonBattleJournal:id/{id}";
+            // Direct lookup is instant when element is already visible.
+            // UiScrollable.scrollIntoView scans the whole view even for visible elements — very slow.
+            // Fall back to scrollable only when direct lookup times out (element is off-screen).
+            try
+            {
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
+                return App.FindElement(MobileBy.AndroidUIAutomator(
+                    $"new UiSelector().resourceId(\"{resourceId}\")"));
+            }
+            catch (OpenQA.Selenium.NoSuchElementException)
+            {
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
+                return App.FindElement(MobileBy.AndroidUIAutomator(
+                    $"new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                    $".scrollIntoView(new UiSelector().resourceId(\"{resourceId}\"))"));
+            }
+            finally
+            {
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
+            }
         }
 
         // MAUI Border and Editor receive content-desc from SemanticProperties.Description

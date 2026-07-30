@@ -61,7 +61,8 @@ namespace UITests
 
             // Input cleared means save path ran (not early-returned due to missing icon or null trainer).
             AppiumElement clearedInput = FindUIElement("ArchetypeNameInput");
-            clearedInput.Text.ShouldBeNullOrEmpty();
+            // On Android, empty Entry returns placeholder text not null/empty — check the typed name is gone.
+            clearedInput.Text.ShouldNotContain(deckName);
 
             // Verify the new archetype row is visible in the list (regression for ScrollView+CollectionView collapse bug).
             FindUIElement($"DeleteArchetype_{deckName}").ShouldNotBeNull();
