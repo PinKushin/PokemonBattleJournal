@@ -33,3 +33,5 @@
 - [Android local test workflow](feedback_android_local_testing.md) — Always use ANDROID_USE_INSTALLED=1 locally; never trigger AppiumSetup's 7min EmbedAssembliesIntoApk build; deploy once from VS then rerun tests freely.
 - [docs/ folder location](project_docs_location.md) — docs/ moved into PokemonBattleJournal/docs/ so VS Solution Explorer shows it; all path refs use PokemonBattleJournal/docs/ prefix.
 - [NUnit UI test navigation pattern](feedback_navigate_to_every_test.md) — NavigateTo in [OneTimeSetUp] per class, not per test; MainPage needs [TearDown] for singleton VM state reset.
+- [NUnit migration status](project_nunit_migration.md) — Complete on feature/nunit-migration; patterns, test counts, next task (AppiumSetup logging).
+- [UI test cleanup pattern](feedback_uitest_cleanup_pattern.md) — Targeted helpers in try/finally only for mutating tests; never blanket [TearDown]; 0ms ImplicitWait in helpers.
