@@ -110,12 +110,12 @@
                 Text="Save Archetype"
                 WidthRequest="220" />
 
-            <CollectionView
+            <VerticalStackLayout
                 AutomationId="ArchetypeList"
                 SemanticProperties.Description="Saved archetypes"
-                ItemsSource="{Binding AllArchetypes}"
-                SelectionMode="None">
-                <CollectionView.ItemTemplate>
+                BindableLayout.ItemsSource="{Binding AllArchetypes}"
+                Spacing="0">
+                <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="models:Archetype">
                         <Grid
                             AutomationId="{Binding Name, StringFormat='ArchetypeItem_{0}'}"
@@ -148,8 +148,8 @@
                                 TextColor="{StaticResource White}" />
                         </Grid>
                     </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
 
             <!--  Tags section  -->
             <Label AutomationId="TagSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Custom Tag" />
@@ -180,12 +180,12 @@
                 Text="Save New Tag"
                 WidthRequest="220" />
 
-            <CollectionView
+            <VerticalStackLayout
                 AutomationId="TagList"
                 SemanticProperties.Description="Saved tags"
-                ItemsSource="{Binding AllTags}"
-                SelectionMode="None">
-                <CollectionView.ItemTemplate>
+                BindableLayout.ItemsSource="{Binding AllTags}"
+                Spacing="0">
+                <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="models:Tags">
                         <Grid
                             AutomationId="{Binding Name, StringFormat='TagItem_{0}'}"
@@ -212,8 +212,8 @@
                                 TextColor="{StaticResource White}" />
                         </Grid>
                     </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
 
             <!--  Save all / danger zone  -->
             <BoxView
