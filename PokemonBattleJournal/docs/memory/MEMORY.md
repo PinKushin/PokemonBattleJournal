@@ -28,3 +28,8 @@
 - [SonarAnalyzer + Roslynator warnings fixed](project_sonar_warnings_fixed.md) — All S112/S3267/S8969/S6562/S6444/S6608/S3168/S2068/S1450 resolved in commit dc45c19; suppression patterns documented.
 - [UI test nav cascade + Windows picker stall](project_uitest_nav_cascade_fix.md) — NavigateTo resets _currentPage=null on failure; picker SendKeys("L") + SendKeys(Enter) split to fix Windows Game3Tab stall.
 - [Self-hosted CI runners](project_self_hosted_runners.md) — PinPC (Windows) + UbuntuBox (Linux); use auto labels [self-hosted,Windows,X64]/[Linux,X64]; DOTNET_INSTALL_DIR must be set at job level not workflow level.
+- [Commit description requirement](feedback_commit_descriptions.md) — Every commit needs a body: what was learned (root cause, platform quirk) and what it tests/validates.
+- [Android pm clear vs Fast Deployment](project_android_pm_clear.md) — pm clear wipes .__override__/ and crashes VS-deployed apps; use force-stop + DB delete instead; pm clear only safe for EmbedAssembliesIntoApk builds.
+- [Android local test workflow](feedback_android_local_testing.md) — Always use ANDROID_USE_INSTALLED=1 locally; never trigger AppiumSetup's 7min EmbedAssembliesIntoApk build; deploy once from VS then rerun tests freely.
+- [docs/ folder location](project_docs_location.md) — docs/ moved into PokemonBattleJournal/docs/ so VS Solution Explorer shows it; all path refs use PokemonBattleJournal/docs/ prefix.
+- [NUnit UI test navigation pattern](feedback_navigate_to_every_test.md) — NavigateTo in [OneTimeSetUp] per class, not per test; MainPage needs [TearDown] for singleton VM state reset.
