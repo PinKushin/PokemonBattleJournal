@@ -8,21 +8,24 @@ namespace UITests
             AppiumElement boSwitch = FindUIElement("BOSwitch");
             AppiumElement statusLabel = FindUIElement("BO3StatusLabel");
 
-            // Ensure starting state is BO1
             if (statusLabel.Text == "Best of 3")
                 boSwitch.Click();
 
-            boSwitch.Click();
-            string toggledOn = FindUIElement("BO3StatusLabel").Text;
+            try
+            {
+                boSwitch.Click();
+                string toggledOn = FindUIElement("BO3StatusLabel").Text;
 
-            boSwitch.Click();
-            string toggledOff = FindUIElement("BO3StatusLabel").Text;
+                boSwitch.Click();
+                string toggledOff = FindUIElement("BO3StatusLabel").Text;
 
-            boSwitch.ShouldNotBeNull();
-            boSwitch.Displayed.ShouldBeTrue();
-            boSwitch.Enabled.ShouldBeTrue();
-            toggledOn.ShouldBe("Best of 3");
-            toggledOff.ShouldBe("Best of 1");
+                boSwitch.ShouldNotBeNull();
+                boSwitch.Displayed.ShouldBeTrue();
+                boSwitch.Enabled.ShouldBeTrue();
+                toggledOn.ShouldBe("Best of 3");
+                toggledOff.ShouldBe("Best of 1");
+            }
+            finally { ResetBOSwitch(); }
         }
     }
 }
