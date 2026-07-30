@@ -1,4 +1,4 @@
-name: UI Tests
+name: Android UI Tests
 
 on:
   push:
@@ -7,60 +7,6 @@ on:
     branches: [master, main]
 
 jobs:
-  # ── Windows UI Tests ──────────────────────────────────────────────────────
-  ui-tests-windows:
-    name: Windows UI Tests
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '10.x'
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v6
-        with:
-          path: ~/.nuget/packages
-          key: nuget-windows-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
-          restore-keys: nuget-windows-
-
-      - name: Install MAUI Windows workload
-        run: dotnet workload install maui-windows
-
-      - name: Enable Developer Mode (required for unpackaged MAUI)
-        run: reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v AllowDevelopmentWithoutDevLicense /d 1
-
-      - name: Cache npm / Appium
-        uses: actions/cache@v6
-        with:
-          path: ~\AppData\Roaming\npm
-          key: appium-windows-${{ hashFiles('.github/workflows/ui-tests.yml') }}
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '20'
-
-      - name: Install Appium and Windows driver
-        run: |
-          npm install -g appium
-          appium driver install windows || appium driver update windows
-
-      - name: Restore
-        run: dotnet restore PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
-
-      # AppiumSetup.BuildWindowsApp() builds the MAUI exe before connecting to Appium
-      - name: Run Windows UI Tests
-        run: dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj --no-restore --logger "trx;LogFileName=windows-ui-tests.trx"
-
-      - name: Upload results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: windows-ui-test-results
-          path: '**/*.trx'
-
-  # ── Android UI Tests ──────────────────────────────────────────────────────
   ui-tests-android:
     name: Android UI Tests
     runs-on: ubuntu-latest
@@ -90,7 +36,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.npm
-          key: appium-android-${{ hashFiles('.github/workflows/ui-tests.yml') }}
+          key: appium-android-${{ hashFiles('.github/workflows/ui-tests-android.yml') }}
 
       - uses: actions/setup-node@v7
         with:

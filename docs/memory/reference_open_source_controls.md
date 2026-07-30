@@ -20,6 +20,12 @@ metadata:
 - Updated version of Acr.UserDialogs for .NET MAUI
 - Useful for native-style dialogs and action sheets
 
+## UraniumUI adoption decision
+
+**UraniumUI is NOT adopted as a dependency.** Native MAUI controls are styled directly (custom colors, fonts, dark theme). UraniumUI is kept as a **read-only reference** — study its source to understand how to implement things like keyboard nav or Android clickability, then replicate the pattern natively. Never add UraniumUI as a package dependency.
+
+**Why:** Windows UI and dark theme are styled and working with native MAUI controls. Switching to UraniumUI was explored and reverted — the native approach gives full control with no library coupling.
+
 ## How to apply
 
 When building any MAUI control that needs to be tappable on Android:
