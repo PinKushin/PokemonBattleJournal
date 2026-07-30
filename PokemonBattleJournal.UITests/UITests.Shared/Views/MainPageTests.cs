@@ -207,11 +207,15 @@ namespace UITests
                 {
                     picker1.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
+                    // Picker dismissal leaves resourceId accessibility tree in a transient state.
+                    // Game2Tab is in the viewport — AccessibilityId (content-desc) resolves reliably.
+                    ClickTab(App.FindElement(MobileBy.AccessibilityId("Game2Tab")));
                 }
                 else
+                {
                     SelectWindowsPickerItem(picker1, "Tie");
-
-                ClickTab(FindUIElement("Game2Tab"));
+                    ClickTab(FindUIElement("Game2Tab"));
+                }
                 FindUIElement("FirstCheck2");
 
                 AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
@@ -246,11 +250,14 @@ namespace UITests
                 {
                     picker1.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                    ClickTab(App.FindElement(MobileBy.AccessibilityId("Game2Tab")));
                 }
                 else
+                {
                     SelectWindowsPickerItem(picker1, "Win");
+                    ClickTab(FindUIElement("Game2Tab"));
+                }
 
-                ClickTab(FindUIElement("Game2Tab"));
                 FindUIElement("FirstCheck2");
 
                 AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
@@ -258,11 +265,13 @@ namespace UITests
                 {
                     picker2.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Loss\")")).Click();
+                    ClickTab(App.FindElement(MobileBy.AccessibilityId("Game3Tab")));
                 }
                 else
+                {
                     SelectWindowsPickerItem(picker2, "Loss");
-
-                ClickTab(FindUIElement("Game3Tab"));
+                    ClickTab(FindUIElement("Game3Tab"));
+                }
                 FindUIElement("Match3Tags").ShouldNotBeNull();
                 FindUIElement("UserNoteInput3").ShouldNotBeNull();
                 FindUIElement("WentFirstLabel3").ShouldNotBeNull();
