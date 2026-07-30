@@ -4,18 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Living context doc
 
-**Read `docs/AI-CONTEXT.md` at the start of every session.** It is the canonical context file — architecture, domain model, session log, known bugs, and user decisions. Update its Session log before starting any long multi-file task, and again when finishing significant work.
+**Read `PokemonBattleJournal/docs/AI-CONTEXT.md` at the start of every session.** It is the canonical context file — architecture, domain model, session log, known bugs, and user decisions. Update its Session log before starting any long multi-file task, and again when finishing significant work.
 
 ## Long-term AI memory
 
-**Read all files in `docs/memory/` at the start of every session.** These are the persistent memory files for Claude Code — user preferences, feedback on past approaches, and project decisions that must carry across conversations. Apply them throughout the session exactly as you would local memory.
+**Read all files in `PokemonBattleJournal/docs/memory/` at the start of every session.** These are the persistent memory files for Claude Code — user preferences, feedback on past approaches, and project decisions that must carry across conversations. Apply them throughout the session exactly as you would local memory.
 
-- `docs/memory/MEMORY.md` — index of all memory entries
-- `docs/memory/feedback_*.md` — how the user wants work approached
-- `docs/memory/project_*.md` — project decisions and context
-- `docs/memory/user_*.md` — user background and preferences
+- `PokemonBattleJournal/docs/memory/MEMORY.md` — index of all memory entries
+- `PokemonBattleJournal/docs/memory/feedback_*.md` — how the user wants work approached
+- `PokemonBattleJournal/docs/memory/project_*.md` — project decisions and context
+- `PokemonBattleJournal/docs/memory/user_*.md` — user background and preferences
 
-**After making a memory-worthy observation** (the user corrects an approach, confirms a decision, states a preference), write both to the local memory system AND copy the updated files to `docs/memory/` and commit them so the repo stays in sync.
+**After making a memory-worthy observation** (the user corrects an approach, confirms a decision, states a preference), write both to the local memory system AND copy the updated files to `PokemonBattleJournal/docs/memory/` and commit them so the repo stays in sync.
 
 ## Commands
 
