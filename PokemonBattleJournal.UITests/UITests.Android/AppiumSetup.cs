@@ -77,11 +77,24 @@ namespace UITests
             androidOptions.AddAdditionalAppiumOption("appWaitActivity", $"{AppPackage}.MainActivity");
             androidOptions.AddAdditionalAppiumOption("appWaitDuration", 60_000);
 
-            // pm clear wipes all app data so seed always starts from a known state.
-            // Safe with EmbedAssembliesIntoApk=true — assemblies are in the APK, not .__override__/.
-            Log("4d. pm clear app data");
-            RunAdb($"shell pm clear {AppPackage}", timeoutMs: 10_000);
-            Log("4d. pm clear done");
+            if (useInstalled)
+            {
+                // VS Fast Deployment stores assemblies in .__override__/ inside app data.
+                // pm clear would wipe them and crash the app on next launch.
+                // Instead: force-stop then delete only the SQLite DB for a clean seed state.
+                Log("4d. force-stop + wipe DB (VS fast-deploy safe)");
+                RunAdb($"shell am force-stop {AppPackage}", timeoutMs: 5_000);
+                RunAdb($"shell rm -f /data/data/{AppPackage}/files/*.db3", timeoutMs: 5_000);
+                Log("4d. wipe DB done");
+            }
+            else
+            {
+                // EmbedAssembliesIntoApk=true build — assemblies are in the APK, not .__override__/.
+                // pm clear is safe and gives the cleanest possible reset.
+                Log("4d. pm clear app data");
+                RunAdb($"shell pm clear {AppPackage}", timeoutMs: 10_000);
+                Log("4d. pm clear done");
+            }
 
             Log("5. new AndroidDriver");
             driver = new AndroidDriver(

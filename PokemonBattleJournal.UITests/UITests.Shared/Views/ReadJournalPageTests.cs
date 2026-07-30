@@ -2,12 +2,7 @@ namespace UITests
 {
     public partial class ReadJournalPageTests : BaseTest
     {
-        // Use direct MobileBy.Id for ReadJournal elements — UiScrollable.scrollIntoView causes
-        // 15-30s delays because it exhausts the scroll range before finding visible elements.
-        private AppiumElement FindReadJournalElement(string id) =>
-            App is WindowsDriver
-                ? App.FindElement(MobileBy.AccessibilityId(id))
-                : App.FindElement(MobileBy.Id($"com.PinKushin.PokemonBattleJournal:id/{id}"));
+        private AppiumElement FindReadJournalElement(string id) => FindUIElement(id);
 
         [Fact]
         public void ReadJournalPage_Loads_PageVisible()
