@@ -38,10 +38,9 @@
         }
 
         [Test]
-        public async Task TrainerPage_Charts_Rendered()
+        public void TrainerPage_Charts_Rendered()
         {
-            await Task.Delay(1000); // allow LiveCharts to finish initial render
-
+            // FindUIElement implicit wait polls until each chart element appears after LiveCharts renders.
             FindUIElement("MatchupMatrixChart").ShouldNotBeNull();
             FindUIElement("WinRateOverTimeChart").ShouldNotBeNull();
             FindUIElement("MostPlayedChart").ShouldNotBeNull();
@@ -49,10 +48,8 @@
         }
 
         [Test]
-        public async Task TrainerPage_AllCharts_Rendered()
+        public void TrainerPage_AllCharts_Rendered()
         {
-            await Task.Delay(1000);
-
             FindUIElement("OpponentPerformanceChart").ShouldNotBeNull();
             FindUIElement("TagUsageChart").ShouldNotBeNull();
             FindUIElement("MatchLengthChart").ShouldNotBeNull();

@@ -43,9 +43,8 @@
         }
 
         [Test]
-        public async Task ReadJournalPage_SelectMatch_ShowsDetail()
+        public void ReadJournalPage_SelectMatch_ShowsDetail()
         {
-
             // Find and click the first match row by its bound AutomationId.
             // Do NOT catch NoSuchElementException — empty list is a real failure (seed broken).
             AppiumElement firstRow = App is WindowsDriver
@@ -56,8 +55,8 @@
                     "new UiSelector().resourceIdMatches(\"com.PinKushin.PokemonBattleJournal:id/MatchRow_.*\")"));
 
             firstRow.Click();
-            await Task.Delay(500);
 
+            // Poll for detail panel — implicit wait blocks until PlayingNameLabel appears.
             FindReadJournalElement("PlayingNameLabel").ShouldNotBeNull();
         }
     }
