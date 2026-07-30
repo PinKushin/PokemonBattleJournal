@@ -6,6 +6,7 @@ namespace UITests
         [Fact]
         public async Task MainPage_BOSwitch_DisplayedAndToggled()
         {
+            NavigateTo("Journal Entry");
             // Arrange
             AppiumElement BOSwitch = FindUIElement("BOSwitch");
             AppiumElement statusLabel = FindUIElement("BO3StatusLabel");

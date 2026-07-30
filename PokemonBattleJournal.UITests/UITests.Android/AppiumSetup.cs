@@ -100,9 +100,7 @@ namespace UITests
             RunAdb($"shell am force-stop {AppPackage}", timeoutMs: 5_000);
             driver?.Quit();
             AppiumServerHelper.DisposeAppiumLocalServer();
-            // Only kill the emulator in CI — locally the AVD stays alive for the next run
-            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI")))
-                ShutdownEmulator();
+            ShutdownEmulator();
         }
 
         private static void EnsureEmulatorRunning()
