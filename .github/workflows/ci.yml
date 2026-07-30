@@ -21,14 +21,26 @@ jobs:
       - name: Restore
         run: dotnet restore PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
 
-      - name: Test
-        run: dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --collect "Code Coverage" --no-restore
+      - name: Test with coverage
+        run: dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --no-restore --collect "XPlat Code Coverage" --results-directory TestResults/unit
 
-      - name: Upload coverage
+      - name: Generate coverage report
+        uses: danielpalme/ReportGenerator-GitHub-Action@5
+        with:
+          reports: TestResults/unit/**/coverage.cobertura.xml
+          targetdir: TestResults/unit/report
+          reporttypes: Html;MarkdownSummaryGithub
+
+      - name: Write coverage summary to job
+        run: Get-Content TestResults/unit/report/SummaryGithub.md | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+        shell: pwsh
+
+      - name: Upload coverage report
+        if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: unit-coverage
-          path: PokemonBattleJournal.Tests/TestResults/**/*.coverage
+          name: unit-coverage-report
+          path: TestResults/unit/report
 
   # ── Integration tests ─────────────────────────────────────────────────────
   integration-tests:
@@ -44,5 +56,23 @@ jobs:
       - name: Restore
         run: dotnet restore PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj
 
-      - name: Test
-        run: dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj --no-restore
+      - name: Test with coverage
+        run: dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj --no-restore --collect "XPlat Code Coverage" --results-directory TestResults/integration
+
+      - name: Generate coverage report
+        uses: danielpalme/ReportGenerator-GitHub-Action@5
+        with:
+          reports: TestResults/integration/**/coverage.cobertura.xml
+          targetdir: TestResults/integration/report
+          reporttypes: Html;MarkdownSummaryGithub
+
+      - name: Write coverage summary to job
+        run: Get-Content TestResults/integration/report/SummaryGithub.md | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+        shell: pwsh
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: integration-coverage-report
+          path: TestResults/integration/report
