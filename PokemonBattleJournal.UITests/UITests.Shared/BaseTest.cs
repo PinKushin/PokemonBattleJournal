@@ -117,14 +117,24 @@ namespace UITests
         }
 
         // Clicks a MAUI Border tab that uses TapGestureRecognizer.
-        // Plain .Click() is unreliable on slow CI runners — the mouse event doesn't always
-        // reach the gesture recognizer. Using Actions to move-to then click is more reliable.
+        // WinAppDriver only supports pen/touch pointer in Actions (not mouse), so we use
+        // a touch tap sequence. On Android, plain .Click() works fine via UIAutomator2.
         protected void ClickTab(AppiumElement tabElement)
         {
-            new OpenQA.Selenium.Interactions.Actions(App)
-                .MoveToElement(tabElement)
-                .Click()
-                .Perform();
+            if (App is not WindowsDriver)
+            {
+                tabElement.Click();
+                return;
+            }
+
+            // WinAppDriver: use touch pointer action (mouse Actions throw UnsupportedOperationException)
+            var touch = new OpenQA.Selenium.Appium.Interactions.PointerInputDevice(
+                OpenQA.Selenium.Interactions.PointerKind.Touch, "touch");
+            var seq = new OpenQA.Selenium.Interactions.ActionSequence(touch, 0);
+            seq.AddAction(touch.CreatePointerMove(tabElement, 0, 0, TimeSpan.Zero));
+            seq.AddAction(touch.CreatePointerDown(OpenQA.Selenium.Interactions.MouseButton.Left));
+            seq.AddAction(touch.CreatePointerUp(OpenQA.Selenium.Interactions.MouseButton.Left));
+            App.PerformActions([seq]);
         }
     }
 }

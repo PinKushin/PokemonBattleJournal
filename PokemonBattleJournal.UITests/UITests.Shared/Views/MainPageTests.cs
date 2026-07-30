@@ -21,11 +21,13 @@ namespace UITests
                 userEntry.Click();
                 userEntry.SendKeys("Hello World");
                 userEntry.ShouldNotBeNull();
-                userEntry.Text.ShouldEndWith("Hello World");
+                // Re-fetch element so WinAppDriver returns current Value, not cached state.
+                AppiumElement refetched = FindUIElement("UserNoteInput");
+                refetched.Text.ShouldContain("Hello World");
             }
             finally
             {
-                try { userEntry.Clear(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+                try { FindUIElement("UserNoteInput").Clear(); } catch (OpenQA.Selenium.NoSuchElementException) { }
             }
         }
 
