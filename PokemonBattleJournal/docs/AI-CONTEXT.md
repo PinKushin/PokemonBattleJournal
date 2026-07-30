@@ -1,6 +1,6 @@
 # PokemonBattleJournal — AI Context
 
-> **Last updated:** 2026-07-28 (In-app DEBUG seeding + first-boot prompt crash fixed — see session log)
+> **Last updated:** 2026-07-30 (NUnit migration + UI test perf refactor — see session log)
 > **Solution file:** `PokemonBattleJournal.slnx` (not `.sln`)  
 > **Read this first** when working in this repo. Update the [Session log](#session-log) whenever scope, decisions, or blockers change — especially before long multi-step work.
 
@@ -39,6 +39,10 @@ Chronological notes for the current / recent work. **Append or edit this section
 | 2026-07-29 | **OptionsPageViewModel bugs fixed** | `SaveTagAsync` + `SaveArchetypeAsync` discarded return values (`_ = await SaveAsync()`). Fixed to assign. `NewDeckIcon` now pre-initialized to `"ball_icon.png"` so icon null-guard never fires silently; `finally` resets to `SelectedIcon`. UI test `OptionsPage_SaveArchetype_WithName_ClearsInput` now passes. |
 | 2026-07-29 | **Integration tests added** | `TagOperationsIntegrationTests` (5 tests), `ArchetypeOperationsIntegrationTests` (6 tests), `MatchOperationsIntegrationTests` (6 tests). Pattern: `TestSqliteConnectionFactory` overrides `GetDbPath()` with unique GUID temp file; `IAsyncLifetime` for setup/teardown. `ArchetypeOperations.GetAllAsync` needs `metaService.GetTopDecksAsync` configured to return empty list — substitute returns null by default causing silent empty-list return. Tags model property is `Name` not `TagTxt`. |
 | 2026-07-29 | **OptionsPageViewModel + MainPageViewModel unit tests expanded** | 8 new tests for OptionsPageVM (SwitchTrainerAsync, SaveTrainerAsync, DeleteTrainerFileAsync, AppearingAsync, SaveTagAsync/SaveArchetypeAsync zero returns). 2 new tests for MainPageVM (SaveMatchAsync success paths — BO1 and BO3). `SaveMatchAsync` uses `GetActiveAsync()` not `GetByNameAsync()`; `SetupSuccessfulSave()` helper configures both calculator and trainer mocks. Unit test count: 329 passing. |
+| 2026-07-30 | **NUnit migration — all test projects** | Branch `feature/nunit-migration`. Replaced xUnit with NUnit 4.6.1 + NUnit3TestAdapter 6.2.0 across `PokemonBattleJournal.Tests`, `PokemonBattleJournal.IntegrationTests`, and all `UITests.*` projects. `[Fact]`→`[Test]`, `[Theory]`/`[InlineData]`→`[Test]`/`[TestCase]`. 13 unit test classes: constructors→`[SetUp]`, `private readonly`→`private X = null!;`, `[FixtureLifeCycle]` removed. Integration tests: `IAsyncLifetime` removed, `InitializeAsync/DisposeAsync`→`[SetUp]/[TearDown]`. UI tests: `ICollectionFixture`/`[Collection]`→NUnit `[SetUpFixture]`. `Assert.Equal(e,a)`→`Assert.That(a, Is.EqualTo(e))`. 350 unit + 22 integration passing. |
+| 2026-07-30 | **UI test NUnit patterns — [OneTimeSetUp] + targeted cleanup** | Each shared page test class has `[OneTimeSetUp]` calling `NavigateTo("Page")` — navigates once per fixture not per test. `MainPageTests` has `[OneTimeTearDown]` calling `InvalidateCurrentPage()` (singleton VM). Per-test cleanup is targeted helpers (`ResetBOSwitch`, `ResetGame1Tab`, `CloseWindowsPickers`, `ClearUserNoteInput`, `DeleteCreatedArchetype`, `DeleteCreatedTag`) called in `try/finally` only by mutating tests. Display-only tests have zero cleanup overhead. All helpers: `ImplicitWait = TimeSpan.Zero` + raw `App.FindElement` (not `FindUIElement`) so 0ms is respected. Removed all `Task.Delay` waits — replaced with implicit-wait polling. Windows UI tests confirmed much faster. |
+| 2026-07-30 | **BaseTest perf logging** | `%TEMP%\UITests.PerfLog.txt` — `[SetUp]` starts Stopwatch and logs `START {TestName}`, `[TearDown]` logs `END {TestName} [Status] {ms}ms`. `NavigateTo` logs nav duration to both NavLog and PerfLog. Enables per-test and per-navigation timing diagnostics without instrumentation in each test. |
+| 2026-07-30 | **docs/ moved to PokemonBattleJournal/docs/** | VS Solution Explorer includes `PokemonBattleJournal/docs/` (project item). All CLAUDE.md path references updated. `docs/memory/` (repo-local memory) lives at `PokemonBattleJournal/docs/memory/`. `AI-CONTEXT.md` at `PokemonBattleJournal/docs/AI-CONTEXT.md`. |
 
 ### User decisions
 
@@ -51,6 +55,9 @@ Chronological notes for the current / recent work. **Append or edit this section
 | **TrainerPage stats UI** | Not current priority. |
 | **Test environment isolation** | Sentinel file pattern — not `#if DEBUG`. Manual debug sessions must still see first-boot prompt. |
 | **Seeding** | In-app `#if DEBUG` in `App.xaml.cs` — no external DB manipulation, no TestSeedService. |
+| **Test framework** | NUnit 4 across all test projects (unit + integration + UI). Single framework, no xUnit. |
+| **UI test cleanup** | Targeted helpers in `try/finally` only for mutating tests — no blanket `[TearDown]` driver calls. |
+| **UI test navigation** | `[OneTimeSetUp]` per page class — single `NavigateTo` per fixture, not per test. |
 
 ### Active work
 
@@ -76,6 +83,11 @@ Chronological notes for the current / recent work. **Append or edit this section
 - [x] WinUI XamlRoot crash — sentinel file + SetActiveAsync in seed
 - [x] In-app DEBUG seeding — replaces TestSeedService; idempotent UITestTrainer creation
 - [x] All UI tests passing (2026-07-28)
+- [x] NUnit migration — all test projects (2026-07-30, branch feature/nunit-migration)
+- [x] UI test [OneTimeSetUp] navigation + targeted cleanup helpers (2026-07-30)
+- [x] BaseTest perf logging to UITests.PerfLog.txt (2026-07-30)
+- [ ] **Add AppiumSetup timestamped logging** — cover emulator/WinAppDriver launch, Appium init, SeedTestData start/end, individual seed steps; write to PerfLog for full timeline
+- [ ] **Merge feature/nunit-migration → master** once Android run confirmed passing
 - [ ] **Fix TrainerPage charts** — lazy/virtualized `CartesianChart` loading to avoid WinUI3 deadlock
 - [ ] **Harden concurrency** — fix static semaphore on transient `TrainerPageViewModel`
 - [ ] Configurable Android Appium emulator (future)
@@ -105,7 +117,7 @@ Chronological notes for the current / recent work. **Append or edit this section
 | Charts | `LiveChartsCore.SkiaSharpView.Maui` 2.0.5 — 8 `CartesianChart` on TrainerPage; currently Label placeholders due to WinUI3 init deadlock |
 | Logging | Serilog → debug + rolling file (`{AppDataDirectory}/Logs/log.txt`) |
 | Errors | Sentry.Maui (DSN in `MauiProgram.cs`) |
-| Unit tests | xUnit, Shouldly, NSubstitute |
+| Unit tests | NUnit 4.6.1, NUnit3TestAdapter 6.2.0, Shouldly, NSubstitute |
 | UI tests | Appium (Windows + Android runners, shared tests) |
 | Benchmarks | BenchmarkDotNet |
 
@@ -276,7 +288,7 @@ XAML bindings by page:
 
 ### Unit tests
 
-329 passing (xUnit, NSubstitute, Shouldly).
+350 passing + 22 integration tests (NUnit 4.6.1, NSubstitute, Shouldly).
 
 **Still lightly covered:**
 - `SqliteConnectionFactory` init (integration-style)
@@ -290,6 +302,13 @@ XAML bindings by page:
 | `UITests.Windows` | Passing. Port 4724. Sentinel file written before launch. `CleanupTestTrainer()` in Dispose deletes UITestTrainer + cascade. SQLite packages in csproj for teardown. |
 | `UITests.Android` | Passing. `adb install -r` only; in-app seed handles data idempotently. AVD `pixel_7_-_api_35`. |
 | `UITests.Shared` | `AppWindowTests`, `MainPageTests`, `AboutPageTests`, `OptionsPageTests`, `ReadJournalPageTests`, `TrainerPageTests` |
+
+**UI test NUnit patterns (established 2026-07-30):**
+- `[OneTimeSetUp]` calls `NavigateTo("Page")` — once per fixture class, not per test
+- `[OneTimeTearDown]` calls `InvalidateCurrentPage()` on MainPage (singleton VM — state doesn't reset on navigate-away)
+- Cleanup helpers use `ImplicitWait = TimeSpan.Zero` + raw `App.FindElement` (not `FindUIElement` which ignores ImplicitWait) — called in `try/finally` only by tests that mutate state
+- `BaseTest.[SetUp]` starts per-test Stopwatch; `[TearDown]` writes `END {test} [status] {ms}ms` to `%TEMP%\UITests.PerfLog.txt`
+- No `Task.Delay` anywhere — all waits via implicit-wait polling
 
 **Seeding flow:**
 1. Windows `AppiumSetup.RunBeforeAnyTests()` writes sentinel file, starts Appium (port 4724), launches exe.
