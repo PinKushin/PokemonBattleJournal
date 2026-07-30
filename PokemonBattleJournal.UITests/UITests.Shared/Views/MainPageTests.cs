@@ -156,7 +156,7 @@ namespace UITests
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
                 else
-                    picker1.SendKeys("T" + OpenQA.Selenium.Keys.Enter); // 'T' navigates to Tie, Enter confirms + closes dropdown
+                    SelectWindowsPickerItem("Tie");
 
                 FindUIElement("Game2Tab").Click();
 
@@ -165,7 +165,7 @@ namespace UITests
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
                 else
-                    picker2.SendKeys("W" + OpenQA.Selenium.Keys.Enter); // 'W' navigates to Win, Enter confirms
+                    SelectWindowsPickerItem("Win");
 
                 FindUIElement("Game3Tab").ShouldNotBeNull();
             }
@@ -204,7 +204,7 @@ namespace UITests
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
                 else
-                    picker1.SendKeys("W" + OpenQA.Selenium.Keys.Enter);
+                    SelectWindowsPickerItem("Win");
 
                 FindUIElement("Game2Tab").Click();
 
@@ -213,10 +213,7 @@ namespace UITests
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Loss\")")).Click();
                 else
-                {
-                    picker2.SendKeys("L");
-                    picker2.SendKeys(OpenQA.Selenium.Keys.Enter);
-                }
+                    SelectWindowsPickerItem("Loss");
 
                 FindUIElement("Game3Tab").Click();
 
@@ -250,11 +247,11 @@ namespace UITests
                 resultPicker.Click();
 
                 // Android: MAUI Picker opens native AlertDialog — find by text.
-                // Windows: send first letter to ComboBox element; UIA tree search is unreliable on CI.
+                // Windows: SelectWindowsPickerItem searches all window handles for the dropdown item.
                 if (App is not WindowsDriver)
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
                 else
-                    resultPicker.SendKeys("W" + OpenQA.Selenium.Keys.Enter); // 'W' navigates to Win, Enter confirms + closes
+                    SelectWindowsPickerItem("Win");
             }
             catch (OpenQA.Selenium.NoSuchElementException)
             {
