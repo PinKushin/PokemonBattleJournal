@@ -2,37 +2,39 @@ namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {
-
         [Fact]
-        public async Task MainPage_BOSwitch_DisplayedAndToggled()
+        public void MainPage_BOSwitch_DisplayedAndToggled()
         {
             NavigateTo("Journal Entry");
-            // Arrange
-            AppiumElement BOSwitch = FindUIElement("BOSwitch");
+            AppiumElement boSwitch = FindUIElement("BOSwitch");
             AppiumElement statusLabel = FindUIElement("BO3StatusLabel");
-            CancellationToken cancellationToken = new();
 
-            // Ensure starting state is off
+            // Ensure starting state is BO1
             if (statusLabel.Text == "Best of 3")
+                boSwitch.Click();
+
+            try
             {
-                BOSwitch.Click();
-                await Task.Delay(500).WaitAsync(cancellationToken);
+                boSwitch.Click();
+                // Sync on label change — no Task.Delay
+                string toggledOn = FindUIElement("BO3StatusLabel").Text;
+
+                boSwitch.Click();
+                string toggledOff = FindUIElement("BO3StatusLabel").Text;
+
+                boSwitch.ShouldNotBeNull();
+                boSwitch.Displayed.ShouldBeTrue();
+                boSwitch.Enabled.ShouldBeTrue();
+                toggledOn.ShouldBe("Best of 3");
+                toggledOff.ShouldBe("Best of 1");
             }
-
-            // Act
-            BOSwitch.Click();
-            await Task.Delay(500).WaitAsync(cancellationToken);
-            string toggledOn = statusLabel.Text;
-            BOSwitch.Click();
-            await Task.Delay(500).WaitAsync(cancellationToken);
-            string toggledOff = statusLabel.Text;
-
-            // Assert
-            _ = BOSwitch.ShouldNotBeNull();
-            BOSwitch.Displayed.ShouldBeTrue();
-            BOSwitch.Enabled.ShouldBeTrue();
-            toggledOn.ShouldBe("Best of 3");
-            toggledOff.ShouldBe("Best of 1");
+            finally
+            {
+                // Always leave BO3 off so subsequent tests see clean BO1 state
+                AppiumElement label = FindUIElement("BO3StatusLabel");
+                if (label.Text == "Best of 3")
+                    FindUIElement("BOSwitch").Click();
+            }
         }
     }
 }
