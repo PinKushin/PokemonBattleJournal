@@ -16,7 +16,15 @@
 - [Security standards](feedback_security.md) — Never introduce SQL injection, XSS, command injection, path traversal, or insecure deserialization. Verify before marking any task done that touches SQL, file I/O, HTTP clients, or user-supplied data.
 - [SQLite only — no Preferences](project_sqlite_only.md) — Preferences API is not used; all state is in the .db3 file. CLAUDE.md reference to preferences.dat is stale.
 - [No sleeps in UI tests](feedback_no_sleeps_in_tests.md) — Never use Thread.Sleep/Task.Delay in Appium tests or seed setup; sync on element discovery via implicit wait instead.
+- [UI test implicit wait limits](feedback_uitest_timeouts.md) — 5s Windows, 10s Android; 15s is a test bug not a timeout; fast-fail cleanup paths use 0ms.
+- [NavigateTo required in every test](feedback_navigate_to_every_test.md) — Every Appium test must call NavigateTo; discovery order is non-deterministic; silent cascade if missing.
+- [Android element lookup strategy](project_android_element_lookup.md) — Direct resourceId (3s) first, UiScrollable fallback (10s); empty Entry returns placeholder not null.
+- [UI test nav diagnostic log](project_uitest_nav_log.md) — %TEMP%\UITests.NavLog.txt; read after VS runs to debug cascades; reset each run by AppiumSetup.
+- [CI workflow structure](project_ci_workflows.md) — 3 separate workflows: ci.yml (unit+integration+coverage), ui-tests-windows.yml, ui-tests-android.yml; Android CI uses API 34 default image.
 - [Android CI build fixes](project_ci_android_build_fixes.md) — AppIcon path case (Appicon vs AppIcon) breaks Linux; iOS/macOS TFMs must be conditioned out on Linux; EmbedAssembliesIntoApk passed at build time only.
-- [Windows picker child window on CI](project_windows_picker_ci.md) — MAUI Picker may open as owned child window on Windows Server CI; SelectWindowsPickerItem helper iterates all App.WindowHandles; uses By.Name primary + XPath fallbacks.
+- [Windows picker child window on CI](project_windows_picker_ci.md) — MAUI Picker may open as owned child window on Windows Server CI; SelectWindowsPickerItem helper iterates all App.WindowHandles.
 - [SQLite integration test isolation](project_integration_test_isolation.md) — Unique GUID temp file per test (not :memory:); must close connection before file delete; ArchetypeOperations needs metaService mock returning empty list.
 - [OptionsPageViewModel bugs fixed](project_options_vm_bugs_fixed.md) — SaveTagAsync/SaveArchetypeAsync discarded return values fixed; NewDeckIcon pre-initialized to ball_icon.png so icon guard doesn't early-return silently.
+- [SonarAnalyzer + Roslynator warnings fixed](project_sonar_warnings_fixed.md) — All S112/S3267/S8969/S6562/S6444/S6608/S3168/S2068/S1450 resolved in commit dc45c19; suppression patterns documented.
+- [UI test nav cascade + Windows picker stall](project_uitest_nav_cascade_fix.md) — NavigateTo resets _currentPage=null on failure; picker SendKeys("L") + SendKeys(Enter) split to fix Windows Game3Tab stall.
+- [Self-hosted CI runners](project_self_hosted_runners.md) — PinPC (Windows) + UbuntuBox (Linux); use auto labels [self-hosted,Windows,X64]/[Linux,X64]; DOTNET_INSTALL_DIR must be set at job level not workflow level.
