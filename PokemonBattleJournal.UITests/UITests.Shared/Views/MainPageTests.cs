@@ -2,18 +2,10 @@ namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {
-        // No constructor navigation — WinAppDriver/Appium starts the app on MainPage already.
-        // Tests that need a specific Shell page navigate explicitly.
-
-        // The SeedTestData step in AppiumSetup is the integration test for first-boot:
-        // it installs a fresh APK (no DB), launches the app, dismisses the Welcome prompt
-        // by typing "UITestTrainer" and clicking Save, then verifies the main page becomes
-        // interactive by successfully seeding 3 matches. If the prompt flow were broken,
-        // every subsequent test in this suite would fail because the nav drawer would be
-        // unreachable. This test documents that contract explicitly.
         [Fact]
         public void MainPage_AfterFirstBoot_TrainerNameSet()
         {
+            NavigateTo("Journal Entry");
             AppiumElement welcomeLabel = FindUIElement("WelcomeMsg");
             welcomeLabel.ShouldNotBeNull();
             welcomeLabel.Text.ShouldContain("UITestTrainer");
@@ -22,8 +14,7 @@ namespace UITests
         [Fact]
         public void MainPage_UserNoteInput_ShowTextEntry()
         {
-            // Editor (EditText) gets resource-id from AutomationId on Android — use FindUIElement.
-            // SemanticProperties.Description on EditText maps to hint, not content-desc.
+            NavigateTo("Journal Entry");
             AppiumElement userEntry = FindUIElement("UserNoteInput");
             try
             {
@@ -33,7 +24,6 @@ namespace UITests
             }
             finally
             {
-                // Clear so later tests don't see stale note text
                 try { userEntry.Clear(); } catch (OpenQA.Selenium.NoSuchElementException) { }
             }
         }
@@ -41,6 +31,7 @@ namespace UITests
         [Fact]
         public void MainPage_BallIcon_DisplayedOnPage()
         {
+            NavigateTo("Journal Entry");
             AppiumElement BallIconPng = FindUIElement("ball_icon.png");
             BallIconPng.ShouldNotBeNull();
         }
@@ -48,6 +39,7 @@ namespace UITests
         [Fact]
         public void MainPage_Pickers_DisplayedAndEnabled()
         {
+            NavigateTo("Journal Entry");
             AppiumElement startPicker = FindUIElement("StartTimePicker");
             AppiumElement endPicker = FindUIElement("EndTimePicker");
             AppiumElement datePicker = FindUIElement("DatePlayedPicker");
@@ -60,6 +52,7 @@ namespace UITests
         [Fact]
         public void MainPage_TagsView_Displayed()
         {
+            NavigateTo("Journal Entry");
             AppiumElement tagsView = FindUIElement("TagsView");
             tagsView.ShouldNotBeNull();
         }
@@ -67,6 +60,7 @@ namespace UITests
         [Fact]
         public void MainPage_BOSwitch_ShowsBO3Fields()
         {
+            NavigateTo("Journal Entry");
             AppiumElement boSwitch = FindUIElement("BOSwitch");
             try
             {
@@ -75,7 +69,6 @@ namespace UITests
             }
             finally
             {
-                // Disable BO3 regardless of pass/fail so next test starts clean
                 try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
             }
         }
@@ -83,6 +76,7 @@ namespace UITests
         [Fact]
         public void MainPage_PlayerArchetype_Displayed()
         {
+            NavigateTo("Journal Entry");
             AppiumElement picker = FindUIElement("PlayerArchetype");
             picker.ShouldNotBeNull();
         }
@@ -90,6 +84,7 @@ namespace UITests
         [Fact]
         public void MainPage_RivalArchetype_Displayed()
         {
+            NavigateTo("Journal Entry");
             AppiumElement picker = FindUIElement("RivalArchetype");
             picker.ShouldNotBeNull();
         }
@@ -97,6 +92,7 @@ namespace UITests
         [Fact]
         public void MainPage_BO3StatusLabel_Displayed()
         {
+            NavigateTo("Journal Entry");
             AppiumElement label = FindUIElement("BO3StatusLabel");
             label.ShouldNotBeNull();
         }
@@ -104,6 +100,7 @@ namespace UITests
         [Fact]
         public void MainPage_ResultPicker_Displayed()
         {
+            NavigateTo("Journal Entry");
             AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
             resultPicker.ShouldNotBeNull();
         }
@@ -111,6 +108,7 @@ namespace UITests
         [Fact]
         public void MainPage_FirstCheck_Displayed()
         {
+            NavigateTo("Journal Entry");
             AppiumElement firstCheck = FindUIElement("FirstCheck");
             firstCheck.ShouldNotBeNull();
         }
@@ -118,6 +116,7 @@ namespace UITests
         [Fact]
         public void MainPage_SaveMatchButton_Displayed()
         {
+            NavigateTo("Journal Entry");
             AppiumElement saveButton = FindUIElement("SaveMatchButton");
             saveButton.ShouldNotBeNull();
         }
@@ -125,14 +124,11 @@ namespace UITests
         [Fact]
         public void MainPage_BO3GameTabs_DisplayedWhenBO3Active()
         {
+            NavigateTo("Journal Entry");
             try
             {
                 FindUIElement("BOSwitch").Click();
-
-                // Verify outer layout first so we know BO3 content is rendered
                 FindUIElement("BO3GamesLayout").ShouldNotBeNull();
-
-                // Game3Tab only appears with a split result — only check Game1Tab and Game2Tab.
                 FindUIElement("Game1Tab").ShouldNotBeNull();
                 FindUIElement("Game2Tab").ShouldNotBeNull();
             }
@@ -145,10 +141,10 @@ namespace UITests
         [Fact]
         public void MainPage_Game3Tab_ShowsWhenGame1IsTie()
         {
+            NavigateTo("Journal Entry");
             try
             {
                 FindUIElement("BOSwitch").Click();
-                // Wait for BO3 layout to fully render before interacting with pickers
                 FindUIElement("BO3GamesLayout");
 
                 AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
@@ -175,7 +171,6 @@ namespace UITests
             }
             finally
             {
-                // Dismiss any open picker dropdown, return to Game1Tab, disable BO3
                 try
                 {
                     if (App is WindowsDriver)
@@ -196,8 +191,7 @@ namespace UITests
         [Fact]
         public void MainPage_Game3Tab_ShowsGamePanel()
         {
-            // ShowGame3 requires Result AND Result2 set + split/tie combination.
-            // Set game1=Win, game2=Loss to produce a split result, then click Game3Tab.
+            NavigateTo("Journal Entry");
             try
             {
                 FindUIElement("BOSwitch").Click();
@@ -249,12 +243,10 @@ namespace UITests
         [Fact]
         public void MainPage_SaveMatch_WithResult_Saves()
         {
+            NavigateTo("Journal Entry");
             try
             {
                 AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
-
-                // Android: click picker to open AlertDialog, then find by text.
-                // Windows: keyboard nav on closed ComboBox — no click needed before SendKeys.
                 if (App is not WindowsDriver)
                 {
                     resultPicker.Click();
@@ -265,7 +257,6 @@ namespace UITests
             }
             catch (OpenQA.Selenium.NoSuchElementException)
             {
-                // Close picker before re-throwing so subsequent tests aren't left with an open popup
                 try
                 {
                     if (App is WindowsDriver)
@@ -276,8 +267,6 @@ namespace UITests
             }
 
             FindUIElement("SaveMatchButton").Click();
-
-            // Button still present means save didn't crash
             FindUIElement("SaveMatchButton").ShouldNotBeNull();
         }
     }
