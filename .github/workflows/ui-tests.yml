@@ -115,13 +115,13 @@ jobs:
       - name: Run Android UI Tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
-          target: google_apis
+          api-level: 34
+          target: default
           arch: x86_64
           profile: pixel_7
-          avd-name: pixel_7_-_api_35
+          avd-name: pixel_7_-_api_34
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 3072
           disable-animations: true
           script: dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --logger "trx;LogFileName=android-ui-tests.trx"
         env:
