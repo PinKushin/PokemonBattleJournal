@@ -10,7 +10,7 @@ jobs:
   # ── Windows UI Tests ──────────────────────────────────────────────────────
   ui-tests-windows:
     name: Windows UI Tests
-    runs-on: [self-hosted, Windows, X64]
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
 
@@ -63,14 +63,9 @@ jobs:
   # ── Android UI Tests ──────────────────────────────────────────────────────
   ui-tests-android:
     name: Android UI Tests
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      - name: Set dotnet install dir (user-writable path for self-hosted runner)
-        run: |
-          echo "DOTNET_INSTALL_DIR=$HOME/.dotnet" >> $GITHUB_ENV
-          echo "DOTNET_ROOT=$HOME/.dotnet" >> $GITHUB_ENV
 
       - uses: actions/setup-dotnet@v6
         with:
