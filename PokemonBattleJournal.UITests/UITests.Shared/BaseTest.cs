@@ -55,8 +55,10 @@ namespace UITests
                 catch (OpenQA.Selenium.NoSuchElementException)
                 {
                     App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                    // Scope scrollable to app package — prevents UiScrollable grabbing the
+                    // notification shade or system scroll views above the app content.
                     return App.FindElement(MobileBy.AndroidUIAutomator(
-                        $"new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                        $"new UiScrollable(new UiSelector().scrollable(true).packageName(\"com.PinKushin.PokemonBattleJournal\").instance(0))" +
                         $".scrollIntoView(new UiSelector().resourceId(\"{resourceId}\"))"));
                 }
             }

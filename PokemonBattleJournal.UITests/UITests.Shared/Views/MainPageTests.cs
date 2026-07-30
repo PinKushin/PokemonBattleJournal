@@ -27,7 +27,15 @@ namespace UITests
             }
             finally
             {
-                try { FindUIElement("UserNoteInput").Clear(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+                try
+                {
+                    // Hide soft keyboard before clearing — leaving it open causes the next
+                    // SendKeys to land in the wrong view (notification shade, etc.)
+                    if (App is AndroidDriver androidDriver)
+                        androidDriver.HideKeyboard();
+                    FindUIElement("UserNoteInput").Clear();
+                }
+                catch (OpenQA.Selenium.NoSuchElementException) { }
             }
         }
 
