@@ -115,5 +115,16 @@ namespace UITests
             pickerElement.SendKeys(itemName[0].ToString());
             pickerElement.SendKeys(OpenQA.Selenium.Keys.Tab);
         }
+
+        // Clicks a MAUI Border tab that uses TapGestureRecognizer.
+        // Plain .Click() is unreliable on slow CI runners — the mouse event doesn't always
+        // reach the gesture recognizer. Using Actions to move-to then click is more reliable.
+        protected void ClickTab(AppiumElement tabElement)
+        {
+            new OpenQA.Selenium.Interactions.Actions(App)
+                .MoveToElement(tabElement)
+                .Click()
+                .Perform();
+        }
     }
 }

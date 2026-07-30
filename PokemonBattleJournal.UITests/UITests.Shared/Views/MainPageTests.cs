@@ -18,6 +18,7 @@ namespace UITests
             AppiumElement userEntry = FindUIElement("UserNoteInput");
             try
             {
+                userEntry.Click();
                 userEntry.SendKeys("Hello World");
                 userEntry.ShouldNotBeNull();
                 userEntry.Text.ShouldEndWith("Hello World");
@@ -156,7 +157,7 @@ namespace UITests
                 else
                     SelectWindowsPickerItem(picker1, "Tie");
 
-                FindUIElement("Game2Tab").Click();
+                ClickTab(FindUIElement("Game2Tab"));
                 // Sync on Game 2 panel visibility — TapGestureRecognizer fires async command.
                 FindUIElement("FirstCheck2");
 
@@ -208,7 +209,7 @@ namespace UITests
                 else
                     SelectWindowsPickerItem(picker1, "Win");
 
-                FindUIElement("Game2Tab").Click();
+                ClickTab(FindUIElement("Game2Tab"));
                 // Sync on Game 2 panel visibility — TapGestureRecognizer fires async command.
                 FindUIElement("FirstCheck2");
 
@@ -221,8 +222,7 @@ namespace UITests
                 else
                     SelectWindowsPickerItem(picker2, "Loss");
 
-                FindUIElement("Game3Tab").Click();
-
+                ClickTab(FindUIElement("Game3Tab"));
                 FindUIElement("Match3Tags").ShouldNotBeNull();
                 FindUIElement("UserNoteInput3").ShouldNotBeNull();
                 FindUIElement("WentFirstLabel3").ShouldNotBeNull();
