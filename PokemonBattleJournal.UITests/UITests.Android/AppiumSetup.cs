@@ -12,7 +12,7 @@ namespace UITests
             }
         }
 
-        private const string AvdName = "pixel_7_-_api_34";
+        private const string AvdName = "pixel_7_-_api_35";
         private const string AppPackage = "com.PinKushin.PokemonBattleJournal";
 
         private static readonly string SetupLogPath = Path.Combine(
