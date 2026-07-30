@@ -140,12 +140,14 @@ namespace UITests
                 return;
             }
 
-            var touch = new OpenQA.Selenium.Appium.Interactions.PointerInputDevice(
-                OpenQA.Selenium.Interactions.PointerKind.Touch, "touch");
-            var seq = new OpenQA.Selenium.Interactions.ActionSequence(touch, 0);
-            seq.AddAction(touch.CreatePointerMove(tabElement, 0, 0, TimeSpan.Zero));
-            seq.AddAction(touch.CreatePointerDown(OpenQA.Selenium.Interactions.MouseButton.Left));
-            seq.AddAction(touch.CreatePointerUp(OpenQA.Selenium.Interactions.MouseButton.Left));
+            // Touch actions fail on Windows Server CI (no touch hardware).
+            // WinUI TapGestureRecognizer responds to left mouse click, so mouse pointer works.
+            var mouse = new OpenQA.Selenium.Appium.Interactions.PointerInputDevice(
+                OpenQA.Selenium.Interactions.PointerKind.Mouse, "mouse");
+            var seq = new OpenQA.Selenium.Interactions.ActionSequence(mouse, 0);
+            seq.AddAction(mouse.CreatePointerMove(tabElement, 0, 0, TimeSpan.Zero));
+            seq.AddAction(mouse.CreatePointerDown(OpenQA.Selenium.Interactions.MouseButton.Left));
+            seq.AddAction(mouse.CreatePointerUp(OpenQA.Selenium.Interactions.MouseButton.Left));
             App.PerformActions([seq]);
         }
     }
