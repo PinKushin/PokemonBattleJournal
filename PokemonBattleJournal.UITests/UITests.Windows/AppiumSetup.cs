@@ -61,6 +61,12 @@ namespace UITests
 
             driver = new WindowsDriver(new Uri("http://127.0.0.1:4724/"), windowsOptions);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
+
+            // Wait for Shell to be fully rendered before any test runs.
+            // FindElement blocks until the element appears (up to 15s implicit wait).
+            // The hamburger/OK menu is the first interactive UIA element — if it's visible
+            // the Shell nav is wired up and NavigateTo will succeed immediately.
+            driver.FindElement(MobileBy.AccessibilityId("OK"));
         }
 
         public void Dispose()
