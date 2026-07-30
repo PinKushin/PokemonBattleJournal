@@ -27,21 +27,21 @@ public class LimitlessDeckParserIntegrationTests
 
     private readonly LimitlessDeckParser _parser = new();
 
-    [Fact]
+    [Test]
     public void Parse_RealSnapshot_ReturnsNonEmptyList()
     {
         List<MetaDeck> result = _parser.Parse(_snapshotHtml, 10);
         result.ShouldNotBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void Parse_RealSnapshot_ReturnsRequestedCount()
     {
         List<MetaDeck> result = _parser.Parse(_snapshotHtml, 10);
         result.Count.ShouldBe(10);
     }
 
-    [Fact]
+    [Test]
     public void Parse_RealSnapshot_EachDeckHasName()
     {
         List<MetaDeck> result = _parser.Parse(_snapshotHtml, 10);
@@ -49,7 +49,7 @@ public class LimitlessDeckParserIntegrationTests
             "Every deck must have a non-empty name — check td:nth-child(3) a selector");
     }
 
-    [Fact]
+    [Test]
     public void Parse_RealSnapshot_EachDeckHasImageUrl()
     {
         List<MetaDeck> result = _parser.Parse(_snapshotHtml, 10);
@@ -57,7 +57,7 @@ public class LimitlessDeckParserIntegrationTests
             "Every deck must have an image URL — check img.pokemon selector");
     }
 
-    [Fact]
+    [Test]
     public void Parse_RealSnapshot_ImageUrlsPointToLimitless()
     {
         List<MetaDeck> result = _parser.Parse(_snapshotHtml, 10);
@@ -66,7 +66,7 @@ public class LimitlessDeckParserIntegrationTests
             "Image URLs should be absolute HTTP URLs");
     }
 
-    [Fact]
+    [Test]
     public void Parse_RealSnapshot_AnnotationDecksNameContainsAnnotation()
     {
         // Snapshot has entries like "Dragapult ex" — annotation merged into name
@@ -75,21 +75,21 @@ public class LimitlessDeckParserIntegrationTests
         anyWithEx.ShouldBeTrue("Expected at least one 'ex' annotated deck in top 20 — snapshot may be stale");
     }
 
-    [Fact]
+    [Test]
     public void Parse_RealSnapshot_CountOne_ReturnsExactlyOne()
     {
         List<MetaDeck> result = _parser.Parse(_snapshotHtml, 1);
         result.Count.ShouldBe(1);
     }
 
-    [Fact]
+    [Test]
     public void Parse_RealSnapshot_FirstDeckNameIsNotEmpty()
     {
         List<MetaDeck> result = _parser.Parse(_snapshotHtml, 1);
         result[0].Name.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [Fact]
+    [Test]
     public void Parse_RealSnapshot_NoDuplicateNames()
     {
         List<MetaDeck> result = _parser.Parse(_snapshotHtml, 10);

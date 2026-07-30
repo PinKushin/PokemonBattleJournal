@@ -1,19 +1,20 @@
-namespace PokemonBattleJournal.Tests.Services
+﻿namespace PokemonBattleJournal.Tests.Services
 {
     public class TagOperationsTests
     {
-        private readonly TagOperations _sut;
-        private readonly SqliteConnectionFactory _mockFactory;
-        private readonly ILogger _mockLogger;
+        private TagOperations _sut = null!;
+        private SqliteConnectionFactory _mockFactory = null!;
+        private ILogger _mockLogger = null!;
 
-        public TagOperationsTests()
+        [SetUp]
+        public void SetUp()
         {
             _mockFactory = Substitute.For<SqliteConnectionFactory>(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>());
             _mockLogger = Substitute.For<ILogger>();
             _sut = new TagOperations(_mockFactory, _mockLogger);
         }
 
-        [Fact]
+        [Test]
         public void SaveAsync_EmptyTagName_ThrowsArgumentException()
         {
             // Act & Assert
@@ -21,7 +22,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.SaveAsync(string.Empty, 1));
         }
 
-        [Fact]
+        [Test]
         public void SaveAsync_ZeroTrainerId_ThrowsArgumentException()
         {
             // Act & Assert
@@ -29,7 +30,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.SaveAsync("Lucky", 0));
         }
 
-        [Fact]
+        [Test]
         public void DeleteAsync_ZeroId_ThrowsArgumentException()
         {
             // Arrange

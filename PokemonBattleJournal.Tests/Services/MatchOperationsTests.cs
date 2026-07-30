@@ -1,19 +1,20 @@
-namespace PokemonBattleJournal.Tests.Services
+﻿namespace PokemonBattleJournal.Tests.Services
 {
     public class MatchOperationsTests
     {
-        private readonly MatchOperations _sut;
-        private readonly SqliteConnectionFactory _mockFactory;
-        private readonly ILogger _mockLogger;
+        private MatchOperations _sut = null!;
+        private SqliteConnectionFactory _mockFactory = null!;
+        private ILogger _mockLogger = null!;
 
-        public MatchOperationsTests()
+        [SetUp]
+        public void SetUp()
         {
             _mockFactory = Substitute.For<SqliteConnectionFactory>(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>());
             _mockLogger = Substitute.For<ILogger>();
             _sut = new MatchOperations(_mockFactory, _mockLogger);
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_NullMatchEntry_ThrowsNullReferenceException()
         {
             // Arrange
@@ -24,7 +25,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.SaveAsync(null!, games));
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_ZeroTrainerId_ThrowsArgumentException()
         {
             // Arrange
@@ -36,7 +37,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.SaveAsync(matchEntry, games));
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_ZeroPlayingId_ThrowsArgumentException()
         {
             // Arrange
@@ -48,7 +49,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.SaveAsync(matchEntry, games));
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_ZeroAgainstId_ThrowsArgumentException()
         {
             // Arrange
@@ -60,7 +61,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.SaveAsync(matchEntry, games));
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_EmptyGames_ThrowsArgumentException()
         {
             // Arrange
@@ -72,7 +73,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.SaveAsync(matchEntry, games));
         }
 
-        [Fact]
+        [Test]
         public void DeleteAsync_NullMatchEntry_ThrowsArgumentNullException()
         {
             // Act & Assert
@@ -80,7 +81,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.DeleteAsync(null!));
         }
 
-        [Fact]
+        [Test]
         public void DeleteAsync_ZeroId_ThrowsArgumentException()
         {
             // Arrange

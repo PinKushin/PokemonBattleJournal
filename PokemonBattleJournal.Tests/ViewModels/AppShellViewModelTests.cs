@@ -1,15 +1,16 @@
-using PokemonBattleJournal.Interfaces;
+﻿using PokemonBattleJournal.Interfaces;
 
 namespace PokemonBattleJournal.Tests.ViewModels
 {
     public class AppShellViewModelTests
     {
-        private readonly AppShellViewModel _sut;
-        private readonly ITrainerSwitchService _mockSwitchService;
-        private readonly ISqliteConnectionFactory _mockConnectionFactory;
-        private readonly MainPageViewModel _mainPageVm;
+        private AppShellViewModel _sut = null!;
+        private ITrainerSwitchService _mockSwitchService = null!;
+        private ISqliteConnectionFactory _mockConnectionFactory = null!;
+        private MainPageViewModel _mainPageVm = null!;
 
-        public AppShellViewModelTests()
+        [SetUp]
+        public void SetUp()
         {
             _mockSwitchService = Substitute.For<ITrainerSwitchService>();
             _mockConnectionFactory = Substitute.For<ISqliteConnectionFactory>();
@@ -31,7 +32,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 Substitute.For<ILogger<AppShellViewModel>>());
         }
 
-        [Fact]
+        [Test]
         public void ToggleTrainerMenuCommand_TogglesIsTrainerMenuOpen()
         {
             // Arrange — initially false
@@ -50,7 +51,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _sut.IsTrainerMenuOpen.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public async Task LoadAsync_PopulatesTrainers()
         {
             // Arrange
@@ -68,7 +69,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _sut.Trainers.Count.ShouldBe(2);
         }
 
-        [Fact]
+        [Test]
         public async Task LoadAsync_SetsSelectedTrainerByActiveId()
         {
             // Arrange
@@ -86,7 +87,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _sut.SelectedTrainer.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void OnTrainerCreated_AddsNewTrainer()
         {
             // Arrange
@@ -99,7 +100,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _sut.Trainers.Count.ShouldBe(1);
         }
 
-        [Fact]
+        [Test]
         public void OnTrainerCreated_SkipsDuplicate()
         {
             // Arrange
@@ -113,7 +114,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _sut.Trainers.Count.ShouldBe(1);
         }
 
-        [Fact]
+        [Test]
         public void TrainerChangedEvent_UpdatesSelectedTrainer()
         {
             // Arrange
@@ -132,7 +133,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _sut.IsTrainerMenuOpen.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public async Task SelectTrainerAsync_NullTrainer_ClosesMenu()
         {
             // Arrange
@@ -145,7 +146,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _sut.IsTrainerMenuOpen.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public async Task SelectTrainerAsync_DifferentTrainer_CallsSwitchService()
         {
             // Arrange — load a trainer so SelectedTrainer is set
@@ -163,7 +164,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             await _mockSwitchService.Received(1).SwitchToAsync(trainer2);
         }
 
-        [Fact]
+        [Test]
         public void OnTrainerCreated_MultipleTrainers_AddsAll()
         {
             var t1 = new Trainer { Id = 1, Name = "Ash" };
@@ -175,7 +176,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _sut.Trainers.Count.ShouldBe(2);
         }
 
-        [Fact]
+        [Test]
         public async Task LoadAsync_EmptyTrainerList_LeavesSelectedTrainerNull()
         {
             _mockSwitchService.GetAllTrainersAsync()
@@ -186,7 +187,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _sut.SelectedTrainer.ShouldBeNull();
         }
 
-        [Fact]
+        [Test]
         public async Task SelectTrainerAsync_SameTrainer_ClosesMenu()
         {
             // Arrange

@@ -27,7 +27,7 @@ public class MatchOperationsTests : IAsyncDisposable
         AgainstId = _archetype.Id,
     };
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_ValidBO1Match_ReturnsPositive()
     {
         await SetupAsync();
@@ -38,7 +38,7 @@ public class MatchOperationsTests : IAsyncDisposable
         result.ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_MatchAppearsInGetAll()
     {
         await SetupAsync();
@@ -49,7 +49,7 @@ public class MatchOperationsTests : IAsyncDisposable
         all.ShouldContain(m => m.TrainerId == _trainer.Id);
     }
 
-    [Fact]
+    [Test]
     public async Task GetByTrainerIdAsync_ReturnsMatchesForTrainer()
     {
         await SetupAsync();
@@ -60,7 +60,7 @@ public class MatchOperationsTests : IAsyncDisposable
         matches.ShouldAllBe(m => m.TrainerId == _trainer.Id);
     }
 
-    [Fact]
+    [Test]
     public async Task GetByTrainerIdAsync_WithRelated_PopulatesArchetypes()
     {
         await SetupAsync();
@@ -72,7 +72,7 @@ public class MatchOperationsTests : IAsyncDisposable
         matches[0].Against.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Test]
     public async Task GetByIdAsync_ExistingMatch_ReturnsWithChildren()
     {
         await SetupAsync();
@@ -84,7 +84,7 @@ public class MatchOperationsTests : IAsyncDisposable
         loaded!.Id.ShouldBe(match.Id);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_BO3Match_SavesAllThreeGames()
     {
         await SetupAsync();
@@ -103,7 +103,7 @@ public class MatchOperationsTests : IAsyncDisposable
         match.Game3Id.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteAsync_ExistingMatch_RemovesFromDb()
     {
         await SetupAsync();
@@ -116,7 +116,7 @@ public class MatchOperationsTests : IAsyncDisposable
         all.ShouldNotContain(m => m.Id == match.Id);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_NoTrainerId_ThrowsArgumentException()
     {
         await SetupAsync();
@@ -125,7 +125,7 @@ public class MatchOperationsTests : IAsyncDisposable
             () => _factory.Matches.SaveAsync(bad, [new Game { Result = Win }]));
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WithTag_TagRelationshipPersists()
     {
         await SetupAsync();

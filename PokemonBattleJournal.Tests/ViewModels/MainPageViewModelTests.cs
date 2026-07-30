@@ -5,16 +5,17 @@ namespace PokemonBattleJournal.Tests.ViewModels
 {
     public class MainPageViewModelTests
     {
-        private readonly MainPageViewModel _viewModel;
-        private readonly ISqliteConnectionFactory _mockConnectionFactory;
-        private readonly ILogger<MainPageViewModel> _mockLogger;
-        //private readonly ILogger<SqliteConnectionFactory> _mockFactoryLogger;
-        private readonly ITrainerOperations _mockTrainerOps;
-        private readonly IMatchOperations _mockMatchOps;
-        private readonly IMatchResultsCalculatorFactory _mockCalculatorFactory;
-        private readonly ITrainerSwitchService _mockSwitchService;
+        private MainPageViewModel _viewModel = null!;
+        private ISqliteConnectionFactory _mockConnectionFactory = null!;
+        private ILogger<MainPageViewModel> _mockLogger = null!;
+        //private ILogger<SqliteConnectionFactory> _mockFactoryLogger;
+        private ITrainerOperations _mockTrainerOps = null!;
+        private IMatchOperations _mockMatchOps = null!;
+        private IMatchResultsCalculatorFactory _mockCalculatorFactory = null!;
+        private ITrainerSwitchService _mockSwitchService = null!;
 
-        public MainPageViewModelTests()
+        [SetUp]
+        public void SetUp()
         {
             // Mocks
             _mockLogger = Substitute.For<ILogger<MainPageViewModel>>();
@@ -33,7 +34,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel = new MainPageViewModel(_mockLogger, _mockConnectionFactory, _mockCalculatorFactory, _mockSwitchService);
         }
 
-        [Fact]
+        [Test]
         public void MainPageViewModel_WhenViewModelConstructed_ViewModelShouldNotBeNull()
         {
             // Arrange
@@ -41,7 +42,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             // Assert
             _viewModel.ShouldNotBeNull();
         }
-        [Fact]
+        [Test]
         public void MainPageViewModel_WhenViewModelConstructed_ViewModelShouldFindTrainerName()
         {
             // Arrange
@@ -53,7 +54,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.TrainerName.ShouldBe("Test");
         }
 
-        [Fact]
+        [Test]
         public async Task SaveMatchAsync_AllFieldsNull_ReturnsZero()
         {
             // Arrange — all required fields are null/defaults
@@ -70,7 +71,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.ValidationMessage.ShouldNotBeNullOrEmpty();
         }
 
-        [Fact]
+        [Test]
         public async Task SaveMatchAsync_PlayerSelectedOnly_ReturnsZero()
         {
             // Arrange
@@ -86,7 +87,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.HasValidationErrors.ShouldBeTrue();
         }
 
-        [Fact]
+        [Test]
         public async Task SaveMatchAsync_AllRequiredFields_ReturnsZeroWithNullTrainer()
         {
             // Arrange — all required fields set, but trainer lookup returns null
@@ -108,7 +109,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.HasValidationErrors.ShouldBeTrue();
         }
 
-        [Fact]
+        [Test]
         public async Task SaveMatchAsync_BO3WithMissingGame2_ReturnsZero()
         {
             // Arrange
@@ -128,7 +129,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.ValidationMessage.ShouldContain("Game 2 result is required");
         }
 
-        [Fact]
+        [Test]
         public async Task SaveMatchAsync_EndTimeBeforeStartTime_PassesValidation()
         {
             // Arrange — StartTime defaults to DateTime.MinValue so EndTime < StartTime is never true
@@ -145,7 +146,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             (_viewModel.ValidationMessage ?? string.Empty).ShouldNotContain("End time cannot be before start time");
         }
 
-        [Fact]
+        [Test]
         public async Task SaveMatchAsync_NullResult_ReturnsZero()
         {
             // Arrange
@@ -165,7 +166,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
         // --- ShowGame3 ---
 
-        [Fact]
+        [Test]
         public void ShowGame3_BO3Off_ReturnsFalse()
         {
             _viewModel.BO3Toggle = false;
@@ -174,7 +175,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.ShowGame3.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public void ShowGame3_ResultsNull_ReturnsFalse()
         {
             _viewModel.BO3Toggle = true;
@@ -183,7 +184,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.ShowGame3.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public void ShowGame3_BothWin_ReturnsFalse()
         {
             _viewModel.BO3Toggle = true;
@@ -192,7 +193,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.ShowGame3.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public void ShowGame3_SplitResult_ReturnsTrue()
         {
             _viewModel.BO3Toggle = true;
@@ -201,7 +202,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.ShowGame3.ShouldBeTrue();
         }
 
-        [Fact]
+        [Test]
         public void ShowGame3_BothTie_ReturnsTrue()
         {
             // Official Pokemon TCG tournament rule: Tie+Tie means neither player has won 2 games, Game 3 required
@@ -211,7 +212,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.ShowGame3.ShouldBeTrue();
         }
 
-        [Fact]
+        [Test]
         public void ShowGame3_Game1Tie_ReturnsTrue()
         {
             // Tie in Game 1 means winner undecided regardless of Game 2 — Game 3 required
@@ -221,7 +222,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.ShowGame3.ShouldBeTrue();
         }
 
-        [Fact]
+        [Test]
         public void ShowGame3_Game2Tie_ReturnsTrue()
         {
             // Tie in Game 2 means winner undecided regardless of Game 1 — Game 3 required
@@ -231,7 +232,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.ShowGame3.ShouldBeTrue();
         }
 
-        [Fact]
+        [Test]
         public void ShowGame3_Game1TieGame2Loss_ReturnsTrue()
         {
             _viewModel.BO3Toggle = true;
@@ -240,7 +241,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.ShowGame3.ShouldBeTrue();
         }
 
-        [Fact]
+        [Test]
         public void ShowGame3_Game1LossGame2Tie_ReturnsTrue()
         {
             _viewModel.BO3Toggle = true;
@@ -251,7 +252,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
         // --- SelectGame commands ---
 
-        [Fact]
+        [Test]
         public void SelectGame1Command_ResetsToGame1()
         {
             _viewModel.IsGame2Selected = true;
@@ -262,7 +263,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.IsGame3Selected.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public void SelectGame2Command_SetsGame2()
         {
             _viewModel.SelectGame2Command.Execute(null);
@@ -271,7 +272,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.IsGame3Selected.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public void SelectGame3Command_SetsGame3()
         {
             _viewModel.SelectGame3Command.Execute(null);
@@ -282,7 +283,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
         // --- ToggleBO3Command ---
 
-        [Fact]
+        [Test]
         public void ToggleBO3Command_TogglesBO3Toggle()
         {
             _viewModel.BO3Toggle = false;
@@ -294,7 +295,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
         // --- OnBO3ToggleChanged side effects ---
 
-        [Fact]
+        [Test]
         public void OnBO3ToggleChanged_WhenDisabling_ClearsGame2And3Fields()
         {
             _viewModel.BO3Toggle = true;
@@ -311,7 +312,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.UserNoteInput3.ShouldBeNull();
         }
 
-        [Fact]
+        [Test]
         public void OnBO3ToggleChanged_WhenDisabling_ResetsToGame1Selected()
         {
             _viewModel.BO3Toggle = true;
@@ -327,7 +328,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
         // --- Time guard logic ---
 
-        [Fact]
+        [Test]
         public void OnStartTimeChanged_WhenEndTimeBeforeNewStart_ClampsEndTime()
         {
             // Establish a known baseline to avoid current-time defaults interfering
@@ -337,7 +338,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.EndTime.ShouldBe(new TimeSpan(11, 0, 0));
         }
 
-        [Fact]
+        [Test]
         public void OnEndTimeChanged_WhenValueBeforeStart_ClampsToStartTime()
         {
             _viewModel.StartTime = new TimeSpan(10, 0, 0);
@@ -347,27 +348,27 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
         // --- HasUnsavedData ---
 
-        [Fact]
+        [Test]
         public void HasUnsavedData_DefaultState_ReturnsFalse()
         {
             _viewModel.HasUnsavedData.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public void HasUnsavedData_WhenPlayerSelected_ReturnsTrue()
         {
             _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
             _viewModel.HasUnsavedData.ShouldBeTrue();
         }
 
-        [Fact]
+        [Test]
         public void HasUnsavedData_WhenRivalSelected_ReturnsTrue()
         {
             _viewModel.RivalSelected = new Archetype { Id = 2, Name = "Water" };
             _viewModel.HasUnsavedData.ShouldBeTrue();
         }
 
-        [Fact]
+        [Test]
         public void HasUnsavedData_WhenNoteEntered_ReturnsTrue()
         {
             _viewModel.UserNoteInput = "some note";
@@ -376,7 +377,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
         // --- ToggleFirstCheck commands ---
 
-        [Fact]
+        [Test]
         public void ToggleFirstCheckCommand_TogglesFirstCheck()
         {
             _viewModel.FirstCheck = false;
@@ -386,7 +387,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.FirstCheck.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public void ToggleFirstCheck2Command_TogglesFirstCheck2()
         {
             _viewModel.FirstCheck2 = false;
@@ -396,7 +397,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.FirstCheck2.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public void ToggleFirstCheck3Command_TogglesFirstCheck3()
         {
             _viewModel.FirstCheck3 = false;
@@ -421,7 +422,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 .Returns(Task.FromResult(1));
         }
 
-        [Fact]
+        [Test]
         public async Task SaveMatchAsync_SuccessfulSave_ClearsFormFields()
         {
             SetupSuccessfulSave();
@@ -440,7 +441,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.FirstCheck.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public async Task SaveMatchAsync_BO3SuccessfulSave_ResetsBO3State()
         {
             SetupSuccessfulSave();
@@ -464,7 +465,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
         // --- AppearingAsync ---
 
-        [Fact]
+        [Test]
         public async Task AppearingAsync_LoadsArchetypes()
         {
             var archetypes = new List<Archetype>
@@ -483,7 +484,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.Archetypes!.Count.ShouldBe(2);
         }
 
-        [Fact]
+        [Test]
         public async Task AppearingAsync_SetsWelcomeMsg()
         {
             _mockConnectionFactory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
@@ -496,7 +497,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.WelcomeMsg.ShouldNotBeNullOrEmpty();
         }
 
-        [Fact]
+        [Test]
         public async Task AppearingAsync_LoadsTags()
         {
             var tags = new List<Tags>

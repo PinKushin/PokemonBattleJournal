@@ -9,7 +9,7 @@ public class HttpMetaDeckFetcherTests
     private static HttpMetaDeckFetcher BuildFetcher(HttpMessageHandler handler) =>
         new(new HttpClient(handler), NullLogger<HttpMetaDeckFetcher>.Instance);
 
-    [Fact]
+    [Test]
     public async Task FetchAsync_ValidResponse_ReturnsHtml()
     {
         string expectedHtml = "<html><body>test</body></html>";
@@ -24,7 +24,7 @@ public class HttpMetaDeckFetcherTests
         result.ShouldBe(expectedHtml);
     }
 
-    [Fact]
+    [Test]
     public async Task FetchAsync_NetworkFailure_ReturnsEmptyString()
     {
         var handler = new ThrowingHttpMessageHandler();
@@ -35,7 +35,7 @@ public class HttpMetaDeckFetcherTests
         result.ShouldBe(string.Empty);
     }
 
-    [Fact]
+    [Test]
     public async Task FetchAsync_NonSuccessStatusCode_ReturnsEmptyString()
     {
         var handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
@@ -46,7 +46,7 @@ public class HttpMetaDeckFetcherTests
         result.ShouldBe(string.Empty);
     }
 
-    [Fact]
+    [Test]
     public async Task FetchAsync_404_ReturnsEmptyString()
     {
         var handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.NotFound));
@@ -57,7 +57,7 @@ public class HttpMetaDeckFetcherTests
         result.ShouldBe(string.Empty);
     }
 
-    [Fact]
+    [Test]
     public async Task FetchAsync_EmptyResponseBody_ReturnsEmptyString()
     {
         var handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
@@ -71,7 +71,7 @@ public class HttpMetaDeckFetcherTests
         result.ShouldBe(string.Empty);
     }
 
-    [Fact]
+    [Test]
     public async Task FetchAsync_LargeHtmlPayload_ReturnsFullContent()
     {
         string bigHtml = string.Concat(Enumerable.Repeat("<tr><td>row</td></tr>", 500));

@@ -1,16 +1,17 @@
-using PokemonBattleJournal.Interfaces;
+﻿using PokemonBattleJournal.Interfaces;
 
 namespace PokemonBattleJournal.Tests.ViewModels
 {
     public class TrainerPageViewModelTests
     {
-        private readonly TrainerPageViewModel _viewModel;
-        private readonly ISqliteConnectionFactory _mockConnectionFactory;
-        private readonly ILogger<TrainerPageViewModel> _mockLogger;
-        private readonly IMatchAnalysisService _mockAnalysisService;
-        private readonly ITrainerSwitchService _mockSwitchService;
+        private TrainerPageViewModel _viewModel = null!;
+        private ISqliteConnectionFactory _mockConnectionFactory = null!;
+        private ILogger<TrainerPageViewModel> _mockLogger = null!;
+        private IMatchAnalysisService _mockAnalysisService = null!;
+        private ITrainerSwitchService _mockSwitchService = null!;
 
-        public TrainerPageViewModelTests()
+        [SetUp]
+        public void SetUp()
         {
             // Mocks
             _mockLogger = Substitute.For<ILogger<TrainerPageViewModel>>();
@@ -25,7 +26,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel = new TrainerPageViewModel(_mockLogger, _mockConnectionFactory, _mockAnalysisService, _mockSwitchService);
         }
 
-        [Fact]
+        [Test]
         public void TrainerPageViewModel_Constructor_SetsWelcomeMsg()
         {
             // Assert
@@ -33,7 +34,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.WelcomeMsg.ShouldNotBeNullOrEmpty();
         }
 
-        [Fact]
+        [Test]
         public async Task AppearingAsync_NoMatches_ResetsStatsToZero()
         {
             // Arrange
@@ -53,7 +54,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.StreakInfo.ShouldBe("No matches played yet");
         }
 
-        [Fact]
+        [Test]
         public async Task AppearingAsync_NoTrainer_AfterCreateFails_DoesNotCallAnalysis()
         {
             _mockConnectionFactory.Trainers.GetActiveAsync()
@@ -67,7 +68,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 Arg.Any<List<MatchEntry>>(), out Arg.Any<uint>(), out Arg.Any<uint>(), out Arg.Any<uint>());
         }
 
-        [Fact]
+        [Test]
         public async Task AppearingAsync_WithMatches_SetsStreakInfoString()
         {
             List<MatchEntry> matches = [new() { Result = MatchResult.Win }];
@@ -94,7 +95,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.StreakInfo.ShouldBe("Longest Streaks - Wins: 5, Losses: 2, Ties: 1");
         }
 
-        [Fact]
+        [Test]
         public async Task AppearingAsync_WithMatches_CalculatesStats()
         {
             // Arrange

@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 
 namespace PokemonBattleJournal.Tests.Services
 {
@@ -6,7 +6,7 @@ namespace PokemonBattleJournal.Tests.Services
     {
         private readonly MatchAnalysisService _service = new();
 
-        [Fact]
+        [Test]
         public void CalculateWinRate_ShouldReturnCorrectValues()
         {
             List<MatchEntry> matches =
@@ -19,13 +19,13 @@ namespace PokemonBattleJournal.Tests.Services
 
             double winRate = _service.CalculateWinRate(matches, out uint wins, out uint losses, out uint ties);
 
-            Assert.Equal(62.5, winRate); // (2 + 0.5*1) / 4 * 100
-            Assert.Equal(2u, wins);
-            Assert.Equal(1u, losses);
-            Assert.Equal(1u, ties);
+            Assert.That(winRate, Is.EqualTo(62.5)); // (2 + 0.5*1) / 4 * 100
+            Assert.That(wins, Is.EqualTo(2u));
+            Assert.That(losses, Is.EqualTo(1u));
+            Assert.That(ties, Is.EqualTo(1u));
         }
 
-        [Fact]
+        [Test]
         public void GetMostPlayedArchetypes_ShouldReturnCorrectCounts()
         {
             List<MatchEntry> matches =
@@ -44,7 +44,7 @@ namespace PokemonBattleJournal.Tests.Services
             result[1].Value.ShouldBe(1);
         }
 
-        [Fact]
+        [Test]
         public void CalculateWinRate_EmptyList_ShouldReturnZero()
         {
             // Arrange
@@ -60,7 +60,7 @@ namespace PokemonBattleJournal.Tests.Services
             ties.ShouldBe(0u);
         }
 
-        [Fact]
+        [Test]
         public void CalculateWinRateOverTime_ShouldGroupByDateAndCalculateCorrectly()
         {
             // Arrange
@@ -82,7 +82,7 @@ namespace PokemonBattleJournal.Tests.Services
             result[1].Value.ShouldBe(100); // 1 win out of 1
         }
 
-        [Fact]
+        [Test]
         public void CalculateArchetypeWinRate_ShouldCalculatePerArchetype()
         {
             // Arrange
@@ -105,7 +105,7 @@ namespace PokemonBattleJournal.Tests.Services
             result[1].Value.ShouldBe(50);
         }
 
-        [Fact]
+        [Test]
         public void CalculateTagUsage_ShouldCountAcrossAllGames()
         {
             // Arrange
@@ -138,7 +138,7 @@ namespace PokemonBattleJournal.Tests.Services
             result[1].Value.ShouldBe(1);
         }
 
-        [Fact]
+        [Test]
         public void CalculatePerformanceAgainstOpponents_ShouldCalculatePerOpponent()
         {
             // Arrange
@@ -161,7 +161,7 @@ namespace PokemonBattleJournal.Tests.Services
             result[1].Value.ShouldBe(0);
         }
 
-        [Fact]
+        [Test]
         public void CalculateAverageMatchDuration_ShouldReturnCorrectAverage()
         {
             // Arrange
@@ -186,7 +186,7 @@ namespace PokemonBattleJournal.Tests.Services
             result.ShouldBe(TimeSpan.FromMinutes(20)); // (30 + 10) / 2 = 20
         }
 
-        [Fact]
+        [Test]
         public void CalculateWinRateByMatchLength_ShouldSplitShortAndLong()
         {
             // Arrange
@@ -223,7 +223,7 @@ namespace PokemonBattleJournal.Tests.Services
             result[1].Value.ShouldBe(0); // 0 wins out of 1 long match
         }
 
-        [Fact]
+        [Test]
         public void CalculateFirstTurnAdvantage_ShouldCalculatePerTurnOrder()
         {
             // Arrange
@@ -252,7 +252,7 @@ namespace PokemonBattleJournal.Tests.Services
             result[1].Value.ShouldBe(50); // 1 win out of 2 second-turn games
         }
 
-        [Fact]
+        [Test]
         public void CalculateTagUsage_TagsInGame2AndGame3_CountsAllGames()
         {
             List<MatchEntry> matches =
@@ -274,7 +274,7 @@ namespace PokemonBattleJournal.Tests.Services
             result[1].Value.ShouldBe(2);
         }
 
-        [Fact]
+        [Test]
         public void GetMostPlayedArchetypes_EmptyList_ReturnsEmpty()
         {
             ObservableCollection<ChartDataPoint> result = _service.GetMostPlayedArchetypes([]);
@@ -282,7 +282,7 @@ namespace PokemonBattleJournal.Tests.Services
             result.ShouldBeEmpty();
         }
 
-        [Fact]
+        [Test]
         public void CalculateStreaks_EmptyList_ReturnsZeroes()
         {
             (int winStreak, int lossStreak, int tieStreak) = _service.CalculateStreaks([]);
@@ -292,7 +292,7 @@ namespace PokemonBattleJournal.Tests.Services
             tieStreak.ShouldBe(0);
         }
 
-        [Fact]
+        [Test]
         public void CalculatePerformanceAgainstOpponents_WithOnlyTies_ReturnsFiftyPercent()
         {
             List<MatchEntry> matches =
@@ -307,7 +307,7 @@ namespace PokemonBattleJournal.Tests.Services
             result[0].Value.ShouldBe(50); // (0 + 0.5*2) / 2 * 100 = 50%
         }
 
-        [Fact]
+        [Test]
         public void CalculateMatchupMatrix_BasicMatchups_BuildsCorrectGrid()
         {
             List<MatchEntry> matches =
@@ -330,7 +330,7 @@ namespace PokemonBattleJournal.Tests.Services
             gardeVsChar.WinRate.ShouldBe(100);
         }
 
-        [Fact]
+        [Test]
         public void CalculateMatchupMatrix_EmptyList_ReturnsEmptyArrays()
         {
             var (played, opponents, cells) = _service.CalculateMatchupMatrix([]);
@@ -340,7 +340,7 @@ namespace PokemonBattleJournal.Tests.Services
             cells.ShouldBeEmpty();
         }
 
-        [Fact]
+        [Test]
         public void CalculateMatchupMatrix_MatchesWithNullArchetypes_AreExcluded()
         {
             List<MatchEntry> matches =
@@ -357,7 +357,7 @@ namespace PokemonBattleJournal.Tests.Services
             cells.Length.ShouldBe(1);
         }
 
-        [Fact]
+        [Test]
         public void CalculateStreaks_ShouldReturnLongestStreaks()
         {
             // Arrange
@@ -380,7 +380,7 @@ namespace PokemonBattleJournal.Tests.Services
             tieStreak.ShouldBe(1);
         }
 
-        [Fact]
+        [Test]
         public void CalculateAverageMatchDuration_EmptyList_ReturnsZero()
         {
             TimeSpan result = _service.CalculateAverageMatchDuration([]);
@@ -388,7 +388,7 @@ namespace PokemonBattleJournal.Tests.Services
             result.ShouldBe(TimeSpan.Zero);
         }
 
-        [Fact]
+        [Test]
         public void CalculateWinRateOverTime_EmptyList_ReturnsEmpty()
         {
             ObservableCollection<TimeDataPoint> result = _service.CalculateWinRateOverTime([]);
@@ -396,7 +396,7 @@ namespace PokemonBattleJournal.Tests.Services
             result.ShouldBeEmpty();
         }
 
-        [Fact]
+        [Test]
         public void CalculateWinRateOverTime_SingleDate_ReturnsSinglePoint()
         {
             List<MatchEntry> matches =

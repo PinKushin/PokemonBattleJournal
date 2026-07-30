@@ -1,16 +1,17 @@
-using PokemonBattleJournal.Interfaces;
+﻿using PokemonBattleJournal.Interfaces;
 
 namespace PokemonBattleJournal.Tests.ViewModels
 {
     public class OptionsPageViewModelTests
     {
-        private readonly OptionsPageViewModel _viewModel;
-        private readonly ISqliteConnectionFactory _mockConnectionFactory;
-        private readonly ILogger<OptionsPageViewModel> _mockLogger;
-        private readonly ITrainerSwitchService _mockSwitchService;
-        private readonly AppShellViewModel _shellVm;
+        private OptionsPageViewModel _viewModel = null!;
+        private ISqliteConnectionFactory _mockConnectionFactory = null!;
+        private ILogger<OptionsPageViewModel> _mockLogger = null!;
+        private ITrainerSwitchService _mockSwitchService = null!;
+        private AppShellViewModel _shellVm = null!;
 
-        public OptionsPageViewModelTests()
+        [SetUp]
+        public void SetUp()
         {
             // Mocks
             _mockLogger = Substitute.For<ILogger<OptionsPageViewModel>>();
@@ -36,7 +37,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel = new OptionsPageViewModel(_mockLogger, _mockConnectionFactory, _mockSwitchService, _shellVm);
         }
 
-        [Fact]
+        [Test]
         public void OptionsPageViewModel_Constructor_SetsTitle()
         {
             // Assert
@@ -44,7 +45,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.Title.ShouldNotBeNullOrEmpty();
         }
 
-        [Fact]
+        [Test]
         public async Task SaveTrainerAsync_NullInput_DoesNotSave()
         {
             // Arrange
@@ -57,7 +58,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Trainers.DidNotReceive().SaveAsync(Arg.Any<string>());
         }
 
-        [Fact]
+        [Test]
         public async Task SaveTagAsync_NullInput_DoesNotSave()
         {
             // Arrange
@@ -70,7 +71,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Tags.DidNotReceive().SaveAsync(Arg.Any<string>(), Arg.Any<uint>());
         }
 
-        [Fact]
+        [Test]
         public async Task SaveTagAsync_NullTrainer_DoesNotSave()
         {
             // Arrange
@@ -85,7 +86,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             // Assert — should not throw, and tag should not be saved since trainer is null
         }
 
-        [Fact]
+        [Test]
         public async Task SaveArchetypeAsync_NullName_DoesNotSave()
         {
             // Arrange
@@ -98,7 +99,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Archetypes.DidNotReceive().SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>());
         }
 
-        [Fact]
+        [Test]
         public async Task SaveTrainerAsync_ValidInput_CallsSaveAsync()
         {
             _viewModel.NameInput = "Ash";
@@ -113,7 +114,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Trainers.Received(1).SaveAsync("Ash");
         }
 
-        [Fact]
+        [Test]
         public async Task SaveTrainerAsync_ValidInput_ClearsNameInput()
         {
             _viewModel.NameInput = "Ash";
@@ -128,7 +129,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.NameInput.ShouldBeNull();
         }
 
-        [Fact]
+        [Test]
         public async Task SaveTrainerAsync_SaveReturnsZero_DoesNotLoadTrainer()
         {
             _viewModel.NameInput = "Ash";
@@ -139,7 +140,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Trainers.DidNotReceive().GetByNameAsync(Arg.Any<string>());
         }
 
-        [Fact]
+        [Test]
         public async Task SwitchTrainerAsync_DifferentTrainer_CallsSwitchService()
         {
             var target = new Trainer { Id = 99, Name = "Brock" };
@@ -152,7 +153,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockSwitchService.Received(1).SwitchToAsync(target);
         }
 
-        [Fact]
+        [Test]
         public void OnSelectedIconItemChanged_UpdatesSelectedIconAndNewDeckIcon()
         {
             var item = new IconItem("Charizard", "charizard.png");
@@ -162,7 +163,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.NewDeckIcon.ShouldBe("charizard.png");
         }
 
-        [Fact]
+        [Test]
         public void OnSelectedIconItemChanged_NullItem_SetsDefaultIcon()
         {
             _viewModel.SelectedIconItem = new IconItem("Old", "old.png");
@@ -172,7 +173,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.NewDeckIcon.ShouldBeNull();
         }
 
-        [Fact]
+        [Test]
         public async Task DeleteTrainerFileAsync_NullTrainer_DoesNotCallDelete()
         {
             // _trainer is null by default (never loaded)
@@ -181,7 +182,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Trainers.DidNotReceive().DeleteAsync(Arg.Any<Trainer>());
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAllAsync_AllInputsNull_DoesNotCallAnyService()
         {
             _viewModel.NameInput = null;
@@ -195,7 +196,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Archetypes.DidNotReceive().SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>());
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAllAsync_ValidTrainerInput_CallsTrainerSave()
         {
             _viewModel.NameInput = "Ash";
@@ -210,7 +211,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Trainers.Received(1).SaveAsync("Ash");
         }
 
-        [Fact]
+        [Test]
         public async Task SaveTagAsync_WithTrainerSet_CallsTagSave()
         {
             var trainer = new Trainer { Id = 3, Name = "Misty" };
@@ -229,7 +230,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Tags.Received(1).SaveAsync("Aggro", trainer.Id);
         }
 
-        [Fact]
+        [Test]
         public async Task SaveTagAsync_WithTrainer_ClearsTagInput()
         {
             var trainer = new Trainer { Id = 3, Name = "Misty" };
@@ -248,7 +249,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.TagInput.ShouldBeNull();
         }
 
-        [Fact]
+        [Test]
         public async Task SaveArchetypeAsync_NullIconExplicitlySet_DoesNotSave()
         {
             // Icon guard still fires if caller explicitly clears NewDeckIcon to null
@@ -260,7 +261,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Archetypes.DidNotReceive().SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>());
         }
 
-        [Fact]
+        [Test]
         public async Task SaveArchetypeAsync_WithTrainer_CallsArchetypeSave()
         {
             var trainer = new Trainer { Id = 7, Name = "Gary" };
@@ -280,7 +281,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Archetypes.Received(1).SaveAsync("Charizard", "charizard.png", trainer.Id);
         }
 
-        [Fact]
+        [Test]
         public async Task SaveArchetypeAsync_WithTrainer_ClearsInputs()
         {
             var trainer = new Trainer { Id = 7, Name = "Gary" };
@@ -301,7 +302,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.NewDeckIcon.ShouldBe(_viewModel.SelectedIcon); // resets to default, not null
         }
 
-        [Fact]
+        [Test]
         public async Task DeleteTrainerFileAsync_WithTrainer_CallsDeleteAsync()
         {
             var trainer = new Trainer { Id = 9, Name = "Giovanni" };
@@ -318,7 +319,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Trainers.Received(1).DeleteAsync(trainer);
         }
 
-        [Fact]
+        [Test]
         public async Task SwitchTrainerAsync_SameTrainer_DoesNotCallSwitchService()
         {
             var trainer = new Trainer { Id = 3, Name = "Misty" };
@@ -335,7 +336,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             await _mockSwitchService.DidNotReceive().SwitchToAsync(Arg.Any<Trainer>());
         }
 
-        [Fact]
+        [Test]
         public async Task SwitchTrainerAsync_DifferentTrainer_UpdatesTrainerName()
         {
             var original = new Trainer { Id = 1, Name = "Ash" };
@@ -354,7 +355,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.TrainerName.ShouldBe("Brock");
         }
 
-        [Fact]
+        [Test]
         public async Task SwitchTrainerAsync_DifferentTrainer_UpdatesTitle()
         {
             var newTrainer = new Trainer { Id = 2, Name = "Brock" };
@@ -367,7 +368,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.Title.ShouldBe("Brock's Options");
         }
 
-        [Fact]
+        [Test]
         public async Task SwitchTrainerAsync_DifferentTrainer_UpdatesFileConfirmMessage()
         {
             var newTrainer = new Trainer { Id = 2, Name = "Brock" };
@@ -380,7 +381,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.FileConfirmMessage.ShouldBe("Delete Brock's Trainer File?");
         }
 
-        [Fact]
+        [Test]
         public async Task SaveTrainerAsync_SaveReturnsZero_StillClearsNameInput()
         {
             // NameInput always cleared in finally regardless of save outcome
@@ -392,7 +393,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.NameInput.ShouldBeNull();
         }
 
-        [Fact]
+        [Test]
         public async Task SaveTrainerAsync_ValidInput_UpdatesTitle()
         {
             _viewModel.NameInput = "Ash";
@@ -407,7 +408,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.Title.ShouldBe("Ash's Options");
         }
 
-        [Fact]
+        [Test]
         public async Task DeleteTrainerFileAsync_WithTrainer_ClearsTrainerName()
         {
             var trainer = new Trainer { Id = 9, Name = "Giovanni" };
@@ -424,7 +425,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.TrainerName.ShouldBe(string.Empty);
         }
 
-        [Fact]
+        [Test]
         public async Task AppearingAsync_SetsSelectedSwitchTrainerToActiveTrainer()
         {
             var trainer = new Trainer { Id = 3, Name = "Misty" };
@@ -439,7 +440,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.SelectedSwitchTrainer!.Id.ShouldBe(trainer.Id);
         }
 
-        [Fact]
+        [Test]
         public async Task SaveTagAsync_SaveReturnsZero_StillClearsTagInput()
         {
             // TagInput always cleared in finally — even when DB save reports 0 affected
@@ -459,7 +460,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.TagInput.ShouldBeNull();
         }
 
-        [Fact]
+        [Test]
         public async Task SaveArchetypeAsync_SaveReturnsZero_StillClearsInputs()
         {
             // NewDeckName/Icon always cleared in finally — even when DB save reports 0 affected
@@ -482,7 +483,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.NewDeckIcon.ShouldBe(_viewModel.SelectedIcon);
         }
 
-        [Fact]
+        [Test]
         public async Task AppearingAsync_LoadsAllArchetypesAndTags()
         {
             var trainer = new Trainer { Id = 1, Name = "Ash" };
@@ -500,7 +501,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.AllTags.Count.ShouldBe(1);
         }
 
-        [Fact]
+        [Test]
         public async Task DeleteArchetypeAsync_CallsDeleteAndRefreshesList()
         {
             var trainer = new Trainer { Id = 1, Name = "Ash" };
@@ -517,7 +518,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Archetypes.Received(1).DeleteAsync(archetype);
         }
 
-        [Fact]
+        [Test]
         public async Task DeleteArchetypeAsync_AfterDelete_RefreshesAllArchetypes()
         {
             var trainer = new Trainer { Id = 1, Name = "Ash" };
@@ -536,7 +537,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.AllArchetypes.Count.ShouldBe(0);
         }
 
-        [Fact]
+        [Test]
         public async Task DeleteTagAsync_CallsDeleteAndRefreshesList()
         {
             var trainer = new Trainer { Id = 1, Name = "Ash" };
@@ -553,7 +554,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _ = _mockConnectionFactory.Tags.Received(1).DeleteAsync(tag);
         }
 
-        [Fact]
+        [Test]
         public async Task DeleteTagAsync_AfterDelete_RefreshesAllTags()
         {
             var trainer = new Trainer { Id = 1, Name = "Ash" };
@@ -572,7 +573,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.AllTags.Count.ShouldBe(0);
         }
 
-        [Fact]
+        [Test]
         public async Task SaveArchetypeAsync_OnSuccess_RefreshesAllArchetypes()
         {
             var trainer = new Trainer { Id = 7, Name = "Gary" };
@@ -595,7 +596,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.AllArchetypes.Count.ShouldBe(1);
         }
 
-        [Fact]
+        [Test]
         public async Task SaveTagAsync_OnSuccess_RefreshesAllTags()
         {
             var trainer = new Trainer { Id = 3, Name = "Misty" };

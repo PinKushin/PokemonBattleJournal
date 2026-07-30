@@ -2,16 +2,17 @@
 {
     public class BO1ResultCalculatorTests
     {
-        private readonly BO1ResultCalculator _bO1ResultCalculator;
+        private BO1ResultCalculator _bO1ResultCalculator = null!;
 
 
-        public BO1ResultCalculatorTests()
+        [SetUp]
+        public void SetUp()
         {
             //SUT
             _bO1ResultCalculator = new();
         }
 
-        [Fact]
+        [Test]
         public void CalculateResult_NullInput_ThrowsException()
         {
             // Arrange
@@ -24,7 +25,7 @@
             });
         }
 
-        [Fact]
+        [Test]
         public void CalculateResult_WinInput_ReturnMatchResultOfWin()
         {
             // Arrange
@@ -38,7 +39,7 @@
             result.ShouldBe(MatchResult.Win);
         }
 
-        [Fact]
+        [Test]
         public void CalculateResult_LossInput_ReturnMatchResultOfLoss()
         {
             // Arrange
@@ -52,7 +53,7 @@
             result.ShouldBe(MatchResult.Loss);
         }
 
-        [Fact]
+        [Test]
         public void CalculateResult_TieInput_ReturnMatchResultOfTie()
         {
             // Arrange
