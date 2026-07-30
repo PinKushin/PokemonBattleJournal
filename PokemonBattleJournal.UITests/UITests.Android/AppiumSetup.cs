@@ -88,7 +88,7 @@ namespace UITests
                 new Uri("http://127.0.0.1:4723/"),
                 androidOptions,
                 TimeSpan.FromMinutes(5));
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
             Log("5. AndroidDriver created");
 
             Log("6. WaitForActivity");

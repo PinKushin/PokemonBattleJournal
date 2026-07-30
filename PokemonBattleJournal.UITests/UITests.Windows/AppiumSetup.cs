@@ -62,7 +62,7 @@ namespace UITests
             }
 
             driver = new WindowsDriver(new Uri("http://127.0.0.1:4724/"), windowsOptions);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
 
             // Wait for Shell to be fully rendered before any test runs.
             // FindElement blocks until the element appears (up to 15s implicit wait).

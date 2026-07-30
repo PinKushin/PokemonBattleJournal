@@ -71,7 +71,7 @@ namespace UITests
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
             try { FindUIElement($"DeleteArchetype_{deckName}").Click(); }
             catch (OpenQA.Selenium.NoSuchElementException) { }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15); }
+            finally { App.Manage().Timeouts().ImplicitWait = App is WindowsDriver ? TimeSpan.FromSeconds(5) : TimeSpan.FromSeconds(10); }
         }
 
         [Fact]
@@ -117,7 +117,7 @@ namespace UITests
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
             try { FindUIElement($"DeleteTag_{tagName}").Click(); }
             catch (OpenQA.Selenium.NoSuchElementException) { }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15); }
+            finally { App.Manage().Timeouts().ImplicitWait = App is WindowsDriver ? TimeSpan.FromSeconds(5) : TimeSpan.FromSeconds(10); }
         }
 
         [Fact]
