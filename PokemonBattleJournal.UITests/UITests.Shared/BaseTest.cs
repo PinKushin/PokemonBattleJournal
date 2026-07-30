@@ -32,9 +32,12 @@ namespace UITests
                 return App.FindElement(MobileBy.AccessibilityId(id));
 
             string resourceId = $"com.PinKushin.PokemonBattleJournal:id/{id}";
-            // Direct lookup is instant when element is already visible.
-            // UiScrollable.scrollIntoView scans the whole view even for visible elements — very slow.
-            // Fall back to scrollable only when direct lookup times out (element is off-screen).
+            // Three-stage lookup:
+            // 1. Direct 3s — instant for already-visible elements.
+            // 2. Direct 10s — for elements in non-scrollable containers that appear after a binding update
+            //    (e.g. tabs inside HorizontalStackLayout with IsVisible bound to a toggle).
+            //    UiScrollable cannot reach these because their parent is not scrollable.
+            // 3. UiScrollable 10s — for elements that are off-screen and need scrolling to reach.
             try
             {
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
@@ -43,10 +46,19 @@ namespace UITests
             }
             catch (OpenQA.Selenium.NoSuchElementException)
             {
-                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-                return App.FindElement(MobileBy.AndroidUIAutomator(
-                    $"new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                    $".scrollIntoView(new UiSelector().resourceId(\"{resourceId}\"))"));
+                try
+                {
+                    App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                    return App.FindElement(MobileBy.AndroidUIAutomator(
+                        $"new UiSelector().resourceId(\"{resourceId}\")"));
+                }
+                catch (OpenQA.Selenium.NoSuchElementException)
+                {
+                    App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                    return App.FindElement(MobileBy.AndroidUIAutomator(
+                        $"new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                        $".scrollIntoView(new UiSelector().resourceId(\"{resourceId}\"))"));
+                }
             }
             finally
             {
