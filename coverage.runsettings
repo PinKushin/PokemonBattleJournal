@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[PokemonBattleJournal]*,[PokemonBattleJournal.Scraper]*</Include>
+          <Exclude>[*.Tests]*,[*.UITests]*,[*.Benchmarks]*</Exclude>
+          <ExcludeByAttribute>GeneratedCodeAttribute,ObsoleteAttribute</ExcludeByAttribute>
+          <SingleHit>false</SingleHit>
+          <UseSourceLink>true</UseSourceLink>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+  <RunConfiguration>
+    <ResultsDirectory>.\PokemonBattleJournal.Tests\TestResults\</ResultsDirectory>
+  </RunConfiguration>
+</RunSettings>
