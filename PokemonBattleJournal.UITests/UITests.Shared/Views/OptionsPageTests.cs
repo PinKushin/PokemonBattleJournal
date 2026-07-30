@@ -18,7 +18,6 @@ namespace UITests
             AppiumElement input = FindUIElement("ArchetypeNameInput");
             input.Clear();
             input.SendKeys("TestDeck");
-            await Task.Delay(300);
 
             input.Text.ShouldEndWith("TestDeck");
 
@@ -56,16 +55,14 @@ namespace UITests
             // No explicit icon selection needed — VM falls back to SelectedIcon default ("ball_icon.png").
             FindUIElement("SaveArchetypeButton").Click();
 
-            // Async save command — wait for VM to clear the name field before asserting.
-            await Task.Delay(500);
+            // Wait for the new archetype row to appear — this proves the async save completed.
+            // Check input cleared only after the row exists, so we never race the VM.
+            FindUIElement($"DeleteArchetype_{deckName}").ShouldNotBeNull();
 
             // Input cleared means save path ran (not early-returned due to missing icon or null trainer).
             AppiumElement clearedInput = FindUIElement("ArchetypeNameInput");
             // On Android, empty Entry returns placeholder text not null/empty — check the typed name is gone.
             clearedInput.Text.ShouldNotContain(deckName);
-
-            // Verify the new archetype row is visible in the list (regression for ScrollView+CollectionView collapse bug).
-            FindUIElement($"DeleteArchetype_{deckName}").ShouldNotBeNull();
 
             // Clean up — delete immediately; use 0ms timeout so a missing button fails fast rather than waiting 15s.
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
@@ -106,11 +103,8 @@ namespace UITests
 
             AppiumElement saveBtn = FindUIElement("SaveTagButton");
             saveBtn.Click();
-            await Task.Delay(500);
 
-            FindUIElement("SaveTagButton").ShouldNotBeNull();
-
-            // Verify the new tag row is visible in the list.
+            // Wait for the new tag row — proves the async save completed, no Task.Delay needed.
             FindUIElement($"DeleteTag_{tagName}").ShouldNotBeNull();
 
             // Clean up with 0ms timeout so a missing button fails fast rather than waiting 15s.
