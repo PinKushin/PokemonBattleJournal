@@ -8,36 +8,50 @@ namespace UITests
         [TearDown]
         public void AfterEach()
         {
-            // Close any open Windows dropdowns first — open pickers block tab clicks and switch toggles.
-            if (App is WindowsDriver)
+            // Use 0ms timeout for all teardown finds — elements that don't exist
+            // (e.g. Game1Tab when BO3 is off) fail instantly instead of exhausting
+            // the full 3s+10s+10s Android lookup chain.
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
             {
-                foreach (string id in new[] { "PossibleResultsPicker", "PossibleResultsPicker2", "PossibleResultsPicker3" })
+                // Close any open Windows dropdowns first — open pickers block tab clicks and switch toggles.
+                if (App is WindowsDriver)
                 {
-                    try { App.FindElement(MobileBy.AccessibilityId(id)).SendKeys(OpenQA.Selenium.Keys.Escape); }
-                    catch (OpenQA.Selenium.NoSuchElementException) { }
+                    foreach (string id in new[] { "PossibleResultsPicker", "PossibleResultsPicker2", "PossibleResultsPicker3" })
+                    {
+                        try { App.FindElement(MobileBy.AccessibilityId(id)).SendKeys(OpenQA.Selenium.Keys.Escape); }
+                        catch (OpenQA.Selenium.NoSuchElementException) { }
+                    }
                 }
+
+                // Return to Game1 tab if a BO3 tab test left us on Game2/Game3.
+                try { App.FindElement(MobileBy.AccessibilityId("Game1Tab")).Click(); }
+                catch (OpenQA.Selenium.NoSuchElementException) { }
+
+                // Turn off BO3 if a test left the switch on.
+                try
+                {
+                    AppiumElement label = App.FindElement(MobileBy.AccessibilityId("BO3StatusLabel"));
+                    if (label.Text == "Best of 3")
+                        App.FindElement(MobileBy.AccessibilityId("BOSwitch")).Click();
+                }
+                catch (OpenQA.Selenium.NoSuchElementException) { }
+
+                // Hide soft keyboard then clear note input.
+                try
+                {
+                    if (App is AndroidDriver androidDriver)
+                        androidDriver.HideKeyboard();
+                    App.FindElement(MobileBy.AccessibilityId("UserNoteInput")).Clear();
+                }
+                catch (OpenQA.Selenium.NoSuchElementException) { }
             }
-
-            // Return to Game1 tab if a BO3 tab test left us on Game2/Game3.
-            try { FindUIElement("Game1Tab").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
-
-            // Turn off BO3 if a test left the switch on.
-            try
+            finally
             {
-                AppiumElement label = FindUIElement("BO3StatusLabel");
-                if (label.Text == "Best of 3")
-                    FindUIElement("BOSwitch").Click();
+                App.Manage().Timeouts().ImplicitWait = App is WindowsDriver
+                    ? TimeSpan.FromSeconds(5)
+                    : TimeSpan.FromSeconds(10);
             }
-            catch (OpenQA.Selenium.NoSuchElementException) { }
-
-            // Hide soft keyboard then clear note input.
-            try
-            {
-                if (App is AndroidDriver androidDriver)
-                    androidDriver.HideKeyboard();
-                FindUIElement("UserNoteInput").Clear();
-            }
-            catch (OpenQA.Selenium.NoSuchElementException) { }
         }
 
         [OneTimeTearDown]
