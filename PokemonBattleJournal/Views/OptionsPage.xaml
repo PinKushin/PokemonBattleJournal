@@ -126,7 +126,6 @@
                                 Grid.Column="0"
                                 HeightRequest="24"
                                 WidthRequest="24"
-                                SemanticProperties.IsInAccessibleTree="False"
                                 Source="{Binding ImagePath}" />
                             <Label
                                 Grid.Column="1"
@@ -139,7 +138,7 @@
                                 AutomationId="{Binding Name, StringFormat='DeleteArchetype_{0}'}"
                                 SemanticProperties.Description="{Binding Name, StringFormat='Delete {0} archetype'}"
                                 BackgroundColor="{StaticResource BostonRed}"
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:OptionsPageViewModel}}, Path=DeleteArchetypeCommand}"
+                                Command="{Binding Source={x:Reference BasePage}, Path=BindingContext.DeleteArchetypeCommand}"
                                 CommandParameter="{Binding .}"
                                 FontSize="11"
                                 HeightRequest="28"
@@ -203,7 +202,7 @@
                                 AutomationId="{Binding Name, StringFormat='DeleteTag_{0}'}"
                                 SemanticProperties.Description="{Binding Name, StringFormat='Delete {0} tag'}"
                                 BackgroundColor="{StaticResource BostonRed}"
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:OptionsPageViewModel}}, Path=DeleteTagCommand}"
+                                Command="{Binding Source={x:Reference BasePage}, Path=BindingContext.DeleteTagCommand}"
                                 CommandParameter="{Binding .}"
                                 FontSize="11"
                                 HeightRequest="28"
