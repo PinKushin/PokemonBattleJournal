@@ -9,6 +9,7 @@ namespace PokemonBattleJournal.Tests.Utilities
             Task successfulTask = Task.CompletedTask;
 
             // Act & Assert — should not throw
+            // SuppressMessage: FireAndForgetSafeAsync is intentionally async void
             successfulTask.FireAndForgetSafeAsync();
         }
 
@@ -20,6 +21,7 @@ namespace PokemonBattleJournal.Tests.Utilities
             Task failingTask = Task.FromException(new Exception("Test error"));
 
             // Act
+            // SuppressMessage: FireAndForgetSafeAsync is intentionally async void
             failingTask.FireAndForgetSafeAsync(mockHandler);
 
             // Allow fire-and-forget to complete
