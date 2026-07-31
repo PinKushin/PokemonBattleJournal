@@ -106,7 +106,7 @@ namespace UITests
             Log($"4. WindowsDriver created ({driverTimer.ElapsedMilliseconds}ms)");
             PerfLog($"{logPrefix} WindowsDriver instantiated ({driverTimer.ElapsedMilliseconds}ms)");
             
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+            driver!.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
 
             // Wait for Shell to be fully rendered before any test runs.
             // FindElement blocks until the element appears (up to 15s implicit wait).
