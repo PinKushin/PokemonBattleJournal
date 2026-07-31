@@ -41,67 +41,43 @@ namespace UITests
 
         protected AppiumDriver App => AppiumSetup.App;
 
-protected AppiumElement FindUIElement(string id)
-{
-    if (App is WindowsDriver)
-    {
-        // Three attempts with increasing timeouts, similar to Android implementation
-        try
+        protected AppiumElement FindUIElement(string id)
         {
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
-            return App.FindElement(MobileBy.AccessibilityId(id));
-        }
-        catch (OpenQA.Selenium.NoSuchElementException)
-        {
+            if (App is WindowsDriver)
+                return App.FindElement(MobileBy.AccessibilityId(id));
+
+            string resourceId = $"com.PinKushin.PokemonBattleJournal:id/{id}";
+            // Three-stage lookup:
+            // 1. Direct 3s — instant for already-visible elements.
+            // 2. Direct 10s — for elements in non-scrollable containers that appear after a binding update.
+            // 3. UiScrollable 10s — for elements off-screen that need scrolling.
             try
             {
-                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-                return App.FindElement(MobileBy.AccessibilityId(id));
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
+                return App.FindElement(MobileBy.AndroidUIAutomator(
+                    $"new UiSelector().resourceId(\"{resourceId}\")"));
             }
             catch (OpenQA.Selenium.NoSuchElementException)
             {
+                try
+                {
+                    App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                    return App.FindElement(MobileBy.AndroidUIAutomator(
+                        $"new UiSelector().resourceId(\"{resourceId}\")"));
+                }
+                catch (OpenQA.Selenium.NoSuchElementException)
+                {
+                    App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                    return App.FindElement(MobileBy.AndroidUIAutomator(
+                        $"new UiScrollable(new UiSelector().scrollable(true).packageName(\"com.PinKushin.PokemonBattleJournal\").instance(0))" +
+                        $".scrollIntoView(new UiSelector().resourceId(\"{resourceId}\"))"));
+                }
+            }
+            finally
+            {
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-                return App.FindElement(MobileBy.AccessibilityId(id));
             }
         }
-        finally
-        {
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-        }
-    }
-
-    string resourceId = $"com.PinKushin.PokemonBattleJournal:id/{id}";
-    // Three-stage lookup:
-    // 1. Direct 3s — instant for already-visible elements.
-    // 2. Direct 10s — for elements in non-scrollable containers that appear after a binding update.
-    // 3. UiScrollable 10s — for elements off-screen that need scrolling.
-    try
-    {
-        App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
-        return App.FindElement(MobileBy.AndroidUIAutomator(
-            $"new UiSelector().resourceId(\"{resourceId}\")"));
-    }
-    catch (OpenQA.Selenium.NoSuchElementException)
-    {
-        try
-        {
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-            return App.FindElement(MobileBy.AndroidUIAutomator(
-                $"new UiSelector().resourceId(\"{resourceId}\")"));
-        }
-        catch (OpenQA.Selenium.NoSuchElementException)
-        {
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-            return App.FindElement(MobileBy.AndroidUIAutomator(
-                $"new UiScrollable(new UiSelector().scrollable(true).packageName(\"com.PinKushin.PokemonBattleJournal\").instance(0))" +
-                $".scrollIntoView(new UiSelector().resourceId(\"{resourceId}\"))"));
-        }
-    }
-    finally
-    {
-        App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-    }
-}
 
         protected AppiumElement FindByDescription(string windowsId, string androidDescription) =>
             App is WindowsDriver
