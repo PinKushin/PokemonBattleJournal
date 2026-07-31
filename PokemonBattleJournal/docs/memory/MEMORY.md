@@ -33,7 +33,8 @@
 - [Android local test workflow](feedback_android_local_testing.md) — Always use ANDROID_USE_INSTALLED=1 locally; never trigger AppiumSetup's 7min EmbedAssembliesIntoApk build; deploy once from VS then rerun tests freely.
 - [docs/ folder location](project_docs_location.md) — docs/ moved into PokemonBattleJournal/docs/ so VS Solution Explorer shows it; all path refs use PokemonBattleJournal/docs/ prefix.
 - [NUnit UI test navigation pattern](feedback_navigate_to_every_test.md) — NavigateTo in [OneTimeSetUp] per class, not per test; MainPage needs [TearDown] for singleton VM state reset.
-- [NUnit migration status](project_nunit_migration.md) — Complete on feature/nunit-migration; patterns, test counts, next task (AppiumSetup logging).
+- [NUnit migration status](project_nunit_migration.md) — Merged to master; all CI passing; 359 unit + 22 integration; coverage 57.7% line (coverlet) / ~80% (VS); next: AppiumSetup logging, OptionsPageViewModel coverage.
+- [Coverage tooling](project_coverage_tooling.md) — VS built-in (~80%) vs coverlet (57.7%); gap is UI test app instrumentation; ReportGenerator merge command documented; 0% classes are expected MAUI startup/UI code.
 - [UI improvement backlog](project_ui_backlog.md) — Post-NUnit backlog: OptionsPage dropdowns, inline time pickers (chained popups), Android styling, ReadJournal search, TrainerPage lazy charts.
 - [UI test cleanup pattern](feedback_uitest_cleanup_pattern.md) — Targeted helpers in try/finally only for mutating tests; never blanket [TearDown]; 0ms ImplicitWait in helpers.
 - [Game3Tab test bug — RESOLVED](project_game3tab_test_bug.md) — AccessibilityId fails after picker selection because MAUI re-render resets content-desc; fix: use FindUIElement (resourceId) after any picker interaction.
