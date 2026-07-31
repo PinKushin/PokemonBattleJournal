@@ -39,9 +39,6 @@ jobs:
           npm install -g appium
           appium driver install windows || appium driver update windows
 
-      - name: Install WinAppDriver
-        run: winget install --id Microsoft.WinAppDriver --accept-package-agreements --accept-source-agreements
-
       - name: Restore
         run: dotnet restore PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
 
