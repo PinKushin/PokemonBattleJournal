@@ -89,11 +89,10 @@ namespace UITests
                 : TimeSpan.FromSeconds(10);
 
         // Ensures BO3 is ON regardless of current state (safe to call when BO3 may already be on).
-        // Scrolls to top first so BO3StatusLabel/BOSwitch (near page top) are always in view,
-        // avoiding stage-3 scrollable timeouts when the page is scrolled down from a prior test.
+        // Call AndroidScrollToTop() before this in tests where a prior test may have scrolled down,
+        // so BO3StatusLabel/BOSwitch (near page top) are in view for FindUIElement.
         private void EnsureBO3On()
         {
-            AndroidScrollToTop();
             AppiumElement label = FindUIElement("BO3StatusLabel");
             if (label.Text != "Best of 3")
                 FindUIElement("BOSwitch").Click();
@@ -211,6 +210,7 @@ namespace UITests
         {
             try
             {
+                AndroidScrollToTop(); // prior tests may leave page scrolled; BO3 controls near top
                 EnsureBO3On();
                 FindUIElement("BO3GamesLayout");
 
@@ -252,6 +252,7 @@ namespace UITests
         {
             try
             {
+                AndroidScrollToTop(); // MainPage_FirstCheck_Displayed (prior alphabetically) scrolls down via stage-3
                 EnsureBO3On();
                 FindUIElement("BO3GamesLayout");
 
