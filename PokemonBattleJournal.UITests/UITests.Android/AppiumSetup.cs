@@ -25,6 +25,12 @@ namespace UITests
             File.AppendAllText(SetupLogPath, line + Environment.NewLine);
         }
 
+        private static void PerfLog(string message)
+        {
+            string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.PerfLog.txt"), line + Environment.NewLine); } catch { }
+        }
+
         [OneTimeSetUp]
         public void RunBeforeAnyTests()
         {
