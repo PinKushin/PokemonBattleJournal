@@ -410,5 +410,78 @@ namespace PokemonBattleJournal.Tests.Services
             result[0].Date.ShouldBe(new DateTime(2026, 3, 1));
             result[0].Value.ShouldBe(100);
         }
+
+        [Test]
+        public void CalculateMatchFrequency_EmptyList_ReturnsEmpty()
+        {
+            ObservableCollection<TimeDataPoint> result = _service.CalculateMatchFrequency([]);
+
+            result.ShouldBeEmpty();
+        }
+
+        [Test]
+        public void CalculateMatchFrequency_MultipleDates_GroupsAndOrdersByDate()
+        {
+            List<MatchEntry> matches =
+            [
+                new() { DatePlayed = new DateTime(2026, 3, 2) },
+                new() { DatePlayed = new DateTime(2026, 3, 1) },
+                new() { DatePlayed = new DateTime(2026, 3, 1) },
+                new() { DatePlayed = new DateTime(2026, 3, 2) },
+                new() { DatePlayed = new DateTime(2026, 3, 2) }
+            ];
+
+            ObservableCollection<TimeDataPoint> result = _service.CalculateMatchFrequency(matches);
+
+            result.Count.ShouldBe(2);
+            result[0].Date.ShouldBe(new DateTime(2026, 3, 1));
+            result[0].Value.ShouldBe(2);
+            result[1].Date.ShouldBe(new DateTime(2026, 3, 2));
+            result[1].Value.ShouldBe(3);
+        }
+
+        [Test]
+        public void CalculateMatchFrequency_SingleDate_ReturnsSinglePoint()
+        {
+            List<MatchEntry> matches =
+            [
+                new() { DatePlayed = new DateTime(2026, 5, 10) },
+                new() { DatePlayed = new DateTime(2026, 5, 10) }
+            ];
+
+            ObservableCollection<TimeDataPoint> result = _service.CalculateMatchFrequency(matches);
+
+            result.Count.ShouldBe(1);
+            result[0].Value.ShouldBe(2);
+        }
+
+        [Test]
+        public void CalculateAverageMatchDuration_WithMatches_ReturnsAverage()
+        {
+            var baseDate = new DateTime(2026, 1, 1);
+            List<MatchEntry> matches =
+            [
+                new() { StartTime = baseDate.AddHours(10), EndTime = baseDate.AddHours(10).AddMinutes(20) },
+                new() { StartTime = baseDate.AddHours(11), EndTime = baseDate.AddHours(11).AddMinutes(40) }
+            ];
+
+            TimeSpan result = _service.CalculateAverageMatchDuration(matches);
+
+            result.ShouldBe(TimeSpan.FromMinutes(30));
+        }
+
+        [Test]
+        public void CalculateAverageMatchDuration_SingleMatch_ReturnsDuration()
+        {
+            var baseDate = new DateTime(2026, 1, 1);
+            List<MatchEntry> matches =
+            [
+                new() { StartTime = baseDate.AddHours(9), EndTime = baseDate.AddHours(9).AddMinutes(15) }
+            ];
+
+            TimeSpan result = _service.CalculateAverageMatchDuration(matches);
+
+            result.ShouldBe(TimeSpan.FromMinutes(15));
+        }
     }
 }

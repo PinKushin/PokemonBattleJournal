@@ -183,5 +183,77 @@
             _viewModel.PlayingName.ShouldBe("Unknown");
             _viewModel.AgainstName.ShouldBe("Unknown");
         }
+
+        [Test]
+        public async Task AppearingAsync_EmptyMatchList_SetsEmptyMatchHistory()
+        {
+            _mockConnectionFactory.Trainers.GetActiveAsync()
+                .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
+            _mockConnectionFactory.Matches.GetByTrainerIdAsync(1, Arg.Any<bool>())
+                .Returns(Task.FromResult(new List<MatchEntry>()));
+
+            await _viewModel.AppearingAsync();
+
+            _viewModel.MatchHistory.ShouldNotBeNull();
+            _viewModel.MatchHistory!.Count.ShouldBe(0);
+        }
+
+        [Test]
+        public async Task AppearingAsync_DatabaseThrows_DoesNotRethrow()
+        {
+            _mockConnectionFactory.Trainers.GetActiveAsync()
+                .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
+            _mockConnectionFactory.Matches.GetByTrainerIdAsync(1, Arg.Any<bool>())
+                .Returns(Task.FromException<List<MatchEntry>>(new InvalidOperationException("DB failure")));
+
+            // Exception must not propagate — caught and handled internally.
+            await Should.NotThrowAsync(() => _viewModel.AppearingAsync());
+        }
+
+        [Test]
+        public void LoadMatch_Game2WithTags_PopulatesTagsSelectedGame2()
+        {
+            _viewModel.SelectedMatch = new MatchEntry
+            {
+                Result = MatchResult.Win,
+                Playing = new Archetype { Name = "Fire" },
+                Against = new Archetype { Name = "Water" },
+                Game1 = new Game { Result = MatchResult.Win, Tags = [] },
+                Game2 = new Game
+                {
+                    Result = MatchResult.Loss,
+                    Tags = [new Tags { Name = "Tag1" }, new Tags { Name = "Tag2" }]
+                }
+            };
+
+            _viewModel.LoadMatch();
+
+            _viewModel.TagsSelectedGame2.ShouldNotBeNull();
+            _viewModel.TagsSelectedGame2!.Count.ShouldBe(2);
+            _viewModel.HasGame2Tags.ShouldBeTrue();
+            _viewModel.Game2TagsInfo.ShouldBe("Game 2: 2 tags");
+        }
+
+        [Test]
+        public void LoadMatch_Game3WithoutTags_SetsGame3NoTagsInfo()
+        {
+            _viewModel.SelectedMatch = new MatchEntry
+            {
+                Result = MatchResult.Win,
+                Playing = new Archetype { Name = "Fire" },
+                Against = new Archetype { Name = "Water" },
+                Game1 = new Game { Result = MatchResult.Win, Tags = [] },
+                Game2 = new Game { Result = MatchResult.Loss, Tags = [] },
+                Game3 = new Game { Result = MatchResult.Tie, Tags = [] }
+            };
+
+            _viewModel.LoadMatch();
+
+            _viewModel.ResultGame3.ShouldBe(MatchResult.Tie);
+            _viewModel.HasGame3Tags.ShouldBeFalse();
+            _viewModel.Game3TagsInfo.ShouldBe("Game 3: No tags");
+            _viewModel.TagsSelectedGame3.ShouldNotBeNull();
+            _viewModel.TagsSelectedGame3!.Count.ShouldBe(0);
+        }
     }
 }
