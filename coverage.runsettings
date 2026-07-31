@@ -16,6 +16,6 @@
     </DataCollectors>
   </DataCollectionRunSettings>
   <RunConfiguration>
-    <ResultsDirectory>.\PokemonBattleJournal.Tests\TestResults\</ResultsDirectory>
+    <ResultsDirectory>.\PokemonBattleJournal\docs\coverage\</ResultsDirectory>
   </RunConfiguration>
 </RunSettings>

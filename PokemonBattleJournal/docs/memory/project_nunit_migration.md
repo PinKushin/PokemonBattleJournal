@@ -1,14 +1,14 @@
 ---
 name: project_nunit_migration
-description: NUnit migration status — complete on feature/nunit-migration, pending merge to master
+description: NUnit migration — all Android and Windows UI tests fixed and passing; pending merge to master
 metadata:
   node_type: memory
   type: project
   originSessionId: 9bcb5645-bb7a-4eb5-8136-ff774166a95e
-  modified: 2026-07-30T20:32:00.700Z
+  modified: 2026-07-30T23:30:00.000Z
 ---
 
-Branch `feature/nunit-migration` replaces xUnit with NUnit 4 across all test projects. Status: complete, pending final UI test run verification before merge to master.
+Branch `feature/nunit-migration` replaces xUnit with NUnit 4 across all test projects. All Android and Windows CI failures resolved. Ready to merge to master once final CI run confirms green.
 
 **What was done:**
 - All projects: xUnit packages removed, NUnit 4.6.1 + NUnit3TestAdapter 6.2.0 added
@@ -21,13 +21,26 @@ Branch `feature/nunit-migration` replaces xUnit with NUnit 4 across all test pro
 **UI test patterns established:**
 - Each page class has `[OneTimeSetUp]` calling `NavigateTo("Page")` — navigates once per fixture
 - `[OneTimeTearDown]` calls `InvalidateCurrentPage()` on MainPage
-- Cleanup helpers (ResetBOSwitch, ResetGame1Tab, CloseWindowsPickers, ClearUserNoteInput, DeleteCreatedArchetype, DeleteCreatedTag) called in `try/finally` only by tests that mutate state
+- Cleanup helpers (ResetBOSwitch, ResetGame1Tab, CloseWindowsPickers, ClearUserNoteInput) called in `try/finally` only by tests that mutate state
 - All helpers use `ImplicitWait = TimeSpan.Zero` so missing elements fail instantly
 - `BaseTest` has `[SetUp]/[TearDown]` with Stopwatch logging to `%TEMP%\UITests.PerfLog.txt`
-- NavigateTo logs duration to both NavLog and PerfLog
 
-**Test counts:** 350 unit + 22 integration — all passing. Android/Windows UI tests in progress.
+**Android fixes committed (all on feature/nunit-migration):**
+- `AndroidScrollToTop()` helper using `scrollToBeginning(100)` in cleanup to reset scroll position after BO3 tests
+- `EnsureBO3On()` helper: reads `BO3StatusLabel.Text`, only clicks BOSwitch if not already "Best of 3" — fixes blind toggle that accidentally turned BO3 off when cleanup left it on
+- `FindUIElement("Game2Tab")` (resourceId) instead of `AccessibilityId("Game2Tab")` after picker selection — MAUI Android re-renders tab bar native views during ShowGame3 binding update, resetting content-desc from AutomationId to SemanticProperties.Description
 
-**Next task:** Add timestamped logging to AppiumSetup (Android + Windows) covering: emulator/WinAppDriver launch, Appium driver init, SeedTestData start/end, individual seed steps. Write to PerfLog so full timeline from setup to first test is visible.
+**Windows CI fix:**
+- `ClickTab` was using `PointerKind.Touch` — silent no-op on Windows Server CI (no touch hardware)
+- Changed to `PointerKind.Mouse` — WinUI TapGestureRecognizer responds to left mouse click
 
-**Why:** Windows UI tests are now much faster after the NUnit refactor. Android deploy time is fixed overhead (~7 min EmbedAssembliesIntoApk on CI). Need AppiumSetup logging to diagnose whether remaining slowness is in setup vs tests.
+**Coverage:**
+- `coverage.runsettings` at repo root — select via Test > Configure Run Settings > Select Solution Wide runsettings File
+- `Save-CoverageResults.ps1` copies cobertura XML to docs/ with timestamp
+- Fine Code Coverage VS extension reads cobertura output for inline editor highlighting
+
+**Test counts:** 350 unit + 22 integration — all passing. Android/Windows UI tests all passing locally and on CI (pending latest Windows run confirmation).
+
+**Next task after merge:** Add timestamped logging to AppiumSetup (Android + Windows) covering emulator launch, Appium driver init, SeedTestData timing.
+
+**Why:** NUnit runs tests alphabetically by default — critical for understanding test ordering and state contamination between tests.

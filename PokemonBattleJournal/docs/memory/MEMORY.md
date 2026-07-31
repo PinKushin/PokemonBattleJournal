@@ -34,4 +34,11 @@
 - [docs/ folder location](project_docs_location.md) — docs/ moved into PokemonBattleJournal/docs/ so VS Solution Explorer shows it; all path refs use PokemonBattleJournal/docs/ prefix.
 - [NUnit UI test navigation pattern](feedback_navigate_to_every_test.md) — NavigateTo in [OneTimeSetUp] per class, not per test; MainPage needs [TearDown] for singleton VM state reset.
 - [NUnit migration status](project_nunit_migration.md) — Complete on feature/nunit-migration; patterns, test counts, next task (AppiumSetup logging).
+- [UI improvement backlog](project_ui_backlog.md) — Post-NUnit backlog: OptionsPage dropdowns, inline time pickers (chained popups), Android styling, ReadJournal search, TrainerPage lazy charts.
 - [UI test cleanup pattern](feedback_uitest_cleanup_pattern.md) — Targeted helpers in try/finally only for mutating tests; never blanket [TearDown]; 0ms ImplicitWait in helpers.
+- [Game3Tab test bug — RESOLVED](project_game3tab_test_bug.md) — AccessibilityId fails after picker selection because MAUI re-render resets content-desc; fix: use FindUIElement (resourceId) after any picker interaction.
+- [MAUI content-desc reset on Android](feedback_maui_content_desc_reset.md) — IsVisible binding update triggers native re-render that resets content-desc from AutomationId to SemanticProperties.Description; use FindUIElement not AccessibilityId after picker interactions.
+- [EnsureBO3On idempotent helper](feedback_bo3_state_idempotent.md) — Blind BOSwitch click turns BO3 off if already on; read BO3StatusLabel.Text first and only click if not "Best of 3".
+- [Windows tab click — use Pen](project_windows_tab_click_ci.md) — Touch is no-op on CI, Mouse rejected locally by WinAppDriver; PointerKind.Pen works on both (no hardware needed).
+- [Cleanup helper timeout rule](feedback_cleanup_helper_timeout.md) — 0ms ImplicitWait only for optional elements; state-restoring clicks need FindUIElement (3s min) or silent miss corrupts subsequent tests.
+- [UiScrollable only scrolls down](feedback_uiscrollable_direction.md) — scrollIntoView can't reach elements above current scroll position; call AndroidScrollToTop before tests needing top-of-page elements.
