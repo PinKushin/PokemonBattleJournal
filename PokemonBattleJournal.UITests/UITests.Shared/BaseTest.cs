@@ -140,14 +140,15 @@ namespace UITests
                 return;
             }
 
-            // Touch actions fail on Windows Server CI (no touch hardware).
-            // WinUI TapGestureRecognizer responds to left mouse click, so mouse pointer works.
-            var mouse = new OpenQA.Selenium.Appium.Interactions.PointerInputDevice(
-                OpenQA.Selenium.Interactions.PointerKind.Mouse, "mouse");
-            var seq = new OpenQA.Selenium.Interactions.ActionSequence(mouse, 0);
-            seq.AddAction(mouse.CreatePointerMove(tabElement, 0, 0, TimeSpan.Zero));
-            seq.AddAction(mouse.CreatePointerDown(OpenQA.Selenium.Interactions.MouseButton.Left));
-            seq.AddAction(mouse.CreatePointerUp(OpenQA.Selenium.Interactions.MouseButton.Left));
+            // WinAppDriver only supports pen and touch pointer types (not mouse).
+            // Touch is a no-op on Windows Server CI (no touch driver). Pen input works on both
+            // local and CI because WinAppDriver can inject pen events without physical hardware.
+            var pen = new OpenQA.Selenium.Appium.Interactions.PointerInputDevice(
+                OpenQA.Selenium.Interactions.PointerKind.Pen, "pen");
+            var seq = new OpenQA.Selenium.Interactions.ActionSequence(pen, 0);
+            seq.AddAction(pen.CreatePointerMove(tabElement, 0, 0, TimeSpan.Zero));
+            seq.AddAction(pen.CreatePointerDown(OpenQA.Selenium.Interactions.MouseButton.Left));
+            seq.AddAction(pen.CreatePointerUp(OpenQA.Selenium.Interactions.MouseButton.Left));
             App.PerformActions([seq]);
         }
     }

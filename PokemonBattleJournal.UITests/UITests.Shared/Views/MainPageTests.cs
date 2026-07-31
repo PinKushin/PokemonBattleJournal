@@ -32,8 +32,9 @@ namespace UITests
 
         private void ResetGame1Tab()
         {
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            try { App.FindElement(MobileBy.AccessibilityId("Game1Tab")).Click(); }
+            // Use FindUIElement (3s minimum wait, resourceId) — 0ms ImplicitWait silently misses
+            // Game1Tab on slow emulators, leaving IsGame2Selected=true and hiding Game1 panel elements.
+            try { FindUIElement("Game1Tab").Click(); }
             catch (OpenQA.Selenium.NoSuchElementException) { }
             finally
             {
@@ -88,8 +89,11 @@ namespace UITests
                 : TimeSpan.FromSeconds(10);
 
         // Ensures BO3 is ON regardless of current state (safe to call when BO3 may already be on).
+        // Scrolls to top first so BO3StatusLabel/BOSwitch (near page top) are always in view,
+        // avoiding stage-3 scrollable timeouts when the page is scrolled down from a prior test.
         private void EnsureBO3On()
         {
+            AndroidScrollToTop();
             AppiumElement label = FindUIElement("BO3StatusLabel");
             if (label.Text != "Best of 3")
                 FindUIElement("BOSwitch").Click();
