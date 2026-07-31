@@ -1,6 +1,7 @@
 namespace UITests
 {
-    public class AppiumSetup : IDisposable
+    [SetUpFixture]
+    public class AppiumSetup
     {
         private static AppiumDriver? driver;
 
@@ -24,7 +25,8 @@ namespace UITests
             File.AppendAllText(SetupLogPath, line + Environment.NewLine);
         }
 
-        public AppiumSetup()
+        [OneTimeSetUp]
+        public void RunBeforeAnyTests()
         {
             File.WriteAllText(SetupLogPath, $"=== AppiumSetup start {DateTime.Now:O} ==={Environment.NewLine}");
             File.WriteAllText(Path.Combine(Path.GetTempPath(), "UITests.NavLog.txt"),
@@ -109,7 +111,8 @@ namespace UITests
             Log("6. WaitForActivity done");
         }
 
-        public void Dispose()
+        [OneTimeTearDown]
+        public void RunAfterAllTests()
         {
             // Force-stop the app before closing the session so it doesn't stay running
             RunAdb($"shell am force-stop {AppPackage}", timeoutMs: 5_000);

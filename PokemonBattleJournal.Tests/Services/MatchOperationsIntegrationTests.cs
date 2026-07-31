@@ -7,12 +7,13 @@ namespace PokemonBattleJournal.Tests.Services
     /// These cover the end-to-end save/retrieve paths that UI tests exercise via picker
     /// interaction, providing a CI-stable regression layer independent of UI automation.
     /// </summary>
-    public class MatchOperationsIntegrationTests : IAsyncLifetime
+    public class MatchOperationsIntegrationTests
     {
         private InMemorySqliteConnectionFactory _factory = null!;
         private MatchOperations _sut = null!;
 
-        public async Task InitializeAsync()
+        [SetUp]
+        public async Task SetUp()
         {
             _factory = new InMemorySqliteConnectionFactory();
             _sut = new MatchOperations(_factory, Substitute.For<ILogger>());
@@ -20,7 +21,8 @@ namespace PokemonBattleJournal.Tests.Services
             _ = await _factory.GetDatabaseAsync();
         }
 
-        public async Task DisposeAsync()
+        [TearDown]
+        public async Task TearDown()
         {
             await _factory.CloseAndDeleteAsync();
         }
@@ -49,7 +51,7 @@ namespace PokemonBattleJournal.Tests.Services
         // SaveAsync — happy paths
         // ---------------------------------------------------------------------------
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_WinResult_PersistsMatchToDatabase()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -76,7 +78,7 @@ namespace PokemonBattleJournal.Tests.Services
             saved!.Result.ShouldBe(MatchResult.Win);
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_LossResult_PersistsCorrectResult()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -102,7 +104,7 @@ namespace PokemonBattleJournal.Tests.Services
             saved!.Result.ShouldBe(MatchResult.Loss);
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_TieResult_PersistsCorrectResult()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -128,7 +130,7 @@ namespace PokemonBattleJournal.Tests.Services
             saved!.Result.ShouldBe(MatchResult.Tie);
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_BO3Match_PersistsAllThreeGames()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -162,7 +164,7 @@ namespace PokemonBattleJournal.Tests.Services
             saved.Game3Id.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_ThenGetByTrainerId_ReturnsMatch()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -186,7 +188,7 @@ namespace PokemonBattleJournal.Tests.Services
             matches[0].TrainerId.ShouldBe(trainerId);
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_ThenDelete_RemovesMatchFromDatabase()
         {
             uint trainerId = await SeedTrainerAsync();

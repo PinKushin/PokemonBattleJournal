@@ -2,19 +2,21 @@ using SQLite;
 
 namespace PokemonBattleJournal.Tests.Services
 {
-    public class TagOperationsIntegrationTests : IAsyncLifetime
+    public class TagOperationsIntegrationTests
     {
         private TestSqliteConnectionFactory _factory = null!;
         private TagOperations _sut = null!;
 
-        public async Task InitializeAsync()
+        [SetUp]
+        public async Task SetUp()
         {
             _factory = new TestSqliteConnectionFactory();
             _sut = new TagOperations(_factory, Substitute.For<ILogger>());
             _ = await _factory.GetDatabaseAsync();
         }
 
-        public async Task DisposeAsync()
+        [TearDown]
+        public async Task TearDown()
         {
             await _factory.CloseAndDeleteAsync();
         }
@@ -27,7 +29,7 @@ namespace PokemonBattleJournal.Tests.Services
             return (uint)trainer.Id;
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_NewTag_PersistsToDatabase()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -39,7 +41,7 @@ namespace PokemonBattleJournal.Tests.Services
             tags.ShouldContain(t => t.Name == "Aggro");
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_DuplicateTag_ReturnsZero()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -50,7 +52,7 @@ namespace PokemonBattleJournal.Tests.Services
             affected.ShouldBe(0);
         }
 
-        [Fact]
+        [Test]
         public async Task GetAllAsync_AfterSave_ReturnsTag()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -62,7 +64,7 @@ namespace PokemonBattleJournal.Tests.Services
             tags.ShouldContain(t => t.Name == "Midrange");
         }
 
-        [Fact]
+        [Test]
         public async Task DeleteAsync_AfterSave_RemovesTag()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -77,7 +79,7 @@ namespace PokemonBattleJournal.Tests.Services
             remaining.ShouldNotContain(t => t.Name == "Tempo");
         }
 
-        [Fact]
+        [Test]
         public async Task GetByIdAsync_AfterSave_ReturnsCorrectTag()
         {
             uint trainerId = await SeedTrainerAsync();

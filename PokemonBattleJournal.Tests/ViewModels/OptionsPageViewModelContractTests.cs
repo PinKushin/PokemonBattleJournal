@@ -8,25 +8,25 @@ namespace PokemonBattleJournal.Tests.ViewModels
     {
         private static readonly Type _vm = typeof(OptionsPageViewModel);
 
-        [Theory]
-        [InlineData("Title")]
-        [InlineData("NameInput")]
-        [InlineData("NewDeckName")]
-        [InlineData("SelectedIcon")]
-        [InlineData("IconCollection")]
-        [InlineData("IconItems")]
-        [InlineData("SelectedIconItem")]
-        [InlineData("TagInput")]
+        [Test]
+        [TestCase("Title")]
+        [TestCase("NameInput")]
+        [TestCase("NewDeckName")]
+        [TestCase("SelectedIcon")]
+        [TestCase("IconCollection")]
+        [TestCase("IconItems")]
+        [TestCase("SelectedIconItem")]
+        [TestCase("TagInput")]
         public void OptionsPageViewModel_HasProperty(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"OptionsPage.xaml binds to '{name}' but it was not found on OptionsPageViewModel");
 
-        [Theory]
-        [InlineData("AppearingCommand")]
-        [InlineData("SaveTrainerCommand")]
-        [InlineData("SaveArchetypeCommand")]
-        [InlineData("SaveTagCommand")]
-        [InlineData("SaveAllCommand")]
-        [InlineData("DeleteTrainerFileCommand")]
+        [Test]
+        [TestCase("AppearingCommand")]
+        [TestCase("SaveTrainerCommand")]
+        [TestCase("SaveArchetypeCommand")]
+        [TestCase("SaveTagCommand")]
+        [TestCase("SaveAllCommand")]
+        [TestCase("DeleteTrainerFileCommand")]
         public void OptionsPageViewModel_HasCommand(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"OptionsPage.xaml binds to Command '{name}' but it was not found on OptionsPageViewModel");
     }

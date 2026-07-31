@@ -7,14 +7,14 @@ public class TrainerOperationsTests : IAsyncDisposable
 {
     private readonly TestSqliteConnectionFactory _factory = new(new NullMetaService());
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_ValidName_ReturnsOne()
     {
         int result = await _factory.Trainers.SaveAsync("Ash");
         result.ShouldBe(1);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_DuplicateName_ReturnsZero()
     {
         await _factory.Trainers.SaveAsync("Misty");
@@ -22,7 +22,7 @@ public class TrainerOperationsTests : IAsyncDisposable
         result.ShouldBe(0);
     }
 
-    [Fact]
+    [Test]
     public async Task GetAllAsync_AfterSave_ReturnsTrainer()
     {
         await _factory.Trainers.SaveAsync("Brock");
@@ -30,7 +30,7 @@ public class TrainerOperationsTests : IAsyncDisposable
         all.ShouldContain(t => t.Name == "Brock");
     }
 
-    [Fact]
+    [Test]
     public async Task GetByNameAsync_ExistingName_ReturnsTrainer()
     {
         await _factory.Trainers.SaveAsync("Gary");
@@ -39,14 +39,14 @@ public class TrainerOperationsTests : IAsyncDisposable
         found!.Name.ShouldBe("Gary");
     }
 
-    [Fact]
+    [Test]
     public async Task GetByNameAsync_MissingName_ReturnsNull()
     {
         Trainer? found = await _factory.Trainers.GetByNameAsync("Nobody");
         found.ShouldBeNull();
     }
 
-    [Fact]
+    [Test]
     public async Task GetByIdAsync_ExistingId_ReturnsTrainer()
     {
         await _factory.Trainers.SaveAsync("Erika");
@@ -56,7 +56,7 @@ public class TrainerOperationsTests : IAsyncDisposable
         found!.Name.ShouldBe("Erika");
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteAsync_ExistingTrainer_RemovesFromDb()
     {
         await _factory.Trainers.SaveAsync("Giovanni");
@@ -67,7 +67,7 @@ public class TrainerOperationsTests : IAsyncDisposable
         after.ShouldBeNull();
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteAsync_WithRelatedMatches_CleansUpAll()
     {
         // Save trainer + archetype + a match so cascading delete is exercised

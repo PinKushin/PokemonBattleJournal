@@ -1,12 +1,13 @@
-namespace PokemonBattleJournal.Tests.ViewModels
+﻿namespace PokemonBattleJournal.Tests.ViewModels
 {
     public class ReadJournalPageViewModelTests
     {
-        private readonly ReadJournalPageViewModel _viewModel;
-        private readonly ISqliteConnectionFactory _mockConnectionFactory;
-        private readonly ILogger<ReadJournalPageViewModel> _mockLogger;
+        private ReadJournalPageViewModel _viewModel = null!;
+        private ISqliteConnectionFactory _mockConnectionFactory = null!;
+        private ILogger<ReadJournalPageViewModel> _mockLogger = null!;
 
-        public ReadJournalPageViewModelTests()
+        [SetUp]
+        public void SetUp()
         {
             // Mocks
             _mockLogger = Substitute.For<ILogger<ReadJournalPageViewModel>>();
@@ -19,7 +20,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel = new ReadJournalPageViewModel(_mockLogger, _mockConnectionFactory, Substitute.For<ITrainerSwitchService>());
         }
 
-        [Fact]
+        [Test]
         public void ReadJournalPageViewModel_Constructor_SetsWelcomeMsg()
         {
             // Assert
@@ -27,7 +28,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.WelcomeMsg.ShouldNotBeNullOrEmpty();
         }
 
-        [Fact]
+        [Test]
         public void LoadMatch_NullSelectedMatch_ResetsDisplay()
         {
             // Arrange
@@ -42,7 +43,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.AgainstName.ShouldBe("other");
         }
 
-        [Fact]
+        [Test]
         public void LoadMatch_ValidMatchWithGame1_PopulatesPlayingAndResult()
         {
             _viewModel.SelectedMatch = new MatchEntry
@@ -71,7 +72,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.Game1TagsInfo.ShouldBe("Game 1: 1 tags");
         }
 
-        [Fact]
+        [Test]
         public void LoadMatch_MatchWithNoGames_SetsGameResultsToNull()
         {
             _viewModel.SelectedMatch = new MatchEntry
@@ -89,7 +90,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.HasGame1Tags.ShouldBeFalse();
         }
 
-        [Fact]
+        [Test]
         public async Task AppearingAsync_WithTrainerAndMatches_PopulatesMatchHistory()
         {
             List<MatchEntry> matches =
@@ -109,7 +110,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.MatchHistory!.Count.ShouldBe(2);
         }
 
-        [Fact]
+        [Test]
         public async Task AppearingAsync_NoTrainer_SetsEmptyMatchHistory()
         {
             // Arrange
@@ -123,7 +124,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.MatchHistory.ShouldBeNull();
         }
 
-        [Fact]
+        [Test]
         public void LoadMatch_BO3AllThreeGames_PopulatesAllGameResults()
         {
             _viewModel.SelectedMatch = new MatchEntry
@@ -145,7 +146,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.Game3TagsInfo.ShouldBe("Game 3: 1 tags");
         }
 
-        [Fact]
+        [Test]
         public void LoadMatch_Game1WithTags_PopulatesTagsSelectedGame1()
         {
             _viewModel.SelectedMatch = new MatchEntry
@@ -167,7 +168,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.TagsSelectedGame1.ShouldContain(t => t.Name == "Aggro");
         }
 
-        [Fact]
+        [Test]
         public void LoadMatch_NullArchetype_FallsBackToUnknown()
         {
             _viewModel.SelectedMatch = new MatchEntry

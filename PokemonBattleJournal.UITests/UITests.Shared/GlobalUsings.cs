@@ -4,4 +4,4 @@ global using OpenQA.Selenium.Appium.Enums;
 global using OpenQA.Selenium.Appium.Service;
 global using OpenQA.Selenium.Appium.Windows;
 global using Shouldly;
-global using Xunit;
+global using NUnit.Framework;

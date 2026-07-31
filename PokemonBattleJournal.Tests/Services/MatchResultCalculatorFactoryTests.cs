@@ -2,7 +2,8 @@
 {
     public class MatchResultCalculatorFactoryTests
     {
-        public MatchResultCalculatorFactoryTests()
+        [SetUp]
+        public void SetUp()
         {
 
         }
@@ -12,7 +13,7 @@
             return new MatchResultCalculatorFactory();
         }
 
-        [Fact]
+        [Test]
         public void MatchResultCalculatorFactory_GetCalculator_ReturnsABO1Calculator()
         {
             // Arrange
@@ -27,7 +28,7 @@
             // Assert
             _ = calculator.ShouldBeOfType<BO1ResultCalculator>();
         }
-        [Fact]
+        [Test]
         public void GetCalculator_ReturnsABO3Calculator()
         {
             // Arrange

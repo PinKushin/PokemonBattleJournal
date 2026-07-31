@@ -2,24 +2,26 @@ using SQLite;
 
 namespace PokemonBattleJournal.Tests.Services
 {
-    public class TrainerOperationsIntegrationTests : IAsyncLifetime
+    public class TrainerOperationsIntegrationTests
     {
         private TestSqliteConnectionFactory _factory = null!;
         private TrainerOperations _sut = null!;
 
-        public async Task InitializeAsync()
+        [SetUp]
+        public async Task SetUp()
         {
             _factory = new TestSqliteConnectionFactory();
             _sut = new TrainerOperations(_factory, Substitute.For<ILogger>());
             _ = await _factory.GetDatabaseAsync();
         }
 
-        public async Task DisposeAsync()
+        [TearDown]
+        public async Task TearDown()
         {
             await _factory.CloseAndDeleteAsync();
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_NewTrainer_PersistsToDatabase()
         {
             int affected = await _sut.SaveAsync("Ash");
@@ -29,7 +31,7 @@ namespace PokemonBattleJournal.Tests.Services
             all.ShouldContain(t => t.Name == "Ash");
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_DuplicateName_ReturnsZero()
         {
             _ = await _sut.SaveAsync("Misty");
@@ -39,7 +41,7 @@ namespace PokemonBattleJournal.Tests.Services
             affected.ShouldBe(0);
         }
 
-        [Fact]
+        [Test]
         public async Task GetAllAsync_AfterSave_ReturnsTrainer()
         {
             _ = await _sut.SaveAsync("Brock");
@@ -50,7 +52,7 @@ namespace PokemonBattleJournal.Tests.Services
             all.ShouldContain(t => t.Name == "Brock");
         }
 
-        [Fact]
+        [Test]
         public async Task GetByNameAsync_AfterSave_ReturnsCorrectTrainer()
         {
             _ = await _sut.SaveAsync("Gary");
@@ -61,7 +63,7 @@ namespace PokemonBattleJournal.Tests.Services
             found!.Name.ShouldBe("Gary");
         }
 
-        [Fact]
+        [Test]
         public async Task GetActiveAsync_AfterSetActive_ReturnsActiveTrainer()
         {
             _ = await _sut.SaveAsync("Giovanni");
@@ -75,7 +77,7 @@ namespace PokemonBattleJournal.Tests.Services
             active!.Name.ShouldBe("Giovanni");
         }
 
-        [Fact]
+        [Test]
         public async Task SetActiveAsync_SwitchBetweenTrainers_OnlyOneActive()
         {
             _ = await _sut.SaveAsync("TrainerA");
@@ -96,7 +98,7 @@ namespace PokemonBattleJournal.Tests.Services
             all.Count(t => t.IsActive).ShouldBe(1);
         }
 
-        [Fact]
+        [Test]
         public async Task DeleteAsync_AfterSave_RemovesTrainer()
         {
             _ = await _sut.SaveAsync("Erika");

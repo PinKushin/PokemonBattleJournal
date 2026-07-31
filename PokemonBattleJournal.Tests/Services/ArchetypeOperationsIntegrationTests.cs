@@ -2,12 +2,13 @@ using SQLite;
 
 namespace PokemonBattleJournal.Tests.Services
 {
-    public class ArchetypeOperationsIntegrationTests : IAsyncLifetime
+    public class ArchetypeOperationsIntegrationTests
     {
         private TestSqliteConnectionFactory _factory = null!;
         private ArchetypeOperations _sut = null!;
 
-        public async Task InitializeAsync()
+        [SetUp]
+        public async Task SetUp()
         {
             _factory = new TestSqliteConnectionFactory();
             var metaService = Substitute.For<ILimitlessMetaService>();
@@ -17,7 +18,8 @@ namespace PokemonBattleJournal.Tests.Services
             _ = await _factory.GetDatabaseAsync();
         }
 
-        public async Task DisposeAsync()
+        [TearDown]
+        public async Task TearDown()
         {
             await _factory.CloseAndDeleteAsync();
         }
@@ -30,7 +32,7 @@ namespace PokemonBattleJournal.Tests.Services
             return (uint)trainer.Id;
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_NewArchetype_PersistsToDatabase()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -42,7 +44,7 @@ namespace PokemonBattleJournal.Tests.Services
             archetypes.ShouldContain(a => a.Name == "Charizard");
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_DuplicateName_ReturnsZero()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -53,7 +55,7 @@ namespace PokemonBattleJournal.Tests.Services
             affected.ShouldBe(0);
         }
 
-        [Fact]
+        [Test]
         public async Task GetAllAsync_AfterSave_ReturnsArchetype()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -65,7 +67,7 @@ namespace PokemonBattleJournal.Tests.Services
             archetypes.ShouldContain(a => a.Name == "Mewtwo");
         }
 
-        [Fact]
+        [Test]
         public async Task DeleteAsync_AfterSave_RemovesArchetype()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -80,7 +82,7 @@ namespace PokemonBattleJournal.Tests.Services
             remaining.ShouldNotContain(a => a.Name == "Blastoise");
         }
 
-        [Fact]
+        [Test]
         public async Task GetByIdAsync_AfterSave_ReturnsCorrectArchetype()
         {
             uint trainerId = await SeedTrainerAsync();
@@ -95,7 +97,7 @@ namespace PokemonBattleJournal.Tests.Services
             found.ImagePath.ShouldBe("venusaur.png");
         }
 
-        [Fact]
+        [Test]
         public async Task SaveAsync_StoresImagePath()
         {
             uint trainerId = await SeedTrainerAsync();

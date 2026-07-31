@@ -35,7 +35,7 @@ public class LimitlessDeckParserTests
         "</tr>" +
         "</tbody></table>";
 
-    [Fact]
+    [Test]
     public void Parse_ValidHtml_ReturnsRequestedCount()
     {
         string html = BuildHtml(12);
@@ -43,21 +43,21 @@ public class LimitlessDeckParserTests
         result.Count.ShouldBe(10);
     }
 
-    [Fact]
+    [Test]
     public void Parse_ValidHtml_ExtractsDeckName()
     {
         List<MetaDeck> result = _parser.Parse(DragapultHtml, 10);
         result[0].Name.ShouldBe("Dragapult ex");
     }
 
-    [Fact]
+    [Test]
     public void Parse_ValidHtml_ExtractsImageUrl()
     {
         List<MetaDeck> result = _parser.Parse(DragapultHtml, 10);
         result[0].ImageUrl.ShouldContain("dragapult");
     }
 
-    [Fact]
+    [Test]
     public void Parse_EmptyTable_ReturnsEmptyList()
     {
         string html = "<table><tbody></tbody></table>";
@@ -65,7 +65,7 @@ public class LimitlessDeckParserTests
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void Parse_CountGreaterThanRows_ReturnsAllRows()
     {
         string html = BuildHtml(3);
@@ -73,21 +73,21 @@ public class LimitlessDeckParserTests
         result.Count.ShouldBe(3);
     }
 
-    [Fact]
+    [Test]
     public void Parse_EmptyHtml_ReturnsEmptyList()
     {
         List<MetaDeck> result = _parser.Parse(string.Empty, 10);
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void Parse_WhitespaceOnlyHtml_ReturnsEmptyList()
     {
         List<MetaDeck> result = _parser.Parse("   \t\n  ", 10);
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void Parse_RowMissingAnchor_SkipsRow()
     {
         string html =
@@ -98,7 +98,7 @@ public class LimitlessDeckParserTests
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void Parse_RowMissingImage_SkipsRow()
     {
         string html =
@@ -109,7 +109,7 @@ public class LimitlessDeckParserTests
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void Parse_AnchorWithNoAnnotation_UsesFullText()
     {
         string html =
@@ -125,7 +125,7 @@ public class LimitlessDeckParserTests
         result[0].Name.ShouldBe("Snorlax Stall");
     }
 
-    [Fact]
+    [Test]
     public void Parse_ImageWithNoSrc_SkipsRow()
     {
         string html =
@@ -137,7 +137,7 @@ public class LimitlessDeckParserTests
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void Parse_MultiWordAnnotation_FormatsNameCorrectly()
     {
         string html =
@@ -152,7 +152,7 @@ public class LimitlessDeckParserTests
         result[0].Name.ShouldBe("N's Zoroark ex");
     }
 
-    [Fact]
+    [Test]
     public void Parse_CountZero_ReturnsEmptyList()
     {
         string html = BuildHtml(5);
@@ -160,7 +160,7 @@ public class LimitlessDeckParserTests
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void Parse_TableWithNoTbody_ReturnsEmptyList()
     {
         // QuerySelectorAll("table tbody tr") finds nothing without tbody
@@ -169,7 +169,7 @@ public class LimitlessDeckParserTests
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void Parse_NullHtml_ReturnsEmptyList()
     {
         List<MetaDeck> result = _parser.Parse(null!, 10);

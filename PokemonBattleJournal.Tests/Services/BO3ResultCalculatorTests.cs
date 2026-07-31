@@ -2,15 +2,16 @@
 {
     public class BO3ResultCalculatorTests
     {
-        private readonly BO3ResultCalculator _bO3ResultCalculator;
+        private BO3ResultCalculator _bO3ResultCalculator = null!;
 
 
-        public BO3ResultCalculatorTests()
+        [SetUp]
+        public void SetUp()
         {
             _bO3ResultCalculator = new();
         }
 
-        [Fact]
+        [Test]
         public void CalculateResult_AllResultsNull_ThrowsException()
         {
             // Arrange
@@ -25,7 +26,7 @@
             });
         }
 
-        [Fact]
+        [Test]
         public void CalculateResult_2ResultsNull_ThrowsException()
         {
             // Arrange
@@ -40,7 +41,7 @@
             });
         }
 
-        [Fact]
+        [Test]
         public void CalculateResult_TwoWins_ReturnsMatchResultOfWin()
         {
             // Arrange
@@ -59,7 +60,7 @@
             result.ShouldBe(MatchResult.Win);
         }
 
-        [Fact]
+        [Test]
         public void CalculateResult_TieWinLoss_ReturnsMatchResultOfTie()
         {
             // Arrange
@@ -77,7 +78,7 @@
             _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Tie);
         }
-        [Fact]
+        [Test]
         public void CalculateResult_TwoLosses_ReturnsMatchResultOfLoss()
         {
             // Arrange
@@ -95,7 +96,7 @@
             _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Loss);
         }
-        [Fact]
+        [Test]
         public void CalculateResult_TwoTiesOneLoss_ReturnsMatchResultOfLoss()
         {
             // Arrange
@@ -111,7 +112,7 @@
             _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Loss);
         }
-        [Fact]
+        [Test]
         public void CalculateResult_TwoTies_ReturnsMatchResultOfTie()
         {
             // Arrange
@@ -127,7 +128,7 @@
             _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Tie);
         }
-        [Fact]
+        [Test]
         public void CalculateResult_OneWinOneLoss_ReturnsMatchResultOfTie()
         {
             // Arrange
@@ -143,7 +144,7 @@
             _ = result.ShouldBeOfType<MatchResult>();
             result.ShouldBe(MatchResult.Tie);
         }
-        [Fact]
+        [Test]
         public void CalculateResult_TwoTiesAndOneWin_ReturnsMatchResultOfWin()
         {
             // Arrange
@@ -157,7 +158,7 @@
             // Assert
             result.ShouldBe(MatchResult.Win);
         }
-        [Fact]
+        [Test]
         public void CalculateResult_TwoWinsAndOneTie_ReturnsMatchResultOfWin()
         {
             // Arrange
@@ -172,7 +173,7 @@
             result.ShouldBe(MatchResult.Win);
         }
 
-        [Fact]
+        [Test]
         public void CalculateResult_ThreeWins_ReturnsMatchResultOfWin()
         {
             // Arrange
@@ -187,7 +188,7 @@
             result.ShouldBe(MatchResult.Win);
         }
 
-        [Fact]
+        [Test]
         public void CalculateResult_ThreeLosses_ReturnsMatchResultOfLoss()
         {
             // Arrange
@@ -202,7 +203,7 @@
             result.ShouldBe(MatchResult.Loss);
         }
 
-        [Fact]
+        [Test]
         public void CalculateResult_ThreeTies_ReturnsMatchResultOfTie()
         {
             // Arrange
@@ -217,7 +218,7 @@
             result.ShouldBe(MatchResult.Tie);
         }
 
-        [Fact]
+        [Test]
         public void CalculateResult_WinLossLoss_ReturnsMatchResultOfLoss()
         {
             // Arrange

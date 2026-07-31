@@ -2,7 +2,7 @@ namespace PokemonBattleJournal.Tests.Utilities
 {
     public class TaskUtilitiesTests
     {
-        [Fact]
+        [Test]
         public void FireAndForgetSafeAsync_Success_DoesNotThrow()
         {
             // Arrange
@@ -12,7 +12,7 @@ namespace PokemonBattleJournal.Tests.Utilities
             successfulTask.FireAndForgetSafeAsync();
         }
 
-        [Fact]
+        [Test]
         public async Task FireAndForgetSafeAsync_Failure_WithHandler_CallsHandler()
         {
             // Arrange
@@ -29,7 +29,7 @@ namespace PokemonBattleJournal.Tests.Utilities
             mockHandler.Received(1).HandleError(Arg.Any<Exception>());
         }
 
-        [Fact]
+        [Test]
         public async Task FireAndForgetSafeAsync_Failure_NullHandler_DoesNotThrow()
         {
             // Arrange

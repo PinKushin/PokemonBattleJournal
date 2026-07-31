@@ -7,4 +7,4 @@ global using PokemonBattleJournal.Services;
 global using PokemonBattleJournal.Utilities;
 global using PokemonBattleJournal.ViewModels;
 global using Shouldly;
-global using Xunit;
+global using NUnit.Framework;

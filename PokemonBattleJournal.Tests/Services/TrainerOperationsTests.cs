@@ -1,19 +1,20 @@
-namespace PokemonBattleJournal.Tests.Services
+﻿namespace PokemonBattleJournal.Tests.Services
 {
     public class TrainerOperationsTests
     {
-        private readonly TrainerOperations _sut;
-        private readonly SqliteConnectionFactory _mockFactory;
-        private readonly ILogger _mockLogger;
+        private TrainerOperations _sut = null!;
+        private SqliteConnectionFactory _mockFactory = null!;
+        private ILogger _mockLogger = null!;
 
-        public TrainerOperationsTests()
+        [SetUp]
+        public void SetUp()
         {
             _mockFactory = Substitute.For<SqliteConnectionFactory>(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>());
             _mockLogger = Substitute.For<ILogger>();
             _sut = new TrainerOperations(_mockFactory, _mockLogger);
         }
 
-        [Fact]
+        [Test]
         public void GetByNameAsync_EmptyName_ThrowsArgumentException()
         {
             // Act & Assert
@@ -21,7 +22,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.GetByNameAsync(string.Empty));
         }
 
-        [Fact]
+        [Test]
         public void GetByNameAsync_NullName_ThrowsArgumentException()
         {
             // Act & Assert
@@ -29,7 +30,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.GetByNameAsync(null!));
         }
 
-        [Fact]
+        [Test]
         public void SaveAsync_EmptyName_ThrowsArgumentException()
         {
             // Act & Assert
@@ -37,7 +38,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.SaveAsync(string.Empty));
         }
 
-        [Fact]
+        [Test]
         public void SaveAsync_NullName_ThrowsArgumentException()
         {
             // Act & Assert
@@ -45,7 +46,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.SaveAsync(null!));
         }
 
-        [Fact]
+        [Test]
         public void DeleteAsync_NullTrainer_ThrowsArgumentNullException()
         {
             // Act & Assert
@@ -53,7 +54,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.DeleteAsync(null!));
         }
 
-        [Fact]
+        [Test]
         public void DeleteAsync_ZeroId_ThrowsArgumentException()
         {
             // Arrange

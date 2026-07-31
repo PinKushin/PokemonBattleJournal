@@ -10,7 +10,7 @@ public class LimitlessMetaServiceTests
     private static LimitlessMetaService BuildService(IMetaDeckFetcher fetcher, IMetaDeckParser parser) =>
         new(fetcher, parser, NullLogger<LimitlessMetaService>.Instance);
 
-    [Fact]
+    [Test]
     public async Task GetTopDecksAsync_FetcherReturnsHtml_DelegatesParseWithCount()
     {
         const string html = "<html>deck table html</html>";
@@ -30,7 +30,7 @@ public class LimitlessMetaServiceTests
         parser.Received(1).Parse(html, count);
     }
 
-    [Fact]
+    [Test]
     public async Task GetTopDecksAsync_FetcherReturnsEmptyString_ReturnsEmptyListWithoutParsing()
     {
         IMetaDeckFetcher fetcher = Substitute.For<IMetaDeckFetcher>();
@@ -45,7 +45,7 @@ public class LimitlessMetaServiceTests
         parser.DidNotReceive().Parse(Arg.Any<string>(), Arg.Any<int>());
     }
 
-    [Fact]
+    [Test]
     public async Task GetTopDecksAsync_FetcherReturnsWhitespace_ReturnsEmptyListWithoutParsing()
     {
         IMetaDeckFetcher fetcher = Substitute.For<IMetaDeckFetcher>();
@@ -60,7 +60,7 @@ public class LimitlessMetaServiceTests
         parser.DidNotReceive().Parse(Arg.Any<string>(), Arg.Any<int>());
     }
 
-    [Fact]
+    [Test]
     public async Task GetTopDecksAsync_PassesDecksUrlToFetcher()
     {
         const string expectedUrl = "https://limitlesstcg.com/decks";
@@ -76,7 +76,7 @@ public class LimitlessMetaServiceTests
         await fetcher.Received(1).FetchAsync(expectedUrl);
     }
 
-    [Fact]
+    [Test]
     public async Task GetTopDecksAsync_DefaultCount_PassesTenToParser()
     {
         IMetaDeckFetcher fetcher = Substitute.For<IMetaDeckFetcher>();
@@ -94,7 +94,7 @@ public class LimitlessMetaServiceTests
 
 public class MetaServiceFactoryTests
 {
-    [Fact]
+    [Test]
     public void Create_ReturnsLimitlessMetaService()
     {
         IMetaDeckFetcher fetcher = Substitute.For<IMetaDeckFetcher>();

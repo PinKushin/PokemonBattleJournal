@@ -1,19 +1,20 @@
-namespace PokemonBattleJournal.Tests.Services
+﻿namespace PokemonBattleJournal.Tests.Services
 {
     public class ArchetypeOperationsTests
     {
-        private readonly ArchetypeOperations _sut;
-        private readonly SqliteConnectionFactory _mockFactory;
-        private readonly ILogger _mockLogger;
+        private ArchetypeOperations _sut = null!;
+        private SqliteConnectionFactory _mockFactory = null!;
+        private ILogger _mockLogger = null!;
 
-        public ArchetypeOperationsTests()
+        [SetUp]
+        public void SetUp()
         {
             _mockFactory = Substitute.For<SqliteConnectionFactory>(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>());
             _mockLogger = Substitute.For<ILogger>();
             _sut = new ArchetypeOperations(_mockFactory, _mockLogger, Substitute.For<ILimitlessMetaService>());
         }
 
-        [Fact]
+        [Test]
         public void SaveAsync_EmptyName_ThrowsArgumentException()
         {
             // Act & Assert
@@ -21,7 +22,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.SaveAsync(string.Empty, "icon.png", 1));
         }
 
-        [Fact]
+        [Test]
         public void SaveAsync_EmptyImagePath_ThrowsArgumentException()
         {
             // Act & Assert
@@ -29,7 +30,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.SaveAsync("Fire", string.Empty, 1));
         }
 
-        [Fact]
+        [Test]
         public void SaveAsync_ZeroTrainerId_ThrowsArgumentException()
         {
             // Act & Assert
@@ -37,7 +38,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.SaveAsync("Fire", "icon.png", 0));
         }
 
-        [Fact]
+        [Test]
         public void DeleteAsync_NullArchetype_ThrowsArgumentNullException()
         {
             // Act & Assert
@@ -45,7 +46,7 @@ namespace PokemonBattleJournal.Tests.Services
                 _sut.DeleteAsync(null!));
         }
 
-        [Fact]
+        [Test]
         public void DeleteAsync_ZeroId_ThrowsArgumentException()
         {
             // Arrange

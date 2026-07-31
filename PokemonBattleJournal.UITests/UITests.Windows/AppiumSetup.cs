@@ -1,6 +1,7 @@
 namespace UITests
 {
-    public class AppiumSetup : IDisposable
+    [SetUpFixture]
+    public class AppiumSetup
     {
         private static AppiumDriver? driver;
         private bool _attachedToExisting;
@@ -13,14 +14,10 @@ namespace UITests
             }
         }
 
-        public AppiumSetup()
-        {
-            RunBeforeAnyTests();
-        }
-
         private static readonly string UiTestSentinelPath =
             Path.Combine(Path.GetTempPath(), "PokemonBattleJournal.uitest");
 
+        [OneTimeSetUp]
         public void RunBeforeAnyTests()
         {
             // Signal the app to suppress the first-boot prompt (avoids XamlRoot crash)
@@ -71,7 +68,8 @@ namespace UITests
             driver.FindElement(MobileBy.AccessibilityId("OK"));
         }
 
-        public void Dispose()
+        [OneTimeTearDown]
+        public void RunAfterAllTests()
         {
             driver?.Quit();
             if (!_attachedToExisting)

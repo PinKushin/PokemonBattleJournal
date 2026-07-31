@@ -2,160 +2,216 @@ namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {
-        [Fact]
+        [OneTimeSetUp]
+        public void SetUp() => NavigateTo("Journal Entry");
+
+        [OneTimeTearDown]
+        public void TearDown() => InvalidateCurrentPage();
+
+        // ---------------------------------------------------------------------------
+        // Cleanup helpers — 0ms timeout so missing elements fail instantly.
+        // Each test that mutates state calls the relevant helper(s) in a finally block.
+        // ---------------------------------------------------------------------------
+
+        private void ResetBOSwitch()
+        {
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
+            {
+                AppiumElement label = App.FindElement(MobileBy.AccessibilityId("BO3StatusLabel"));
+                if (label.Text == "Best of 3")
+                    App.FindElement(MobileBy.AccessibilityId("BOSwitch")).Click();
+            }
+            catch (OpenQA.Selenium.NoSuchElementException) { }
+            finally
+            {
+                AndroidScrollToTop();
+                RestoreImplicitWait();
+            }
+        }
+
+        private void ResetGame1Tab()
+        {
+            // Use FindUIElement (3s minimum wait, resourceId) — 0ms ImplicitWait silently misses
+            // Game1Tab on slow emulators, leaving IsGame2Selected=true and hiding Game1 panel elements.
+            try { FindUIElement("Game1Tab").Click(); }
+            catch (OpenQA.Selenium.NoSuchElementException) { }
+            finally
+            {
+                AndroidScrollToTop();
+                RestoreImplicitWait();
+            }
+        }
+
+        // scrollToBeginning returns UiScrollable not an element — exception is expected and ignored.
+        private void AndroidScrollToTop()
+        {
+            if (App is not AndroidDriver) return;
+            try
+            {
+                App.FindElement(MobileBy.AndroidUIAutomator(
+                    "new UiScrollable(new UiSelector().scrollable(true).instance(0)).scrollToBeginning(100)"));
+            }
+            catch { }
+        }
+
+        private void CloseWindowsPickers(params string[] ids)
+        {
+            if (App is not WindowsDriver) return;
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
+            {
+                foreach (string id in ids)
+                {
+                    try { App.FindElement(MobileBy.AccessibilityId(id)).SendKeys(OpenQA.Selenium.Keys.Escape); }
+                    catch (OpenQA.Selenium.NoSuchElementException) { }
+                }
+            }
+            finally { RestoreImplicitWait(); }
+        }
+
+        private void ClearUserNoteInput()
+        {
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
+            {
+                if (App is AndroidDriver androidDriver)
+                    androidDriver.HideKeyboard();
+                App.FindElement(MobileBy.AccessibilityId("UserNoteInput")).Clear();
+            }
+            catch (OpenQA.Selenium.NoSuchElementException) { }
+            finally { RestoreImplicitWait(); }
+        }
+
+        private void RestoreImplicitWait() =>
+            App.Manage().Timeouts().ImplicitWait = App is WindowsDriver
+                ? TimeSpan.FromSeconds(5)
+                : TimeSpan.FromSeconds(10);
+
+        // Ensures BO3 is ON regardless of current state (safe to call when BO3 may already be on).
+        // Call AndroidScrollToTop() before this in tests where a prior test may have scrolled down,
+        // so BO3StatusLabel/BOSwitch (near page top) are in view for FindUIElement.
+        private void EnsureBO3On()
+        {
+            AppiumElement label = FindUIElement("BO3StatusLabel");
+            if (label.Text != "Best of 3")
+                FindUIElement("BOSwitch").Click();
+        }
+
+        // ---------------------------------------------------------------------------
+        // Tests
+        // ---------------------------------------------------------------------------
+
+        [Test]
         public void MainPage_AfterFirstBoot_TrainerNameSet()
         {
-            NavigateTo("Journal Entry");
             AppiumElement welcomeLabel = FindUIElement("WelcomeMsg");
             welcomeLabel.ShouldNotBeNull();
             welcomeLabel.Text.ShouldContain("UITestTrainer");
         }
 
-        [Fact]
+        [Test]
         public void MainPage_UserNoteInput_ShowTextEntry()
         {
-            NavigateTo("Journal Entry");
-            AppiumElement userEntry = FindUIElement("UserNoteInput");
             try
             {
+                AppiumElement userEntry = FindUIElement("UserNoteInput");
                 userEntry.Click();
                 userEntry.SendKeys("Hello World");
                 userEntry.ShouldNotBeNull();
                 // Re-fetch element so WinAppDriver returns current Value, not cached state.
-                AppiumElement refetched = FindUIElement("UserNoteInput");
-                refetched.Text.ShouldContain("Hello World");
+                FindUIElement("UserNoteInput").Text.ShouldContain("Hello World");
             }
-            finally
-            {
-                try
-                {
-                    // Hide soft keyboard before clearing — leaving it open causes the next
-                    // SendKeys to land in the wrong view (notification shade, etc.)
-                    if (App is AndroidDriver androidDriver)
-                        androidDriver.HideKeyboard();
-                    FindUIElement("UserNoteInput").Clear();
-                }
-                catch (OpenQA.Selenium.NoSuchElementException) { }
-            }
+            finally { ClearUserNoteInput(); }
         }
 
-        [Fact]
+        [Test]
         public void MainPage_BallIcon_DisplayedOnPage()
         {
-            NavigateTo("Journal Entry");
-            AppiumElement BallIconPng = FindUIElement("ball_icon.png");
-            BallIconPng.ShouldNotBeNull();
+            FindUIElement("ball_icon.png").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_Pickers_DisplayedAndEnabled()
         {
-            NavigateTo("Journal Entry");
-            AppiumElement startPicker = FindUIElement("StartTimePicker");
-            AppiumElement endPicker = FindUIElement("EndTimePicker");
-            AppiumElement datePicker = FindUIElement("DatePlayedPicker");
-
-            startPicker.Enabled.ShouldBeTrue();
-            endPicker.Enabled.ShouldBeTrue();
-            datePicker.Enabled.ShouldBeTrue();
+            FindUIElement("StartTimePicker").Enabled.ShouldBeTrue();
+            FindUIElement("EndTimePicker").Enabled.ShouldBeTrue();
+            FindUIElement("DatePlayedPicker").Enabled.ShouldBeTrue();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_TagsView_Displayed()
         {
-            NavigateTo("Journal Entry");
-            AppiumElement tagsView = FindUIElement("TagsView");
-            tagsView.ShouldNotBeNull();
+            FindUIElement("TagsView").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_BOSwitch_ShowsBO3Fields()
         {
-            NavigateTo("Journal Entry");
-            AppiumElement boSwitch = FindUIElement("BOSwitch");
             try
             {
-                boSwitch.Click();
+                EnsureBO3On();
                 FindUIElement("BO3GamesLayout").ShouldNotBeNull();
             }
-            finally
-            {
-                try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
-            }
+            finally { ResetBOSwitch(); }
         }
 
-        [Fact]
+        [Test]
         public void MainPage_PlayerArchetype_Displayed()
         {
-            NavigateTo("Journal Entry");
-            AppiumElement picker = FindUIElement("PlayerArchetype");
-            picker.ShouldNotBeNull();
+            FindUIElement("PlayerArchetype").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_RivalArchetype_Displayed()
         {
-            NavigateTo("Journal Entry");
-            AppiumElement picker = FindUIElement("RivalArchetype");
-            picker.ShouldNotBeNull();
+            FindUIElement("RivalArchetype").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_BO3StatusLabel_Displayed()
         {
-            NavigateTo("Journal Entry");
-            AppiumElement label = FindUIElement("BO3StatusLabel");
-            label.ShouldNotBeNull();
+            FindUIElement("BO3StatusLabel").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_ResultPicker_Displayed()
         {
-            NavigateTo("Journal Entry");
-            AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
-            resultPicker.ShouldNotBeNull();
+            FindUIElement("PossibleResultsPicker").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_FirstCheck_Displayed()
         {
-            NavigateTo("Journal Entry");
-            AppiumElement firstCheck = FindUIElement("FirstCheck");
-            firstCheck.ShouldNotBeNull();
+            FindUIElement("FirstCheck").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_SaveMatchButton_Displayed()
         {
-            NavigateTo("Journal Entry");
-            AppiumElement saveButton = FindUIElement("SaveMatchButton");
-            saveButton.ShouldNotBeNull();
+            FindUIElement("SaveMatchButton").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void MainPage_BO3GameTabs_DisplayedWhenBO3Active()
         {
-            NavigateTo("Journal Entry");
             try
             {
-                FindUIElement("BOSwitch").Click();
+                EnsureBO3On();
                 FindUIElement("BO3GamesLayout").ShouldNotBeNull();
                 FindUIElement("Game1Tab").ShouldNotBeNull();
                 FindUIElement("Game2Tab").ShouldNotBeNull();
             }
-            finally
-            {
-                try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
-            }
+            finally { ResetBOSwitch(); }
         }
 
-        [Fact]
+        [Test]
         public void MainPage_Game3Tab_ShowsWhenGame1IsTie()
         {
-            NavigateTo("Journal Entry");
             try
             {
-                FindUIElement("BOSwitch").Click();
+                AndroidScrollToTop(); // prior tests may leave page scrolled; BO3 controls near top
+                EnsureBO3On();
                 FindUIElement("BO3GamesLayout");
 
                 AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
@@ -163,12 +219,13 @@ namespace UITests
                 {
                     picker1.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
+                    ClickTab(FindUIElement("Game2Tab"));
                 }
                 else
+                {
                     SelectWindowsPickerItem(picker1, "Tie");
-
-                ClickTab(FindUIElement("Game2Tab"));
-                // Sync on Game 2 panel visibility — TapGestureRecognizer fires async command.
+                    ClickTab(FindUIElement("Game2Tab"));
+                }
                 FindUIElement("FirstCheck2");
 
                 AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
@@ -184,30 +241,19 @@ namespace UITests
             }
             finally
             {
-                try
-                {
-                    if (App is WindowsDriver)
-                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker")).SendKeys(OpenQA.Selenium.Keys.Escape);
-                }
-                catch (OpenQA.Selenium.NoSuchElementException) { }
-                try
-                {
-                    if (App is WindowsDriver)
-                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker2")).SendKeys(OpenQA.Selenium.Keys.Escape);
-                }
-                catch (OpenQA.Selenium.NoSuchElementException) { }
-                try { FindUIElement("Game1Tab").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
-                try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+                CloseWindowsPickers("PossibleResultsPicker", "PossibleResultsPicker2");
+                ResetGame1Tab();
+                ResetBOSwitch();
             }
         }
 
-        [Fact]
+        [Test]
         public void MainPage_Game3Tab_ShowsGamePanel()
         {
-            NavigateTo("Journal Entry");
             try
             {
-                FindUIElement("BOSwitch").Click();
+                AndroidScrollToTop(); // MainPage_FirstCheck_Displayed (prior alphabetically) scrolls down via stage-3
+                EnsureBO3On();
                 FindUIElement("BO3GamesLayout");
 
                 AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
@@ -215,12 +261,14 @@ namespace UITests
                 {
                     picker1.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                    ClickTab(FindUIElement("Game2Tab"));
                 }
                 else
+                {
                     SelectWindowsPickerItem(picker1, "Win");
+                    ClickTab(FindUIElement("Game2Tab"));
+                }
 
-                ClickTab(FindUIElement("Game2Tab"));
-                // Sync on Game 2 panel visibility — TapGestureRecognizer fires async command.
                 FindUIElement("FirstCheck2");
 
                 AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
@@ -228,11 +276,13 @@ namespace UITests
                 {
                     picker2.Click();
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Loss\")")).Click();
+                    ClickTab(FindUIElement("Game3Tab"));
                 }
                 else
+                {
                     SelectWindowsPickerItem(picker2, "Loss");
-
-                ClickTab(FindUIElement("Game3Tab"));
+                    ClickTab(FindUIElement("Game3Tab"));
+                }
                 FindUIElement("Match3Tags").ShouldNotBeNull();
                 FindUIElement("UserNoteInput3").ShouldNotBeNull();
                 FindUIElement("WentFirstLabel3").ShouldNotBeNull();
@@ -240,24 +290,15 @@ namespace UITests
             }
             finally
             {
-                try
-                {
-                    if (App is WindowsDriver)
-                    {
-                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker")).SendKeys(OpenQA.Selenium.Keys.Escape);
-                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker2")).SendKeys(OpenQA.Selenium.Keys.Escape);
-                    }
-                }
-                catch (OpenQA.Selenium.NoSuchElementException) { }
-                try { FindUIElement("Game1Tab").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
-                try { FindUIElement("BOSwitch").Click(); } catch (OpenQA.Selenium.NoSuchElementException) { }
+                CloseWindowsPickers("PossibleResultsPicker", "PossibleResultsPicker2");
+                ResetGame1Tab();
+                ResetBOSwitch();
             }
         }
 
-        [Fact]
+        [Test]
         public void MainPage_SaveMatch_WithResult_Saves()
         {
-            NavigateTo("Journal Entry");
             try
             {
                 AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
@@ -268,20 +309,11 @@ namespace UITests
                 }
                 else
                     SelectWindowsPickerItem(resultPicker, "Win");
-            }
-            catch (OpenQA.Selenium.NoSuchElementException)
-            {
-                try
-                {
-                    if (App is WindowsDriver)
-                        App.FindElement(MobileBy.AccessibilityId("PossibleResultsPicker")).SendKeys(OpenQA.Selenium.Keys.Escape);
-                }
-                catch (OpenQA.Selenium.NoSuchElementException) { }
-                throw;
-            }
 
-            FindUIElement("SaveMatchButton").Click();
-            FindUIElement("SaveMatchButton").ShouldNotBeNull();
+                FindUIElement("SaveMatchButton").Click();
+                FindUIElement("SaveMatchButton").ShouldNotBeNull();
+            }
+            finally { CloseWindowsPickers("PossibleResultsPicker"); }
         }
     }
 }

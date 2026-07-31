@@ -15,7 +15,7 @@ public class TagOperationsTests : IAsyncDisposable
         _trainerId = t.Id;
     }
 
-    [Fact]
+    [Test]
     public async Task GetAllAsync_EmptyDb_ReturnsDefaultTags()
     {
         List<Tags> tags = await _factory.Tags.GetAllAsync();
@@ -23,7 +23,7 @@ public class TagOperationsTests : IAsyncDisposable
         tags.Count.ShouldBeGreaterThanOrEqualTo(8);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_ValidTag_ReturnsOne()
     {
         await EnsureTrainerAsync();
@@ -31,7 +31,7 @@ public class TagOperationsTests : IAsyncDisposable
         result.ShouldBe(1);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_Tag_AppearsInGetAll()
     {
         await EnsureTrainerAsync();
@@ -40,7 +40,7 @@ public class TagOperationsTests : IAsyncDisposable
         tags.ShouldContain(t => t.Name == "Control");
     }
 
-    [Fact]
+    [Test]
     public async Task GetByIdAsync_ExistingTag_ReturnsTag()
     {
         await EnsureTrainerAsync();
@@ -53,7 +53,7 @@ public class TagOperationsTests : IAsyncDisposable
         found!.Name.ShouldBe("Tempo");
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteAsync_ExistingTag_RemovesIt()
     {
         await EnsureTrainerAsync();

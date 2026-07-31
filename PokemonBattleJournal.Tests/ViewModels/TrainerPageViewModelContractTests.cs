@@ -8,39 +8,39 @@ namespace PokemonBattleJournal.Tests.ViewModels
     {
         private static readonly Type _vm = typeof(TrainerPageViewModel);
 
-        [Theory]
-        [InlineData("WelcomeMsg")]
-        [InlineData("WinAverage")]
-        [InlineData("Wins")]
-        [InlineData("Losses")]
-        [InlineData("Ties")]
-        [InlineData("AverageMatchDuration")]
-        [InlineData("StreakInfo")]
+        [Test]
+        [TestCase("WelcomeMsg")]
+        [TestCase("WinAverage")]
+        [TestCase("Wins")]
+        [TestCase("Losses")]
+        [TestCase("Ties")]
+        [TestCase("AverageMatchDuration")]
+        [TestCase("StreakInfo")]
         // Matchup heatmap
-        [InlineData("MatchupHeatSeries")]
-        [InlineData("MatchupXAxes")]
-        [InlineData("MatchupYAxes")]
+        [TestCase("MatchupHeatSeries")]
+        [TestCase("MatchupXAxes")]
+        [TestCase("MatchupYAxes")]
         // Bar charts
-        [InlineData("MostPlayedSeries")]
-        [InlineData("MostPlayedYAxes")]
-        [InlineData("ArchetypeWinRateSeries")]
-        [InlineData("ArchetypeWinRateYAxes")]
-        [InlineData("TagUsageSeries")]
-        [InlineData("TagUsageYAxes")]
-        [InlineData("OpponentSeries")]
-        [InlineData("OpponentYAxes")]
-        [InlineData("MatchLengthSeries")]
-        [InlineData("MatchLengthYAxes")]
-        [InlineData("FirstTurnSeries")]
-        [InlineData("FirstTurnYAxes")]
+        [TestCase("MostPlayedSeries")]
+        [TestCase("MostPlayedYAxes")]
+        [TestCase("ArchetypeWinRateSeries")]
+        [TestCase("ArchetypeWinRateYAxes")]
+        [TestCase("TagUsageSeries")]
+        [TestCase("TagUsageYAxes")]
+        [TestCase("OpponentSeries")]
+        [TestCase("OpponentYAxes")]
+        [TestCase("MatchLengthSeries")]
+        [TestCase("MatchLengthYAxes")]
+        [TestCase("FirstTurnSeries")]
+        [TestCase("FirstTurnYAxes")]
         // Line chart
-        [InlineData("WinRateOverTimeSeries")]
-        [InlineData("WinRateTimeXAxes")]
+        [TestCase("WinRateOverTimeSeries")]
+        [TestCase("WinRateTimeXAxes")]
         public void TrainerPageViewModel_HasProperty(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"TrainerPage.xaml binds to '{name}' but it was not found on TrainerPageViewModel");
 
-        [Theory]
-        [InlineData("AppearingCommand")]
+        [Test]
+        [TestCase("AppearingCommand")]
         public void TrainerPageViewModel_HasCommand(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"TrainerPage.xaml binds to Command '{name}' but it was not found on TrainerPageViewModel");
     }

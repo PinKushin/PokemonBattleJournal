@@ -8,30 +8,30 @@ namespace PokemonBattleJournal.Tests.ViewModels
     {
         private static readonly Type _vm = typeof(ReadJournalPageViewModel);
 
-        [Theory]
-        [InlineData("WelcomeMsg")]
-        [InlineData("MatchHistory")]
-        [InlineData("SelectedMatch")]
-        [InlineData("SelectedNote")]
-        [InlineData("PlayingName")]
-        [InlineData("PlayingIconSource")]
-        [InlineData("AgainstName")]
-        [InlineData("AgainstIconSource")]
-        [InlineData("Game1TagsInfo")]
-        [InlineData("Game2TagsInfo")]
-        [InlineData("Game3TagsInfo")]
-        [InlineData("HasGame1Tags")]
-        [InlineData("HasGame2Tags")]
-        [InlineData("HasGame3Tags")]
-        [InlineData("TagsSelectedGame1")]
-        [InlineData("TagsSelectedGame2")]
-        [InlineData("TagsSelectedGame3")]
+        [Test]
+        [TestCase("WelcomeMsg")]
+        [TestCase("MatchHistory")]
+        [TestCase("SelectedMatch")]
+        [TestCase("SelectedNote")]
+        [TestCase("PlayingName")]
+        [TestCase("PlayingIconSource")]
+        [TestCase("AgainstName")]
+        [TestCase("AgainstIconSource")]
+        [TestCase("Game1TagsInfo")]
+        [TestCase("Game2TagsInfo")]
+        [TestCase("Game3TagsInfo")]
+        [TestCase("HasGame1Tags")]
+        [TestCase("HasGame2Tags")]
+        [TestCase("HasGame3Tags")]
+        [TestCase("TagsSelectedGame1")]
+        [TestCase("TagsSelectedGame2")]
+        [TestCase("TagsSelectedGame3")]
         public void ReadJournalPageViewModel_HasProperty(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"ReadJournalPage.xaml binds to '{name}' but it was not found on ReadJournalPageViewModel");
 
-        [Theory]
-        [InlineData("AppearingCommand")]
-        [InlineData("LoadMatchCommand")]
+        [Test]
+        [TestCase("AppearingCommand")]
+        [TestCase("LoadMatchCommand")]
         public void ReadJournalPageViewModel_HasCommand(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"ReadJournalPage.xaml binds to Command '{name}' but it was not found on ReadJournalPageViewModel");
     }

@@ -1,34 +1,33 @@
-namespace UITests
+﻿namespace UITests
 {
     public partial class ReadJournalPageTests : BaseTest
     {
+        [OneTimeSetUp]
+        public void SetUp() => NavigateTo("Read Journal");
+
         private AppiumElement FindReadJournalElement(string id) => FindUIElement(id);
 
-        [Fact]
+        [Test]
         public void ReadJournalPage_Loads_PageVisible()
         {
-            NavigateTo("Read Journal");
             FindReadJournalElement("ReadJournalPage").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void ReadJournalPage_Title_Displayed()
         {
-            NavigateTo("Read Journal");
             FindReadJournalElement("ReadJournalTitle").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void ReadJournalPage_MatchHistoryList_Displayed()
         {
-            NavigateTo("Read Journal");
             FindReadJournalElement("MatchHistoryList").ShouldNotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void ReadJournalPage_HasSeededMatches()
         {
-            NavigateTo("Read Journal");
 
             // Find the first seeded match row — AutomationId is bound to match Id.
             // SeedTestData seeds 3 matches so at least MatchRow_1 must exist.
@@ -43,11 +42,9 @@ namespace UITests
             firstRow.ShouldNotBeNull();
         }
 
-        [Fact]
-        public async Task ReadJournalPage_SelectMatch_ShowsDetail()
+        [Test]
+        public void ReadJournalPage_SelectMatch_ShowsDetail()
         {
-            NavigateTo("Read Journal");
-
             // Find and click the first match row by its bound AutomationId.
             // Do NOT catch NoSuchElementException — empty list is a real failure (seed broken).
             AppiumElement firstRow = App is WindowsDriver
@@ -58,8 +55,8 @@ namespace UITests
                     "new UiSelector().resourceIdMatches(\"com.PinKushin.PokemonBattleJournal:id/MatchRow_.*\")"));
 
             firstRow.Click();
-            await Task.Delay(500);
 
+            // Poll for detail panel — implicit wait blocks until PlayingNameLabel appears.
             FindReadJournalElement("PlayingNameLabel").ShouldNotBeNull();
         }
     }
