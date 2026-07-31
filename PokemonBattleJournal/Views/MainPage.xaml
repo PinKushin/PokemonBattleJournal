@@ -217,6 +217,7 @@
                                 FontAttributes="{Binding IsGame1Selected, Converter={StaticResource TabActiveFontConverter}}"
                                 FontFamily="SairaRegular"
                                 FontSize="14"
+                                MinimumHeightRequest="0"
                                 Text="Game 1"
                                 TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
                             <Button
@@ -232,6 +233,7 @@
                                 FontFamily="SairaRegular"
                                 FontSize="14"
                                 IsVisible="{Binding BO3Toggle}"
+                                MinimumHeightRequest="0"
                                 Text="Game 2"
                                 TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
                             <Button
@@ -247,6 +249,7 @@
                                 FontFamily="SairaRegular"
                                 FontSize="14"
                                 IsVisible="{Binding ShowGame3}"
+                                MinimumHeightRequest="0"
                                 Text="Game 3"
                                 TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
                         </HorizontalStackLayout>
