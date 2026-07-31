@@ -226,6 +226,10 @@ namespace UITests
                     SelectWindowsPickerItem(picker1, "Tie");
                     ClickTab(FindUIElement("Game2Tab"));
                 }
+                
+                // Wait for Game 2 panel to be active
+                FindUIElement("UserNoteInput2");
+
                 FindUIElement("FirstCheck2");
 
                 AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
@@ -268,6 +272,9 @@ namespace UITests
                     SelectWindowsPickerItem(picker1, "Win");
                     ClickTab(FindUIElement("Game2Tab"));
                 }
+                
+                // Wait for Game 2 panel to be active
+                FindUIElement("UserNoteInput2");
 
                 FindUIElement("FirstCheck2");
 
