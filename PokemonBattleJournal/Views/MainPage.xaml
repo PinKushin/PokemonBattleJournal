@@ -205,62 +205,50 @@
                         StrokeShape="RoundRectangle 8"
                         StrokeThickness="0">
                         <HorizontalStackLayout Spacing="4">
-                            <Border
+                            <Button
                                 Padding="16,8"
                                 AutomationId="Game1Tab"
                                 SemanticProperties.Description="Game 1 tab"
                                 SemanticProperties.Hint="Double tap to edit game 1"
                                 BackgroundColor="{Binding IsGame1Selected, Converter={StaticResource TabActiveBgConverter}}"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 6">
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding SelectGame1Command}" />
-                                </Border.GestureRecognizers>
-                                <Label
-                                    FontAttributes="{Binding IsGame1Selected, Converter={StaticResource TabActiveFontConverter}}"
-                                    FontFamily="SairaRegular"
-                                    FontSize="14"
-                                    Text="Game 1"
-                                    TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
-                            </Border>
-                            <Border
+                                BorderWidth="0"
+                                Command="{Binding SelectGame1Command}"
+                                CornerRadius="6"
+                                FontAttributes="{Binding IsGame1Selected, Converter={StaticResource TabActiveFontConverter}}"
+                                FontFamily="SairaRegular"
+                                FontSize="14"
+                                Text="Game 1"
+                                TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
+                            <Button
                                 Padding="16,8"
                                 AutomationId="Game2Tab"
                                 SemanticProperties.Description="Game 2 tab"
                                 SemanticProperties.Hint="Double tap to edit game 2"
                                 BackgroundColor="{Binding IsGame2Selected, Converter={StaticResource TabActiveBgConverter}}"
+                                BorderWidth="0"
+                                Command="{Binding SelectGame2Command}"
+                                CornerRadius="6"
+                                FontAttributes="{Binding IsGame2Selected, Converter={StaticResource TabActiveFontConverter}}"
+                                FontFamily="SairaRegular"
+                                FontSize="14"
                                 IsVisible="{Binding BO3Toggle}"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 6">
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding SelectGame2Command}" />
-                                </Border.GestureRecognizers>
-                                <Label
-                                    FontAttributes="{Binding IsGame2Selected, Converter={StaticResource TabActiveFontConverter}}"
-                                    FontFamily="SairaRegular"
-                                    FontSize="14"
-                                    Text="Game 2"
-                                    TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
-                            </Border>
-                            <Border
+                                Text="Game 2"
+                                TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
+                            <Button
                                 Padding="16,8"
                                 AutomationId="Game3Tab"
                                 SemanticProperties.Description="Game 3 tab"
                                 SemanticProperties.Hint="Double tap to edit game 3"
                                 BackgroundColor="{Binding IsGame3Selected, Converter={StaticResource TabActiveBgConverter}}"
+                                BorderWidth="0"
+                                Command="{Binding SelectGame3Command}"
+                                CornerRadius="6"
+                                FontAttributes="{Binding IsGame3Selected, Converter={StaticResource TabActiveFontConverter}}"
+                                FontFamily="SairaRegular"
+                                FontSize="14"
                                 IsVisible="{Binding ShowGame3}"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 6">
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding SelectGame3Command}" />
-                                </Border.GestureRecognizers>
-                                <Label
-                                    FontAttributes="{Binding IsGame3Selected, Converter={StaticResource TabActiveFontConverter}}"
-                                    FontFamily="SairaRegular"
-                                    FontSize="14"
-                                    Text="Game 3"
-                                    TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
-                            </Border>
+                                Text="Game 3"
+                                TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
                         </HorizontalStackLayout>
                     </Border>
                     <!--#endregion-->
