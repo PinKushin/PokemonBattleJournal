@@ -177,9 +177,7 @@
                     .FirstOrDefaultAsync();
 
                 if (existingTrainer is null)
-                {
                     throw new ArgumentException($"Trainer with ID {trainer.Id} not found", nameof(trainer));
-                }
 
                 // Load related records first (outside transaction)
                 List<MatchEntry> matches = await db.Table<MatchEntry>()

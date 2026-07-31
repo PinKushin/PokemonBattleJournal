@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using PokemonBattleJournal.Utilities;
 
 namespace PokemonBattleJournal.ViewModels
 {
@@ -32,12 +33,12 @@ namespace PokemonBattleJournal.ViewModels
 
         private void OnTrainerChanged(object? sender, Trainer trainer)
         {
-            MainThreadHelper.BeginInvokeOnMainThread(async () =>
+            MainThreadHelper.BeginInvokeOnMainThread(() =>
             {
                 TrainerName = trainer.Name ?? string.Empty;
                 WelcomeMsg = $"Welcome {TrainerName}";
                 ResetForm();
-                await AppearingAsync();
+                AppearingAsync().FireAndForgetSafeAsync();
             });
         }
 

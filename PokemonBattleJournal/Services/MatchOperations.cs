@@ -360,7 +360,7 @@ namespace PokemonBattleJournal.Services
             }
 
             // Save tags and tag-game relationships
-            if (game.Tags != null && game.Tags.Count > 0)
+            if (game.Tags?.Count > 0)
             {
                 _logger.LogDebug("Saving {Count} tags for game {GameId}", game.Tags.Count, game.Id);
 

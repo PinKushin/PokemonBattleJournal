@@ -8,7 +8,7 @@
 
         }
 
-        private MatchResultCalculatorFactory CreateFactory()
+        private static MatchResultCalculatorFactory CreateFactory()
         {
             return new MatchResultCalculatorFactory();
         }

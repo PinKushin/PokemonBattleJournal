@@ -100,7 +100,7 @@ namespace PokemonBattleJournal.ViewModels
         }
 
         [RelayCommand]
-        public async Task NavigateAsync(string route)
+        public static async Task NavigateAsync(string route)
         {
             await Shell.Current.GoToAsync(route);
             Shell.Current.FlyoutIsPresented = false;

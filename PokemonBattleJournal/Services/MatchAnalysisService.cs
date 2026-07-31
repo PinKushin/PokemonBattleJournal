@@ -119,7 +119,7 @@ namespace PokemonBattleJournal.Services
             var firstTurnGames = allGames.Where(g => g.Turn == 1).ToList();
             var secondTurnGames = allGames.Where(g => g.Turn == 2).ToList();
 
-            double FirstTurnRate(List<Game> games) => games.Count > 0
+            static double FirstTurnRate(List<Game> games) => games.Count > 0
                 ? (games.Count(g => g.Result == MatchResult.Win) + 0.5 * games.Count(g => g.Result == MatchResult.Tie)) / games.Count * 100
                 : 0;
 
@@ -142,8 +142,8 @@ namespace PokemonBattleJournal.Services
             var cells = relevant
                 .GroupBy(m => (Playing: m.Playing?.Name ?? string.Empty, Against: m.Against?.Name ?? string.Empty))
                 .Select(g => (
-                    PlayedIdx: playedIdx[g.Key.Item1],
-                    OpponentIdx: opponentIdx[g.Key.Item2],
+                    PlayedIdx: playedIdx[g.Key.Playing],
+                    OpponentIdx: opponentIdx[g.Key.Against],
                     WinRate: Calculations.CalculateWinRate(g.ToList(), out _, out _, out _)
                 ))
                 .ToArray();

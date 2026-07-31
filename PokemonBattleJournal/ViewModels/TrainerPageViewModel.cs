@@ -5,6 +5,7 @@ using LiveChartsCore.Kernel.Sketches;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
+using PokemonBattleJournal.Utilities;
 
 namespace PokemonBattleJournal.ViewModels
 {
@@ -27,16 +28,16 @@ namespace PokemonBattleJournal.ViewModels
 
         private void OnTrainerChanged(object? sender, Trainer trainer)
         {
-            MainThreadHelper.BeginInvokeOnMainThread(async () =>
+            MainThreadHelper.BeginInvokeOnMainThread(() =>
             {
                 TrainerName = trainer.Name ?? string.Empty;
                 WelcomeMsg = $"{TrainerName}'s Profile";
-                await AppearingAsync();
+                AppearingAsync().FireAndForgetSafeAsync();
             });
         }
 
         [ObservableProperty]
-        public partial string TrainerName { get; set; }
+        public partial string TrainerName { get; set; } = string.Empty;
 
         [ObservableProperty]
         public partial string WelcomeMsg { get; set; }

@@ -1,4 +1,6 @@
-﻿namespace PokemonBattleJournal.ViewModels
+﻿using PokemonBattleJournal.Utilities;
+
+namespace PokemonBattleJournal.ViewModels
 {
     public partial class ReadJournalPageViewModel : ObservableObject
     {
@@ -19,11 +21,11 @@
 
         private void OnTrainerChanged(object? sender, Trainer trainer)
         {
-            MainThreadHelper.BeginInvokeOnMainThread(async () =>
+            MainThreadHelper.BeginInvokeOnMainThread(() =>
             {
                 TrainerName = trainer.Name ?? string.Empty;
                 WelcomeMsg = $"{TrainerName}'s Journal";
-                await AppearingAsync();
+                AppearingAsync().FireAndForgetSafeAsync();
             });
         }
 
