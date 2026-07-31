@@ -1,22 +1,33 @@
 ---
 name: project_windows_tab_click_ci
-description: Use PointerKind.Pen for WinUI TapGestureRecognizer — Touch is no-op on CI, Mouse rejected by WinAppDriver locally
+description: Game tabs must be Button not Border — Border+TapGestureRecognizer has no UIA InvokePattern; all pointer simulation fails on Windows CI
 metadata:
   type: project
 ---
 
-`PointerKind.Touch` silently no-ops on Windows Server CI (no touch driver). `PointerKind.Mouse` is rejected by WinAppDriver locally with `UnsupportedOperationException: Currently only pen and touch pointer input source types are supported`. Use `PointerKind.Pen` — WinAppDriver explicitly supports it, no physical pen hardware needed, works both locally and on CI.
+`Border+TapGestureRecognizer` does not expose UIA `InvokePattern`. WinAppDriver's `.Click()` falls back to pointer simulation, and every pointer type fails in some environment:
+- `PointerKind.Touch` — silent no-op on Windows Server CI (no touch driver)
+- `PointerKind.Mouse` — rejected by WinAppDriver locally: `UnsupportedOperationException: Currently only pen and touch pointer input source types are supported`
+- `PointerKind.Pen` — accepted by WinAppDriver but doesn't fire `TapGestureRecognizer` on CI (no interactive session / WinUI3 pen event handling differs)
 
-```csharp
-var pen = new OpenQA.Selenium.Appium.Interactions.PointerInputDevice(
-    OpenQA.Selenium.Interactions.PointerKind.Pen, "pen");
-var seq = new OpenQA.Selenium.Interactions.ActionSequence(pen, 0);
-seq.AddAction(pen.CreatePointerMove(tabElement, 0, 0, TimeSpan.Zero));
-seq.AddAction(pen.CreatePointerDown(OpenQA.Selenium.Interactions.MouseButton.Left));
-seq.AddAction(pen.CreatePointerUp(OpenQA.Selenium.Interactions.MouseButton.Left));
-App.PerformActions([seq]);
+**Fix:** change tab elements from `Border` to `Button` with `BorderWidth="0"` and `CornerRadius`. `Button` exposes UIA `InvokePattern` — WinAppDriver's `.Click()` calls `Invoke()` directly, no pointer simulation, works on every Windows configuration.
+
+```xml
+<Button
+    AutomationId="Game2Tab"
+    BackgroundColor="{Binding IsGame2Selected, Converter={StaticResource TabActiveBgConverter}}"
+    BorderWidth="0"
+    Command="{Binding SelectGame2Command}"
+    CornerRadius="6"
+    FontAttributes="{Binding IsGame2Selected, Converter={StaticResource TabActiveFontConverter}}"
+    FontFamily="SairaRegular"
+    FontSize="14"
+    IsVisible="{Binding BO3Toggle}"
+    Padding="16,8"
+    Text="Game 2"
+    TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
 ```
 
-**Why:** Tab elements are `Border` with `TapGestureRecognizer` — not `Button`. WinAppDriver error message "only pen and touch supported" is the clue: Pen is the safe cross-environment choice. Touch = silent failure on CI. Mouse = local WinAppDriver rejection.
+**Why:** InvokePattern is a UIA contract that works headlessly. Pointer simulation depends on input drivers and interactive session state — neither of which is reliable on CI.
 
-**How to apply:** Any MAUI `Border`/non-button tappable in Windows UI tests: use `PointerKind.Pen` in `ActionSequence`.
+**How to apply:** Any clickable MAUI non-Button tappable needed by Windows UI tests must be a `Button` or expose `InvokePattern` via a platform handler. Never use `Border+TapGestureRecognizer` for elements that need Appium interaction.

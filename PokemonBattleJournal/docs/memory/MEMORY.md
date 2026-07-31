@@ -39,6 +39,6 @@
 - [Game3Tab test bug — RESOLVED](project_game3tab_test_bug.md) — AccessibilityId fails after picker selection because MAUI re-render resets content-desc; fix: use FindUIElement (resourceId) after any picker interaction.
 - [MAUI content-desc reset on Android](feedback_maui_content_desc_reset.md) — IsVisible binding update triggers native re-render that resets content-desc from AutomationId to SemanticProperties.Description; use FindUIElement not AccessibilityId after picker interactions.
 - [EnsureBO3On idempotent helper](feedback_bo3_state_idempotent.md) — Blind BOSwitch click turns BO3 off if already on; read BO3StatusLabel.Text first and only click if not "Best of 3".
-- [Windows tab click — use Pen](project_windows_tab_click_ci.md) — Touch is no-op on CI, Mouse rejected locally by WinAppDriver; PointerKind.Pen works on both (no hardware needed).
+- [Windows tab click — use Button not Border](project_windows_tab_click_ci.md) — Border+TapGestureRecognizer has no UIA InvokePattern; Touch/Pen/Mouse simulation all fail on CI; fix: change tabs to Button so WinAppDriver .Click() uses InvokePattern.
 - [Cleanup helper timeout rule](feedback_cleanup_helper_timeout.md) — 0ms ImplicitWait only for optional elements; state-restoring clicks need FindUIElement (3s min) or silent miss corrupts subsequent tests.
 - [UiScrollable only scrolls down](feedback_uiscrollable_direction.md) — scrollIntoView can't reach elements above current scroll position; call AndroidScrollToTop before tests needing top-of-page elements.
