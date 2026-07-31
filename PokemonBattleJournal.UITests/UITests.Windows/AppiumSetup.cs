@@ -17,16 +17,34 @@ namespace UITests
         private static readonly string UiTestSentinelPath =
             Path.Combine(Path.GetTempPath(), "PokemonBattleJournal.uitest");
 
+        private static void Log(string message)
+        {
+            string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.Windows.setup.log"), line + Environment.NewLine); } catch { }
+        }
+
+        private static void PerfLog(string message)
+        {
+            string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.PerfLog.txt"), line + Environment.NewLine); } catch { }
+        }
+
         [OneTimeSetUp]
         public void RunBeforeAnyTests()
         {
+            var setupTimer = System.Diagnostics.Stopwatch.StartNew();
+            string logPrefix = $"[{DateTime.Now:HH:mm:ss.fff}]";
+            
             // Signal the app to suppress the first-boot prompt (avoids XamlRoot crash)
             File.WriteAllText(UiTestSentinelPath, "1");
             File.WriteAllText(Path.Combine(Path.GetTempPath(), "UITests.NavLog.txt"),
                 $"=== Nav log start {DateTime.Now:O} ==={Environment.NewLine}");
+            PerfLog($"{logPrefix} START Windows AppiumSetup");
 
             // Port 4724 so Windows and Android Appium servers don't conflict when the full suite runs in parallel
+            Log("1. StartAppiumLocalServer");
             AppiumServerHelper.StartAppiumLocalServer(port: 4724);
+            PerfLog($"{logPrefix} AppiumServer started ({setupTimer.ElapsedMilliseconds}ms)");
 
             var runningProc = System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal")
                 .FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero);
@@ -42,6 +60,7 @@ namespace UITests
 
             if (_attachedToExisting)
             {
+                Log("2. Attach to VS-launched app — skip build");
                 // Attach to VS-launched app — skip build
                 windowsOptions.AddAdditionalAppiumOption(
                     "appium:appTopLevelWindow",
@@ -49,23 +68,43 @@ namespace UITests
             }
             else
             {
+                Log("2. Kill crash remnants");
                 // Kill any leftover crash remnants
                 foreach (var proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
                     try { proc.Kill(true); proc.WaitForExit(5_000); } catch { }
 
+                Log("3. BuildWindowsApp");
+                var buildTimer = System.Diagnostics.Stopwatch.StartNew();
                 string exePath = BuildWindowsApp();
+                buildTimer.Stop();
+                Log($"3. BuildWindowsApp done ({buildTimer.ElapsedMilliseconds}ms)");
+                PerfLog($"{logPrefix} BuildWindowsApp completed ({buildTimer.ElapsedMilliseconds}ms)");
                 // No pre-wipe — app seeds UITestTrainer in #if DEBUG if absent (idempotent)
                 windowsOptions.App = exePath;
             }
 
+            Log("4. new WindowsDriver");
+            var driverTimer = System.Diagnostics.Stopwatch.StartNew();
             driver = new WindowsDriver(new Uri("http://127.0.0.1:4724/"), windowsOptions);
+            driverTimer.Stop();
+            Log($"4. WindowsDriver created ({driverTimer.ElapsedMilliseconds}ms)");
+            PerfLog($"{logPrefix} WindowsDriver instantiated ({driverTimer.ElapsedMilliseconds}ms)");
+            
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
 
             // Wait for Shell to be fully rendered before any test runs.
             // FindElement blocks until the element appears (up to 15s implicit wait).
             // The hamburger/OK menu is the first interactive UIA element — if it's visible
             // the Shell nav is wired up and NavigateTo will succeed immediately.
+            Log("5. Wait for Shell");
+            var shellWaitTimer = System.Diagnostics.Stopwatch.StartNew();
             driver.FindElement(MobileBy.AccessibilityId("OK"));
+            shellWaitTimer.Stop();
+            Log($"5. Shell ready ({shellWaitTimer.ElapsedMilliseconds}ms)");
+            PerfLog($"{logPrefix} Shell ready ({shellWaitTimer.ElapsedMilliseconds}ms)");
+            
+            setupTimer.Stop();
+            PerfLog($"{logPrefix} Windows AppiumSetup complete ({setupTimer.ElapsedMilliseconds}ms)");
         }
 
         [OneTimeTearDown]

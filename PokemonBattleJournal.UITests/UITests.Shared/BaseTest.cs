@@ -99,20 +99,26 @@ namespace UITests
             var navTimer = System.Diagnostics.Stopwatch.StartNew();
             try
             {
+                PerfLog($"NAV   [{caller}] start nav to '{pageTitle}'");
                 if (App is WindowsDriver)
                 {
+                    PerfLog($"NAV   [{caller}] click OK button");
                     App.FindElement(MobileBy.AccessibilityId("OK")).Click();
+                    PerfLog($"NAV   [{caller}] click page title '{pageTitle}'");
                     App.FindElement(MobileBy.AccessibilityId(pageTitle)).Click();
                 }
                 else
                 {
+                    PerfLog($"NAV   [{caller}] open nav drawer");
                     App.FindElement(MobileBy.AccessibilityId("Open navigation drawer")).Click();
+                    PerfLog($"NAV   [{caller}] click page '{pageTitle}' in drawer");
                     App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")")).Click();
                 }
                 navTimer.Stop();
                 _currentPage = pageTitle;
                 NavLog($"OK    [{caller}] now on '{pageTitle}' ({navTimer.ElapsedMilliseconds}ms)");
                 PerfLog($"NAV   '{pageTitle}' {navTimer.ElapsedMilliseconds}ms");
+                PerfLog($"NAV   [{caller}] complete nav to '{pageTitle}' ({navTimer.ElapsedMilliseconds}ms)");
             }
             catch (Exception ex)
             {

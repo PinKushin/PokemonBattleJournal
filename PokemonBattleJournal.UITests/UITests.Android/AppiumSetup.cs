@@ -28,20 +28,30 @@ namespace UITests
         [OneTimeSetUp]
         public void RunBeforeAnyTests()
         {
+            var setupTimer = System.Diagnostics.Stopwatch.StartNew();
+            Log("START AppiumSetup.RunBeforeAnyTests");
+            
             File.WriteAllText(SetupLogPath, $"=== AppiumSetup start {DateTime.Now:O} ==={Environment.NewLine}");
             File.WriteAllText(Path.Combine(Path.GetTempPath(), "UITests.NavLog.txt"),
                 $"=== Nav log start {DateTime.Now:O} ==={Environment.NewLine}");
 
             Log("1. EnsureAndroidToolsInPath");
+            var step1Timer = System.Diagnostics.Stopwatch.StartNew();
             EnsureAndroidToolsInPath();
+            step1Timer.Stop();
+            Log($"1. EnsureAndroidToolsInPath done ({step1Timer.ElapsedMilliseconds}ms)");
 
             Log("2. EnsureEmulatorRunning");
+            var step2Timer = System.Diagnostics.Stopwatch.StartNew();
             EnsureEmulatorRunning();
-            Log("2. EnsureEmulatorRunning done");
+            step2Timer.Stop();
+            Log($"2. EnsureEmulatorRunning done ({step2Timer.ElapsedMilliseconds}ms)");
 
             Log("3. StartAppiumLocalServer");
+            var step3Timer = System.Diagnostics.Stopwatch.StartNew();
             AppiumServerHelper.StartAppiumLocalServer();
-            Log("3. StartAppiumLocalServer done");
+            step3Timer.Stop();
+            Log($"3. StartAppiumLocalServer done ({step3Timer.ElapsedMilliseconds}ms)");
 
             bool useInstalled = !string.IsNullOrEmpty(
                 Environment.GetEnvironmentVariable("ANDROID_USE_INSTALLED"));
@@ -52,27 +62,32 @@ namespace UITests
                 PlatformName = "Android",
             };
 
-            if (useInstalled)
-            {
-                Log("4. Skipping build — using app deployed by VS");
-                androidOptions.AddAdditionalAppiumOption("noReset", true);
-            }
-            else
-            {
-                Log("4. BuildAndroidApk");
-                string apkPath = BuildAndroidApk();
-                Log($"4. BuildAndroidApk done: {apkPath}");
+if (useInstalled)
+                {
+                    Log("4. Skipping build — using app deployed by VS");
+                    androidOptions.AddAdditionalAppiumOption("noReset", true);
+                }
+                else
+                {
+                    Log("4. BuildAndroidApk");
+                    var step4Timer = System.Diagnostics.Stopwatch.StartNew();
+                    string apkPath = BuildAndroidApk();
+                    step4Timer.Stop();
+                    Log($"4. BuildAndroidApk done: {apkPath} ({step4Timer.ElapsedMilliseconds}ms)");
+                    PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] BuildAndroidApk completed ({step4Timer.ElapsedMilliseconds}ms)");
 
-                // Install manually via adb — do NOT set androidOptions.App.
-                // When App is set, Appium takes ownership of the lifecycle and uninstalls on Quit().
-                // Without App, Appium launches the already-installed package by AppPackage/AppActivity.
-                Log("4b. Installing APK via adb");
-                RunAdb($"install -r \"{apkPath}\"", timeoutMs: 120_000);
-                Log("4b. APK installed");
+                    // Install manually via adb — do NOT set androidOptions.App.
+                    // When App is set, Appium takes ownership of the lifecycle and uninstalls on Quit().
+                    // Without App, Appium launches the already-installed package by AppPackage/AppActivity.
+                    Log("4b. Installing APK via adb");
+                    var step4bTimer = System.Diagnostics.Stopwatch.StartNew();
+                    RunAdb($"install -r \"{apkPath}\"", timeoutMs: 120_000);
+                    step4bTimer.Stop();
+                    Log($"4b. APK installed ({step4bTimer.ElapsedMilliseconds}ms)");
 
-                androidOptions.AddAdditionalAppiumOption("noReset", true);
-                androidOptions.AddAdditionalAppiumOption("skipDeviceInitialization", true);
-            }
+                    androidOptions.AddAdditionalAppiumOption("noReset", true);
+                    androidOptions.AddAdditionalAppiumOption("skipDeviceInitialization", true);
+                }
 
             androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppPackage, AppPackage);
             androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppActivity, $"{AppPackage}.MainActivity");
@@ -99,26 +114,51 @@ namespace UITests
             }
 
             Log("5. new AndroidDriver");
+            var step5Timer = System.Diagnostics.Stopwatch.StartNew();
             driver = new AndroidDriver(
                 new Uri("http://127.0.0.1:4723/"),
                 androidOptions,
                 TimeSpan.FromMinutes(5));
+            step5Timer.Stop();
+            Log($"5. AndroidDriver created ({step5Timer.ElapsedMilliseconds}ms)");
+            PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] AndroidDriver instantiated ({step5Timer.ElapsedMilliseconds}ms)");
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-            Log("5. AndroidDriver created");
 
             Log("6. WaitForActivity");
+            var step6Timer = System.Diagnostics.Stopwatch.StartNew();
             WaitForActivity($"{AppPackage}.MainActivity", timeoutSeconds: 60);
-            Log("6. WaitForActivity done");
+            step6Timer.Stop();
+            Log($"6. WaitForActivity done ({step6Timer.ElapsedMilliseconds}ms)");
+            PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] AndroidWaitForActivity completed ({step6Timer.ElapsedMilliseconds}ms)");
         }
 
         [OneTimeTearDown]
         public void RunAfterAllTests()
         {
-            // Force-stop the app before closing the session so it doesn't stay running
+            var cleanupTimer = System.Diagnostics.Stopwatch.StartNew();
+            Log("Tearing down: Force-stop app");
+            var stopAppTimer = System.Diagnostics.Stopwatch.StartNew();
             RunAdb($"shell am force-stop {AppPackage}", timeoutMs: 5_000);
+            stopAppTimer.Stop();
+            Log($"Tearing down: Force-stop app done ({stopAppTimer.ElapsedMilliseconds}ms)");
+            
+            Log("Tearing down: Quit driver");
+            var quitDriverTimer = System.Diagnostics.Stopwatch.StartNew();
             driver?.Quit();
+            quitDriverTimer.Stop();
+            Log($"Tearing down: Quit driver done ({quitDriverTimer.ElapsedMilliseconds}ms)");
+            
+            Log("Tearing down: Dispose AppiumServer");
             AppiumServerHelper.DisposeAppiumLocalServer();
+            
+            Log("Tearing down: Shutdown emulator");
+            var shutdownEmulatorTimer = System.Diagnostics.Stopwatch.StartNew();
             ShutdownEmulator();
+            shutdownEmulatorTimer.Stop();
+            Log($"Tearing down: Shutdown emulator done ({shutdownEmulatorTimer.ElapsedMilliseconds}ms)");
+            
+            cleanupTimer.Stop();
+            PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] Android AppiumSetup cleanup complete ({cleanupTimer.ElapsedMilliseconds}ms)");
         }
 
         private static void EnsureEmulatorRunning()
