@@ -85,7 +85,23 @@ namespace UITests
 
             Log("4. new WindowsDriver");
             var driverTimer = System.Diagnostics.Stopwatch.StartNew();
-            driver = new WindowsDriver(new Uri("http://127.0.0.1:4724/"), windowsOptions);
+            Exception? lastEx = null;
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                try
+                {
+                    driver = new WindowsDriver(new Uri("http://127.0.0.1:4724/"), windowsOptions);
+                    lastEx = null;
+                    break;
+                }
+                catch (Exception ex) when (attempt < 2)
+                {
+                    lastEx = ex;
+                    Log($"4. WindowsDriver attempt {attempt + 1} failed: {ex.Message} — retrying in 5s...");
+                    Task.Delay(5_000).Wait();
+                }
+            }
+            if (lastEx != null) throw new InvalidOperationException("Failed to create WindowsDriver after 3 attempts", lastEx);
             driverTimer.Stop();
             Log($"4. WindowsDriver created ({driverTimer.ElapsedMilliseconds}ms)");
             PerfLog($"{logPrefix} WindowsDriver instantiated ({driverTimer.ElapsedMilliseconds}ms)");
