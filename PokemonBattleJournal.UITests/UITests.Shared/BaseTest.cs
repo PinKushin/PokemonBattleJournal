@@ -44,7 +44,30 @@ namespace UITests
         protected AppiumElement FindUIElement(string id)
         {
             if (App is WindowsDriver)
-                return App.FindElement(MobileBy.AccessibilityId(id));
+            {
+                try
+                {
+                    App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
+                    return App.FindElement(MobileBy.AccessibilityId(id));
+                }
+                catch (OpenQA.Selenium.NoSuchElementException)
+                {
+                    try
+                    {
+                        App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                        return App.FindElement(MobileBy.AccessibilityId(id));
+                    }
+                    catch (OpenQA.Selenium.NoSuchElementException)
+                    {
+                        App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                        return App.FindElement(MobileBy.AccessibilityId(id));
+                    }
+                }
+                finally
+                {
+                    App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+                }
+            }
 
             string resourceId = $"com.PinKushin.PokemonBattleJournal:id/{id}";
             // Three-stage lookup:

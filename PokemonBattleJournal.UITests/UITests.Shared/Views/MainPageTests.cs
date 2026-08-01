@@ -3,7 +3,11 @@ namespace UITests
     public partial class MainPageTests : BaseTest
     {
         [OneTimeSetUp]
-        public void SetUp() => NavigateTo("Journal Entry");
+        public void SetUp()
+        {
+            NavigateTo("Journal Entry");
+            ScrollPageToTop();
+        }
 
         [OneTimeTearDown]
         public void TearDown() => InvalidateCurrentPage();
@@ -15,6 +19,7 @@ namespace UITests
 
         private void ResetBOSwitch()
         {
+            ScrollPageToTop();
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
             try
             {
@@ -25,7 +30,6 @@ namespace UITests
             catch (OpenQA.Selenium.NoSuchElementException) { }
             finally
             {
-                AndroidScrollToTop();
                 RestoreImplicitWait();
             }
         }
@@ -34,23 +38,36 @@ namespace UITests
         {
             // Use FindUIElement (3s minimum wait, resourceId) — 0ms ImplicitWait silently misses
             // Game1Tab on slow emulators, leaving IsGame2Selected=true and hiding Game1 panel elements.
+            ScrollPageToTop();
             try { FindUIElement("Game1Tab").Click(); }
             catch (OpenQA.Selenium.NoSuchElementException) { }
             finally
             {
-                AndroidScrollToTop();
                 RestoreImplicitWait();
             }
         }
 
-        // scrollToBeginning returns UiScrollable not an element — exception is expected and ignored.
-        private void AndroidScrollToTop()
+        // UiScrollable scrollForward() moves toward the end of the list; scrollToBeginning()
+        // moves back to the top/left edge. On Windows we use keyboard navigation to return
+        // the ScrollView to the top because the page itself does not expose a scroll helper.
+        private void ScrollPageToTop()
         {
-            if (App is not AndroidDriver) return;
+            if (App is AndroidDriver)
+            {
+                try
+                {
+                    App.FindElement(MobileBy.AndroidUIAutomator(
+                        "new UiScrollable(new UiSelector().scrollable(true).instance(0)).scrollToBeginning(100)"));
+                }
+                catch { }
+                return;
+            }
+
+            if (App is not WindowsDriver) return;
+
             try
             {
-                App.FindElement(MobileBy.AndroidUIAutomator(
-                    "new UiScrollable(new UiSelector().scrollable(true).instance(0)).scrollToBeginning(100)"));
+                App.FindElement(MobileBy.AccessibilityId("SaveMatchButton")).SendKeys(OpenQA.Selenium.Keys.Home);
             }
             catch { }
         }
@@ -89,7 +106,7 @@ namespace UITests
                 : TimeSpan.FromSeconds(10);
 
         // Ensures BO3 is ON regardless of current state (safe to call when BO3 may already be on).
-        // Call AndroidScrollToTop() before this in tests where a prior test may have scrolled down,
+        // Call ScrollPageToTop() before this in tests where a prior test may have scrolled down,
         // so BO3StatusLabel/BOSwitch (near page top) are in view for FindUIElement.
         private void EnsureBO3On()
         {
@@ -210,7 +227,7 @@ namespace UITests
         {
             try
             {
-                AndroidScrollToTop(); // prior tests may leave page scrolled; BO3 controls near top
+                ScrollPageToTop(); // prior tests may leave page scrolled; BO3 controls near top
                 EnsureBO3On();
                 FindUIElement("BO3GamesLayout");
 
@@ -224,6 +241,7 @@ namespace UITests
                 else
                 {
                     SelectWindowsPickerItem(picker1, "Tie");
+                    ScrollPageToTop();
                     ClickTab(FindUIElement("Game2Tab"));
                 }
                 
@@ -239,7 +257,10 @@ namespace UITests
                     App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
                 }
                 else
+                {
                     SelectWindowsPickerItem(picker2, "Win");
+                    ScrollPageToTop();
+                }
 
                 FindUIElement("Game3Tab").ShouldNotBeNull();
             }
@@ -256,7 +277,7 @@ namespace UITests
         {
             try
             {
-                AndroidScrollToTop(); // MainPage_FirstCheck_Displayed (prior alphabetically) scrolls down via stage-3
+                ScrollPageToTop(); // MainPage_FirstCheck_Displayed (prior alphabetically) scrolls down via stage-3
                 EnsureBO3On();
                 FindUIElement("BO3GamesLayout");
 
@@ -270,6 +291,7 @@ namespace UITests
                 else
                 {
                     SelectWindowsPickerItem(picker1, "Win");
+                    ScrollPageToTop();
                     ClickTab(FindUIElement("Game2Tab"));
                 }
                 
@@ -288,6 +310,7 @@ namespace UITests
                 else
                 {
                     SelectWindowsPickerItem(picker2, "Loss");
+                    ScrollPageToTop();
                     ClickTab(FindUIElement("Game3Tab"));
                 }
                 FindUIElement("Match3Tags").ShouldNotBeNull();
