@@ -45,7 +45,7 @@
             EventName="Appearing" />
         <toolkit:EventToCommandBehavior Command="{Binding DisappearingCommand}" EventName="Disappearing" />
     </ContentPage.Behaviors>
-    <ScrollView>
+    <ScrollView AutomationId="MainPageScrollView">
         <VerticalStackLayout Padding="15,15" Spacing="8">
 
             <!--#region Page Title Bar-->

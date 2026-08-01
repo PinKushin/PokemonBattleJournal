@@ -67,7 +67,7 @@ namespace UITests
 
             try
             {
-                App.FindElement(MobileBy.AccessibilityId("SaveMatchButton")).SendKeys(OpenQA.Selenium.Keys.Home);
+                App.FindElement(MobileBy.AccessibilityId("MainPageScrollView")).SendKeys(OpenQA.Selenium.Keys.Home);
             }
             catch { }
         }

@@ -23,6 +23,7 @@
 - [CI workflow structure](project_ci_workflows.md) — 3 separate workflows: ci.yml (unit+integration+coverage), ui-tests-windows.yml, ui-tests-android.yml; Android CI uses API 34 default image.
 - [Android CI build fixes](project_ci_android_build_fixes.md) — AppIcon path case (Appicon vs AppIcon) breaks Linux; iOS/macOS TFMs must be conditioned out on Linux; EmbedAssembliesIntoApk passed at build time only.
 - [Windows picker child window on CI](project_windows_picker_ci.md) — MAUI Picker may open as owned child window on Windows Server CI; SelectWindowsPickerItem helper iterates all App.WindowHandles.
+- [Windows ScrollView reset for BO3 tests](project_windows_scrollview_reset.md) — Reset the real MainPage ScrollView by AutomationId on Windows; nearby controls are too fragile during clipped CI states.
 - [SQLite integration test isolation](project_integration_test_isolation.md) — Unique GUID temp file per test (not :memory:); must close connection before file delete; ArchetypeOperations needs metaService mock returning empty list.
 - [OptionsPageViewModel bugs fixed](project_options_vm_bugs_fixed.md) — SaveTagAsync/SaveArchetypeAsync discarded return values fixed; NewDeckIcon pre-initialized to ball_icon.png so icon guard doesn't early-return silently.
 - [SonarAnalyzer + Roslynator warnings fixed](project_sonar_warnings_fixed.md) — All S112/S3267/S8969/S6562/S6444/S6608/S3168/S2068/S1450 resolved in commit dc45c19; suppression patterns documented.
