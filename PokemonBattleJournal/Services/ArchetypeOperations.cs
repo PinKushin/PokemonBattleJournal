@@ -200,22 +200,22 @@ namespace PokemonBattleJournal.Services
             {
                 await _factory.GetLock().WaitAsync();
 
-                // Check if this archetype is used in any matches first
-                int matchCount = await db.ExecuteScalarAsync<int>(
-                    "SELECT COUNT(*) FROM MatchEntry WHERE PlayingId = ? OR AgainstId = ?",
-                    archetype.Id, archetype.Id);
-
-                if (matchCount > 0)
-                {
-                    _logger.LogWarning("Archetype {ArchetypeId} ({ArchetypeName}) is used in {Count} matches",
-                        archetype.Id, archetype.Name, matchCount);
-                    throw new InvalidOperationException(
-                        $"Cannot delete archetype '{archetype.Name}' because it is used in {matchCount} matches");
-                }
-
                 int affected = 0;
                 await db.RunInTransactionAsync(tran =>
                 {
+                    // Check if this archetype is used in any matches (must be inside transaction)
+                    int matchCount = tran.ExecuteScalar<int>(
+                        "SELECT COUNT(*) FROM MatchEntry WHERE PlayingId = ? OR AgainstId = ?",
+                        archetype.Id, archetype.Id);
+
+                    if (matchCount > 0)
+                    {
+                        _logger.LogWarning("Archetype {ArchetypeId} ({ArchetypeName}) is used in {Count} matches",
+                            archetype.Id, archetype.Name, matchCount);
+                        throw new InvalidOperationException(
+                            $"Cannot delete archetype '{archetype.Name}' because it is used in {matchCount} matches");
+                    }
+
                     affected = tran.Delete(archetype);
 
                     // Verify deletion
