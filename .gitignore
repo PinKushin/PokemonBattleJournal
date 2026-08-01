@@ -370,3 +370,6 @@ FodyWeavers.xsd
 
 # VS Code machine-local overrides
 .vscode/settings.local.json
+/CoverageReport
+/.tools
+/tools
