@@ -67,5 +67,59 @@ public class TagOperationsTests : IAsyncDisposable
         after.ShouldBeNull();
     }
 
+    [Test]
+    public async Task SaveAsync_EmptyName_ThrowsArgumentException()
+    {
+        await EnsureTrainerAsync();
+        await Should.ThrowAsync<ArgumentException>(
+            () => _factory.Tags.SaveAsync("", _trainerId));
+    }
+
+    [Test]
+    public async Task SaveAsync_ZeroTrainerId_ThrowsArgumentException()
+    {
+        await Should.ThrowAsync<ArgumentException>(
+            () => _factory.Tags.SaveAsync("SpeedRun", 0));
+    }
+
+    [Test]
+    public async Task GetByIdAsync_NonExistentId_ReturnsNull()
+    {
+        Tags? result = await _factory.Tags.GetByIdAsync(99999);
+        result.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task DeleteAsync_ZeroId_ThrowsArgumentException()
+    {
+        await Should.ThrowAsync<ArgumentException>(
+            () => _factory.Tags.DeleteAsync(new Tags { Name = "Ghost" }));
+    }
+
+    [Test]
+    public async Task DeleteAsync_TagUsedInGame_CascadesTagGameRelationship()
+    {
+        await EnsureTrainerAsync();
+
+        await _factory.Trainers.SaveAsync("TagCascadeTrainer");
+        Trainer trainer = (await _factory.Trainers.GetByNameAsync("TagCascadeTrainer"))!;
+        await _factory.Archetypes.SaveAsync("Pikachu", "ball_icon.png", trainer.Id);
+        List<Archetype> archs = await _factory.Archetypes.GetAllAsync();
+        Archetype arch = archs.First(a => a.TrainerId == trainer.Id);
+
+        await _factory.Tags.SaveAsync("CascadeTag", trainer.Id);
+        List<Tags> allTags = await _factory.Tags.GetAllAsync();
+        Tags cascadeTag = allTags.First(t => t.Name == "CascadeTag");
+
+        MatchEntry match = new() { TrainerId = trainer.Id, PlayingId = arch.Id, AgainstId = arch.Id };
+        Game game = new() { Result = MatchResult.Win, Tags = [cascadeTag] };
+        await _factory.Matches.SaveAsync(match, [game]);
+
+        await _factory.Tags.DeleteAsync(cascadeTag);
+
+        Tags? deleted = await _factory.Tags.GetByIdAsync(cascadeTag.Id);
+        deleted.ShouldBeNull();
+    }
+
     public ValueTask DisposeAsync() => _factory.DisposeAsync();
 }

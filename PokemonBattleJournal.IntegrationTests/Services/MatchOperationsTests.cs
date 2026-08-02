@@ -144,5 +144,118 @@ public class MatchOperationsTests : IAsyncDisposable
         loaded.Game1.Tags!.ShouldContain(t => t.Id == tag.Id);
     }
 
+    [Test]
+    public async Task SaveAsync_ZeroPlayingId_ThrowsArgumentException()
+    {
+        await SetupAsync();
+        MatchEntry bad = new() { TrainerId = _trainer.Id, AgainstId = _archetype.Id };
+        await Should.ThrowAsync<ArgumentException>(
+            () => _factory.Matches.SaveAsync(bad, [new Game { Result = Win }]));
+    }
+
+    [Test]
+    public async Task SaveAsync_ZeroAgainstId_ThrowsArgumentException()
+    {
+        await SetupAsync();
+        MatchEntry bad = new() { TrainerId = _trainer.Id, PlayingId = _archetype.Id };
+        await Should.ThrowAsync<ArgumentException>(
+            () => _factory.Matches.SaveAsync(bad, [new Game { Result = Win }]));
+    }
+
+    [Test]
+    public async Task SaveAsync_EmptyGamesList_ThrowsArgumentException()
+    {
+        await SetupAsync();
+        await Should.ThrowAsync<ArgumentException>(
+            () => _factory.Matches.SaveAsync(MakeMatch(), []));
+    }
+
+    [Test]
+    public async Task GetByIdAsync_NonExistentId_ReturnsNull()
+    {
+        MatchEntry? result = await _factory.Matches.GetByIdAsync(99999);
+        result.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task GetAllAsync_EmptyDb_ReturnsEmpty()
+    {
+        List<MatchEntry> all = await _factory.Matches.GetAllAsync();
+        all.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task DeleteAsync_NullMatch_ThrowsArgumentNullException()
+    {
+        await Should.ThrowAsync<ArgumentNullException>(
+            () => _factory.Matches.DeleteAsync(null!));
+    }
+
+    [Test]
+    public async Task DeleteAsync_ZeroId_ThrowsArgumentException()
+    {
+        await Should.ThrowAsync<ArgumentException>(
+            () => _factory.Matches.DeleteAsync(new MatchEntry()));
+    }
+
+    [Test]
+    public async Task GetByTrainerIdAsync_NoMatchesForTrainer_ReturnsEmpty()
+    {
+        await SetupAsync();
+        List<MatchEntry> matches = await _factory.Matches.GetByTrainerIdAsync(99999);
+        matches.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task SaveAsync_TwoGameBO3_SetsGame1AndGame2ButNotGame3()
+    {
+        await SetupAsync();
+        MatchEntry match = MakeMatch();
+        List<Game> games =
+        [
+            new() { Result = Win },
+            new() { Result = Win },
+        ];
+
+        await _factory.Matches.SaveAsync(match, games);
+
+        match.Game1Id.ShouldNotBeNull();
+        match.Game2Id.ShouldNotBeNull();
+        match.Game3Id.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task SaveAsync_UpdateExistingMatch_Persists()
+    {
+        await SetupAsync();
+        MatchEntry match = MakeMatch();
+        await _factory.Matches.SaveAsync(match, [new Game { Result = Win }]);
+
+        match.Notes = "Updated note";
+        await _factory.Matches.SaveAsync(match, [new Game { Result = Loss }]);
+
+        MatchEntry? loaded = await _factory.Matches.GetByIdAsync(match.Id);
+        loaded.ShouldNotBeNull();
+        loaded!.Notes.ShouldBe("Updated note");
+    }
+
+    [Test]
+    public async Task DeleteAsync_CascadesGamesAndTagRelationships()
+    {
+        await SetupAsync();
+        List<Tags> tags = await _factory.Tags.GetAllAsync();
+        Tags tag = tags[0];
+
+        MatchEntry match = MakeMatch();
+        Game game = new() { Result = Win, Tags = [tag] };
+        await _factory.Matches.SaveAsync(match, [game]);
+
+        uint matchId = match.Id;
+        await _factory.Matches.DeleteAsync(match);
+
+        MatchEntry? deleted = await _factory.Matches.GetByIdAsync(matchId);
+        deleted.ShouldBeNull();
+    }
+
     public ValueTask DisposeAsync() => _factory.DisposeAsync();
 }
