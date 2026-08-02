@@ -11,24 +11,13 @@ namespace UITests
 
         private void DeleteCreatedArchetype(string name)
         {
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            try { FindUIElement($"DeleteArchetype_{name}").Click(); }
-            catch (OpenQA.Selenium.NoSuchElementException) { }
-            finally { RestoreImplicitWait(); }
+            TryClickIfPresent($"DeleteArchetype_{name}");
         }
 
         private void DeleteCreatedTag(string name)
         {
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            try { FindUIElement($"DeleteTag_{name}").Click(); }
-            catch (OpenQA.Selenium.NoSuchElementException) { }
-            finally { RestoreImplicitWait(); }
+            TryClickIfPresent($"DeleteTag_{name}");
         }
-
-        private void RestoreImplicitWait() =>
-            App.Manage().Timeouts().ImplicitWait = App is WindowsDriver
-                ? TimeSpan.FromSeconds(5)
-                : TimeSpan.FromSeconds(10);
 
         // ---------------------------------------------------------------------------
         // Tests

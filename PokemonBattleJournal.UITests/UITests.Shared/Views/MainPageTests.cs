@@ -13,37 +13,29 @@ namespace UITests
         public void TearDown() => InvalidateCurrentPage();
 
         // ---------------------------------------------------------------------------
-        // Cleanup helpers — 0ms timeout so missing elements fail instantly.
-        // Each test that mutates state calls the relevant helper(s) in a finally block.
+        // Cleanup helpers — each test that mutates state calls the relevant helper(s)
+        // in a finally block. TryClickIfPresent is used for best-effort cleanup.
         // ---------------------------------------------------------------------------
 
         private void ResetBOSwitch()
         {
             ScrollPageToTop();
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
             try
             {
-                AppiumElement label = App.FindElement(MobileBy.AccessibilityId("BO3StatusLabel"));
+                AppiumElement label = FindUIElement("BO3StatusLabel");
                 if (label.Text == "Best of 3")
-                    App.FindElement(MobileBy.AccessibilityId("BOSwitch")).Click();
+                    TryClickIfPresent("BOSwitch");
             }
             catch (OpenQA.Selenium.NoSuchElementException) { }
-            finally
-            {
-                RestoreImplicitWait();
-            }
         }
 
         private void ResetGame1Tab()
         {
-            // Use FindUIElement (3s minimum wait, resourceId) — 0ms ImplicitWait silently misses
-            // Game1Tab on slow emulators, leaving IsGame2Selected=true and hiding Game1 panel elements.
             ScrollPageToTop();
-            try { FindUIElement("Game1Tab").Click(); }
-            catch (OpenQA.Selenium.NoSuchElementException) { }
-            finally
+            if (!TryClickIfPresent("Game1Tab"))
             {
-                RestoreImplicitWait();
+                // Game1Tab may not exist if BO3 was toggled off — log for CI diagnosis.
+                TestContext.WriteLine("WARN: ResetGame1Tab — Game1Tab not found; next test may inherit dirty state.");
             }
         }
 
@@ -75,21 +67,18 @@ namespace UITests
         private void CloseWindowsPickers(params string[] ids)
         {
             if (App is not WindowsDriver) return;
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            try
+            foreach (string id in ids)
             {
-                foreach (string id in ids)
+                try
                 {
-                    try { App.FindElement(MobileBy.AccessibilityId(id)).SendKeys(OpenQA.Selenium.Keys.Escape); }
-                    catch (OpenQA.Selenium.NoSuchElementException) { }
+                    App.FindElement(MobileBy.AccessibilityId(id)).SendKeys(OpenQA.Selenium.Keys.Escape);
                 }
+                catch (OpenQA.Selenium.NoSuchElementException) { }
             }
-            finally { RestoreImplicitWait(); }
         }
 
         private void ClearUserNoteInput()
         {
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
             try
             {
                 if (App is AndroidDriver androidDriver)
@@ -97,13 +86,7 @@ namespace UITests
                 App.FindElement(MobileBy.AccessibilityId("UserNoteInput")).Clear();
             }
             catch (OpenQA.Selenium.NoSuchElementException) { }
-            finally { RestoreImplicitWait(); }
         }
-
-        private void RestoreImplicitWait() =>
-            App.Manage().Timeouts().ImplicitWait = App is WindowsDriver
-                ? TimeSpan.FromSeconds(5)
-                : TimeSpan.FromSeconds(10);
 
         // Ensures BO3 is ON regardless of current state (safe to call when BO3 may already be on).
         // Call ScrollPageToTop() before this in tests where a prior test may have scrolled down,

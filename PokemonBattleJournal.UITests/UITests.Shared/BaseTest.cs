@@ -168,5 +168,29 @@ namespace UITests
             // which works on all Windows configurations without pointer simulation.
             tabElement.Click();
         }
+
+        /// <summary>
+        /// Attempts to find and click an element within a short deadline.
+        /// Returns true if clicked, false if element not found. Never throws.
+        /// Does NOT modify the driver's ImplicitWait — safe to call from cleanup helpers.
+        /// </summary>
+        protected bool TryClickIfPresent(string accessibilityId, int timeoutMs = 2000)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            while (DateTime.UtcNow < deadline)
+            {
+                try
+                {
+                    App.FindElement(MobileBy.AccessibilityId(accessibilityId)).Click();
+                    return true;
+                }
+                catch (OpenQA.Selenium.NoSuchElementException) when (DateTime.UtcNow < deadline)
+                {
+                    // Not in UIA tree yet — retry
+                }
+                catch { return false; }
+            }
+            return false;
+        }
     }
 }
