@@ -57,7 +57,7 @@ jobs:
         run: dotnet restore PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj
 
       - name: Test with coverage
-        run: dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj --no-restore --collect "XPlat Code Coverage" --results-directory TestResults/integration
+        run: dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj --no-restore --filter "Category!=LiveWeb" --collect "XPlat Code Coverage" --results-directory TestResults/integration
 
       - name: Generate coverage report
         uses: danielpalme/ReportGenerator-GitHub-Action@5

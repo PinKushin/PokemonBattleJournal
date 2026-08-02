@@ -1,0 +1,32 @@
+name: Scraper Monitor
+
+on:
+  schedule:
+    - cron: '0 13 * * *'   # 08:00 EST (UTC-5) daily
+  workflow_dispatch:        # allow manual trigger
+
+jobs:
+  scraper-live-check:
+    name: Limitless Live Web Check
+    runs-on: [self-hosted, Windows, X64]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Restore
+        run: dotnet restore PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj
+
+      - name: Run live scraper tests
+        run: >
+          dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj
+          --no-restore
+          --filter "Category=LiveWeb"
+          --logger "trx;LogFileName=scraper-monitor.trx"
+          --results-directory TestResults/scraper
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: scraper-monitor-results
+          path: TestResults/scraper
