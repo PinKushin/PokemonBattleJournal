@@ -12,34 +12,32 @@ namespace UITests
             App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")")).Click();
         }
 
-        // Three-stage resourceId lookup:
-        // 1. Direct 3s — instant for already-visible elements.
-        // 2. Direct 10s — for elements that appear after a binding update.
-        // 3. UiScrollable 10s — for elements off-screen that need scrolling.
+        // Poll every 500ms for up to 10s with a direct resourceId lookup.
+        // If the element is not found in the viewport after 10s, fall back to UiScrollable
+        // which scrolls the page to bring off-screen elements into view.
         protected override AppiumElement FindUIElement(string id)
         {
             string resourceId = $"{PackageName}:id/{id}";
+            string directSelector = $"new UiSelector().resourceId(\"{resourceId}\")";
+            var deadline = DateTime.UtcNow.AddSeconds(10);
             try
             {
-                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
-                return App.FindElement(MobileBy.AndroidUIAutomator(
-                    $"new UiSelector().resourceId(\"{resourceId}\")"));
+                while (true)
+                {
+                    try
+                    {
+                        App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(500);
+                        return App.FindElement(MobileBy.AndroidUIAutomator(directSelector));
+                    }
+                    catch (OpenQA.Selenium.NoSuchElementException) when (DateTime.UtcNow < deadline) { }
+                }
             }
             catch (OpenQA.Selenium.NoSuchElementException)
             {
-                try
-                {
-                    App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-                    return App.FindElement(MobileBy.AndroidUIAutomator(
-                        $"new UiSelector().resourceId(\"{resourceId}\")"));
-                }
-                catch (OpenQA.Selenium.NoSuchElementException)
-                {
-                    App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-                    return App.FindElement(MobileBy.AndroidUIAutomator(
-                        $"new UiScrollable(new UiSelector().scrollable(true).packageName(\"{PackageName}\").instance(0))" +
-                        $".scrollIntoView(new UiSelector().resourceId(\"{resourceId}\"))"));
-                }
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                return App.FindElement(MobileBy.AndroidUIAutomator(
+                    $"new UiScrollable(new UiSelector().scrollable(true).packageName(\"{PackageName}\").instance(0))" +
+                    $".scrollIntoView({directSelector})"));
             }
             finally
             {
