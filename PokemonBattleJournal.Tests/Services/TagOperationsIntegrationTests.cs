@@ -93,6 +93,41 @@ namespace PokemonBattleJournal.Tests.Services
             found!.Name.ShouldBe("Stall");
         }
 
+        [Test]
+        public async Task GetByIdAsync_NonExistentId_ReturnsNull()
+        {
+            Tags? found = await _sut.GetByIdAsync(99999);
+            found.ShouldBeNull();
+        }
+
+        [Test]
+        public async Task GetAllAsync_EmptyDatabase_SeedsDefaultTags()
+        {
+            // TagOperations.GetAllAsync seeds 8 default tags when the table is empty
+            List<Tags> tags = await _sut.GetAllAsync();
+            tags.ShouldNotBeEmpty();
+            tags.ShouldContain(t => t.Name == "Lucky");
+        }
+
+        [Test]
+        public async Task DeleteAsync_ZeroId_ThrowsArgumentException()
+        {
+            await Should.ThrowAsync<ArgumentException>(() => _sut.DeleteAsync(new Tags { Id = 0, Name = "Ghost" }));
+        }
+
+        [Test]
+        public async Task SaveAsync_EmptyTagName_ThrowsArgumentException()
+        {
+            uint trainerId = await SeedTrainerAsync();
+            await Should.ThrowAsync<ArgumentException>(() => _sut.SaveAsync("", trainerId));
+        }
+
+        [Test]
+        public async Task SaveAsync_ZeroTrainerId_ThrowsArgumentException()
+        {
+            await Should.ThrowAsync<ArgumentException>(() => _sut.SaveAsync("Valid", 0));
+        }
+
         private sealed class TestSqliteConnectionFactory : SqliteConnectionFactory
         {
             private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"pbj_tag_test_{Guid.NewGuid():N}.db3");
