@@ -78,6 +78,23 @@ namespace UITests
         }
 
         [Test]
+        public void OptionsPage_ArchetypeList_ShowsDebugSeededArchetypes()
+        {
+            // Debug seed inserts Charizard, Regidrago, Miraidon directly.
+            FindUIElement("DeleteArchetype_Charizard").ShouldNotBeNull();
+            FindUIElement("DeleteArchetype_Regidrago").ShouldNotBeNull();
+            FindUIElement("DeleteArchetype_Miraidon").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void OptionsPage_TagList_ShowsDebugSeededTags()
+        {
+            // Debug seed inserts "Lucky" and "Early Start" for UITestTrainer.
+            FindUIElement("DeleteTag_Lucky").ShouldNotBeNull();
+            FindUIElement("DeleteTag_Early Start").ShouldNotBeNull();
+        }
+
+        [Test]
         public void OptionsPage_TagInput_Displayed()
         {
             FindUIElement("TagInput").ShouldNotBeNull();

@@ -48,6 +48,46 @@
         }
 
         [Test]
+        public void TrainerPage_LossesLabel_ShowsNonZero()
+        {
+            // Seeding now includes 2 Loss matches; zero means seed or async load failed.
+            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(20));
+            string lossesText = wait.Until(_ =>
+            {
+                string text = FindUIElement("LossesLabel").Text;
+                return int.TryParse(text, out int v) && v > 0 ? text : null;
+            });
+            int.TryParse(lossesText, out int losses);
+            losses.ShouldBeGreaterThan(0, $"LossesLabel shows '{lossesText}' — expected seeded losses");
+        }
+
+        [Test]
+        public void TrainerPage_TiesLabel_ShowsNonZero()
+        {
+            // Seeding includes 1 Tie match.
+            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(20));
+            string tiesText = wait.Until(_ =>
+            {
+                string text = FindUIElement("TiesLabel").Text;
+                return int.TryParse(text, out int v) && v > 0 ? text : null;
+            });
+            int.TryParse(tiesText, out int ties);
+            ties.ShouldBeGreaterThan(0, $"TiesLabel shows '{tiesText}' — expected seeded ties");
+        }
+
+        [Test]
+        public void TrainerPage_WinRateLabel_ShowsValue()
+        {
+            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(10));
+            string winRate = wait.Until(_ =>
+            {
+                string text = FindUIElement("WinRateLabel").Text;
+                return !string.IsNullOrEmpty(text) ? text : null;
+            });
+            winRate.ShouldNotBeNullOrEmpty();
+        }
+
+        [Test]
         public void TrainerPage_AllCharts_Rendered()
         {
             FindUIElement("OpponentPerformanceChart").ShouldNotBeNull();

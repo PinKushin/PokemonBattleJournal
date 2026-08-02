@@ -11,5 +11,17 @@
             AppiumElement title = FindUIElement("AboutPageTitle");
             title.ShouldNotBeNull();
         }
+
+        [Test]
+        public void AboutPage_Author_Displayed()
+        {
+            FindUIElement("AboutPageAuthor").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void AboutPage_Tagline_Displayed()
+        {
+            FindUIElement("AboutPageTagline").ShouldNotBeNull();
+        }
     }
 }

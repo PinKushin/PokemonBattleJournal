@@ -59,5 +59,25 @@
             // Poll for detail panel — implicit wait blocks until PlayingNameLabel appears.
             FindReadJournalElement("PlayingNameLabel").ShouldNotBeNull();
         }
+
+        [Test]
+        public void ReadJournalPage_SelectMatch_ShowsArchetypeNames()
+        {
+            AppiumElement firstRow = App is WindowsDriver
+                ? App.FindElements(MobileBy.XPath("//*[contains(@AutomationId,'MatchRow_')]"))
+                    .FirstOrDefault()
+                    ?? throw new Exception("No match rows found — seeded data missing")
+                : App.FindElement(MobileBy.AndroidUIAutomator(
+                    "new UiSelector().resourceIdMatches(\"com.PinKushin.PokemonBattleJournal:id/MatchRow_.*\")"));
+
+            firstRow.Click();
+
+            // With diverse seed, archetypes are non-empty strings (e.g. "Other", "Charizard").
+            string playingName = FindReadJournalElement("PlayingNameLabel").Text;
+            string againstName = FindReadJournalElement("AgainstNameLabel").Text;
+
+            playingName.ShouldNotBeNullOrEmpty("PlayingNameLabel was empty — archetype not loaded");
+            againstName.ShouldNotBeNullOrEmpty("AgainstNameLabel was empty — archetype not loaded");
+        }
     }
 }
