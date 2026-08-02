@@ -693,6 +693,64 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.HasValidationErrors.ShouldBeTrue();
             _viewModel.SavedFileDisplay.ShouldBe("Save Failed: Database Error");
         }
+
+        [Test]
+        public async Task SaveMatchAsync_UnexpectedExceptionFromSave_SetsValidationMessage()
+        {
+            var mockCalculator = Substitute.For<IMatchResultCalculator>();
+            mockCalculator.CalculateResult(Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>())
+                .Returns(MatchResult.Win);
+            _mockCalculatorFactory.GetCalculator(Arg.Any<bool>()).Returns(mockCalculator);
+            _mockTrainerOps.GetActiveAsync().Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
+            _viewModel.TrainerName = "Test";
+            _mockMatchOps.SaveAsync(Arg.Any<MatchEntry>(), Arg.Any<List<Game>>())
+                .Returns(Task.FromException<int>(new InvalidOperationException("unexpected")));
+
+            _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
+            _viewModel.RivalSelected = new Archetype { Id = 2, Name = "Water" };
+            _viewModel.Result = MatchResult.Win;
+
+            int result = await _viewModel.SaveMatchAsync();
+
+            result.ShouldBe(0);
+            _viewModel.HasValidationErrors.ShouldBeTrue();
+            _viewModel.SavedFileDisplay.ShouldBe("Save Failed: Unexpected Error");
+        }
+
+        [Test]
+        public async Task AppearingAsync_ActiveTrainerFromSwitchService_DoesNotCallGetActiveAsync()
+        {
+            var trainer = new Trainer { Id = 5, Name = "Misty" };
+            _mockSwitchService.ActiveTrainer.Returns(trainer);
+            _mockConnectionFactory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
+            _mockConnectionFactory.Tags.Returns(Substitute.For<ITagOperations>());
+            _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
+            _mockConnectionFactory.Tags.GetAllAsync().Returns(Task.FromResult(new List<Tags>()));
+
+            await _viewModel.AppearingAsync();
+
+            await _mockConnectionFactory.Trainers.DidNotReceive().GetActiveAsync();
+            _viewModel.TrainerName.ShouldBe("Misty");
+        }
+
+        [Test]
+        public void DisappearingCommand_DoesNotThrow()
+        {
+            Should.NotThrow(() => _viewModel.DisappearingCommand.Execute(null));
+        }
+
+        [Test]
+        public void OnBO3ToggleChanged_WhenDisabling_ClearsMatch2And3TagsSelected()
+        {
+            _viewModel.BO3Toggle = true;
+            _viewModel.Match2TagsSelected = [new Tags { Name = "Lucky" }];
+            _viewModel.Match3TagsSelected = [new Tags { Name = "Aggro" }];
+
+            _viewModel.BO3Toggle = false;
+
+            _viewModel.Match2TagsSelected.ShouldBeNull();
+            _viewModel.Match3TagsSelected.ShouldBeNull();
+        }
     }
 
 }
