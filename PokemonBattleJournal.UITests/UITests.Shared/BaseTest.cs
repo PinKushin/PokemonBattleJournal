@@ -48,7 +48,12 @@ namespace UITests
                 // Poll every 500ms for up to 30s. WinAppDriver FindElement with
                 // short implicit wait catches the element the instant it appears
                 // in the UIA tree after a binding cascade or dropdown close.
+                // Re-anchor every ~2s: IsVisible binding cascades update the UIA tree
+                // on the MAUI UI thread asynchronously; the one-time re-anchor in
+                // SelectWindowsPickerItem can fire before the update lands, so the
+                // poll loop must periodically re-acquire the root to catch late additions.
                 var deadline = DateTime.UtcNow.AddSeconds(30);
+                int iteration = 0;
                 try
                 {
                     while (true)
@@ -60,7 +65,11 @@ namespace UITests
                         }
                         catch (OpenQA.Selenium.NoSuchElementException) when (DateTime.UtcNow < deadline)
                         {
-                            // Element not in UIA tree yet — poll again
+                            if (++iteration % 4 == 0)
+                            {
+                                try { App.SwitchTo().Window(App.CurrentWindowHandle); }
+                                catch (Exception reAnchorEx) { NavLog($"re-anchor failed: {reAnchorEx.Message}"); }
+                            }
                         }
                     }
                 }
@@ -166,7 +175,8 @@ namespace UITests
             // Re-anchoring the session forces WinAppDriver to re-acquire the root UIA element.
             if (App is WindowsDriver)
             {
-                try { App.SwitchTo().Window(App.CurrentWindowHandle); } catch { }
+                try { App.SwitchTo().Window(App.CurrentWindowHandle); }
+                catch (Exception ex) { NavLog($"re-anchor after picker failed: {ex.Message}"); }
             }
         }
 
