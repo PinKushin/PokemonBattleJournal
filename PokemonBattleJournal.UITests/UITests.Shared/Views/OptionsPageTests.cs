@@ -135,5 +135,46 @@ namespace UITests
         {
             FindUIElement("TrainerNameInput").ShouldNotBeNull();
         }
+
+        [Test]
+        public void OptionsPage_SectionHeadings_Displayed()
+        {
+            FindUIElement("TrainerSectionHeading").ShouldNotBeNull();
+            FindUIElement("ArchetypeSectionHeading").ShouldNotBeNull();
+            FindUIElement("TagSectionHeading").ShouldNotBeNull();
+            FindUIElement("SwitchTrainerHeading").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void OptionsPage_ArchetypeList_Container_Displayed()
+        {
+            FindUIElement("ArchetypeList").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void OptionsPage_TagList_Container_Displayed()
+        {
+            FindUIElement("TagList").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void OptionsPage_ArchetypeItem_Other_Displayed()
+        {
+            // ArchetypeItem_{Name} is the row container in the archetype list.
+            FindUIElement("ArchetypeItem_Other").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void OptionsPage_TagItem_Lucky_Displayed()
+        {
+            // TagItem_{Name} is the row container in the tag list.
+            FindUIElement("TagItem_Lucky").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void OptionsPage_DeleteTrainer_Displayed()
+        {
+            FindUIElement("DeleteTrainer").ShouldNotBeNull();
+        }
     }
 }

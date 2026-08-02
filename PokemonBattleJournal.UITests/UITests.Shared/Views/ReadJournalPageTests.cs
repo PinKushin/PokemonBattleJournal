@@ -7,6 +7,25 @@
 
         private AppiumElement FindReadJournalElement(string id) => FindUIElement(id);
 
+        // Returns the first match row — any match, used for single-game detail tests.
+        private AppiumElement FindFirstMatchRow() =>
+            App is WindowsDriver
+                ? App.FindElements(MobileBy.XPath("//*[contains(@AutomationId,'MatchRow_')]"))
+                    .FirstOrDefault()
+                    ?? throw new Exception("No match rows found — seeded data missing")
+                : App.FindElement(MobileBy.AndroidUIAutomator(
+                    "new UiSelector().resourceIdMatches(\"com.PinKushin.PokemonBattleJournal:id/MatchRow_.*\")"));
+
+        // Returns the last match row — the BO3 Loss (3 games) seeded last.
+        private AppiumElement FindLastMatchRow() =>
+            App is WindowsDriver
+                ? App.FindElements(MobileBy.XPath("//*[contains(@AutomationId,'MatchRow_')]"))
+                    .LastOrDefault()
+                    ?? throw new Exception("No match rows found — seeded data missing")
+                : App.FindElements(MobileBy.XPath("//*[contains(@resource-id,'MatchRow_')]"))
+                    .LastOrDefault()
+                    ?? throw new Exception("No match rows found — seeded data missing");
+
         [Test]
         public void ReadJournalPage_Loads_PageVisible()
         {
@@ -63,14 +82,7 @@
         [Test]
         public void ReadJournalPage_SelectMatch_ShowsArchetypeNames()
         {
-            AppiumElement firstRow = App is WindowsDriver
-                ? App.FindElements(MobileBy.XPath("//*[contains(@AutomationId,'MatchRow_')]"))
-                    .FirstOrDefault()
-                    ?? throw new Exception("No match rows found — seeded data missing")
-                : App.FindElement(MobileBy.AndroidUIAutomator(
-                    "new UiSelector().resourceIdMatches(\"com.PinKushin.PokemonBattleJournal:id/MatchRow_.*\")"));
-
-            firstRow.Click();
+            FindFirstMatchRow().Click();
 
             // With diverse seed, archetypes are non-empty strings (e.g. "Other", "Charizard").
             string playingName = FindReadJournalElement("PlayingNameLabel").Text;
@@ -78,6 +90,46 @@
 
             playingName.ShouldNotBeNullOrEmpty("PlayingNameLabel was empty — archetype not loaded");
             againstName.ShouldNotBeNullOrEmpty("AgainstNameLabel was empty — archetype not loaded");
+        }
+
+        [Test]
+        public void ReadJournalPage_SelectMatch_ShowsDetailCard()
+        {
+            FindFirstMatchRow().Click();
+            FindReadJournalElement("SelectedMatchCard").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void ReadJournalPage_SelectMatch_ShowsIcons()
+        {
+            FindFirstMatchRow().Click();
+            FindReadJournalElement("PlayingIcon").ShouldNotBeNull();
+            FindReadJournalElement("AgainstIcon").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void ReadJournalPage_SelectMatch_ShowsNotesEditor()
+        {
+            FindFirstMatchRow().Click();
+            FindReadJournalElement("SelectedMatchNotes").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void ReadJournalPage_SelectMatch_ShowsGame1TagsView()
+        {
+            FindFirstMatchRow().Click();
+            // Game1TagsView is always visible; shows either tags or "No Tags for Game 1" empty view.
+            FindReadJournalElement("Game1TagsView").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void ReadJournalPage_BO3Match_ShowsGame2And3TagViews()
+        {
+            // Last seeded match is BO3 Loss (Regidrago vs Miraidon, 3 games).
+            // Game2TagsView and Game3TagsView are only visible for matches with Game2/Game3.
+            FindLastMatchRow().Click();
+            FindReadJournalElement("Game2TagsView").ShouldNotBeNull();
+            FindReadJournalElement("Game3TagsView").ShouldNotBeNull();
         }
     }
 }

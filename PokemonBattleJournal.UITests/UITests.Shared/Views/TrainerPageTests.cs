@@ -88,6 +88,53 @@
         }
 
         [Test]
+        public void TrainerPage_AverageMatchDuration_ShowsValue()
+        {
+            // Seeded matches have distinct start/end times so duration is non-zero.
+            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(10));
+            string text = wait.Until(_ =>
+            {
+                string t = FindUIElement("AverageMatchDurationLabel").Text;
+                return !string.IsNullOrEmpty(t) ? t : null;
+            });
+            text.ShouldNotBeNullOrEmpty();
+        }
+
+        [Test]
+        public void TrainerPage_StreakInfo_ShowsValue()
+        {
+            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(10));
+            string text = wait.Until(_ =>
+            {
+                string t = FindUIElement("StreakInfoLabel").Text;
+                return !string.IsNullOrEmpty(t) ? t : null;
+            });
+            text.ShouldNotBeNullOrEmpty();
+        }
+
+        [Test]
+        public void TrainerPage_StatNameLabels_Displayed()
+        {
+            FindUIElement("WinRateStatName").ShouldNotBeNull();
+            FindUIElement("WinsStatName").ShouldNotBeNull();
+            FindUIElement("LossesStatName").ShouldNotBeNull();
+            FindUIElement("TiesStatName").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void TrainerPage_ChartHeadings_Displayed()
+        {
+            FindUIElement("MatchupMatrixHeading").ShouldNotBeNull();
+            FindUIElement("WinRateOverTimeHeading").ShouldNotBeNull();
+            FindUIElement("MostPlayedHeading").ShouldNotBeNull();
+            FindUIElement("ArchetypeWinRateHeading").ShouldNotBeNull();
+            FindUIElement("OpponentPerformanceHeading").ShouldNotBeNull();
+            FindUIElement("TagUsageHeading").ShouldNotBeNull();
+            FindUIElement("MatchLengthHeading").ShouldNotBeNull();
+            FindUIElement("FirstTurnHeading").ShouldNotBeNull();
+        }
+
+        [Test]
         public void TrainerPage_AllCharts_Rendered()
         {
             FindUIElement("OpponentPerformanceChart").ShouldNotBeNull();

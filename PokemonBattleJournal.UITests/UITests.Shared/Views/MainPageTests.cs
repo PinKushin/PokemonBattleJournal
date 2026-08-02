@@ -303,6 +303,70 @@ namespace UITests
         }
 
         [Test]
+        public void MainPage_PageTitle_Displayed()
+        {
+            FindUIElement("PageTitle").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void MainPage_SectionHeadings_Displayed()
+        {
+            FindUIElement("SelectDecksHeading").ShouldNotBeNull();
+            FindUIElement("MatchFormatHeading").ShouldNotBeNull();
+            FindUIElement("StartTimeHeading").ShouldNotBeNull();
+            FindUIElement("EndTimeHeading").ShouldNotBeNull();
+            FindUIElement("DatePlayedHeading").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void MainPage_WentFirstLabel_Displayed()
+        {
+            FindUIElement("WentFirstLabel").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void MainPage_SaveMatch_WithArchetypes_ShowsSavedText()
+        {
+            try
+            {
+                ScrollPageToTop();
+
+                // Select player archetype — WaitUntilGone syncs on popup dismissal before opening rival.
+                FindUIElement("PlayerArchetype").Click();
+                FindUIElement("ArchetypeItem_Other").Click();
+                WaitUntilGone("ArchetypeItem_Other");
+
+                // Select rival archetype
+                FindUIElement("RivalArchetype").Click();
+                FindUIElement("ArchetypeItem_Other").Click();
+                WaitUntilGone("ArchetypeItem_Other");
+
+                // Select result
+                AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
+                if (App is not WindowsDriver)
+                {
+                    resultPicker.Click();
+                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                }
+                else
+                    SelectWindowsPickerItem(resultPicker, "Win");
+
+                FindUIElement("SaveMatchButton").Click();
+
+                // SavedFileDisplay binding updates to "Saved: Match at …" on success.
+                // SemanticProperties.Description is NOT set on the button so .Text reflects the bound value.
+                var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(5));
+                string savedText = wait.Until(_ =>
+                {
+                    string text = FindUIElement("SaveMatchButton").Text;
+                    return text.StartsWith("Saved") ? text : null;
+                });
+                savedText.ShouldStartWith("Saved");
+            }
+            finally { CloseWindowsPickers("PossibleResultsPicker"); }
+        }
+
+        [Test]
         public void MainPage_SaveMatch_WithResult_Saves()
         {
             try

@@ -95,5 +95,25 @@ namespace UITests
         /// </summary>
         protected virtual void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName) =>
             throw new PlatformNotSupportedException("SelectWindowsPickerItem is Windows-only.");
+
+        /// <summary>
+        /// Spins (no sleep) until the element with <paramref name="automationId"/> disappears
+        /// from the accessibility tree or <paramref name="timeoutMs"/> elapses.
+        /// Use after closing a popup/modal to sync on its full dismissal before the next interaction.
+        /// </summary>
+        protected void WaitUntilGone(string automationId, int timeoutMs = 3000)
+        {
+            // WinAppDriver does not support reading ImplicitWait back — hardcode restore to the
+            // 5s value set in AppiumSetup. Setting to zero lets FindElements return immediately.
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
+            {
+                var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+                while (DateTime.UtcNow < deadline)
+                    if (!App.FindElements(MobileBy.AccessibilityId(automationId)).Any())
+                        return;
+            }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+        }
     }
 }

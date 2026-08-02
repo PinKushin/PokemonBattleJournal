@@ -519,7 +519,6 @@
             <!--#region Save Button-->
             <Button
                 AutomationId="SaveMatchButton"
-                SemanticProperties.Description="Save match"
                 BackgroundColor="{StaticResource PokeBlue}"
                 Command="{Binding SaveMatchCommand}"
                 HorizontalOptions="Fill"

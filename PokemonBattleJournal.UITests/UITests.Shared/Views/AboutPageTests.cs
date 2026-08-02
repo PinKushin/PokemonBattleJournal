@@ -23,5 +23,11 @@
         {
             FindUIElement("AboutPageTagline").ShouldNotBeNull();
         }
+
+        [Test]
+        public void AboutPage_Logo_Displayed()
+        {
+            FindUIElement("AboutPageLogo").ShouldNotBeNull();
+        }
     }
 }

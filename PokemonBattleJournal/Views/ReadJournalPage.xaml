@@ -27,6 +27,8 @@
 
             <!--  Selected match detail card  -->
             <Border
+                AutomationId="SelectedMatchCard"
+                SemanticProperties.Description="Selected match detail card"
                 Padding="16"
                 IsVisible="{Binding SelectedMatch, Converter={StaticResource IsNotNullConverter}}"
                 Stroke="{StaticResource PokeYellow}"
