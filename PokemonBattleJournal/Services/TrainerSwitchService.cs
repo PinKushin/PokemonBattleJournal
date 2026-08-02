@@ -1,3 +1,5 @@
+using Sentry;
+
 namespace PokemonBattleJournal.Services
 {
     public class TrainerSwitchService : ITrainerSwitchService
@@ -22,6 +24,8 @@ namespace PokemonBattleJournal.Services
         {
             ActiveTrainer = await _connection.Trainers.GetActiveAsync();
             _logger.LogInformation("Active trainer loaded: {Name} ({Id})", ActiveTrainer?.Name, ActiveTrainer?.Id);
+            if (ActiveTrainer is not null)
+                SetSentryUser(ActiveTrainer);
         }
 
         public async Task SwitchToAsync(Trainer trainer)
@@ -29,7 +33,20 @@ namespace PokemonBattleJournal.Services
             await _connection.Trainers.SetActiveAsync(trainer);
             ActiveTrainer = trainer;
             _logger.LogInformation("Switched to trainer {TrainerName} ({TrainerId})", trainer.Name, trainer.Id);
+            SetSentryUser(trainer);
             TrainerChanged?.Invoke(this, trainer);
+        }
+
+        private static void SetSentryUser(Trainer trainer)
+        {
+            SentrySdk.ConfigureScope(scope =>
+            {
+                scope.User = new SentryUser
+                {
+                    Id = trainer.Id.ToString(),
+                    Username = trainer.Name
+                };
+            });
         }
     }
 }
