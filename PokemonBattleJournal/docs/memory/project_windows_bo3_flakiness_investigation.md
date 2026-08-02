@@ -50,6 +50,24 @@ CI runners are slower than local machines. The binding cascade + dropdown close 
 3. Check `UITests.Windows.setup.log` for driver/build timing
 4. If the test still fails after 30s poll, the element is genuinely not in the UIA tree for 30+ seconds — need to investigate WinAppDriver or MAUI further
 
+## User's WinAppDriver replacement project
+
+User is building an OSS replacement for WinAppDriver. The goal is to bypass WinAppDriver entirely and talk directly to `IUIAutomation` COM API from C#. This would sidestep the class of flakiness caused by WinAppDriver's UIA tree filtering ([#857](https://github.com/microsoft/WinAppDriver/issues/857), [#1079](https://github.com/microsoft/WinAppDriver/issues/1079)).
+
+Key interfaces for the replacement:
+- `IUIAutomation` — root factory for element lookups, conditions, patterns
+- `IUIAutomationElement` — a single UI element (properties, tree navigation, Invoke)
+- `IUIAutomationCondition` — filter for FindFirst/FindAll
+- `IUIAutomationInvokePattern` — click/activate
+- `IUIAutomationValuePattern` — get/set text values
+- `IUIAutomationSelectionItemPattern` — select items in lists/combo boxes
+
+HWND lookup via P/Invoke: `FindWindow`, `EnumWindows`
+
+The existing test suite uses `FindUIElement` polling at the Appium `FindElement` level, so swapping the driver backend won't require test logic changes.
+
+Added IUIAutomation section to CLAUDE.md with COM code samples, interface reference, and HWND lookup patterns.
+
 ## Key files
 - `UITests.Shared/BaseTest.cs:44-70` — `FindUIElement` Windows poll loop
 - `UITests.Shared/Views/MainPageTests.cs:226-271` — `Game3Tab_ShowsWhenGame1IsTie`

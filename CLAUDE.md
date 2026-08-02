@@ -101,6 +101,73 @@ In this project:
 - Seed failures throw `InvalidOperationException` — never swallowed silently
 - Windows UI tests: `WipeAppData()` deletes DB + preferences before each run so first-boot prompt always fires on a clean slate
 
+## Windows UI Automation (IUIAutomation)
+
+WinAppDriver wraps the Windows UIA COM API (`IUIAutomation`) but has known issues with elements not appearing in the UIA tree ([#857](https://github.com/microsoft/WinAppDriver/issues/857), [#1079](https://github.com/microsoft/WinAppDriver/issues/1079)). For direct access bypassing WinAppDriver:
+
+### Low-level COM access from C#
+
+```csharp
+// Primary entry point — creates the automation factory
+IUIAutomation automation = new CUIAutomation();
+// or: (IUIAutomation)AutomationFactory.CreateObject("UIAutomation.UIAutomation");
+
+// Find window by HWND
+IntPtr hwnd = FindWindow(null, "PokemonBattleJournal");
+IUIAutomationElement window = automation.ElementFromHandle(hwnd);
+
+// Find element by property condition
+IUIAutomationCondition condition = automation.CreatePropertyCondition(
+    UIA_AutomationIdPropertyId, "Game2Tab");
+IUIAutomationElement element = window.FindFirst(TreeScope.Children, condition);
+
+// Find all matching elements
+IUIAutomationElementArray elements = window.FindAll(TreeScope.Subtree, condition);
+```
+
+### HWND lookup
+
+```csharp
+[DllImport("user32.dll", SetLastError = true)]
+static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+// Or enumerate all windows:
+[DllImport("user32.dll")]
+static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+```
+
+### Key COM interfaces
+
+| Interface | Purpose |
+|-----------|---------|
+| `IUIAutomation` | Root factory — element lookups, conditions, patterns |
+| `IUIAutomationElement` | A single UI element — properties, tree navigation, Invoke |
+| `IUIAutomationCondition` | Filter for FindFirst/FindAll (property, and, or, not) |
+| `IUIAutomationInvokePattern` | Click/activate an element |
+| `IUIAutomationValuePattern` | Get/set text values |
+| `IUIAutomationSelectionItemPattern` | Select items in lists/combo boxes |
+| `IUIAutomationExpandCollapsePattern` | Expand/collapse dropdowns |
+
+### ComWrappers for .NET 8+
+
+```csharp
+// .NET 8+ — use ComWrappers to host COM objects
+var wrapper = new ComWrappers();
+var automation = (IUIAutomation)wrapper.GetOrCreateObjectForComInstance(
+    AutomationFactory.CreateObject("UIAutomation.UIAutomation").GetRawRuntimeInterface(),
+    CreateObjectFlags.None);
+```
+
+### Why this matters for test flakiness
+
+WinAppDriver's `FindElement` calls `IUIAutomationElement::FindFirst` under the hood. When WinAppDriver returns `NoSuchElementException` for an element that exists on screen, the UIA tree is being restructured (animation, binding cascade, tab switch). Direct `IUIAutomation` access lets you:
+- Retry tree walks with your own timing (no global ImplicitWait)
+- Use `TreeScope.Subtree` to search deeper in the hierarchy
+- Access elements WinAppDriver filters out (e.g., off-screen items)
+- Use `IUIAutomation::AddAutomationPropertyChangedEventHandler` to watch for tree changes
+
 ## Platform notes
 
 - Windows: unpackaged (`WindowsPackageType=None`); debug exe at `bin\Debug\net10.0-windows10.0.19041.0\win10-x64\PokemonBattleJournal.exe`
