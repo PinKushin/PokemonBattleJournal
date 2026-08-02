@@ -43,5 +43,23 @@ namespace PokemonBattleJournal.Tests.Utilities
             // Allow fire-and-forget to complete
             await Task.Delay(100);
         }
+
+        [Test]
+        public async Task FireAndForgetSafeAsync_Failure_WithLogger_LogsError()
+        {
+            ILogger mockLogger = Substitute.For<ILogger>();
+            Task failingTask = Task.FromException(new InvalidOperationException("boom"));
+
+            failingTask.FireAndForgetSafeAsync(logger: mockLogger);
+
+            await Task.Delay(100);
+
+            mockLogger.Received(1).Log(
+                LogLevel.Error,
+                Arg.Any<EventId>(),
+                Arg.Any<object>(),
+                Arg.Any<Exception>(),
+                Arg.Any<Func<object, Exception?, string>>());
+        }
     }
 }

@@ -16,11 +16,14 @@
         /// </summary>
         public virtual async Task<List<Trainer>> GetAllAsync()
         {
+            _logger.LogDebug("GetAllAsync: fetching all trainers");
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
                 await _factory.GetLock().WaitAsync();
-                return await db.Table<Trainer>().ToListAsync();
+                List<Trainer> trainers = await db.Table<Trainer>().ToListAsync();
+                _logger.LogDebug("GetAllAsync: returned {Count} trainers", trainers.Count);
+                return trainers;
             }
             catch (Exception ex)
             {
@@ -38,11 +41,14 @@
         /// <inheritdoc/>
         public virtual async Task<Trainer?> GetActiveAsync()
         {
+            _logger.LogDebug("GetActiveAsync: querying active trainer");
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
                 await _factory.GetLock().WaitAsync();
-                return await db.Table<Trainer>().Where(t => t.IsActive).FirstOrDefaultAsync();
+                Trainer? active = await db.Table<Trainer>().Where(t => t.IsActive).FirstOrDefaultAsync();
+                _logger.LogDebug("GetActiveAsync: active trainer = {Name} ({Id})", active?.Name, active?.Id);
+                return active;
             }
             catch (Exception ex)
             {
@@ -58,6 +64,7 @@
         /// <inheritdoc/>
         public virtual async Task SetActiveAsync(Trainer trainer)
         {
+            _logger.LogDebug("SetActiveAsync: setting trainer {Name} ({Id}) as active", trainer.Name, trainer.Id);
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
@@ -282,6 +289,7 @@
                 throw new ArgumentException("Trainer name is required", nameof(trainerName));
             }
 
+            _logger.LogDebug("SaveAsync: saving trainer {Name}", trainerName);
             // Create the trainer instance
             Trainer trainer = new() { Name = trainerName };
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();

@@ -15,8 +15,7 @@
         [System.Diagnostics.CodeAnalysis.SuppressMessage("S3168", "S3168:\"async\" methods should not return \"void\"")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("PH_S", "PH_S030:async void method invocation",
             Justification = "Intentional fire-and-forget extension method; async void is the correct pattern here.")]
-        public static async void FireAndForgetSafeAsync(this Task task, IErrorHandler? handler = null)
-
+        public static async void FireAndForgetSafeAsync(this Task task, IErrorHandler? handler = null, ILogger? logger = null)
         {
             try
             {
@@ -24,6 +23,7 @@
             }
             catch (Exception ex)
             {
+                logger?.LogError(ex, "Unhandled exception in fire-and-forget task");
                 handler?.HandleError(ex);
             }
         }

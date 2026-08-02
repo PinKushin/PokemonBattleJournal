@@ -25,7 +25,7 @@ namespace PokemonBattleJournal.ViewModels
             {
                 TrainerName = trainer.Name ?? string.Empty;
                 WelcomeMsg = $"{TrainerName}'s Journal";
-                AppearingAsync().FireAndForgetSafeAsync();
+                AppearingAsync().FireAndForgetSafeAsync(logger: _logger);
             });
         }
 

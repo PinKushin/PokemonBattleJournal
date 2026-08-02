@@ -442,6 +442,7 @@
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error loading icon collection from app package");
                 ModalErrorHandler modalErrorHandler = new();
                 modalErrorHandler.HandleError(ex);
                 return iconCollection;

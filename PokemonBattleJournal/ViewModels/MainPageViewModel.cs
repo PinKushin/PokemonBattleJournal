@@ -38,7 +38,7 @@ namespace PokemonBattleJournal.ViewModels
                 TrainerName = trainer.Name ?? string.Empty;
                 WelcomeMsg = $"Welcome {TrainerName}";
                 ResetForm();
-                AppearingAsync().FireAndForgetSafeAsync();
+                AppearingAsync().FireAndForgetSafeAsync(logger: _logger);
             });
         }
 

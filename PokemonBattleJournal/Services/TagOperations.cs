@@ -90,6 +90,7 @@
                 throw new ArgumentException("Trainer ID is required", nameof(trainerId));
             }
 
+            _logger.LogDebug("SaveAsync: saving tag {Name} for trainer {TrainerId}", tagTxt, trainerId);
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             Tags tag = new()
             { Name = tagTxt, TrainerId = trainerId };
@@ -141,6 +142,7 @@
                 throw new ArgumentException("Tag ID is required", nameof(tag));
             }
 
+            _logger.LogDebug("DeleteAsync: deleting tag {Name} ({Id})", tag.Name, tag.Id);
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {

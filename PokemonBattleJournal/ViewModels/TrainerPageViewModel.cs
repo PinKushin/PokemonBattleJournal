@@ -32,7 +32,7 @@ namespace PokemonBattleJournal.ViewModels
             {
                 TrainerName = trainer.Name ?? string.Empty;
                 WelcomeMsg = $"{TrainerName}'s Profile";
-                AppearingAsync().FireAndForgetSafeAsync();
+                AppearingAsync().FireAndForgetSafeAsync(logger: _logger);
             });
         }
 

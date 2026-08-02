@@ -18,6 +18,7 @@ namespace PokemonBattleJournal.Services
         /// <returns>List of MatchEntry</returns>
         public async Task<List<MatchEntry>> GetAllAsync()
         {
+            _logger.LogDebug("GetAllAsync: fetching all match entries");
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
@@ -64,6 +65,8 @@ namespace PokemonBattleJournal.Services
                 throw new ArgumentException("At least one game is required", nameof(games));
             }
 
+            _logger.LogDebug("SaveAsync: trainer={TrainerId}, playing={PlayingId}, against={AgainstId}, games={GameCount}",
+                matchEntry.TrainerId, matchEntry.PlayingId, matchEntry.AgainstId, games.Count);
             try
             {
                 SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
@@ -179,6 +182,7 @@ namespace PokemonBattleJournal.Services
         /// </summary>
         public virtual async Task<List<MatchEntry>> GetByTrainerIdAsync(uint trainerId, bool includeRelated = true)
         {
+            _logger.LogDebug("GetByTrainerIdAsync: trainer {TrainerId}, includeRelated={IncludeRelated}", trainerId, includeRelated);
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {

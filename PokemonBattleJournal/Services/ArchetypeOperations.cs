@@ -126,6 +126,7 @@ namespace PokemonBattleJournal.Services
                 throw new ArgumentException("Trainer ID is required", nameof(trainerId));
             }
 
+            _logger.LogDebug("SaveAsync: saving archetype {Name} for trainer {TrainerId}", name, trainerId);
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             Archetype archetype = new()
             {
@@ -195,6 +196,7 @@ namespace PokemonBattleJournal.Services
                 throw new ArgumentException("Archetype ID is required", nameof(archetype));
             }
 
+            _logger.LogDebug("DeleteAsync: deleting archetype {Name} ({Id})", archetype.Name, archetype.Id);
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
