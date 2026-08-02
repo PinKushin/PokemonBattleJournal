@@ -725,5 +725,90 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             await Should.NotThrowAsync(() => _viewModel.SaveTrainerAsync());
         }
+
+        [Test]
+        public async Task SaveTrainerAsync_SaveSucceedsButTrainerNotFoundAfterSave_DoesNotCallSwitchService()
+        {
+            // Save returns 1 but GetByNameAsync returns null → early return, no SwitchToAsync
+            _viewModel.NameInput = "Ghost";
+            _mockConnectionFactory.Trainers.SaveAsync("Ghost").Returns(Task.FromResult(1));
+            _mockConnectionFactory.Trainers.GetByNameAsync("Ghost")
+                .Returns(Task.FromResult<Trainer?>(null));
+
+            await _viewModel.SaveTrainerAsync();
+
+            await _mockSwitchService.DidNotReceive().SwitchToAsync(Arg.Any<Trainer>());
+        }
+
+        [Test]
+        public async Task DeleteArchetypeAsync_AffectedIsZero_DoesNotRefreshArchetypeList()
+        {
+            var trainer = new Trainer { Id = 1, Name = "Ash" };
+            var archetype = new Archetype { Id = 5, Name = "Fire" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.GetAllAsync()
+                .Returns(Task.FromResult(new List<Archetype> { archetype }));
+            _mockConnectionFactory.Tags.GetAllAsync().Returns(Task.FromResult(new List<Tags>()));
+            _mockConnectionFactory.Archetypes.DeleteAsync(archetype).Returns(Task.FromResult(0));
+
+            await _viewModel.AppearingAsync();
+            _viewModel.AllArchetypes.Count.ShouldBe(1); // seeded above
+
+            await _viewModel.DeleteArchetypeAsync(archetype);
+
+            // GetAllAsync called once (AppearingAsync) but NOT a second time after delete=0
+            _ = _mockConnectionFactory.Archetypes.Received(1).GetAllAsync();
+        }
+
+        [Test]
+        public async Task DeleteTagAsync_AffectedIsZero_DoesNotRefreshTagList()
+        {
+            var trainer = new Trainer { Id = 1, Name = "Ash" };
+            var tag = new Tags { Id = 3, Name = "Lucky" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
+            _mockConnectionFactory.Tags.GetAllAsync().Returns(Task.FromResult(new List<Tags> { tag }));
+            _mockConnectionFactory.Tags.DeleteAsync(tag).Returns(Task.FromResult(0));
+
+            await _viewModel.AppearingAsync();
+
+            await _viewModel.DeleteTagAsync(tag);
+
+            // GetAllAsync called once (AppearingAsync) but NOT a second time after delete=0
+            _ = _mockConnectionFactory.Tags.Received(1).GetAllAsync();
+        }
+
+        [Test]
+        public async Task SaveTagAsync_ThrowsException_DoesNotRethrow()
+        {
+            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Tags.SaveAsync(Arg.Any<string>(), Arg.Any<uint>())
+                .Returns(Task.FromException<int>(new InvalidOperationException("DB error")));
+
+            await _viewModel.AppearingAsync();
+            _viewModel.TagInput = "Aggro";
+
+            await Should.NotThrowAsync(() => _viewModel.SaveTagAsync());
+        }
+
+        [Test]
+        public async Task SaveArchetypeAsync_ThrowsException_DoesNotRethrow()
+        {
+            var trainer = new Trainer { Id = 7, Name = "Gary" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockConnectionFactory.Archetypes.SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>())
+                .Returns(Task.FromException<int>(new InvalidOperationException("DB error")));
+
+            await _viewModel.AppearingAsync();
+            _viewModel.NewDeckName = "Charizard";
+            _viewModel.NewDeckIcon = "charizard.png";
+
+            await Should.NotThrowAsync(() => _viewModel.SaveArchetypeAsync());
+        }
     }
 }

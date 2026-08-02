@@ -1,5 +1,6 @@
 ﻿#pragma warning disable IDE0058 // Expression value is never used
 using PokemonBattleJournal.Interfaces;
+using SQLite;
 
 namespace PokemonBattleJournal.Tests.ViewModels
 {
@@ -602,6 +603,95 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
 
             _viewModel.BO3Toggle.ShouldBeFalse();
+        }
+
+        // --- SaveMatchAsync additional paths ---
+
+        [Test]
+        public async Task SaveMatchAsync_BO3SplitWithNoGame3_ReturnsZero()
+        {
+            // BO3, Win+Loss split, ShowGame3=true, but Result3=null → validation fails
+            _viewModel.BO3Toggle = true;
+            _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
+            _viewModel.RivalSelected = new Archetype { Id = 2, Name = "Water" };
+            _viewModel.Result = MatchResult.Win;
+            _viewModel.Result2 = MatchResult.Loss;
+            _viewModel.Result3 = null;
+
+            int result = await _viewModel.SaveMatchAsync();
+
+            result.ShouldBe(0);
+            _viewModel.HasValidationErrors.ShouldBeTrue();
+            _viewModel.ValidationMessage!.ShouldContain("Game 3 result is required");
+        }
+
+        [Test]
+        public async Task SaveMatchAsync_SaveReturnsZero_SetsFailureMessage()
+        {
+            // All validation passes, DB reports 0 rows affected → failure path
+            var mockCalculator = Substitute.For<IMatchResultCalculator>();
+            mockCalculator.CalculateResult(Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>())
+                .Returns(MatchResult.Win);
+            _mockCalculatorFactory.GetCalculator(Arg.Any<bool>()).Returns(mockCalculator);
+            _mockTrainerOps.GetActiveAsync().Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
+            _viewModel.TrainerName = "Test";
+            _mockMatchOps.SaveAsync(Arg.Any<MatchEntry>(), Arg.Any<List<Game>>()).Returns(Task.FromResult(0));
+
+            _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
+            _viewModel.RivalSelected = new Archetype { Id = 2, Name = "Water" };
+            _viewModel.Result = MatchResult.Win;
+
+            int result = await _viewModel.SaveMatchAsync();
+
+            result.ShouldBe(0);
+            _viewModel.HasValidationErrors.ShouldBeTrue();
+            _viewModel.SavedFileDisplay.ShouldBe("Failed to save match");
+        }
+
+        [Test]
+        public async Task SaveMatchAsync_ArgumentExceptionFromSave_SetsValidationMessage()
+        {
+            var mockCalculator = Substitute.For<IMatchResultCalculator>();
+            mockCalculator.CalculateResult(Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>())
+                .Returns(MatchResult.Win);
+            _mockCalculatorFactory.GetCalculator(Arg.Any<bool>()).Returns(mockCalculator);
+            _mockTrainerOps.GetActiveAsync().Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
+            _viewModel.TrainerName = "Test";
+            _mockMatchOps.SaveAsync(Arg.Any<MatchEntry>(), Arg.Any<List<Game>>())
+                .Returns(Task.FromException<int>(new ArgumentException("invalid field")));
+
+            _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
+            _viewModel.RivalSelected = new Archetype { Id = 2, Name = "Water" };
+            _viewModel.Result = MatchResult.Win;
+
+            int result = await _viewModel.SaveMatchAsync();
+
+            result.ShouldBe(0);
+            _viewModel.HasValidationErrors.ShouldBeTrue();
+            _viewModel.SavedFileDisplay.ShouldBe("Save Failed: Invalid Data");
+        }
+
+        [Test]
+        public async Task SaveMatchAsync_SQLiteExceptionFromSave_SetsValidationMessage()
+        {
+            var mockCalculator = Substitute.For<IMatchResultCalculator>();
+            mockCalculator.CalculateResult(Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>())
+                .Returns(MatchResult.Win);
+            _mockCalculatorFactory.GetCalculator(Arg.Any<bool>()).Returns(mockCalculator);
+            _mockTrainerOps.GetActiveAsync().Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
+            _viewModel.TrainerName = "Test";
+            _mockMatchOps.SaveAsync(Arg.Any<MatchEntry>(), Arg.Any<List<Game>>())
+                .Returns(Task.FromException<int>(SQLiteException.New(SQLite3.Result.Error, "disk full")));
+
+            _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
+            _viewModel.RivalSelected = new Archetype { Id = 2, Name = "Water" };
+            _viewModel.Result = MatchResult.Win;
+
+            int result = await _viewModel.SaveMatchAsync();
+
+            result.ShouldBe(0);
+            _viewModel.HasValidationErrors.ShouldBeTrue();
+            _viewModel.SavedFileDisplay.ShouldBe("Save Failed: Database Error");
         }
     }
 

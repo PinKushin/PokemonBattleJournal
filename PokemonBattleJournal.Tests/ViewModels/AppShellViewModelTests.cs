@@ -188,6 +188,29 @@ namespace PokemonBattleJournal.Tests.ViewModels
         }
 
         [Test]
+        public async Task LoadAsync_NoActiveTrainer_WithFallbackTrainer_CallsSwitchToAsync()
+        {
+            // When ActiveTrainer is null but trainers exist, falls back to first and persists via SwitchToAsync
+            var trainer = new Trainer { Id = 1, Name = "Ash" };
+            _mockSwitchService.GetAllTrainersAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
+            _mockSwitchService.ActiveTrainer.Returns((Trainer?)null);
+            _mockSwitchService.SwitchToAsync(Arg.Any<Trainer>()).Returns(Task.CompletedTask);
+
+            await _sut.LoadAsync();
+
+            await _mockSwitchService.Received(1).SwitchToAsync(trainer);
+        }
+
+        [Test]
+        public async Task LoadAsync_ExceptionFromInitialize_DoesNotThrow()
+        {
+            _mockSwitchService.InitializeAsync()
+                .Returns(Task.FromException(new InvalidOperationException("init failed")));
+
+            await Should.NotThrowAsync(() => _sut.LoadAsync());
+        }
+
+        [Test]
         public async Task SelectTrainerAsync_SameTrainer_ClosesMenu()
         {
             // Arrange

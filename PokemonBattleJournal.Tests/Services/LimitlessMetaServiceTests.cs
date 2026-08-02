@@ -7,6 +7,25 @@ namespace PokemonBattleJournal.Tests.Services;
 
 public class LimitlessMetaServiceTests
 {
+    private static readonly string SentinelPath =
+        Path.Combine(Path.GetTempPath(), "PokemonBattleJournal.uitest");
+    private bool _sentinelExisted;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _sentinelExisted = File.Exists(SentinelPath);
+        if (_sentinelExisted)
+            File.Delete(SentinelPath);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (_sentinelExisted && !File.Exists(SentinelPath))
+            File.WriteAllText(SentinelPath, string.Empty);
+    }
+
     private static LimitlessMetaService BuildService(IMetaDeckFetcher fetcher, IMetaDeckParser parser) =>
         new(fetcher, parser, NullLogger<LimitlessMetaService>.Instance);
 
@@ -89,6 +108,22 @@ public class LimitlessMetaServiceTests
         await service.GetTopDecksAsync();
 
         parser.Received(1).Parse(Arg.Any<string>(), 10);
+    }
+
+    [Test]
+    public async Task GetTopDecksAsync_WhenSentinelFilePresent_ReturnsEmptyWithoutCallingFetcher()
+    {
+        File.WriteAllText(SentinelPath, string.Empty);
+        _sentinelExisted = true; // ensure TearDown preserves it
+
+        IMetaDeckFetcher fetcher = Substitute.For<IMetaDeckFetcher>();
+        IMetaDeckParser parser = Substitute.For<IMetaDeckParser>();
+
+        LimitlessMetaService service = BuildService(fetcher, parser);
+        List<MetaDeck> result = await service.GetTopDecksAsync();
+
+        result.ShouldBeEmpty();
+        await fetcher.DidNotReceive().FetchAsync(Arg.Any<string>());
     }
 }
 
