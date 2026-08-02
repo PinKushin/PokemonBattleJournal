@@ -157,35 +157,50 @@
                         VerticalTextAlignment="Center" />
                 </HorizontalStackLayout>
                 <!--#endregion-->
-                <!--#region Start and End Time Pickers-->
-                <Label AutomationId="StartTimeHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Start Time" />
-                <TimePicker
-                    x:Name="StartTimePicker"
-                    AutomationId="StartTimePicker"
-                    SemanticProperties.Description="Match start time"
-                    Format="h_mm tt"
-                    HorizontalOptions="Center"
-                    MaximumWidthRequest="300"
-                    Time="{Binding StartTime}" />
-                <Label AutomationId="EndTimeHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="End Time" />
-                <TimePicker
-                    x:Name="EndTimePicker"
-                    AutomationId="EndTimePicker"
-                    SemanticProperties.Description="Match end time"
-                    Format="h_mm tt"
-                    HorizontalOptions="Center"
-                    MaximumWidthRequest="300"
-                    Time="{Binding EndTime}" />
-                <!--#endregion-->
-                <!--#region Date Played Picker-->
-                <Label AutomationId="DatePlayedHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Date Played" />
-                <DatePicker
-                    x:Name="DatePlayedPicker"
-                    AutomationId="DatePlayedPicker"
-                    SemanticProperties.Description="Date the match was played"
-                    HorizontalOptions="Center"
-                    MaximumWidthRequest="300"
-                    Date="{Binding DatePlayed}" />
+                <!--#region Time and Date Pickers-->
+                <FlexLayout HorizontalOptions="Center" JustifyContent="Center" Wrap="Wrap">
+                    <VerticalStackLayout Margin="10,0" HorizontalOptions="Center" Spacing="4">
+                        <Label
+                            AutomationId="StartTimeHeading"
+                            SemanticProperties.HeadingLevel="Level2"
+                            Style="{StaticResource Headline}"
+                            Text="Start Time" />
+                        <TimePicker
+                            x:Name="StartTimePicker"
+                            AutomationId="StartTimePicker"
+                            SemanticProperties.Description="Match start time"
+                            Format="h_mm tt"
+                            HorizontalOptions="Center"
+                            Time="{Binding StartTime}" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Margin="10,0" HorizontalOptions="Center" Spacing="4">
+                        <Label
+                            AutomationId="EndTimeHeading"
+                            SemanticProperties.HeadingLevel="Level2"
+                            Style="{StaticResource Headline}"
+                            Text="End Time" />
+                        <TimePicker
+                            x:Name="EndTimePicker"
+                            AutomationId="EndTimePicker"
+                            SemanticProperties.Description="Match end time"
+                            Format="h_mm tt"
+                            HorizontalOptions="Center"
+                            Time="{Binding EndTime}" />
+                    </VerticalStackLayout>
+                </FlexLayout>
+                <VerticalStackLayout HorizontalOptions="Center" Spacing="4">
+                    <Label
+                        AutomationId="DatePlayedHeading"
+                        SemanticProperties.HeadingLevel="Level2"
+                        Style="{StaticResource Headline}"
+                        Text="Date Played" />
+                    <DatePicker
+                        x:Name="DatePlayedPicker"
+                        AutomationId="DatePlayedPicker"
+                        SemanticProperties.Description="Date the match was played"
+                        HorizontalOptions="Center"
+                        Date="{Binding DatePlayed}" />
+                </VerticalStackLayout>
                 <!--#endregion-->
             </VerticalStackLayout>
             <!--#endregion-->
