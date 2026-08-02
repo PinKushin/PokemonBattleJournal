@@ -5,6 +5,7 @@
         private ReadJournalPageViewModel _viewModel = null!;
         private ISqliteConnectionFactory _mockConnectionFactory = null!;
         private ILogger<ReadJournalPageViewModel> _mockLogger = null!;
+        private ITrainerSwitchService _mockSwitchService = null!;
 
         [SetUp]
         public void SetUp()
@@ -12,12 +13,13 @@
             // Mocks
             _mockLogger = Substitute.For<ILogger<ReadJournalPageViewModel>>();
             _mockConnectionFactory = Substitute.For<ISqliteConnectionFactory>();
+            _mockSwitchService = Substitute.For<ITrainerSwitchService>();
 
             _mockConnectionFactory.Trainers.Returns(Substitute.For<ITrainerOperations>());
             _mockConnectionFactory.Matches.Returns(Substitute.For<IMatchOperations>());
 
             // SUT
-            _viewModel = new ReadJournalPageViewModel(_mockLogger, _mockConnectionFactory, Substitute.For<ITrainerSwitchService>());
+            _viewModel = new ReadJournalPageViewModel(_mockLogger, _mockConnectionFactory, _mockSwitchService);
         }
 
         [Test]
@@ -254,6 +256,40 @@
             _viewModel.Game3TagsInfo.ShouldBe("Game 3: No tags");
             _viewModel.TagsSelectedGame3.ShouldNotBeNull();
             _viewModel.TagsSelectedGame3!.Count.ShouldBe(0);
+        }
+
+        // ---------------------------------------------------------------------------
+        // OnTrainerChanged
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void OnTrainerChanged_EventRaised_UpdatesTrainerName()
+        {
+            var trainer = new Trainer { Id = 7, Name = "Brock" };
+
+            _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
+
+            _viewModel.TrainerName.ShouldBe("Brock");
+        }
+
+        [Test]
+        public void OnTrainerChanged_EventRaised_UpdatesWelcomeMsg()
+        {
+            var trainer = new Trainer { Id = 7, Name = "Brock" };
+
+            _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
+
+            _viewModel.WelcomeMsg.ShouldBe("Brock's Journal");
+        }
+
+        [Test]
+        public void OnTrainerChanged_EventRaised_NullName_SetsEmptyTrainerName()
+        {
+            var trainer = new Trainer { Id = 7, Name = null };
+
+            _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
+
+            _viewModel.TrainerName.ShouldBe(string.Empty);
         }
     }
 }

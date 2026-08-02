@@ -617,5 +617,113 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             _viewModel.AllTags.Count.ShouldBe(1);
         }
+
+        // ---------------------------------------------------------------------------
+        // OnSelectedSwitchTrainerChanged
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public async Task OnSelectedSwitchTrainerChanged_DifferentTrainer_CallsSwitchService()
+        {
+            // Load an active trainer so _trainer is set
+            var current = new Trainer { Id = 1, Name = "Ash" };
+            var next = new Trainer { Id = 2, Name = "Misty" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(current));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { current, next }));
+            _mockSwitchService.SwitchToAsync(Arg.Any<Trainer>()).Returns(Task.CompletedTask);
+            await _viewModel.AppearingAsync();
+
+            // Setting SelectedSwitchTrainer fires OnSelectedSwitchTrainerChanged
+            _viewModel.SelectedSwitchTrainer = next;
+
+            // Give the fire-and-forget a moment to call SwitchToAsync
+            await Task.Delay(50);
+            await _mockSwitchService.Received(1).SwitchToAsync(next);
+        }
+
+        [Test]
+        public async Task OnSelectedSwitchTrainerChanged_SameTrainer_DoesNotCallSwitchService()
+        {
+            var trainer = new Trainer { Id = 3, Name = "Brock" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+            await _viewModel.AppearingAsync();
+
+            _viewModel.SelectedSwitchTrainer = trainer;
+
+            await Task.Delay(50);
+            await _mockSwitchService.DidNotReceive().SwitchToAsync(Arg.Any<Trainer>());
+        }
+
+        [Test]
+        public async Task OnSelectedSwitchTrainerChanged_NullValue_DoesNotCallSwitchService()
+        {
+            var trainer = new Trainer { Id = 3, Name = "Brock" };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+            await _viewModel.AppearingAsync();
+
+            _viewModel.SelectedSwitchTrainer = null;
+
+            await Task.Delay(50);
+            await _mockSwitchService.DidNotReceive().SwitchToAsync(Arg.Any<Trainer>());
+        }
+
+        // ---------------------------------------------------------------------------
+        // AppearingAsync — ActiveTrainer from switch service (no DB call needed)
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public async Task AppearingAsync_ActiveTrainerFromSwitchService_DoesNotCallGetActiveAsync()
+        {
+            var trainer = new Trainer { Id = 10, Name = "Lance" };
+            _mockSwitchService.ActiveTrainer.Returns(trainer);
+            _mockConnectionFactory.Trainers.GetAllAsync()
+                .Returns(Task.FromResult(new List<Trainer> { trainer }));
+
+            await _viewModel.AppearingAsync();
+
+            _mockConnectionFactory.Trainers.DidNotReceive().GetActiveAsync();
+            _viewModel.TrainerName.ShouldBe("Lance");
+        }
+
+        // ---------------------------------------------------------------------------
+        // DeleteTrainerFromListAsync — non-active trainer (no Shell dialog needed here
+        // because Shell.Current is null in unit tests, but we can test the DB path
+        // via a confirmed=false mock that makes the method return early)
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public async Task DeleteArchetypeAsync_ThrowsException_DoesNotRethrow()
+        {
+            var archetype = new Archetype { Id = 5, Name = "Fire" };
+            _mockConnectionFactory.Archetypes.DeleteAsync(archetype)
+                .Returns(Task.FromException<int>(new InvalidOperationException("DB error")));
+
+            await Should.NotThrowAsync(() => _viewModel.DeleteArchetypeAsync(archetype));
+        }
+
+        [Test]
+        public async Task DeleteTagAsync_ThrowsException_DoesNotRethrow()
+        {
+            var tag = new Tags { Id = 3, Name = "Lucky" };
+            _mockConnectionFactory.Tags.DeleteAsync(tag)
+                .Returns(Task.FromException<int>(new InvalidOperationException("DB error")));
+
+            await Should.NotThrowAsync(() => _viewModel.DeleteTagAsync(tag));
+        }
+
+        [Test]
+        public async Task SaveTrainerAsync_ThrowsException_DoesNotRethrow()
+        {
+            _viewModel.NameInput = "Ash";
+            _mockConnectionFactory.Trainers.SaveAsync("Ash")
+                .Returns(Task.FromException<int>(new InvalidOperationException("DB error")));
+
+            await Should.NotThrowAsync(() => _viewModel.SaveTrainerAsync());
+        }
     }
 }

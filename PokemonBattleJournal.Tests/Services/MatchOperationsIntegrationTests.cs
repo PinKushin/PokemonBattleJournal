@@ -214,6 +214,98 @@ namespace PokemonBattleJournal.Tests.Services
         }
 
         // ---------------------------------------------------------------------------
+        // GetAllAsync
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public async Task GetAllAsync_EmptyDatabase_ReturnsEmptyList()
+        {
+            List<MatchEntry> all = await _sut.GetAllAsync();
+
+            all.ShouldBeEmpty();
+        }
+
+        [Test]
+        public async Task GetAllAsync_AfterSavingTwoMatches_ReturnsBoth()
+        {
+            uint trainerId = await SeedTrainerAsync();
+            uint archetypeId = await SeedArchetypeAsync();
+            MatchEntry match1 = new()
+            {
+                TrainerId = trainerId, PlayingId = archetypeId, AgainstId = archetypeId,
+                Result = MatchResult.Win, DatePlayed = DateTime.UtcNow,
+                StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow.AddMinutes(20),
+            };
+            MatchEntry match2 = new()
+            {
+                TrainerId = trainerId, PlayingId = archetypeId, AgainstId = archetypeId,
+                Result = MatchResult.Loss, DatePlayed = DateTime.UtcNow,
+                StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow.AddMinutes(15),
+            };
+            _ = await _sut.SaveAsync(match1, [new Game { Result = MatchResult.Win, Turn = 1 }]);
+            _ = await _sut.SaveAsync(match2, [new Game { Result = MatchResult.Loss, Turn = 1 }]);
+
+            List<MatchEntry> all = await _sut.GetAllAsync();
+
+            all.Count.ShouldBe(2);
+        }
+
+        // ---------------------------------------------------------------------------
+        // GetByIdAsync
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public async Task GetByIdAsync_ExistingEntry_ReturnsMatchWithRelatedData()
+        {
+            uint trainerId = await SeedTrainerAsync();
+            uint archetypeId = await SeedArchetypeAsync();
+            MatchEntry match = new()
+            {
+                TrainerId = trainerId, PlayingId = archetypeId, AgainstId = archetypeId,
+                Result = MatchResult.Win, DatePlayed = DateTime.UtcNow,
+                StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow.AddMinutes(20),
+            };
+            _ = await _sut.SaveAsync(match, [new Game { Result = MatchResult.Win, Turn = 1 }]);
+
+            MatchEntry? found = await _sut.GetByIdAsync(match.Id);
+
+            found.ShouldNotBeNull();
+            found!.Id.ShouldBe(match.Id);
+            found.Result.ShouldBe(MatchResult.Win);
+        }
+
+        [Test]
+        public async Task GetByIdAsync_NonExistentId_ReturnsNull()
+        {
+            MatchEntry? found = await _sut.GetByIdAsync(99999);
+
+            found.ShouldBeNull();
+        }
+
+        [Test]
+        public async Task GetByIdAsync_WithIncludeRelatedFalse_StillReturnsMatch()
+        {
+            // GetWithChildrenAsync(id, recursive:true) loads children regardless of includeRelated.
+            // includeRelated=false only skips the extra LoadRelatedDataAsync pass (archetype FKs).
+            // So the match is still returned; Playing is populated via GetWithChildrenAsync.
+            uint trainerId = await SeedTrainerAsync();
+            uint archetypeId = await SeedArchetypeAsync();
+            MatchEntry match = new()
+            {
+                TrainerId = trainerId, PlayingId = archetypeId, AgainstId = archetypeId,
+                Result = MatchResult.Tie, DatePlayed = DateTime.UtcNow,
+                StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow.AddMinutes(10),
+            };
+            _ = await _sut.SaveAsync(match, [new Game { Result = MatchResult.Tie, Turn = 1 }]);
+
+            MatchEntry? found = await _sut.GetByIdAsync(match.Id, includeRelated: false);
+
+            found.ShouldNotBeNull();
+            found!.Id.ShouldBe(match.Id);
+            found.Result.ShouldBe(MatchResult.Tie);
+        }
+
+        // ---------------------------------------------------------------------------
         // Inner factory — overrides GetDbPath() to use an isolated in-memory database
         // ---------------------------------------------------------------------------
 

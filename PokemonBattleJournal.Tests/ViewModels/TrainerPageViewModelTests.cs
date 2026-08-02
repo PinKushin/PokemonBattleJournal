@@ -140,5 +140,39 @@ namespace PokemonBattleJournal.Tests.ViewModels
             // Assert
             _mockAnalysisService.CalculateWinRate(matches, out Arg.Any<uint>(), out Arg.Any<uint>(), out Arg.Any<uint>());
         }
+
+        // ---------------------------------------------------------------------------
+        // OnTrainerChanged
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void OnTrainerChanged_EventRaised_UpdatesTrainerName()
+        {
+            var trainer = new Trainer { Id = 3, Name = "Misty" };
+
+            _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
+
+            _viewModel.TrainerName.ShouldBe("Misty");
+        }
+
+        [Test]
+        public void OnTrainerChanged_EventRaised_UpdatesWelcomeMsg()
+        {
+            var trainer = new Trainer { Id = 3, Name = "Misty" };
+
+            _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
+
+            _viewModel.WelcomeMsg.ShouldBe("Misty's Profile");
+        }
+
+        [Test]
+        public void OnTrainerChanged_EventRaised_NullName_SetsEmptyTrainerName()
+        {
+            var trainer = new Trainer { Id = 3, Name = null };
+
+            _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
+
+            _viewModel.TrainerName.ShouldBe(string.Empty);
+        }
     }
 }

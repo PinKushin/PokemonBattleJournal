@@ -515,6 +515,94 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.TagCollection.ShouldNotBeNull();
             _viewModel.TagCollection!.Count.ShouldBe(2);
         }
+
+        // ---------------------------------------------------------------------------
+        // HasUnsavedData
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void HasUnsavedData_NothingSet_ReturnsFalse()
+        {
+            _viewModel.HasUnsavedData.ShouldBeFalse();
+        }
+
+        [Test]
+        public void HasUnsavedData_PlayerSelected_ReturnsTrue()
+        {
+            _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
+
+            _viewModel.HasUnsavedData.ShouldBeTrue();
+        }
+
+        [Test]
+        public void HasUnsavedData_RivalSelected_ReturnsTrue()
+        {
+            _viewModel.RivalSelected = new Archetype { Id = 2, Name = "Water" };
+
+            _viewModel.HasUnsavedData.ShouldBeTrue();
+        }
+
+        [Test]
+        public void HasUnsavedData_NonEmptyUserNote_ReturnsTrue()
+        {
+            _viewModel.UserNoteInput = "Good game";
+
+            _viewModel.HasUnsavedData.ShouldBeTrue();
+        }
+
+        [Test]
+        public void HasUnsavedData_TagsSelected_ReturnsTrue()
+        {
+            _viewModel.TagsSelected = [new Tags { Name = "Lucky" }];
+
+            _viewModel.HasUnsavedData.ShouldBeTrue();
+        }
+
+        // ---------------------------------------------------------------------------
+        // OnTrainerChanged
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void OnTrainerChanged_EventRaised_UpdatesTrainerName()
+        {
+            var trainer = new Trainer { Id = 5, Name = "Gary" };
+
+            _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
+
+            _viewModel.TrainerName.ShouldBe("Gary");
+        }
+
+        [Test]
+        public void OnTrainerChanged_EventRaised_UpdatesWelcomeMsg()
+        {
+            var trainer = new Trainer { Id = 5, Name = "Gary" };
+
+            _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
+
+            _viewModel.WelcomeMsg.ShouldBe("Welcome Gary");
+        }
+
+        [Test]
+        public void OnTrainerChanged_EventRaised_ResetsPlayerSelected()
+        {
+            _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
+            var trainer = new Trainer { Id = 5, Name = "Gary" };
+
+            _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
+
+            _viewModel.PlayerSelected.ShouldBeNull();
+        }
+
+        [Test]
+        public void OnTrainerChanged_EventRaised_ResetsBO3Toggle()
+        {
+            _viewModel.BO3Toggle = true;
+            var trainer = new Trainer { Id = 5, Name = "Gary" };
+
+            _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
+
+            _viewModel.BO3Toggle.ShouldBeFalse();
+        }
     }
 
 }

@@ -112,6 +112,32 @@ namespace PokemonBattleJournal.Tests.Services
             remaining.ShouldNotContain(t => t.Name == "Erika");
         }
 
+        // ---------------------------------------------------------------------------
+        // GetByIdAsync
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public async Task GetByIdAsync_ExistingTrainer_ReturnsTrainer()
+        {
+            _ = await _sut.SaveAsync("Oak");
+            Trainer? byName = await _sut.GetByNameAsync("Oak");
+            byName.ShouldNotBeNull();
+
+            Trainer? byId = await _sut.GetByIdAsync(byName!.Id);
+
+            byId.ShouldNotBeNull();
+            byId!.Name.ShouldBe("Oak");
+            byId.Id.ShouldBe(byName.Id);
+        }
+
+        [Test]
+        public async Task GetByIdAsync_NonExistentId_ReturnsNull()
+        {
+            Trainer? found = await _sut.GetByIdAsync(99999);
+
+            found.ShouldBeNull();
+        }
+
         private sealed class TestSqliteConnectionFactory : SqliteConnectionFactory
         {
             private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"pbj_trainer_test_{Guid.NewGuid():N}.db3");
