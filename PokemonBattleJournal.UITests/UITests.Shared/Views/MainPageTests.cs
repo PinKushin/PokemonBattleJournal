@@ -32,22 +32,8 @@ namespace UITests
         private void ResetGame1Tab()
         {
             ScrollPageToTop();
-            if (App is AndroidDriver)
-            {
-                // AccessibilityId (content-desc) is reset by MAUI after picker interactions;
-                // use FindUIElement (resourceId) which survives binding-cascade re-renders.
-                try { FindUIElement("Game1Tab").Click(); }
-                catch (OpenQA.Selenium.NoSuchElementException)
-                {
-                    TestContext.WriteLine("WARN: ResetGame1Tab — Game1Tab not found on Android; next test may inherit dirty state.");
-                }
-                return;
-            }
             if (!TryClickIfPresent("Game1Tab"))
-            {
-                // Game1Tab may not exist if BO3 was toggled off — log for CI diagnosis.
                 TestContext.WriteLine("WARN: ResetGame1Tab — Game1Tab not found; next test may inherit dirty state.");
-            }
         }
 
         // UiScrollable scrollForward() moves toward the end of the list; scrollToBeginning()
