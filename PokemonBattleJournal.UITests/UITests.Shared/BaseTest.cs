@@ -159,10 +159,22 @@ namespace UITests
             pickerElement.Click();
             pickerElement.SendKeys(itemName[0].ToString());
             pickerElement.SendKeys(OpenQA.Selenium.Keys.Tab);
-            // Tab commits the selection but moves focus to SaveMatchButton, which
-            // triggers WinUI3 ScrollView to auto-scroll the tab bar off-screen.
-            // Shift+Tab moves focus back to the picker area, scrolling the view up.
-            pickerElement.SendKeys(OpenQA.Selenium.Keys.Shift + OpenQA.Selenium.Keys.Tab);
+        }
+
+        // Tab commits the picker but moves focus to SaveMatchButton, which triggers
+        // WinUI3 ScrollView to auto-scroll the tab bar off-screen. WinAppDriver
+        // FindElement only sees on-screen elements, so tabs become unfindable.
+        // SendKeys(Keys.PageUp) on the focused SaveButton scrolls the parent
+        // ScrollView back up, bringing the tab bar into view.
+        protected void ScrollToTop()
+        {
+            if (App is not WindowsDriver) return;
+            try
+            {
+                App.FindElement(MobileBy.AccessibilityId("SaveMatchButton"))
+                    .SendKeys(OpenQA.Selenium.Keys.PageUp);
+            }
+            catch { }
         }
 
         protected static void ClickTab(AppiumElement tabElement)
