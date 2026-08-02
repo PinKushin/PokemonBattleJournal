@@ -306,6 +306,50 @@ namespace PokemonBattleJournal.Tests.Services
         }
 
         // ---------------------------------------------------------------------------
+        // DeleteAsync
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public async Task DeleteAsync_ExistingMatch_RemovesFromDatabase()
+        {
+            uint trainerId = await SeedTrainerAsync();
+            uint archetypeId = await SeedArchetypeAsync();
+            MatchEntry match = new()
+            {
+                TrainerId = trainerId, PlayingId = archetypeId, AgainstId = archetypeId,
+                Result = MatchResult.Win, DatePlayed = DateTime.UtcNow,
+                StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow.AddMinutes(5),
+            };
+            _ = await _sut.SaveAsync(match, [new Game { Result = MatchResult.Win, Turn = 1 }]);
+
+            int deleted = await _sut.DeleteAsync(match);
+
+            deleted.ShouldBeGreaterThan(0);
+            MatchEntry? found = await _sut.GetByIdAsync(match.Id);
+            found.ShouldBeNull();
+        }
+
+        [Test]
+        public async Task GetByTrainerIdAsync_EmptyDatabase_ReturnsEmptyList()
+        {
+            List<MatchEntry> matches = await _sut.GetByTrainerIdAsync(999);
+            matches.ShouldBeEmpty();
+        }
+
+        [Test]
+        public async Task SaveAsync_ZeroTrainerId_ThrowsArgumentException()
+        {
+            MatchEntry match = new()
+            {
+                TrainerId = 0, PlayingId = 1, AgainstId = 1,
+                Result = MatchResult.Win, DatePlayed = DateTime.UtcNow,
+                StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow.AddMinutes(5),
+            };
+            await Should.ThrowAsync<ArgumentException>(() =>
+                _sut.SaveAsync(match, [new Game { Result = MatchResult.Win, Turn = 1 }]));
+        }
+
+        // ---------------------------------------------------------------------------
         // Inner factory — overrides GetDbPath() to use an isolated in-memory database
         // ---------------------------------------------------------------------------
 

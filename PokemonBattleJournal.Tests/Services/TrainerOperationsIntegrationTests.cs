@@ -113,6 +113,30 @@ namespace PokemonBattleJournal.Tests.Services
         }
 
         // ---------------------------------------------------------------------------
+        // Additional guard and miss cases
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public async Task GetByNameAsync_NonExistentName_ReturnsNull()
+        {
+            Trainer? found = await _sut.GetByNameAsync("Nobody");
+            found.ShouldBeNull();
+        }
+
+        [Test]
+        public async Task DeleteAsync_NullTrainer_ThrowsArgumentNullException()
+        {
+            await Should.ThrowAsync<ArgumentNullException>(() => _sut.DeleteAsync(null!));
+        }
+
+        [Test]
+        public async Task GetAllAsync_EmptyDatabase_ReturnsEmptyList()
+        {
+            List<Trainer> all = await _sut.GetAllAsync();
+            all.ShouldBeEmpty();
+        }
+
+        // ---------------------------------------------------------------------------
         // GetByIdAsync
         // ---------------------------------------------------------------------------
 
