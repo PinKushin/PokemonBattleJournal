@@ -41,11 +41,7 @@ namespace PokemonBattleJournal.Services
         {
             SentrySdk.ConfigureScope(scope =>
             {
-                scope.User = new SentryUser
-                {
-                    Id = trainer.Id.ToString(),
-                    Username = trainer.Name
-                };
+                scope.User = new SentryUser { Id = trainer.Id.ToString() };
             });
         }
     }
