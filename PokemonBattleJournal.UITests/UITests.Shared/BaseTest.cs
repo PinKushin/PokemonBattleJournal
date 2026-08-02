@@ -159,6 +159,10 @@ namespace UITests
             pickerElement.Click();
             pickerElement.SendKeys(itemName[0].ToString());
             pickerElement.SendKeys(OpenQA.Selenium.Keys.Tab);
+            // Tab commits the selection but moves focus to SaveMatchButton, which
+            // triggers WinUI3 ScrollView to auto-scroll the tab bar off-screen.
+            // Shift+Tab moves focus back to the picker area, scrolling the view up.
+            pickerElement.SendKeys(OpenQA.Selenium.Keys.Shift + OpenQA.Selenium.Keys.Tab);
         }
 
         protected static void ClickTab(AppiumElement tabElement)
