@@ -3,6 +3,7 @@ using static PokemonBattleJournal.Models.MatchResult;
 
 namespace PokemonBattleJournal.IntegrationTests.Services;
 
+[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class TrainerOperationsTests : IAsyncDisposable
 {
     private readonly TestSqliteConnectionFactory _factory = new(new NullMetaService());

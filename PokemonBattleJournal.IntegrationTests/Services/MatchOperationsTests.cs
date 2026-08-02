@@ -231,12 +231,47 @@ public class MatchOperationsTests : IAsyncDisposable
         MatchEntry match = MakeMatch();
         await _factory.Matches.SaveAsync(match, [new Game { Result = Win }]);
 
-        match.Notes = "Updated note";
+        DateTime updatedEnd = match.EndTime.AddMinutes(10);
+        match.EndTime = updatedEnd;
         await _factory.Matches.SaveAsync(match, [new Game { Result = Loss }]);
 
         MatchEntry? loaded = await _factory.Matches.GetByIdAsync(match.Id);
         loaded.ShouldNotBeNull();
-        loaded!.Notes.ShouldBe("Updated note");
+        loaded!.EndTime.ShouldBe(updatedEnd);
+    }
+
+    [Test]
+    public async Task GetByIdAsync_WithIncludeRelatedFalse_ReturnsMatchWithoutLoadedChildren()
+    {
+        await SetupAsync();
+        MatchEntry match = MakeMatch();
+        await _factory.Matches.SaveAsync(match, [new Game { Result = Win }]);
+
+        MatchEntry? loaded = await _factory.Matches.GetByIdAsync(match.Id, includeRelated: false);
+        loaded.ShouldNotBeNull();
+        loaded!.Id.ShouldBe(match.Id);
+    }
+
+    [Test]
+    public async Task GetByTrainerIdAsync_WithIncludeRelatedFalse_ReturnsMatchesWithoutArchetypes()
+    {
+        await SetupAsync();
+        await _factory.Matches.SaveAsync(MakeMatch(), [new Game { Result = Win }]);
+
+        List<MatchEntry> matches = await _factory.Matches.GetByTrainerIdAsync(_trainer.Id, includeRelated: false);
+        matches.ShouldNotBeEmpty();
+    }
+
+    [Test]
+    public async Task SaveAsync_WithNonExistentTagId_ReturnsZero()
+    {
+        // PreValidateTagsAsync throws ArgumentException, caught by catch block → returns 0
+        await SetupAsync();
+        Tags fakeTag = new() { Id = 99999, Name = "Ghost" };
+        Game game = new() { Result = Win, Tags = [fakeTag] };
+
+        int result = await _factory.Matches.SaveAsync(MakeMatch(), [game]);
+        result.ShouldBe(0);
     }
 
     [Test]

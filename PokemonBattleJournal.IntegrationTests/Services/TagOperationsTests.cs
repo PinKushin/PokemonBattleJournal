@@ -68,6 +68,20 @@ public class TagOperationsTests : IAsyncDisposable
     }
 
     [Test]
+    public async Task GetAllAsync_WithExistingTags_DoesNotReseed()
+    {
+        await EnsureTrainerAsync();
+        await _factory.Tags.SaveAsync("CustomTag", _trainerId);
+
+        // Call twice — second call should NOT re-seed defaults since table is non-empty
+        List<Tags> first = await _factory.Tags.GetAllAsync();
+        List<Tags> second = await _factory.Tags.GetAllAsync();
+
+        second.Count.ShouldBe(first.Count);
+        second.ShouldContain(t => t.Name == "CustomTag");
+    }
+
+    [Test]
     public async Task SaveAsync_EmptyName_ThrowsArgumentException()
     {
         await EnsureTrainerAsync();

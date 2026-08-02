@@ -217,6 +217,35 @@ public class ArchetypeOperationsTests : IAsyncDisposable
         archetypes.ShouldContain(a => a.Name == "Iron Valiant");
     }
 
+    [Test]
+    public async Task GetAllAsync_MetaServiceReturnsCdnUrl_FixesImagePathToLocal()
+    {
+        ArgumentNullException.ThrowIfNull(_factory);
+        var cdnMetaService = new CdnMetaService();
+        var sut = new ArchetypeOperations(_factory, NullLogger<ArchetypeOperations>.Instance, cdnMetaService);
+
+        // First call seeds meta deck with CDN URL
+        await sut.GetAllAsync();
+
+        // Second call — CDN URL rows should get local sprite path applied
+        List<Archetype> result = await sut.GetAllAsync();
+        Archetype? charizard = result.FirstOrDefault(a => a.Name == "Charizard ex");
+        charizard.ShouldNotBeNull();
+        charizard!.ImagePath.ShouldNotStartWith("http");
+    }
+
+    [Test]
+    public async Task GetAllAsync_WithExistingData_AlwaysEnsuresOtherExists()
+    {
+        Trainer trainer = await EnsureTrainerAsync();
+        ArchetypeOperations sut = CreateSut();
+
+        await sut.SaveAsync("CustomDeck", "custom.png", trainer.Id);
+        List<Archetype> result = await sut.GetAllAsync();
+
+        result.ShouldContain(a => a.Name == "Other");
+    }
+
     private sealed class FakeMetaService : ILimitlessMetaService
     {
         public Task<List<MetaDeck>> GetTopDecksAsync(int count = 10) =>
@@ -224,6 +253,15 @@ public class ArchetypeOperationsTests : IAsyncDisposable
             {
                 new("Iron Valiant", "iron-valiant.png"),
                 new("Charizard ex", "charizard-ex.png"),
+            });
+    }
+
+    private sealed class CdnMetaService : ILimitlessMetaService
+    {
+        public Task<List<MetaDeck>> GetTopDecksAsync(int count = 10) =>
+            Task.FromResult(new List<MetaDeck>
+            {
+                new("Charizard ex", "https://limitlesstcg.com/img/charizard.png"),
             });
     }
 
