@@ -110,6 +110,53 @@ namespace PokemonBattleJournal.Tests.Services
             saved!.ImagePath.ShouldBe("snorlax.png");
         }
 
+        [Test]
+        public async Task DeleteAsync_ArchetypeInUseByMatch_ThrowsInvalidOperationException()
+        {
+            uint trainerId = await SeedTrainerAsync();
+            _ = await _sut.SaveAsync("Raichu", "raichu.png", trainerId);
+            List<Archetype> all = await _sut.GetAllAsync();
+            Archetype archetype = all.First(a => a.Name == "Raichu");
+
+            // Use RunInTransactionAsync so the insert is committed on the same serialized queue
+            // before DeleteAsync's RunInTransactionAsync reads the COUNT.
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+            await db.RunInTransactionAsync(tran =>
+            {
+                tran.Execute(
+                    "INSERT INTO MatchEntry (TrainerId, PlayingId, AgainstId, Result, DatePlayed, StartTime, EndTime) VALUES (?,?,?,?,?,?,?)",
+                    trainerId, archetype.Id, archetype.Id,
+                    (int)MatchResult.Win,
+                    DateTime.UtcNow.Ticks, DateTime.UtcNow.Ticks, DateTime.UtcNow.AddMinutes(5).Ticks);
+            });
+
+            // DeleteAsync catches InvalidOperationException internally and returns 0 (does not rethrow)
+            int result = await _sut.DeleteAsync(archetype);
+            result.ShouldBe(0);
+            // Archetype must still exist in the DB
+            Archetype? still = await _sut.GetByIdAsync(archetype.Id);
+            still.ShouldNotBeNull();
+        }
+
+        [Test]
+        public async Task DeleteAsync_NullArchetype_ThrowsArgumentNullException()
+        {
+            await Should.ThrowAsync<ArgumentNullException>(() => _sut.DeleteAsync(null!));
+        }
+
+        [Test]
+        public async Task DeleteAsync_ZeroId_ThrowsArgumentException()
+        {
+            await Should.ThrowAsync<ArgumentException>(() => _sut.DeleteAsync(new Archetype { Id = 0, Name = "Ghost" }));
+        }
+
+        [Test]
+        public async Task GetByIdAsync_NonExistentId_ReturnsNull()
+        {
+            Archetype? found = await _sut.GetByIdAsync(99999);
+            found.ShouldBeNull();
+        }
+
         private sealed class TestSqliteConnectionFactory : SqliteConnectionFactory
         {
             private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"pbj_archetype_test_{Guid.NewGuid():N}.db3");
