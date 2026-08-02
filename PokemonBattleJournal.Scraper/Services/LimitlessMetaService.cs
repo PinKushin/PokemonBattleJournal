@@ -21,6 +21,14 @@ public class LimitlessMetaService : ILimitlessMetaService
 
     public async Task<List<MetaDeck>> GetTopDecksAsync(int count = 10)
     {
+        // Skip network call during UI test runs — the sentinel file is written by AppiumSetup.
+        // UI tests only need the "Other" default archetype; live meta data is irrelevant there.
+        if (File.Exists(Path.Combine(Path.GetTempPath(), "PokemonBattleJournal.uitest")))
+        {
+            _logger.LogInformation("GetTopDecksAsync: UI test sentinel detected — skipping network fetch");
+            return [];
+        }
+
         string html = await _fetcher.FetchAsync(DecksUrl);
         if (string.IsNullOrWhiteSpace(html))
         {

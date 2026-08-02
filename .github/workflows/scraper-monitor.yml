@@ -8,10 +8,14 @@ on:
 jobs:
   scraper-live-check:
     name: Limitless Live Web Check
-    runs-on: [self-hosted, Windows, X64]
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
 
       - name: Restore
         run: dotnet restore PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj
