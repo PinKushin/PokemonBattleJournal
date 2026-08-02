@@ -155,11 +155,19 @@ namespace UITests
 
         protected void InvalidateCurrentPage() => _currentPage = null;
 
-        protected static void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName)
+        protected void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName)
         {
             pickerElement.Click();
             pickerElement.SendKeys(itemName[0].ToString());
             pickerElement.SendKeys(OpenQA.Selenium.Keys.Tab);
+            // After a MAUI Picker (ComboBox) closes, WinAppDriver's cached UIA tree root
+            // goes stale — elements added after the dropdown teardown (e.g. Game3Tab becoming
+            // visible via IsVisible binding) are invisible to subsequent FindElement calls.
+            // Re-anchoring the session forces WinAppDriver to re-acquire the root UIA element.
+            if (App is WindowsDriver)
+            {
+                try { App.SwitchTo().Window(App.CurrentWindowHandle); } catch { }
+            }
         }
 
         protected static void ClickTab(AppiumElement tabElement)
