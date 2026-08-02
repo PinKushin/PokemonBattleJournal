@@ -45,22 +45,23 @@ namespace UITests
         {
             if (App is WindowsDriver)
             {
+                // Poll every 500ms for up to 30s. WinAppDriver FindElement with
+                // short implicit wait catches the element the instant it appears
+                // in the UIA tree after a binding cascade or dropdown close.
+                var deadline = DateTime.UtcNow.AddSeconds(30);
                 try
                 {
-                    App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
-                    return App.FindElement(MobileBy.AccessibilityId(id));
-                }
-                catch (OpenQA.Selenium.NoSuchElementException)
-                {
-                    try
+                    while (true)
                     {
-                        App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-                        return App.FindElement(MobileBy.AccessibilityId(id));
-                    }
-                    catch (OpenQA.Selenium.NoSuchElementException)
-                    {
-                        App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-                        return App.FindElement(MobileBy.AccessibilityId(id));
+                        try
+                        {
+                            App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(500);
+                            return App.FindElement(MobileBy.AccessibilityId(id));
+                        }
+                        catch (OpenQA.Selenium.NoSuchElementException) when (DateTime.UtcNow < deadline)
+                        {
+                            // Element not in UIA tree yet — poll again
+                        }
                     }
                 }
                 finally
@@ -159,22 +160,6 @@ namespace UITests
             pickerElement.Click();
             pickerElement.SendKeys(itemName[0].ToString());
             pickerElement.SendKeys(OpenQA.Selenium.Keys.Tab);
-        }
-
-        // Tab commits the picker but moves focus to SaveMatchButton, which triggers
-        // WinUI3 ScrollView to auto-scroll the tab bar off-screen. WinAppDriver
-        // FindElement only sees on-screen elements, so tabs become unfindable.
-        // SendKeys(Keys.PageUp) on the focused SaveButton scrolls the parent
-        // ScrollView back up, bringing the tab bar into view.
-        protected void ScrollToTop()
-        {
-            if (App is not WindowsDriver) return;
-            try
-            {
-                App.FindElement(MobileBy.AccessibilityId("SaveMatchButton"))
-                    .SendKeys(OpenQA.Selenium.Keys.PageUp);
-            }
-            catch { }
         }
 
         protected static void ClickTab(AppiumElement tabElement)
