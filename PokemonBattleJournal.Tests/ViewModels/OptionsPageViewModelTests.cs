@@ -686,7 +686,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             await _viewModel.AppearingAsync();
 
-            _mockConnectionFactory.Trainers.DidNotReceive().GetActiveAsync();
+            _ = _mockConnectionFactory.Trainers.DidNotReceive().GetActiveAsync();
             _viewModel.TrainerName.ShouldBe("Lance");
         }
 
