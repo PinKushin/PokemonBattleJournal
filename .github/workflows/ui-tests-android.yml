@@ -79,3 +79,13 @@ jobs:
         with:
           name: android-ui-test-results
           path: '**/*.trx'
+
+      - name: Upload timing logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-ui-timing-logs
+          path: |
+            /tmp/UITests.PerfLog.txt
+            /tmp/UITests.NavLog.txt
+            /tmp/UITests.Android.setup.log

@@ -241,7 +241,6 @@ namespace UITests
                 else
                 {
                     SelectWindowsPickerItem(picker1, "Tie");
-                    ScrollPageToTop();
                     ClickTab(FindUIElement("Game2Tab"));
                 }
                 
@@ -259,7 +258,6 @@ namespace UITests
                 else
                 {
                     SelectWindowsPickerItem(picker2, "Win");
-                    ScrollPageToTop();
                 }
 
                 FindUIElement("Game3Tab").ShouldNotBeNull();
@@ -291,7 +289,6 @@ namespace UITests
                 else
                 {
                     SelectWindowsPickerItem(picker1, "Win");
-                    ScrollPageToTop();
                     ClickTab(FindUIElement("Game2Tab"));
                 }
                 
@@ -310,7 +307,6 @@ namespace UITests
                 else
                 {
                     SelectWindowsPickerItem(picker2, "Loss");
-                    ScrollPageToTop();
                     ClickTab(FindUIElement("Game3Tab"));
                 }
                 FindUIElement("Match3Tags").ShouldNotBeNull();

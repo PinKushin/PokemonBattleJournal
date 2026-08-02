@@ -51,3 +51,13 @@ jobs:
         with:
           name: windows-ui-test-results
           path: '**/*.trx'
+
+      - name: Upload timing logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-ui-timing-logs
+          path: |
+            ${{ runner.temp }}/UITests.PerfLog.txt
+            ${{ runner.temp }}/UITests.NavLog.txt
+            ${{ runner.temp }}/UITests.Windows.setup.log
