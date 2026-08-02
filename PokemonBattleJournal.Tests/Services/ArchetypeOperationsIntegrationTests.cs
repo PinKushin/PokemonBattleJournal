@@ -98,6 +98,36 @@ namespace PokemonBattleJournal.Tests.Services
         }
 
         [Test]
+        public async Task GetAllAsync_WithMetaDecks_UpsertsMetaArchetypes()
+        {
+            // Re-create the SUT with a metaService that returns real decks
+            var metaService = Substitute.For<ILimitlessMetaService>();
+            metaService.GetTopDecksAsync(Arg.Any<int>())
+                .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
+                {
+                    new("Pikachu", "https://cdn.example.com/pikachu.png"),
+                    new("Eevee", "https://cdn.example.com/eevee.png"),
+                }));
+            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+
+            List<Archetype> archetypes = await sut.GetAllAsync();
+
+            archetypes.ShouldContain(a => a.Name == "Pikachu");
+            archetypes.ShouldContain(a => a.Name == "Eevee");
+        }
+
+        [Test]
+        public async Task GetAllAsync_OfflineEmptyDb_SeedsHardcodedDefaults()
+        {
+            // metaService returns empty (offline), DB is empty → hardcoded defaults are seeded
+            List<Archetype> archetypes = await _sut.GetAllAsync();
+
+            archetypes.ShouldNotBeEmpty();
+            archetypes.ShouldContain(a => a.Name == "Other");
+            archetypes.ShouldContain(a => a.Name == "Charizard");
+        }
+
+        [Test]
         public async Task SaveAsync_StoresImagePath()
         {
             uint trainerId = await SeedTrainerAsync();
