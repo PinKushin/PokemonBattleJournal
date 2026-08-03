@@ -102,7 +102,8 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             PlaceholderColor = accentColor.MultiplyAlpha(0.5f),
             CancelButtonColor = accentColor,
             WidthRequest = popupWidth,
-            Margin = new Thickness(0, 0, 0, 4)
+            Margin = new Thickness(0, 0, 0, 4),
+            AutomationId = "ArchetypeSearchBar",
         };
         searchBar.TextChanged += (s, e) =>
         {

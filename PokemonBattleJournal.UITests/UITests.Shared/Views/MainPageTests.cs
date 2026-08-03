@@ -293,6 +293,7 @@ namespace UITests
                 FindUIElement("UserNoteInput3").ShouldNotBeNull();
                 FindUIElement("WentFirstLabel3").ShouldNotBeNull();
                 FindUIElement("PossibleResultsPicker3").ShouldNotBeNull();
+                FindUIElement("FirstCheck3").ShouldNotBeNull();
             }
             finally
             {
@@ -384,6 +385,39 @@ namespace UITests
                 FindUIElement("SaveMatchButton").ShouldNotBeNull();
             }
             finally { CloseWindowsPickers("PossibleResultsPicker"); }
+        }
+
+        [Test]
+        public void MainPage_ArchetypePicker_Search_FiltersResults()
+        {
+            ScrollPageToTop();
+            FindUIElement("PlayerArchetype").Click();
+
+            // Search bar appears inside the popup
+            AppiumElement searchBar = FindUIElement("ArchetypeSearchBar");
+            searchBar.ShouldNotBeNull();
+
+            // "Other" is seeded — should survive a matching query
+            searchBar.SendKeys("Other");
+            FindUIElement("ArchetypeItem_Other").ShouldNotBeNull();
+
+            // Clear and type a non-matching query — Other should disappear
+            searchBar.Clear();
+            searchBar.SendKeys("zzznomatch");
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
+            {
+                bool found = App.FindElements(MobileBy.AccessibilityId("ArchetypeItem_Other")).Count > 0;
+                found.ShouldBeFalse("ArchetypeItem_Other should be filtered out by 'zzznomatch' query");
+            }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+
+            // Dismiss popup via Cancel button (text-based lookup; no AutomationId on it)
+            if (App is AndroidDriver)
+                App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Cancel\")")).Click();
+            else
+                App.FindElement(MobileBy.AccessibilityId("Cancel")).Click();
+            WaitUntilGone("ArchetypeSearchBar");
         }
     }
 }

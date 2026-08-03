@@ -176,5 +176,57 @@ namespace UITests
         {
             FindUIElement("DeleteTrainer").ShouldNotBeNull();
         }
+
+        [Test]
+        public void OptionsPage_DeleteArchetype_RemovesFromList()
+        {
+            string deckName = $"DelTestDeck-{DateTime.Now:HHmmss}";
+
+            AppiumElement input = FindUIElement("ArchetypeNameInput");
+            input.Clear();
+            input.SendKeys(deckName);
+            FindUIElement("SaveArchetypeButton").Click();
+
+            // Wait for row to appear (proves save completed)
+            FindUIElement($"DeleteArchetype_{deckName}").ShouldNotBeNull();
+
+            // Delete it
+            FindUIElement($"DeleteArchetype_{deckName}").Click();
+
+            // Verify gone
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
+            {
+                bool still = App.FindElements(MobileBy.AccessibilityId($"DeleteArchetype_{deckName}")).Count > 0;
+                still.ShouldBeFalse("Archetype row should be removed after delete");
+            }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+        }
+
+        [Test]
+        public void OptionsPage_DeleteTag_RemovesFromList()
+        {
+            string tagName = $"DelTestTag-{DateTime.Now:HHmmss}";
+
+            AppiumElement tagInput = FindUIElement("TagInput");
+            tagInput.Clear();
+            tagInput.SendKeys(tagName);
+            FindUIElement("SaveTagButton").Click();
+
+            // Wait for row to appear (proves save completed)
+            FindUIElement($"DeleteTag_{tagName}").ShouldNotBeNull();
+
+            // Delete it
+            FindUIElement($"DeleteTag_{tagName}").Click();
+
+            // Verify gone
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
+            {
+                bool still = App.FindElements(MobileBy.AccessibilityId($"DeleteTag_{tagName}")).Count > 0;
+                still.ShouldBeFalse("Tag row should be removed after delete");
+            }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+        }
     }
 }
