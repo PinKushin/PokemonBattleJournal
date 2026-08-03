@@ -65,26 +65,31 @@ When the archetype ComboBox is tapped, animate the pokeball icon as if it's open
 
 ### Rough implementation plan
 
-1. **Asset:** Create two frames — `ball_icon_open_top.png` (top half tilted up) and `ball_icon_open_bottom.png` (bottom half), or use a GIF/Lottie animation. Alternative: CSS-style rotation + translate of the existing ball via a custom `DrawingView` or SkiaSharp canvas.
+**Physics note:** Pokeball hinges at the back — only the top half rotates away from the viewer. Bottom stays still.
 
-2. **Trigger point:** `ComboBoxControl.OnTapped` or the `TapGestureRecognizer` command that opens the popup. Play the animation before `PopupNavigation.Instance.PushAsync(popup)`.
+1. **Asset:** Split `ball_icon.png` into two separate images: `ball_icon_top.png` (top red half) and `ball_icon_bottom.png` (bottom white half). Stack them in a Grid.
+
+2. **Trigger point:** `ComboBoxControl.OnTapped` / `TapGestureRecognizer` command before `PopupNavigation.Instance.PushAsync(popup)`.
 
 3. **Animation (MAUI `Animation` API):**
    ```csharp
-   // Rotate top half up, bottom half down, then snap open
+   // Top half rotates backward around its bottom edge (the hinge line).
+   // AnchorY = 1.0 pins the pivot at the bottom of the top image.
+   _ballTop.AnchorY = 1.0;
    var open = new Animation();
-   open.Add(0, 0.4, new Animation(v => _ballTop.TranslationY = v, 0, -8));
-   open.Add(0, 0.4, new Animation(v => _ballBottom.TranslationY = v, 0, 8));
-   open.Add(0.4, 1.0, new Animation(v => _ballContainer.Opacity = v, 1, 0));
-   open.Commit(this, "BallOpen", length: 300, easing: Easing.CubicOut,
-       finished: (_, _) => { /* show popup */ });
+   open.Add(0, 0.6, new Animation(v => _ballTop.RotationX = v, 0, -110,
+       easing: Easing.CubicIn));   // rotate lid back ~110° (past vertical so it's clearly open)
+   open.Add(0.5, 1.0, new Animation(v => _ballContainer.Opacity = v, 1, 0,
+       easing: Easing.Linear));    // fade out as it opens
+   open.Commit(this, "BallOpen", length: 280,
+       finished: (_, _) => { /* show popup; reset RotationX = 0, Opacity = 1 */ });
    ```
 
-4. **Close animation:** Reverse on popup dismiss — ball snaps shut, restoring opacity.
+4. **Close animation:** Reverse — `RotationX` from -110 back to 0, opacity 0 → 1, triggered on popup dismiss callback.
 
-5. **Platform notes:** Test on Android (ensure animation doesn't block touch input) and Windows (MAUI animations run on UI thread; no WinAppDriver conflicts if AutomationId stays on the container).
+5. **Platform notes:** `RotationX` is 3D perspective rotation; verify it doesn't render flat on Android API < 28. MAUI animations run on UI thread — keep length ≤ 300ms so it doesn't feel laggy before the picker appears.
 
-6. **Accessibility:** Respect `AccessibilitySettings.IsReduceMotionEnabled` — skip animation if true, open immediately.
+6. **Accessibility:** Check `AccessibilitySettings.IsReduceMotionEnabled` — skip animation and open immediately if true.
 
 ## Deck Comparer
 
