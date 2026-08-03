@@ -810,5 +810,18 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             await Should.NotThrowAsync(() => _viewModel.SaveArchetypeAsync());
         }
+
+        // ---------------------------------------------------------------------------
+        // ToDisplayName
+        // ---------------------------------------------------------------------------
+
+        [TestCase("ball_icon.png", "Ball Icon")]
+        [TestCase("charizard_fire.png", "Charizard Fire")]
+        [TestCase("single.png", "Single")]
+        [TestCase("no_extension", "No Extension")]
+        public void ToDisplayName_FilenameVariants_ReturnsTitleCased(string filename, string expected)
+        {
+            OptionsPageViewModel.ToDisplayName(filename).ShouldBe(expected);
+        }
     }
 }

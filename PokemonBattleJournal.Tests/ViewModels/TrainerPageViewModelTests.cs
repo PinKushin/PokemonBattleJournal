@@ -174,5 +174,72 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             _viewModel.TrainerName.ShouldBe(string.Empty);
         }
+
+        // ---------------------------------------------------------------------------
+        // BuildMatchupHeatmap — non-empty data path
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public async Task AppearingAsync_WithMatchupData_SetsMatchupHeatSeries()
+        {
+            var matches = new List<MatchEntry> { new() { Result = MatchResult.Win } };
+            _mockConnectionFactory.Trainers.GetActiveAsync()
+                .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Ash" }));
+            _mockConnectionFactory.Matches.GetByTrainerIdAsync(1, true)
+                .Returns(Task.FromResult(matches));
+
+            _mockAnalysisService.CalculateWinRate(matches, out _, out _, out _).Returns(100d);
+            _mockAnalysisService.CalculateMatchupMatrix(matches)
+                .Returns((
+                    new[] { "Charizard" },
+                    new[] { "Pikachu" },
+                    new (int, int, double)[] { (0, 0, 75.0) }));
+            _mockAnalysisService.GetMostPlayedArchetypes(matches).Returns([]);
+            _mockAnalysisService.CalculateWinRateOverTime(matches).Returns([]);
+            _mockAnalysisService.CalculateArchetypeWinRate(matches).Returns([]);
+            _mockAnalysisService.CalculateTagUsage(matches).Returns([]);
+            _mockAnalysisService.CalculatePerformanceAgainstOpponents(matches).Returns([]);
+            _mockAnalysisService.CalculateAverageMatchDuration(matches).Returns(TimeSpan.Zero);
+            _mockAnalysisService.CalculateWinRateByMatchLength(matches).Returns([]);
+            _mockAnalysisService.CalculateFirstTurnAdvantage(matches).Returns([]);
+            _mockAnalysisService.CalculateStreaks(matches).Returns((1, 0, 0));
+
+            await _viewModel.AppearingAsync();
+
+            _viewModel.MatchupHeatSeries.ShouldNotBeNull();
+            _viewModel.MatchupHeatSeries.ShouldNotBeEmpty();
+            _viewModel.MatchupXAxes.ShouldNotBeNull();
+            _viewModel.MatchupYAxes.ShouldNotBeNull();
+        }
+
+        // ---------------------------------------------------------------------------
+        // FormatChartDateLabel
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void FormatChartDateLabel_ValidTicks_ReturnsFormattedDate()
+        {
+            double ticks = new DateTime(2026, 7, 25, 0, 0, 0, DateTimeKind.Utc).Ticks;
+
+            string label = TrainerPageViewModel.FormatChartDateLabel(ticks);
+
+            label.ShouldBe("07/25");
+        }
+
+        [Test]
+        public void FormatChartDateLabel_NegativeTicks_ReturnsEmpty()
+        {
+            string label = TrainerPageViewModel.FormatChartDateLabel(-1d);
+
+            label.ShouldBe(string.Empty);
+        }
+
+        [Test]
+        public void FormatChartDateLabel_OverflowTicks_ReturnsEmpty()
+        {
+            string label = TrainerPageViewModel.FormatChartDateLabel((double)DateTime.MaxValue.Ticks + 1e10);
+
+            label.ShouldBe(string.Empty);
+        }
     }
 }

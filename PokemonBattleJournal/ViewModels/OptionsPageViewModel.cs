@@ -453,7 +453,7 @@
             }
         }
 
-        private static string ToDisplayName(string filename)
+        internal static string ToDisplayName(string filename)
         {
             string name = System.IO.Path.GetFileNameWithoutExtension(filename);
             return System.Globalization.CultureInfo.CurrentCulture.TextInfo

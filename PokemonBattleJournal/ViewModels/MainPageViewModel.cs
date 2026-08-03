@@ -331,13 +331,6 @@ namespace PokemonBattleJournal.ViewModels
                 isValid = false;
             }
 
-            // Time range validation
-            if (EndTime < StartTime)
-            {
-                _ = validationMessages.AppendLine("End time cannot be before start time");
-                isValid = false;
-            }
-
             // BO3 specific validations
             if (BO3Toggle)
             {

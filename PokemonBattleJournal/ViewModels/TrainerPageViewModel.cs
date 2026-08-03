@@ -305,13 +305,7 @@ namespace PokemonBattleJournal.ViewModels
             [
                 new Axis
                 {
-                    Labeler = value =>
-                    {
-                        long ticks = (long)value;
-                        if (ticks < DateTime.MinValue.Ticks || ticks > DateTime.MaxValue.Ticks)
-                            return string.Empty;
-                        return new DateTime(ticks, DateTimeKind.Utc).ToString("MM/dd");
-                    },
+                    Labeler = FormatChartDateLabel,
                     UnitWidth = TimeSpan.FromDays(1).Ticks,
                     MinStep = TimeSpan.FromDays(1).Ticks,
                     TextSize = 11,
@@ -333,6 +327,14 @@ namespace PokemonBattleJournal.ViewModels
                 }
             ];
             MatchLengthYAxes = [new Axis { Labels = data.Select(x => x.Label ?? "").ToArray(), TextSize = 12 }];
+        }
+
+        internal static string FormatChartDateLabel(double value)
+        {
+            long ticks = (long)value;
+            if (ticks < DateTime.MinValue.Ticks || ticks > DateTime.MaxValue.Ticks)
+                return string.Empty;
+            return new DateTime(ticks, DateTimeKind.Utc).ToString("MM/dd");
         }
 
         private void BuildFirstTurnChart(List<MatchEntry> matches)

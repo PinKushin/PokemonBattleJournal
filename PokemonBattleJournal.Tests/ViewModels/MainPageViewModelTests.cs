@@ -133,16 +133,14 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SaveMatchAsync_EndTimeBeforeStartTime_PassesValidation()
         {
-            // Arrange — StartTime defaults to DateTime.MinValue so EndTime < StartTime is never true
-            // The VM does not validate this case; the match goes through to save
+            // Property setter clamps EndTime >= StartTime so time-range validation
+            // is never triggered; match proceeds to save with no time error.
             _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
             _viewModel.RivalSelected = new Archetype { Id = 2, Name = "Water" };
             _viewModel.Result = MatchResult.Win;
 
-            // Act
             int result = await _viewModel.SaveMatchAsync();
 
-            // Assert — validation passes, DB save runs (no real DB so 0 rows affected)
             result.ShouldBe(0);
             (_viewModel.ValidationMessage ?? string.Empty).ShouldNotContain("End time cannot be before start time");
         }
@@ -715,6 +713,17 @@ namespace PokemonBattleJournal.Tests.ViewModels
             result.ShouldBe(0);
             _viewModel.HasValidationErrors.ShouldBeTrue();
             _viewModel.SavedFileDisplay.ShouldBe("Save Failed: Unexpected Error");
+        }
+
+        [Test]
+        public async Task AppearingAsync_ArchetypeLoadThrows_DoesNotRethrow()
+        {
+            _mockConnectionFactory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
+            _mockConnectionFactory.Tags.Returns(Substitute.For<ITagOperations>());
+            _mockConnectionFactory.Archetypes.GetAllAsync()
+                .Returns(Task.FromException<List<Archetype>>(new InvalidOperationException("DB failure")));
+
+            await Should.NotThrowAsync(() => _viewModel.AppearingAsync());
         }
 
         [Test]
