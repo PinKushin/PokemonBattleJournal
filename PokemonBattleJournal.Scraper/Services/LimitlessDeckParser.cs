@@ -24,7 +24,8 @@ public class LimitlessDeckParser : IMetaDeckParser
                 break;
 
             IElement? anchor = row.QuerySelector("td:nth-child(3) a");
-            IElement? img = row.QuerySelector("img.pokemon");
+            IHtmlCollection<IElement> imgs = row.QuerySelectorAll("img.pokemon");
+            IElement? img = imgs.Length > 0 ? imgs[0] : null;
 
             if (anchor is null || img is null)
                 continue;
@@ -46,11 +47,12 @@ public class LimitlessDeckParser : IMetaDeckParser
             }
 
             string imageUrl = img.GetAttribute("src") ?? string.Empty;
+            string? secondaryImageUrl = imgs.Length > 1 ? imgs[1].GetAttribute("src") : null;
 
             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(imageUrl))
                 continue;
 
-            decks.Add(new MetaDeck(name, imageUrl));
+            decks.Add(new MetaDeck(name, imageUrl, secondaryImageUrl));
         }
 
         return decks;

@@ -1,19 +1,23 @@
 # Memory Index
 
+- [TrainerHill import feature](project_trainerhill_import.md) — JSON import from trainerhill.com; mixed-type turn field (int/string JsonElement), slug-to-name conversion, get-or-create archetype/tag, per-entry error collection.
+
 - [In-app DEBUG seeding](project_in_app_seeding.md) — App.xaml.cs seeds UITestTrainer on startup in #if DEBUG; must call SetActiveAsync after create/find; bypasses MAUI's GUID DB path problem.
 - [WinUI XamlRoot crash from ContentDialog](project_winui_xamlroot_crash.md) — DisplayPromptAsync before window is composed crashes with "no XamlRoot"; root cause is inactive UITestTrainer; fix is SetActiveAsync in seed + sentinel file.
 - [UI test sentinel file pattern](project_uitest_sentinel_file.md) — %TEMP%\PokemonBattleJournal.uitest written by AppiumSetup, read by app to suppress first-boot prompt without blocking manual dev testing.
 - [Trainer IsActive=0 after SaveAsync](project_trainer_active_state.md) — SaveAsync always inserts inactive; must call SetActiveAsync separately; seed handles exists-but-inactive case too.
-- [ComboBox popup platform incompatibilities](feedback_combobox_popup_platforms.md) — SelectionMode.Single breaks Windows; platform-specific implementations required for Android/Windows clickability.
+- [ComboBox popup platform incompatibilities](feedback_combobox_popup_platforms.md) — SelectionMode.Single breaks Windows; platform-specific implementations required for Android/Windows clickability; all popup elements need AutomationId (AccessibilityId("Cancel") fails if no AutomationId set).
 - [ViewModel contract tests as AI guardrails](feedback_contract_tests.md) — Reflection-based tests pinning XAML binding names to ViewModel members; user's explicit strategy for constraining AI changes.
+- [IntegrationTests is a separate project](feedback_integration_tests_project.md) — must update alongside .Tests on any API change; CI runs both; LiveWeb category excluded
 - [Check docs first before debugging library issues](feedback_check_docs_first.md) — Always verify official setup/installation docs before investigating mysterious third-party library failures.
 - [UI test coverage for every Shell page](project_ui_test_coverage.md) — Every Shell page must have a navigation + element-visible Appium test; FindUIElement timeout catches page hangs.
 - [App styling palette and font conventions](project_styling_palette.md) — PokeYellow headings (PokemonSolid), PokeBlue accents, SairaRegular body, PokeYellow input borders; all Shell pages now styled.
 - [Engineering principles](feedback_engineering_principles.md) — DRY, SOLID, design patterns (factory/strategy/repository/command), extensibility, composition over inheritance, full accessibility (AutomationId + SemanticProperties on all elements), error surfacing (no silent catch), and test best practices.
+- [MAUI sprite naming constraint](project_sprite_naming_constraint.md) — MAUI assets must be underscore; CDN URLs use hyphens; convert on lookup; substitute.png is 36×36 in Images/ not PokemonSprites/
+- [OptionsPage crash on fresh DB](project_optionspage_crash_fresh_db.md) — 0xc000027b in Microsoft.UI.Xaml.dll when ModalErrorHandler fires during AppearingAsync on fresh DB; fix: log-only in GetAllAsync, no dialog
+- [Substitute sprite](project_substitute_sprite.md) — substitute.png from Pokémon Showdown; "Other"/unknown fallback icon; lives in Images/ not PokemonSprites/
 - [Project roadmap](project_roadmap.md) — Planned features: JSON import/export (TrainerHill format with archetype slug resolution), deck maker (deck lists tied to archetypes), deck comparer (side-by-side diff).
 - [Project website](project_website.md) — https://pinkushin.github.io/PokemonBattleJournal/ deployed from index.html at repo root via static.yml workflow.
-- [FlexLayout wrap broken on Windows](project_flexlayout_windows_wrap.md) — FlexLayout inside VerticalStackLayout gets infinite width; wrap never fires. Fix: Grid + OnSizeAllocated.
-- [No code-behind preference](feedback_codebehind_preference.md) — Pure XAML preferred; code-behind only for view-layer layout logic (OnSizeAllocated etc.), never business logic.
 - [Theme switcher goal](project_theme_switcher.md) — Long-term: in-app theme switcher; Android emulator defaults light; never hardcode colors.
 - [Open source control references](reference_open_source_controls.md) — UraniumUI + Controls.UserDialogs.Maui; key: Button subclass = native Android clickable; CollectionView SelectionMode for list items.
 - [Security standards](feedback_security.md) — Never introduce SQL injection, XSS, command injection, path traversal, or insecure deserialization. Verify before marking any task done that touches SQL, file I/O, HTTP clients, or user-supplied data.
@@ -26,7 +30,6 @@
 - [CI workflow structure](project_ci_workflows.md) — 3 separate workflows: ci.yml (unit+integration+coverage), ui-tests-windows.yml, ui-tests-android.yml; Android CI uses API 34 default image.
 - [Android CI build fixes](project_ci_android_build_fixes.md) — AppIcon path case (Appicon vs AppIcon) breaks Linux; iOS/macOS TFMs must be conditioned out on Linux; EmbedAssembliesIntoApk passed at build time only.
 - [Windows picker child window on CI](project_windows_picker_ci.md) — MAUI Picker may open as owned child window on Windows Server CI; SelectWindowsPickerItem helper iterates all App.WindowHandles.
-- [Windows ScrollView reset for BO3 tests](project_windows_scrollview_reset.md) — Reset the real MainPage ScrollView by AutomationId on Windows; nearby controls are too fragile during clipped CI states.
 - [SQLite integration test isolation](project_integration_test_isolation.md) — Unique GUID temp file per test (not :memory:); must close connection before file delete; ArchetypeOperations needs metaService mock returning empty list.
 - [OptionsPageViewModel bugs fixed](project_options_vm_bugs_fixed.md) — SaveTagAsync/SaveArchetypeAsync discarded return values fixed; NewDeckIcon pre-initialized to ball_icon.png so icon guard doesn't early-return silently.
 - [SonarAnalyzer + Roslynator warnings fixed](project_sonar_warnings_fixed.md) — All S112/S3267/S8969/S6562/S6444/S6608/S3168/S2068/S1450 resolved in commit dc45c19; suppression patterns documented.
@@ -37,19 +40,20 @@
 - [Android local test workflow](feedback_android_local_testing.md) — Always use ANDROID_USE_INSTALLED=1 locally; never trigger AppiumSetup's 7min EmbedAssembliesIntoApk build; deploy once from VS then rerun tests freely.
 - [docs/ folder location](project_docs_location.md) — docs/ moved into PokemonBattleJournal/docs/ so VS Solution Explorer shows it; all path refs use PokemonBattleJournal/docs/ prefix.
 - [NUnit UI test navigation pattern](feedback_navigate_to_every_test.md) — NavigateTo in [OneTimeSetUp] per class, not per test; MainPage needs [TearDown] for singleton VM state reset.
-- [NUnit migration status](project_nunit_migration.md) — Merged to master; all CI passing; 359 unit + 22 integration; coverage 57.7% line (coverlet) / ~80% (VS); next: AppiumSetup logging, OptionsPageViewModel coverage.
-- [Coverage tooling](project_coverage_tooling.md) — VS built-in (~80%) vs coverlet (57.7%); gap is UI test app instrumentation; ReportGenerator merge command documented; 0% classes are expected MAUI startup/UI code.
+- [NUnit migration status](project_nunit_migration.md) — Merged to master; all CI passing; 359 unit + 22 integration; coverage: 57.7% line via coverlet, ~80% via VS tool; next: AppiumSetup logging, OptionsPageViewModel coverage.
 - [UI improvement backlog](project_ui_backlog.md) — Post-NUnit backlog: OptionsPage dropdowns, inline time pickers (chained popups), Android styling, ReadJournal search, TrainerPage lazy charts.
-- [UI test cleanup pattern](feedback_uitest_cleanup_pattern.md) — Targeted helpers in try/finally only for mutating tests; never blanket [TearDown]; 0ms ImplicitWait in helpers.
-- [Game3Tab test bug — RESOLVED](project_game3tab_test_bug.md) — AccessibilityId fails after picker selection because MAUI re-render resets content-desc; fix: use FindUIElement (resourceId) after any picker interaction.
-- [MAUI content-desc reset on Android](feedback_maui_content_desc_reset.md) — IsVisible binding update triggers native re-render that resets content-desc from AutomationId to SemanticProperties.Description; use FindUIElement not AccessibilityId after picker interactions.
-- [EnsureBO3On idempotent helper](feedback_bo3_state_idempotent.md) — Blind BOSwitch click turns BO3 off if already on; read BO3StatusLabel.Text first and only click if not "Best of 3".
-- [Windows tab click — use Button not Border](project_windows_tab_click_ci.md) — Border+TapGestureRecognizer has no UIA InvokePattern; Touch/Pen/Mouse simulation all fail on CI; fix: change tabs to Button so WinAppDriver .Click() uses InvokePattern.
+- [Game3Tab test bug — RESOLVED](project_game3tab_test_bug.md) — AccessibilityId fails after picker selection on Android because MAUI binding re-render resets content-desc; fix: use FindUIElement (resourceId).
+- [MAUI content-desc reset on Android](feedback_maui_content_desc_reset.md) — IsVisible binding update triggers native re-render resetting content-desc from AutomationId to SemanticProperties.Description; use FindUIElement after picker interactions.
+- [EnsureBO3On idempotent helper](feedback_bo3_state_idempotent.md) — Blind BOSwitch click turns BO3 off if already on; read BO3StatusLabel.Text first, only click if not "Best of 3"; then poll label until "Best of 3" before returning (binding cascade timing).
+- [Windows tab click — use Button not Border](project_windows_tab_click_ci.md) — Border+TapGestureRecognizer has no UIA InvokePattern; Touch/Pen/Mouse simulation all fail on CI; fix: tabs must be Button so WinAppDriver .Click() uses InvokePattern.
 - [Cleanup helper timeout rule](feedback_cleanup_helper_timeout.md) — 0ms ImplicitWait only for optional elements; state-restoring clicks need FindUIElement (3s min) or silent miss corrupts subsequent tests.
 - [UiScrollable only scrolls down](feedback_uiscrollable_direction.md) — scrollIntoView can't reach elements above current scroll position; call AndroidScrollToTop before tests needing top-of-page elements.
-- [Windows BO3 flakiness investigation](project_windows_bo3_flakiness_investigation.md) — Flaky Game3Tab tests: poll loop in FindUIElement, ComboBox close animation + binding cascade timing, CI timing logs now uploaded. User building OSS WinAppDriver replacement using direct IUIAutomation COM API.
+- [UI test cleanup pattern](feedback_uitest_cleanup_pattern.md) — Targeted helpers in try/finally only for mutating tests; never blanket [TearDown]; 0ms ImplicitWait in helpers.
+- [Coverage tooling](project_coverage_tooling.md) — VS built-in (~80%) vs coverlet (57.7%); gap is UI test app instrumentation; ReportGenerator merge command documented; 0% classes are expected MAUI startup/UI code.
 - [Android seeder persistent DB](project_android_seeder_persistent_db.md) — Android DB survives runs; failed seed leaves 0 matches; seeder must check GetByTrainerIdAsync count before early-returning. Limitless name lookup must use Contains not exact match.
 - [Icon semantic split](project_icon_semantic_split.md) — ball_icon.png = unselected/placeholder UI (ComboBox, BO3 toggle, Went-First, title bar); substitute.png = actual Other/unknown archetype in data layer.
-- [Sonar Split S3220/S3878](project_sonar_split_s3220_s3878.md) — Split('a','b') triggers S3220; Split(['a','b']) triggers S3878; fix: Split(['a','b'], StringSplitOptions.None) uses explicit non-params overload.
-- [FlaUI ScrollIntoView for Windows lists](feedback_flaui_scroll_into_view.md) — ScrollItemPattern.ScrollIntoView() + WinAppDriver Click for off-screen CollectionView items; Actions.MoveToElement breaks off-screen.
-- [ReadJournal test toggle-collapse guard](feedback_readjournal_test_toggle.md) — NUnit alpha order: BO3Match opens row first; SelectMatch_* re-click collapses it; fix: EnsureMatchDetailOpen() checks PlayingNameLabel before clicking.
+- [Sonar Split S3220/S3878](project_sonar_split_s3220_s3878.md) — Split('a','b') triggers S3220; Split(['a','b']) triggers S3878; fix: Split(['a','b'], StringSplitOptions.None) to use explicit non-params overload.
+- [FlaUI ScrollIntoView for Windows lists](feedback_flaui_scroll_into_view.md) — Use ScrollItemPattern.ScrollIntoView() + WinAppDriver Click for off-screen CollectionView items; Actions.MoveToElement is coordinate-based and breaks off-screen.
+- [ReadJournal test toggle-collapse guard](feedback_readjournal_test_toggle.md) — NUnit alpha order: BO3Match opens row first; SelectMatch_* tests re-click and collapse it; fix: EnsureMatchDetailOpen() checks PlayingNameLabel visibility before clicking.
+- [Dual-icon archetype support](project_dual_icon_archetypes.md) — Archetype.ImagePath2 optional; MetaDeck.SecondaryImageUrl; ComboBox/ReadJournal show second icon when present; bool VM props for IsVisible; no converter in XAML.
+- [No IsNotNullConverter in XAML](feedback_no_isnot_null_converter_in_xaml.md) — IsNotNullConverter crashed OptionsPage; always use explicit bool VM property for IsVisible bindings instead.

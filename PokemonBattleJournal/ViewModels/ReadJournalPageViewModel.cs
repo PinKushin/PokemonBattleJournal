@@ -79,10 +79,22 @@ namespace PokemonBattleJournal.ViewModels
         public partial string? AgainstName { get; set; } = "other";
 
         [ObservableProperty]
-        public partial string? PlayingIconSource { get; set; } = "substitute.png";
+        public partial string PlayingIconSource { get; set; } = "substitute.png";
 
         [ObservableProperty]
-        public partial string? AgainstIconSource { get; set; } = "substitute.png";
+        public partial string? PlayingIconSource2 { get; set; }
+
+        [ObservableProperty]
+        public partial bool HasPlayingIcon2 { get; set; }
+
+        [ObservableProperty]
+        public partial string AgainstIconSource { get; set; } = "substitute.png";
+
+        [ObservableProperty]
+        public partial string? AgainstIconSource2 { get; set; }
+
+        [ObservableProperty]
+        public partial bool HasAgainstIcon2 { get; set; }
 
         [ObservableProperty]
         public partial List<Tags>? TagsSelectedGame1 { get; set; }
@@ -182,7 +194,11 @@ namespace PokemonBattleJournal.ViewModels
                 PlayingName = SelectedMatch.Playing?.Name ?? "Unknown";
                 AgainstName = SelectedMatch.Against?.Name ?? "Unknown";
                 PlayingIconSource = SelectedMatch.Playing?.ImagePath ?? "substitute.png";
+                PlayingIconSource2 = SelectedMatch.Playing?.ImagePath2;
+                HasPlayingIcon2 = PlayingIconSource2 != null;
                 AgainstIconSource = SelectedMatch.Against?.ImagePath ?? "substitute.png";
+                AgainstIconSource2 = SelectedMatch.Against?.ImagePath2;
+                HasAgainstIcon2 = AgainstIconSource2 != null;
 
                 LoadGameDetails();
             }
@@ -281,7 +297,11 @@ namespace PokemonBattleJournal.ViewModels
         private void ResetDisplay()
         {
             PlayingIconSource = "substitute.png";
+            PlayingIconSource2 = null;
+            HasPlayingIcon2 = false;
             AgainstIconSource = "substitute.png";
+            AgainstIconSource2 = null;
+            HasAgainstIcon2 = false;
             PlayingName = "other";
             AgainstName = "other";
             SelectedNote = "Select Match";

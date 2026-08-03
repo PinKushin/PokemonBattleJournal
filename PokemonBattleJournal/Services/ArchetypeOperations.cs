@@ -41,13 +41,21 @@ namespace PokemonBattleJournal.Services
                     foreach (MetaDeck deck in metaDecks)
                     {
                         string imagePath = TryResolveLocalSprite(deck.Name, deck.ImageUrl);
+                        string? imagePath2 = deck.SecondaryImageUrl != null
+                            ? TryResolveLocalSprite(deck.Name, deck.SecondaryImageUrl)
+                            : null;
                         await db.ExecuteAsync(
-                            "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
-                            deck.Name, imagePath);
-                        // Fix existing rows that still reference CDN URLs
+                            "INSERT OR IGNORE INTO Archetype (Name, ImagePath, ImagePath2) VALUES (?, ?, ?)",
+                            deck.Name, imagePath, imagePath2);
+                        // Fix existing rows with CDN ImagePath
                         await db.ExecuteAsync(
                             "UPDATE Archetype SET ImagePath = ? WHERE Name = ? AND ImagePath LIKE 'http%'",
                             imagePath, deck.Name);
+                        // Backfill ImagePath2 for rows that don't have it yet
+                        if (imagePath2 != null)
+                            await db.ExecuteAsync(
+                                "UPDATE Archetype SET ImagePath2 = ? WHERE Name = ? AND ImagePath2 IS NULL",
+                                imagePath2, deck.Name);
                     }
 #pragma warning restore S3267
                 }
@@ -113,7 +121,7 @@ namespace PokemonBattleJournal.Services
         /// <summary>
         /// Saves an archetype to the database.
         /// </summary>
-        public async Task<int> SaveAsync(string name, string imgPath, uint trainerId)
+        public async Task<int> SaveAsync(string name, string imgPath, uint trainerId, string? imgPath2 = null)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -136,6 +144,7 @@ namespace PokemonBattleJournal.Services
             {
                 Name = name,
                 ImagePath = imgPath,
+                ImagePath2 = imgPath2,
                 TrainerId = trainerId
             };
 

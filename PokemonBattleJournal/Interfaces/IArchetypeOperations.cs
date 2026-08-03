@@ -6,7 +6,7 @@
         /// Saves an archetype to the database.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when name, image path, or trainer ID is invalid.</exception>
-        Task<int> SaveAsync(string name, string imgPath, uint trainerId);
+        Task<int> SaveAsync(string name, string imgPath, uint trainerId, string? imgPath2 = null);
 
         /// <summary>
         /// Gets all archetypes.

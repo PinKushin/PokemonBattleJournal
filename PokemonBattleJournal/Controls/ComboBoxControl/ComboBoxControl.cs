@@ -14,6 +14,7 @@ public class ComboBoxControl : ContentView
     private readonly Border _border;
     private readonly Label _selectedLabel;
     private readonly Image _selectedIcon;
+    private readonly Image _selectedIcon2;
     private readonly Label _arrowLabel;
     private readonly Label _placeholderLabel;
 #pragma warning restore S1450
@@ -30,6 +31,9 @@ public class ComboBoxControl : ContentView
 
     public static readonly BindableProperty ImageMemberPathProperty =
         BindableProperty.Create(nameof(ImageMemberPath), typeof(string), typeof(ComboBoxControl), "ImagePath");
+
+    public static readonly BindableProperty ImageMemberPath2Property =
+        BindableProperty.Create(nameof(ImageMemberPath2), typeof(string), typeof(ComboBoxControl), "ImagePath2");
 
     public static readonly BindableProperty PlaceholderProperty =
         BindableProperty.Create(nameof(Placeholder), typeof(string), typeof(ComboBoxControl), "Select...");
@@ -83,6 +87,12 @@ public class ComboBoxControl : ContentView
     {
         get => (string)GetValue(ImageMemberPathProperty);
         set => SetValue(ImageMemberPathProperty, value);
+    }
+
+    public string ImageMemberPath2
+    {
+        get => (string)GetValue(ImageMemberPath2Property);
+        set => SetValue(ImageMemberPath2Property, value);
     }
 
     public string Placeholder
@@ -174,7 +184,15 @@ public class ComboBoxControl : ContentView
             WidthRequest = 28,
             HeightRequest = 28,
             VerticalOptions = LayoutOptions.Center,
-            HorizontalOptions = LayoutOptions.Start,
+            Aspect = Aspect.AspectFit,
+            IsVisible = false
+        };
+
+        _selectedIcon2 = new Image
+        {
+            WidthRequest = 28,
+            HeightRequest = 28,
+            VerticalOptions = LayoutOptions.Center,
             Aspect = Aspect.AspectFit,
             IsVisible = false
         };
@@ -191,10 +209,10 @@ public class ComboBoxControl : ContentView
 
         var iconAndText = new HorizontalStackLayout
         {
-            Spacing = 8,
+            Spacing = 4,
             VerticalOptions = LayoutOptions.Center,
-            HorizontalOptions = LayoutOptions.Start,
-            Children = { _selectedIcon, _selectedLabel, _placeholderLabel }
+            HorizontalOptions = LayoutOptions.Center,
+            Children = { _selectedIcon, _selectedIcon2, _selectedLabel, _placeholderLabel }
         };
 
         var contentLayout = new Grid
@@ -246,16 +264,21 @@ public class ComboBoxControl : ContentView
         {
             _placeholderLabel.IsVisible = false;
             _selectedLabel.IsVisible = true;
-            var name = SelectedItem.GetType().GetProperty(DisplayMemberPath)?.GetValue(SelectedItem)?.ToString() ?? "";
-            var imagePath = SelectedItem.GetType().GetProperty(ImageMemberPath)?.GetValue(SelectedItem)?.ToString();
+            var type = SelectedItem.GetType();
+            var name = type.GetProperty(DisplayMemberPath)?.GetValue(SelectedItem)?.ToString() ?? "";
+            var imagePath = type.GetProperty(ImageMemberPath)?.GetValue(SelectedItem)?.ToString();
+            var imagePath2 = type.GetProperty(ImageMemberPath2)?.GetValue(SelectedItem)?.ToString();
             _selectedLabel.Text = name;
             _selectedIcon.Source = imagePath;
+            _selectedIcon2.Source = imagePath2;
+            _selectedIcon2.IsVisible = !string.IsNullOrEmpty(imagePath2);
         }
         else
         {
             _placeholderLabel.IsVisible = true;
             _selectedLabel.IsVisible = false;
             _selectedIcon.Source = "ball_icon.png";
+            _selectedIcon2.IsVisible = false;
         }
     }
 
@@ -270,7 +293,8 @@ public class ComboBoxControl : ContentView
             PopupBackgroundColor,
             PopupAccentColor,
             PopupWidth,
-            ItemHeight);
+            ItemHeight,
+            ImageMemberPath2);
 
         var popupResult = await Shell.Current.CurrentPage.ShowPopupAsync<ComboBoxPopup.PickerResult?>(popup, new PopupOptions
         {
