@@ -91,8 +91,17 @@ namespace UITests
         private void EnsureBO3On()
         {
             AppiumElement label = FindUIElement("BO3StatusLabel");
-            if (label.Text != "Best of 3")
-                FindUIElement("BOSwitch").Click();
+            if (label.Text == "Best of 3")
+                return;
+
+            FindUIElement("BOSwitch").Click();
+
+            // Game2Tab.IsVisible is bound to BO3Toggle. BO3GamesLayout and Game1Tab are always
+            // visible so they resolve instantly after the click — before the binding cascade
+            // completes. Poll until the label confirms BO3 is active so callers can rely on
+            // Game2Tab being in the UIA tree.
+            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(5));
+            wait.Until(_ => App.FindElement(MobileBy.AccessibilityId("BO3StatusLabel")).Text == "Best of 3");
         }
 
         // ---------------------------------------------------------------------------
