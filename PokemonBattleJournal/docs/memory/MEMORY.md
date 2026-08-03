@@ -12,6 +12,8 @@
 - [Engineering principles](feedback_engineering_principles.md) — DRY, SOLID, design patterns (factory/strategy/repository/command), extensibility, composition over inheritance, full accessibility (AutomationId + SemanticProperties on all elements), error surfacing (no silent catch), and test best practices.
 - [Project roadmap](project_roadmap.md) — Planned features: JSON import/export (TrainerHill format with archetype slug resolution), deck maker (deck lists tied to archetypes), deck comparer (side-by-side diff).
 - [Project website](project_website.md) — https://pinkushin.github.io/PokemonBattleJournal/ deployed from index.html at repo root via static.yml workflow.
+- [FlexLayout wrap broken on Windows](project_flexlayout_windows_wrap.md) — FlexLayout inside VerticalStackLayout gets infinite width; wrap never fires. Fix: Grid + OnSizeAllocated.
+- [No code-behind preference](feedback_codebehind_preference.md) — Pure XAML preferred; code-behind only for view-layer layout logic (OnSizeAllocated etc.), never business logic.
 - [Theme switcher goal](project_theme_switcher.md) — Long-term: in-app theme switcher; Android emulator defaults light; never hardcode colors.
 - [Open source control references](reference_open_source_controls.md) — UraniumUI + Controls.UserDialogs.Maui; key: Button subclass = native Android clickable; CollectionView SelectionMode for list items.
 - [Security standards](feedback_security.md) — Never introduce SQL injection, XSS, command injection, path traversal, or insecure deserialization. Verify before marking any task done that touches SQL, file I/O, HTTP clients, or user-supplied data.

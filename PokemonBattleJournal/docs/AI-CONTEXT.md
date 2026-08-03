@@ -1,6 +1,6 @@
 # PokemonBattleJournal — AI Context
 
-> **Last updated:** 2026-08-02 (responsive MainPage layout + GitHub Pages site)
+> **Last updated:** 2026-08-03 (responsive MainPage layout + GitHub Pages site + memory/docs sync)
 > **Solution file:** `PokemonBattleJournal.slnx` (not `.sln`)
 > **Project website:** https://pinkushin.github.io/PokemonBattleJournal/ (deployed via `.github/workflows/static.yml` from `index.html` at repo root)
 > **Read this first** when working in this repo. Update the [Session log](#session-log) whenever scope, decisions, or blockers change — especially before long multi-step work.
@@ -55,6 +55,9 @@ Chronological notes for the current / recent work. **Append or edit this section
 | 2026-07-30 | **UI test NUnit patterns — [OneTimeSetUp] + targeted cleanup** | Each shared page test class has `[OneTimeSetUp]` calling `NavigateTo("Page")` — navigates once per fixture not per test. `MainPageTests` has `[OneTimeTearDown]` calling `InvalidateCurrentPage()` (singleton VM). Per-test cleanup is targeted helpers (`ResetBOSwitch`, `ResetGame1Tab`, `CloseWindowsPickers`, `ClearUserNoteInput`, `DeleteCreatedArchetype`, `DeleteCreatedTag`) called in `try/finally` only by mutating tests. Display-only tests have zero cleanup overhead. All helpers: `ImplicitWait = TimeSpan.Zero` + raw `App.FindElement` (not `FindUIElement`) so 0ms is respected. Removed all `Task.Delay` waits — replaced with implicit-wait polling. Windows UI tests confirmed much faster. |
 | 2026-07-30 | **BaseTest perf logging** | `%TEMP%\UITests.PerfLog.txt` — `[SetUp]` starts Stopwatch and logs `START {TestName}`, `[TearDown]` logs `END {TestName} [Status] {ms}ms`. `NavigateTo` logs nav duration to both NavLog and PerfLog. Enables per-test and per-navigation timing diagnostics without instrumentation in each test. |
 | 2026-07-30 | **docs/ moved to PokemonBattleJournal/docs/** | VS Solution Explorer includes `PokemonBattleJournal/docs/` (project item). All CLAUDE.md path references updated. `docs/memory/` (repo-local memory) lives at `PokemonBattleJournal/docs/memory/`. `AI-CONTEXT.md` at `PokemonBattleJournal/docs/AI-CONTEXT.md`. |
+| 2026-08-03 | **Responsive two-column MainPage layout** | Replaced `FlexLayout Wrap="Wrap"` (broken on Windows — `VerticalStackLayout` gives infinite width so wrap never fires) with `Grid` (2 col × 2 row). `OnSizeAllocated` in `MainPage.xaml.cs` reads actual page width and moves `RightColumn` between col 1 row 0 (wide, ≥560px) and col 0 row 1 (narrow, <560px). `SecondColDef.Width = new GridLength(0)` collapses second column in narrow mode. Note: `GridLength.Zero` does not exist in MAUI — use `new GridLength(0)`. |
+| 2026-08-03 | **GitHub Pages site launched** | `index.html` at repo root is the public landing page. `.github/workflows/static.yml` deploys only `index.html` (staged into `_site/`) on push or `workflow_dispatch`. Action versions: `checkout@v7`, `configure-pages@v6`, `upload-pages-artifact@v5`, `deploy-pages@v5` (Node 24). Site live at https://pinkushin.github.io/PokemonBattleJournal/. Enable: GitHub Settings → Pages → Source → GitHub Actions. |
+| 2026-08-03 | **README moved to repo root** | `PokemonBattleJournal/docs/README.md` deleted; `README.md` now at repo root so GitHub renders it. Relative links updated to match new path depth. Website link added at top. |
 
 ### User decisions
 
