@@ -57,6 +57,35 @@ Build and store deck lists tied to archetypes. Goals:
 
 Architecture notes: new `DeckEntry` model + `DeckOperations` service; new Shell page if complex enough.
 
+## Pokeball Archetype Picker Animation
+
+When the archetype ComboBox is tapped, animate the pokeball icon as if it's opening to "release" the archetype list. Goal: reinforce the "tap to pick a Pokémon (deck)" metaphor.
+
+**Trigger:** User idea from 2026-08-03 session — ball_icon.png is the unselected placeholder; opening the picker should feel like throwing a ball.
+
+### Rough implementation plan
+
+1. **Asset:** Create two frames — `ball_icon_open_top.png` (top half tilted up) and `ball_icon_open_bottom.png` (bottom half), or use a GIF/Lottie animation. Alternative: CSS-style rotation + translate of the existing ball via a custom `DrawingView` or SkiaSharp canvas.
+
+2. **Trigger point:** `ComboBoxControl.OnTapped` or the `TapGestureRecognizer` command that opens the popup. Play the animation before `PopupNavigation.Instance.PushAsync(popup)`.
+
+3. **Animation (MAUI `Animation` API):**
+   ```csharp
+   // Rotate top half up, bottom half down, then snap open
+   var open = new Animation();
+   open.Add(0, 0.4, new Animation(v => _ballTop.TranslationY = v, 0, -8));
+   open.Add(0, 0.4, new Animation(v => _ballBottom.TranslationY = v, 0, 8));
+   open.Add(0.4, 1.0, new Animation(v => _ballContainer.Opacity = v, 1, 0));
+   open.Commit(this, "BallOpen", length: 300, easing: Easing.CubicOut,
+       finished: (_, _) => { /* show popup */ });
+   ```
+
+4. **Close animation:** Reverse on popup dismiss — ball snaps shut, restoring opacity.
+
+5. **Platform notes:** Test on Android (ensure animation doesn't block touch input) and Windows (MAUI animations run on UI thread; no WinAppDriver conflicts if AutomationId stays on the container).
+
+6. **Accessibility:** Respect `AccessibilitySettings.IsReduceMotionEnabled` — skip animation if true, open immediately.
+
 ## Deck Comparer
 
 Compare two deck lists side-by-side:
