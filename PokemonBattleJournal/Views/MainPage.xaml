@@ -67,13 +67,24 @@
             </HorizontalStackLayout>
             <!--#endregion-->
 
-            <FlexLayout Wrap="Wrap" JustifyContent="Center" AlignItems="Start">
+            <Grid x:Name="MainColumnsGrid">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition x:Name="SecondColDef" Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
             <!--#region Match Archetypes, Time, BO3-->
             <VerticalStackLayout
                 x:Name="LeftColumn"
+                Grid.Row="0"
+                Grid.Column="0"
                 Margin="8"
                 HorizontalOptions="Center"
+                MinimumWidthRequest="280"
                 Spacing="10">
 
                 <!--#region Archetype Pickers-->
@@ -207,8 +218,10 @@
             <!--#region Match Notes, Tags, Results-->
             <VerticalStackLayout
                 x:Name="RightColumn"
+                Grid.Row="0"
+                Grid.Column="1"
                 Margin="8"
-                IsVisible="True">
+                MinimumWidthRequest="280">
                 <!--#region Game Tabs (always visible)-->
                 <VerticalStackLayout AutomationId="BO3GamesLayout">
 
@@ -529,7 +542,7 @@
             </VerticalStackLayout>
             <!--#endregion-->
 
-            </FlexLayout>
+            </Grid>
 
             <!--#region Save Button-->
             <Button
