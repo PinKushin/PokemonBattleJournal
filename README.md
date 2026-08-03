@@ -98,8 +98,6 @@ Run a single test by name:
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --filter "FullyQualifiedName~MethodName"
 ```
 
-Expected: **221 tests passing**.
-
 If tests fail to build, restore the scraper project first — the test project references it:
 
 ```powershell
@@ -112,12 +110,8 @@ dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
 **Before running:**
 
 1. Build the app in Debug for Windows (step 2 above).
-2. Update the exe path in `PokemonBattleJournal.UITests/UITests.Windows/AppiumSetup.cs` if your clone is not at `C:\Users\pinku\source\repos\...`:
-   ```csharp
-   App = @"C:\your\path\PokemonBattleJournal\bin\Debug\net10.0-windows10.0.19041.0\win-x64\PokemonBattleJournal.exe"
-   ```
-3. Enable Developer Mode on Windows: **Settings → System → For developers → Developer Mode → On**.
-4. Verify Appium and the Windows driver are installed:
+2. Enable Developer Mode on Windows: **Settings → System → For developers → Developer Mode → On**.
+3. Verify Appium and the Windows driver are installed:
    ```powershell
    appium driver list --installed
    # should show: windows
@@ -143,12 +137,8 @@ Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
    ```powershell
    avdmanager create avd -n "pixel_7_-_api_35" -k "system-images;android-35;google_apis;x86_64" -d "pixel_7"
    ```
-2. Deploy a Debug build to the emulator. Start the emulator first, then:
-   ```powershell
-   dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-android
-   # Deploy via Android Studio or adb
-   ```
-3. Verify the app is installed on the emulator:
+2. Deploy a Debug build to the emulator from Android Studio or via adb.
+3. Verify the app is installed:
    ```powershell
    adb shell pm list packages | Select-String "PinKushin"
    # should show: package:com.PinKushin.PokemonBattleJournal
@@ -164,8 +154,6 @@ Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 ```powershell
 dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
 ```
-
-The `avd` option in `AppiumSetup.cs` will boot the emulator automatically if it is not already running.
 
 ---
 
@@ -186,13 +174,13 @@ Do not run with `dotnet run` or in Debug — results will be invalid and the run
 ```
 PokemonBattleJournal/          # MAUI app
 PokemonBattleJournal.Scraper/  # Limitless TCG meta deck fetcher
-PokemonBattleJournal.Tests/    # 221 unit tests (xUnit, NSubstitute, Shouldly)
+PokemonBattleJournal.Tests/    # Unit tests (NUnit, NSubstitute, Shouldly)
 PokemonBattleJournal.UITests/
   UITests.Windows/             # Appium Windows UI tests
   UITests.Android/             # Appium Android UI tests
   UITests.Shared/              # Shared test logic
 PokemonBattleJournal.Benchmarks/
-docs/                          # AI-CONTEXT.md, memory/
+PokemonBattleJournal/docs/     # AI-CONTEXT.md, memory/, coverage-report/
 ```
 
 ---
@@ -215,13 +203,13 @@ Views (XAML) → ViewModels → Services → ISqliteConnectionFactory → SQLite
 
 | File | Purpose |
 |---|---|
-| [`AI-CONTEXT.md`](AI-CONTEXT.md) | Architecture, domain model, session log, known issues — read this first |
-| [`ROADMAP.md`](ROADMAP.md) | Bug and feature backlog with priority order |
-| [`../CLAUDE.md`](../CLAUDE.md) | Claude Code guidance — commands, conventions, architecture summary |
-| [`../LICENSE.txt`](../LICENSE.txt) | The Unlicense (public domain) |
+| [`PokemonBattleJournal/docs/AI-CONTEXT.md`](PokemonBattleJournal/docs/AI-CONTEXT.md) | Architecture, domain model, session log, known issues |
+| [`PokemonBattleJournal/docs/ROADMAP.md`](PokemonBattleJournal/docs/ROADMAP.md) | Bug and feature backlog with priority order |
+| [`CLAUDE.md`](CLAUDE.md) | Claude Code guidance — commands, conventions, architecture summary |
+| [`LICENSE.txt`](LICENSE.txt) | The Unlicense (public domain) |
 
 ---
 
 ## License
 
-This is free and unencumbered software released into the public domain under [The Unlicense](../LICENSE.txt).
+This is free and unencumbered software released into the public domain under [The Unlicense](LICENSE.txt).
