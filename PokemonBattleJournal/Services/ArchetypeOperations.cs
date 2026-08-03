@@ -187,9 +187,10 @@ namespace PokemonBattleJournal.Services
 
         private static string TryResolveLocalSprite(string deckName, string imageUrl = "")
         {
-            if (!string.IsNullOrWhiteSpace(imageUrl))
+            if (!string.IsNullOrWhiteSpace(imageUrl) &&
+                Uri.TryCreate(imageUrl, UriKind.Absolute, out Uri? uri))
             {
-                string file = Path.GetFileName(new Uri(imageUrl).AbsolutePath);
+                string file = Path.GetFileName(uri.AbsolutePath);
                 if (!string.IsNullOrEmpty(file))
                     return file.Replace('-', '_');
             }
