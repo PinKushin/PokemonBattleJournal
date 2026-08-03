@@ -1,25 +1,25 @@
 Summary
-  Generated on: 07/30/26 - 11:02:07 PM
-  Coverage date: 07/30/26 - 10:55:41 PM - 07/30/26 - 11:01:54 PM
-  Parser: MultiReport (2x Cobertura)
-  Assemblies: 1
-  Classes: 43
-  Files: 43
-  Line coverage: 57.7%
-  Covered lines: 1810
-  Uncovered lines: 1322
-  Coverable lines: 3132
-  Total lines: 5043
-  Branch coverage: 67.8% (460 of 678)
-  Covered branches: 460
-  Total branches: 678
-  Method coverage: 64.5% (171 of 265)
-  Full method coverage: 41.8% (111 of 265)
-  Covered methods: 171
-  Fully covered methods: 111
-  Total methods: 265
+  Generated on: 08/02/26 - 12:06:02 PM
+  Coverage date: 07/30/26 - 10:55:32 PM - 08/02/26 - 12:05:55 PM
+  Parser: MultiReport (7x Cobertura)
+  Assemblies: 2
+  Classes: 48
+  Files: 48
+  Line coverage: 60.7%
+  Covered lines: 2069
+  Uncovered lines: 1336
+  Coverable lines: 3405
+  Total lines: 5197
+  Branch coverage: 66.8% (612 of 916)
+  Covered branches: 612
+  Total branches: 916
+  Method coverage: 67.3% (210 of 312)
+  Full method coverage: 46.1% (144 of 312)
+  Covered methods: 210
+  Fully covered methods: 144
+  Total methods: 312
 
-PokemonBattleJournal                                           57.7%
+PokemonBattleJournal                                           59.9%
   PokemonBattleJournal.App                                        0%
   PokemonBattleJournal.AppShell                                   0%
   PokemonBattleJournal.Constants                                  0%
@@ -28,25 +28,25 @@ PokemonBattleJournal                                           57.7%
   PokemonBattleJournal.Controls.ImagePicker                       0%
   PokemonBattleJournal.Controls.ImagePickerPopup                  0%
   PokemonBattleJournal.MauiProgram                                0%
-  PokemonBattleJournal.Models.Archetype                         100%
+  PokemonBattleJournal.Models.Archetype                        85.7%
   PokemonBattleJournal.Models.ChartDataPoint                    100%
   PokemonBattleJournal.Models.Game                              100%
   PokemonBattleJournal.Models.IconItem                          100%
   PokemonBattleJournal.Models.MatchEntry                        100%
-  PokemonBattleJournal.Models.TagGame                            50%
-  PokemonBattleJournal.Models.Tags                              100%
+  PokemonBattleJournal.Models.TagGame                             0%
+  PokemonBattleJournal.Models.Tags                               60%
   PokemonBattleJournal.Models.TimeDataPoint                     100%
   PokemonBattleJournal.Models.Trainer                           100%
-  PokemonBattleJournal.Services.ArchetypeOperations            53.5%
+  PokemonBattleJournal.Services.ArchetypeOperations            60.3%
   PokemonBattleJournal.Services.BO1ResultCalculator             100%
   PokemonBattleJournal.Services.BO3ResultCalculator             100%
   PokemonBattleJournal.Services.MatchAnalysisService            100%
-  PokemonBattleJournal.Services.MatchOperations                71.4%
+  PokemonBattleJournal.Services.MatchOperations                61.9%
   PokemonBattleJournal.Services.MatchResultCalculatorFactory    100%
   PokemonBattleJournal.Services.ModalErrorHandler              81.2%
-  PokemonBattleJournal.Services.SqliteConnectionFactory        97.6%
+  PokemonBattleJournal.Services.SqliteConnectionFactory        88.3%
   PokemonBattleJournal.Services.TagOperations                  66.4%
-  PokemonBattleJournal.Services.TrainerOperations              62.8%
+  PokemonBattleJournal.Services.TrainerOperations              61.9%
   PokemonBattleJournal.Services.TrainerSwitchService            100%
   PokemonBattleJournal.Utilities.Calculations                  96.2%
   PokemonBattleJournal.Utilities.FileHelper                      81%
@@ -54,12 +54,19 @@ PokemonBattleJournal                                           57.7%
   PokemonBattleJournal.Utilities.TaskUtilities                  100%
   PokemonBattleJournal.ViewModels.AboutPageViewModel              0%
   PokemonBattleJournal.ViewModels.AppShellViewModel            76.1%
-  PokemonBattleJournal.ViewModels.MainPageViewModel            75.5%
-  PokemonBattleJournal.ViewModels.OptionsPageViewModel         57.9%
-  PokemonBattleJournal.ViewModels.ReadJournalPageViewModel     91.6%
-  PokemonBattleJournal.ViewModels.TrainerPageViewModel         80.4%
+  PokemonBattleJournal.ViewModels.MainPageViewModel            78.3%
+  PokemonBattleJournal.ViewModels.OptionsPageViewModel         63.7%
+  PokemonBattleJournal.ViewModels.ReadJournalPageViewModel     96.4%
+  PokemonBattleJournal.ViewModels.TrainerPageViewModel         88.9%
   PokemonBattleJournal.Views.AboutPage                            0%
   PokemonBattleJournal.Views.MainPage                             0%
   PokemonBattleJournal.Views.OptionsPage                          0%
   PokemonBattleJournal.Views.ReadJournalPage                      0%
   PokemonBattleJournal.Views.TrainerPage                          0%
+
+PokemonBattleJournal.Scraper                                    100%
+  PokemonBattleJournal.Scraper.Models.MetaDeck                  100%
+  PokemonBattleJournal.Scraper.Services.HttpMetaDeckFetcher     100%
+  PokemonBattleJournal.Scraper.Services.LimitlessDeckParser     100%
+  PokemonBattleJournal.Scraper.Services.LimitlessMetaService    100%
+  PokemonBattleJournal.Scraper.Services.MetaServiceFactory      100%
