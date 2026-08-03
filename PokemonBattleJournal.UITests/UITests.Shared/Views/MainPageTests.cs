@@ -392,32 +392,33 @@ namespace UITests
         {
             ScrollPageToTop();
             FindUIElement("PlayerArchetype").Click();
-
-            // Search bar appears inside the popup
-            AppiumElement searchBar = FindUIElement("ArchetypeSearchBar");
-            searchBar.ShouldNotBeNull();
-
-            // "Other" is seeded — should survive a matching query
-            searchBar.SendKeys("Other");
-            FindUIElement("ArchetypeItem_Other").ShouldNotBeNull();
-
-            // Clear and type a non-matching query — Other should disappear
-            searchBar.Clear();
-            searchBar.SendKeys("zzznomatch");
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
             try
             {
-                bool found = App.FindElements(MobileBy.AccessibilityId("ArchetypeItem_Other")).Count > 0;
-                found.ShouldBeFalse("ArchetypeItem_Other should be filtered out by 'zzznomatch' query");
-            }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+                // Search bar appears inside the popup
+                AppiumElement searchBar = FindUIElement("ArchetypeSearchBar");
+                searchBar.ShouldNotBeNull();
 
-            // Dismiss popup via Cancel button (text-based lookup; no AutomationId on it)
-            if (App is AndroidDriver)
-                App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Cancel\")")).Click();
-            else
-                App.FindElement(MobileBy.AccessibilityId("Cancel")).Click();
-            WaitUntilGone("ArchetypeSearchBar");
+                // "Other" is seeded — should survive a matching query
+                searchBar.SendKeys("Other");
+                FindUIElement("ArchetypeItem_Other").ShouldNotBeNull();
+
+                // Clear and type a non-matching query — Other should disappear
+                searchBar.Clear();
+                searchBar.SendKeys("zzznomatch");
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+                try
+                {
+                    bool found = App.FindElements(MobileBy.AccessibilityId("ArchetypeItem_Other")).Count > 0;
+                    found.ShouldBeFalse("ArchetypeItem_Other should be filtered out by 'zzznomatch' query");
+                }
+                finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+            }
+            finally
+            {
+                // Always close popup so a failure here doesn't cascade to the next test class.
+                TryClickIfPresent("ArchetypePopupCancel");
+                WaitUntilGone("ArchetypeSearchBar");
+            }
         }
     }
 }

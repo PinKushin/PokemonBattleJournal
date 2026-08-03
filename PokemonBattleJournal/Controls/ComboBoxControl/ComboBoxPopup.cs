@@ -116,6 +116,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
         var closeButton = new Button
         {
             Text = "Cancel",
+            AutomationId = "ArchetypePopupCancel",
             HorizontalOptions = LayoutOptions.Center,
             WidthRequest = 120,
             TextColor = accentColor,
