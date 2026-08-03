@@ -16,17 +16,7 @@
                 : App.FindElement(MobileBy.AndroidUIAutomator(
                     "new UiSelector().resourceIdMatches(\"com.PinKushin.PokemonBattleJournal:id/MatchRow_.*\")"));
 
-        // Returns the last match row — the BO3 Loss (3 games) seeded last.
-        private AppiumElement FindLastMatchRow() =>
-            App is WindowsDriver
-                ? App.FindElements(MobileBy.XPath("//*[contains(@AutomationId,'MatchRow_')]"))
-                    .LastOrDefault()
-                    ?? throw new Exception("No match rows found — seeded data missing")
-                : App.FindElements(MobileBy.XPath("//*[contains(@resource-id,'MatchRow_')]"))
-                    .LastOrDefault()
-                    ?? throw new Exception("No match rows found — seeded data missing");
-
-        [Test]
+[Test]
         public void ReadJournalPage_Loads_PageVisible()
         {
             FindReadJournalElement("ReadJournalPage").ShouldNotBeNull();
@@ -125,9 +115,9 @@
         [Test]
         public void ReadJournalPage_BO3Match_ShowsGame2And3TagViews()
         {
-            // Last seeded match is BO3 Loss (Regidrago vs Miraidon, 3 games).
+            // Newest seeded match is BO3 Loss (Regidrago vs RagingBolt, 3 games) — sorted newest-first so it is row 0.
             // Game2TagsView and Game3TagsView are only visible for matches with Game2/Game3.
-            FindLastMatchRow().Click();
+            FindFirstMatchRow().Click();
             FindReadJournalElement("Game2TagsView").ShouldNotBeNull();
             FindReadJournalElement("Game3TagsView").ShouldNotBeNull();
         }
