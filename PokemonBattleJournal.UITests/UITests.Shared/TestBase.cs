@@ -46,6 +46,19 @@ namespace UITests
 
         protected static void ClickTab(AppiumElement tabElement) => tabElement.Click();
 
+        /// <summary>
+        /// Scrolls the element into the viewport via UIA ScrollIntoView (Windows: Actions.MoveToElement;
+        /// Android: plain Click — UiScrollable/UiSelector already handles scrolling at the lookup site).
+        /// Use this instead of element.Click() whenever the target may be below the visible area.
+        /// </summary>
+        protected void ScrollToAndClick(AppiumElement element)
+        {
+            if (App is WindowsDriver)
+                new OpenQA.Selenium.Interactions.Actions(App).MoveToElement(element).Click().Perform();
+            else
+                element.Click();
+        }
+
         // Template method: handles page-tracking and logging; platform provides navigation steps.
         protected void NavigateTo(string pageTitle)
         {

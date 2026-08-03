@@ -1,4 +1,4 @@
-﻿namespace UITests
+namespace UITests
 {
     public partial class ReadJournalPageTests : BaseTest
     {
@@ -7,7 +7,8 @@
 
         private AppiumElement FindReadJournalElement(string id) => FindUIElement(id);
 
-        // Returns the first match row — any match, used for single-game detail tests.
+        // Returns the first match row — the BO3 Loss is seeded with DatePlayed=UtcNow+1d so it
+        // always sorts first (newest-first) regardless of BO1 matches added by other tests mid-run.
         private AppiumElement FindFirstMatchRow() =>
             App is WindowsDriver
                 ? App.FindElements(MobileBy.XPath("//*[contains(@AutomationId,'MatchRow_')]"))
@@ -16,7 +17,29 @@
                 : App.FindElement(MobileBy.AndroidUIAutomator(
                     "new UiSelector().resourceIdMatches(\"com.PinKushin.PokemonBattleJournal:id/MatchRow_.*\")"));
 
-[Test]
+        // Opens the detail panel for the first match row without toggling.
+        // NUnit runs tests alphabetically; BO3Match opens the row first, then SelectMatch_* tests
+        // would re-click and collapse it. This helper skips the click when detail is already visible.
+        private void EnsureMatchDetailOpen()
+        {
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            bool alreadyOpen = App.FindElements(MobileBy.AccessibilityId("PlayingNameLabel")).Count > 0;
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+            if (!alreadyOpen)
+                FindFirstMatchRow().Click();
+        }
+
+        // Same guard for the BO3 detail: skip click if Game2TagsView is already showing.
+        private void EnsureBO3MatchDetailOpen()
+        {
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            bool alreadyOpen = App.FindElements(MobileBy.AccessibilityId("Game2TagsView")).Count > 0;
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+            if (!alreadyOpen)
+                FindFirstMatchRow().Click();
+        }
+
+        [Test]
         public void ReadJournalPage_Loads_PageVisible()
         {
             FindReadJournalElement("ReadJournalPage").ShouldNotBeNull();
@@ -37,10 +60,6 @@
         [Test]
         public void ReadJournalPage_HasSeededMatches()
         {
-
-            // Find the first seeded match row — AutomationId is bound to match Id.
-            // SeedTestData seeds 3 matches so at least MatchRow_1 must exist.
-            // Failure here means seeding failed or data didn't load for the active trainer.
             AppiumElement firstRow = App is WindowsDriver
                 ? App.FindElements(MobileBy.XPath("//*[contains(@AutomationId,'MatchRow_')]"))
                     .FirstOrDefault()
@@ -54,27 +73,15 @@
         [Test]
         public void ReadJournalPage_SelectMatch_ShowsDetail()
         {
-            // Find and click the first match row by its bound AutomationId.
-            // Do NOT catch NoSuchElementException — empty list is a real failure (seed broken).
-            AppiumElement firstRow = App is WindowsDriver
-                ? App.FindElements(MobileBy.XPath("//*[contains(@AutomationId,'MatchRow_')]"))
-                    .FirstOrDefault()
-                    ?? throw new Exception("No match rows found — seeded data missing")
-                : App.FindElement(MobileBy.AndroidUIAutomator(
-                    "new UiSelector().resourceIdMatches(\"com.PinKushin.PokemonBattleJournal:id/MatchRow_.*\")"));
-
-            firstRow.Click();
-
-            // Poll for detail panel — implicit wait blocks until PlayingNameLabel appears.
+            EnsureMatchDetailOpen();
             FindReadJournalElement("PlayingNameLabel").ShouldNotBeNull();
         }
 
         [Test]
         public void ReadJournalPage_SelectMatch_ShowsArchetypeNames()
         {
-            FindFirstMatchRow().Click();
+            EnsureMatchDetailOpen();
 
-            // With diverse seed, archetypes are non-empty strings (e.g. "Other", "Charizard").
             string playingName = FindReadJournalElement("PlayingNameLabel").Text;
             string againstName = FindReadJournalElement("AgainstNameLabel").Text;
 
@@ -85,14 +92,14 @@
         [Test]
         public void ReadJournalPage_SelectMatch_ShowsDetailCard()
         {
-            FindFirstMatchRow().Click();
+            EnsureMatchDetailOpen();
             FindReadJournalElement("SelectedMatchCard").ShouldNotBeNull();
         }
 
         [Test]
         public void ReadJournalPage_SelectMatch_ShowsIcons()
         {
-            FindFirstMatchRow().Click();
+            EnsureMatchDetailOpen();
             FindReadJournalElement("PlayingIcon").ShouldNotBeNull();
             FindReadJournalElement("AgainstIcon").ShouldNotBeNull();
         }
@@ -100,24 +107,22 @@
         [Test]
         public void ReadJournalPage_SelectMatch_ShowsNotesEditor()
         {
-            FindFirstMatchRow().Click();
+            EnsureMatchDetailOpen();
             FindReadJournalElement("SelectedMatchNotes").ShouldNotBeNull();
         }
 
         [Test]
         public void ReadJournalPage_SelectMatch_ShowsGame1TagsView()
         {
-            FindFirstMatchRow().Click();
-            // Game1TagsView is always visible; shows either tags or "No Tags for Game 1" empty view.
+            EnsureMatchDetailOpen();
             FindReadJournalElement("Game1TagsView").ShouldNotBeNull();
         }
 
         [Test]
         public void ReadJournalPage_BO3Match_ShowsGame2And3TagViews()
         {
-            // Newest seeded match is BO3 Loss (Regidrago vs RagingBolt, 3 games) — sorted newest-first so it is row 0.
-            // Game2TagsView and Game3TagsView are only visible for matches with Game2/Game3.
-            FindFirstMatchRow().Click();
+            // BO3 Loss seeded at UtcNow+1d — always row 0 (newest-first sort).
+            EnsureBO3MatchDetailOpen();
             FindReadJournalElement("Game2TagsView").ShouldNotBeNull();
             FindReadJournalElement("Game3TagsView").ShouldNotBeNull();
         }

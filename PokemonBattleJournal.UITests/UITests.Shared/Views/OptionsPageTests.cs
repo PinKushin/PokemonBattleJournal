@@ -190,7 +190,6 @@ namespace UITests
             // Wait for row to appear (proves save completed)
             FindUIElement($"DeleteArchetype_{deckName}").ShouldNotBeNull();
 
-            // Delete it
             FindUIElement($"DeleteArchetype_{deckName}").Click();
 
             // Verify gone
@@ -216,7 +215,6 @@ namespace UITests
             // Wait for row to appear (proves save completed)
             FindUIElement($"DeleteTag_{tagName}").ShouldNotBeNull();
 
-            // Delete it
             FindUIElement($"DeleteTag_{tagName}").Click();
 
             // Verify gone

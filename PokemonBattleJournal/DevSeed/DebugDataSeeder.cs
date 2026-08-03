@@ -100,7 +100,9 @@ namespace PokemonBattleJournal.DevSeed
                         new Game { Result = MatchResult.Win,  Turn = 1, Notes = "Seed-BO3a-G3" }
                     ]);
 
-                DateTime bo3Date2 = baseDate.AddDays(13);
+                // +1 day ensures this match always sorts FIRST in ReadJournal (newest-first).
+                // Other test-run matches are created at DateTime.Now (<= today), so this never slips.
+                DateTime bo3Date2 = DateTime.UtcNow.AddDays(1);
                 await factory.Matches.SaveAsync(
                     new MatchEntry
                     {
