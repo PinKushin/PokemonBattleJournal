@@ -8,13 +8,15 @@
         private readonly ILogger<OptionsPageViewModel> _logger;
         private readonly ITrainerSwitchService _switchService;
         private readonly AppShellViewModel _shellVm;
+        private readonly ITrainerHillImportService _importService;
 
-        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService, AppShellViewModel shellVm)
+        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService, AppShellViewModel shellVm, ITrainerHillImportService importService)
         {
             _connection = connection;
             _logger = logger;
             _switchService = switchService;
             _shellVm = shellVm;
+            _importService = importService;
         }
 
         [ObservableProperty]
@@ -74,6 +76,53 @@
 
         [ObservableProperty]
         public partial string FileConfirmMessage { get; set; } = "Delete Trainer File?";
+
+        [ObservableProperty]
+        public partial string ImportStatusMessage { get; set; } = string.Empty;
+
+        [RelayCommand]
+        public async Task ImportFromTrainerHillAsync()
+        {
+            if (_trainer is null)
+                return;
+
+            try
+            {
+                FileResult? file = await FilePicker.Default.PickAsync(new PickOptions
+                {
+                    PickerTitle = "Select TrainerHill battle log",
+                    FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                    {
+                        { DevicePlatform.WinUI, [".json"] },
+                        { DevicePlatform.Android, ["application/json"] },
+                        { DevicePlatform.iOS, ["public.json"] },
+                        { DevicePlatform.MacCatalyst, ["public.json"] },
+                    })
+                });
+
+                if (file is null)
+                    return;
+
+                await using Stream stream = await file.OpenReadAsync();
+                (int imported, List<string> errors) = await _importService.ImportAsync(stream, _trainer.Id);
+
+                ImportStatusMessage = errors.Count > 0
+                    ? $"Imported {imported}, {errors.Count} skipped"
+                    : $"Imported {imported} matches";
+
+                _logger.LogInformation("TrainerHill import: {Imported} imported, {Errors} errors", imported, errors.Count);
+
+                if (errors.Count > 0)
+                    _logger.LogWarning("TrainerHill import errors: {Errors}", string.Join("; ", errors));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during TrainerHill import");
+                ImportStatusMessage = "Import failed";
+                ModalErrorHandler handler = new();
+                handler.HandleError(ex);
+            }
+        }
 
         [RelayCommand]
         public async Task AppearingAsync()

@@ -17,6 +17,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [TestCase("IconItems")]
         [TestCase("SelectedIconItem")]
         [TestCase("TagInput")]
+        [TestCase("ImportStatusMessage")]
         public void OptionsPageViewModel_HasProperty(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"OptionsPage.xaml binds to '{name}' but it was not found on OptionsPageViewModel");
 
@@ -27,6 +28,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [TestCase("SaveTagCommand")]
         [TestCase("SaveAllCommand")]
         [TestCase("DeleteTrainerFileCommand")]
+        [TestCase("ImportFromTrainerHillCommand")]
         public void OptionsPageViewModel_HasCommand(string name) =>
             _vm.GetProperty(name).ShouldNotBeNull($"OptionsPage.xaml binds to Command '{name}' but it was not found on OptionsPageViewModel");
     }

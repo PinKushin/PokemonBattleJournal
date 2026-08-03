@@ -214,6 +214,29 @@
                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
 
+            <!--  Import  -->
+            <Label AutomationId="ImportSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Import" />
+
+            <Button
+                x:Name="ImportTrainerHillButton"
+                AutomationId="ImportTrainerHillButton"
+                SemanticProperties.Description="Import matches from TrainerHill"
+                SemanticProperties.Hint="Opens file picker to select a TrainerHill battle log JSON file"
+                Command="{Binding ImportFromTrainerHillCommand}"
+                HorizontalOptions="Center"
+                Text="Import from TrainerHill"
+                WidthRequest="220" />
+
+            <Label
+                AutomationId="ImportStatusLabel"
+                SemanticProperties.Description="Import status"
+                FontFamily="SairaRegular"
+                FontSize="12"
+                HorizontalOptions="Center"
+                IsVisible="{Binding ImportStatusMessage, Converter={toolkit:IsNotNullOrEmptyConverter}}"
+                Text="{Binding ImportStatusMessage}"
+                TextColor="{StaticResource PokeYellow}" />
+
             <!--  Save all / danger zone  -->
             <BoxView
                 Margin="0,8"
