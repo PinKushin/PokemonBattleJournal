@@ -47,9 +47,9 @@ namespace PokemonBattleJournal.Services
                         await db.ExecuteAsync(
                             "INSERT OR IGNORE INTO Archetype (Name, ImagePath, ImagePath2) VALUES (?, ?, ?)",
                             deck.Name, imagePath, imagePath2);
-                        // Fix existing rows with CDN ImagePath
+                        // Fix existing rows with CDN ImagePath or substitute.png placeholder (e.g. from TrainerHill import)
                         await db.ExecuteAsync(
-                            "UPDATE Archetype SET ImagePath = ? WHERE Name = ? AND ImagePath LIKE 'http%'",
+                            "UPDATE Archetype SET ImagePath = ? WHERE Name = ? AND (ImagePath LIKE 'http%' OR ImagePath = 'substitute.png')",
                             imagePath, deck.Name);
                         // Backfill ImagePath2 for rows that don't have it yet
                         if (imagePath2 != null)
@@ -185,32 +185,11 @@ namespace PokemonBattleJournal.Services
             }
         }
 
-        // Limitless CDN uses different naming conventions than Pokémon Showdown sprites.
-        // Map CDN filename (after hyphen→underscore) to the local Showdown sprite name.
-        private static readonly Dictionary<string, string> _spriteAliases = new(StringComparer.OrdinalIgnoreCase)
-        {
-            // Ogerpon: Limitless omits "_mask"; Showdown includes it
-            { "ogerpon.png",             "ogerpon_teal_mask.png" },
-            { "ogerpon_wellspring.png",  "ogerpon_wellspring_mask.png" },
-            { "ogerpon_hearthflame.png", "ogerpon_hearthflame_mask.png" },
-            { "ogerpon_cornerstone.png", "ogerpon_cornerstone_mask.png" },
-            // Mega forms Limitless labels that have no Mega in the games
-            { "greninja_mega.png", "greninja.png" },
-            { "starmie_mega.png",  "starmie.png" },
-        };
-
         private static string TryResolveLocalSprite(string deckName, string imageUrl = "")
         {
-            if (!string.IsNullOrWhiteSpace(imageUrl) &&
-                Uri.TryCreate(imageUrl, UriKind.Absolute, out Uri? uri))
-            {
-                string file = Path.GetFileName(uri.AbsolutePath);
-                if (!string.IsNullOrEmpty(file))
-                {
-                    string candidate = file.Replace('-', '_');
-                    return _spriteAliases.TryGetValue(candidate, out string? alias) ? alias : candidate;
-                }
-            }
+            string? fromUrl = SpriteResolver.FromUrl(imageUrl);
+            if (fromUrl != null)
+                return fromUrl;
 
             // Name-based fallback: take first Pokemon in multi-Pokemon names
             string name = deckName.Split(['&', '/'], StringSplitOptions.None)[0].Trim();

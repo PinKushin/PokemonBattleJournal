@@ -1,4 +1,3 @@
-using PokemonBattleJournal.Scraper.Models;
 using PokemonBattleJournal.Scraper.Services;
 
 namespace PokemonBattleJournal.Tests.Services;

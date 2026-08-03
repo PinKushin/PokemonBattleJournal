@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using PokemonBattleJournal.Interfaces;
 using PokemonBattleJournal.Scraper.Interfaces;
 using PokemonBattleJournal.Scraper.Models;
+using PokemonBattleJournal.Services;
 using SQLite;
 
 namespace PokemonBattleJournal.Services.Import
@@ -51,6 +52,7 @@ namespace PokemonBattleJournal.Services.Import
 
             List<MetaDeck> metaDecks = await _limitlessService.GetTopDecksAsync(int.MaxValue);
             Dictionary<string, string> slugLookup = BuildSlugLookup(metaDecks);
+            Dictionary<string, MetaDeck> deckByName = metaDecks.ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
 
             foreach (TrainerHillEntry entry in entries)
             {
@@ -71,8 +73,8 @@ namespace PokemonBattleJournal.Services.Import
 
                     string playingName = LookupSlug(entry.Playing, slugLookup) ?? SlugToName(entry.Playing);
                     string againstName = LookupSlug(entry.Against, slugLookup) ?? SlugToName(entry.Against);
-                    uint playingId = await ResolveArchetypeAsync(playingName);
-                    uint againstId = await ResolveArchetypeAsync(againstName);
+                    uint playingId = await ResolveArchetypeAsync(playingName, deckByName);
+                    uint againstId = await ResolveArchetypeAsync(againstName, deckByName);
 
                     DateTime datePlayed = DateTime.TryParse(
                         entry.Time, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dt)
@@ -137,15 +139,28 @@ namespace PokemonBattleJournal.Services.Import
             });
         }
 
-        private async Task<uint> ResolveArchetypeAsync(string name)
+        private async Task<uint> ResolveArchetypeAsync(string name, Dictionary<string, MetaDeck> deckByName)
         {
+            _ = deckByName.TryGetValue(name, out MetaDeck? deck);
+            string imagePath = SpriteResolver.FromUrl(deck?.ImageUrl) ?? "substitute.png";
+            string? imagePath2 = SpriteResolver.FromUrl(deck?.SecondaryImageUrl);
+
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
                 await _factory.GetLock().WaitAsync();
                 await db.ExecuteAsync(
-                    "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
-                    name, "substitute.png");
+                    "INSERT OR IGNORE INTO Archetype (Name, ImagePath, ImagePath2) VALUES (?, ?, ?)",
+                    name, imagePath, imagePath2);
+                // Upgrade substitute.png placeholder if we now have a real sprite
+                if (imagePath != "substitute.png")
+                    await db.ExecuteAsync(
+                        "UPDATE Archetype SET ImagePath = ? WHERE Name = ? AND ImagePath = 'substitute.png'",
+                        imagePath, name);
+                if (imagePath2 != null)
+                    await db.ExecuteAsync(
+                        "UPDATE Archetype SET ImagePath2 = ? WHERE Name = ? AND ImagePath2 IS NULL",
+                        imagePath2, name);
                 Archetype? archetype = await db.Table<Archetype>()
                     .Where(a => a.Name == name)
                     .FirstOrDefaultAsync();

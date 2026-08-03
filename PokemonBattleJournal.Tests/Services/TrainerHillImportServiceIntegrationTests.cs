@@ -1,9 +1,7 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
 using PokemonBattleJournal.Scraper.Interfaces;
-using PokemonBattleJournal.Scraper.Models;
 using PokemonBattleJournal.Services.Import;
-using SQLite;
 
 namespace PokemonBattleJournal.Tests.Services
 {
@@ -238,6 +236,57 @@ namespace PokemonBattleJournal.Tests.Services
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             (await db.Table<Archetype>().Where(a => a.Name == "N's Zoroark").CountAsync()).ShouldBe(1);
             (await db.Table<Archetype>().Where(a => a.Name == "N Zoroark").CountAsync()).ShouldBe(0);
+        }
+
+        [Test]
+        public async Task ImportAsync_SlugMatchesLimitlessDeckWithSprite_ResolvesProperSprite()
+        {
+            ILimitlessMetaService metaService = Substitute.For<ILimitlessMetaService>();
+            metaService.GetTopDecksAsync(Arg.Any<int>())
+                .Returns([new MetaDeck("Ogerpon Box", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png")]);
+            TrainerHillImportService sut = new(
+                _factory,
+                Substitute.For<ILogger<TrainerHillImportService>>(),
+                metaService);
+
+            const string json = """
+                [{"playing":"ogerpon-box","against":"other","time":"2026-07-18 19:08:53","result":"Win",
+                  "game1":{"result":"Win","turn":1,"tags":[],"notes":null}}]
+                """;
+
+            await sut.ImportAsync(ToStream(json), _trainerId);
+
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+            Archetype? archetype = await db.Table<Archetype>().Where(a => a.Name == "Ogerpon Box").FirstOrDefaultAsync();
+            archetype.ShouldNotBeNull();
+            archetype!.ImagePath.ShouldBe("ogerpon_teal_mask.png");
+        }
+
+        [Test]
+        public async Task ImportAsync_SlugMatchesDualIconDeck_ResolvesBothSprites()
+        {
+            ILimitlessMetaService metaService = Substitute.For<ILimitlessMetaService>();
+            metaService.GetTopDecksAsync(Arg.Any<int>())
+                .Returns([new MetaDeck("Charizard ex / Pidgeot ex",
+                    "https://cdn.example.com/charizard_ex.png",
+                    "https://cdn.example.com/pidgeot_ex.png")]);
+            TrainerHillImportService sut = new(
+                _factory,
+                Substitute.For<ILogger<TrainerHillImportService>>(),
+                metaService);
+
+            const string json = """
+                [{"playing":"charizard-pidgeot","against":"other","time":"2026-07-18 19:08:53","result":"Win",
+                  "game1":{"result":"Win","turn":1,"tags":[],"notes":null}}]
+                """;
+
+            await sut.ImportAsync(ToStream(json), _trainerId);
+
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+            Archetype? archetype = await db.Table<Archetype>().Where(a => a.Name == "Charizard ex / Pidgeot ex").FirstOrDefaultAsync();
+            archetype.ShouldNotBeNull();
+            archetype!.ImagePath.ShouldBe("charizard_ex.png");
+            archetype!.ImagePath2.ShouldBe("pidgeot_ex.png");
         }
 
         // ---------------------------------------------------------------------------
