@@ -9,18 +9,25 @@ namespace PokemonBattleJournal.DevSeed
             {
                 var trainers = await factory.Trainers.GetAllAsync();
                 var existing = trainers.FirstOrDefault(t => t.Name == "UITestTrainer");
+                Trainer? trainer;
                 if (existing != null)
                 {
                     if (!existing.IsActive)
                         await factory.Trainers.SetActiveAsync(existing);
-                    return;
+                    // Check if matches were seeded — previous run may have created the trainer
+                    // but aborted before seeding matches (e.g. Limitless name mismatch).
+                    var existingMatches = await factory.Matches.GetByTrainerIdAsync(existing.Id, includeRelated: false);
+                    if (existingMatches.Count > 0)
+                        return; // already seeded (at least partially)
+                    trainer = existing;
                 }
-
-                await factory.Trainers.SaveAsync("UITestTrainer");
-                Trainer? trainer = await factory.Trainers.GetByNameAsync("UITestTrainer");
-                if (trainer == null) return;
-
-                await factory.Trainers.SetActiveAsync(trainer);
+                else
+                {
+                    await factory.Trainers.SaveAsync("UITestTrainer");
+                    trainer = await factory.Trainers.GetByNameAsync("UITestTrainer");
+                    if (trainer == null) return;
+                    await factory.Trainers.SetActiveAsync(trainer);
+                }
 
                 List<Archetype> allArchetypes = await factory.Archetypes.GetAllAsync();
                 // "Other" is always seeded by ArchetypeOperations regardless of Limitless result.

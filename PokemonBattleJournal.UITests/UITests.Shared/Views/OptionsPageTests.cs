@@ -80,10 +80,13 @@ namespace UITests
         [Test]
         public void OptionsPage_ArchetypeList_ShowsDebugSeededArchetypes()
         {
-            // Debug seed inserts Charizard, Regidrago, Miraidon directly.
-            FindUIElement("DeleteArchetype_Charizard").ShouldNotBeNull();
-            FindUIElement("DeleteArchetype_Regidrago").ShouldNotBeNull();
-            FindUIElement("DeleteArchetype_Miraidon").ShouldNotBeNull();
+            // Limitless archetypes are seeded on startup. Names differ by platform (live vs offline).
+            // Check for multiple archetypes (Other is always 1; Limitless adds more).
+            int count = App is WindowsDriver
+                ? App.FindElements(MobileBy.XPath("//*[contains(@AutomationId,'DeleteArchetype_')]")).Count
+                : App.FindElements(MobileBy.AndroidUIAutomator(
+                    "new UiSelector().resourceIdMatches(\"com.PinKushin.PokemonBattleJournal:id/DeleteArchetype_.*\")")).Count;
+            (count > 1).ShouldBeTrue($"Only {count} archetype row(s) found — Limitless seeding may have failed");
         }
 
         [Test]
