@@ -23,20 +23,25 @@ namespace PokemonBattleJournal.DevSeed
                 await factory.Trainers.SetActiveAsync(trainer);
 
                 List<Archetype> allArchetypes = await factory.Archetypes.GetAllAsync();
-                Archetype? other      = allArchetypes.FirstOrDefault(a => a.Name == "Other");
-                Archetype? charizard  = allArchetypes.FirstOrDefault(a => a.Name == "Charizard");
-                Archetype? regidrago  = allArchetypes.FirstOrDefault(a => a.Name == "Regidrago");
-                Archetype? miraidon   = allArchetypes.FirstOrDefault(a => a.Name == "Miraidon");
-                Archetype? ragingBolt = allArchetypes.FirstOrDefault(a => a.Name == "Raging Bolt");
-                Archetype? gardevoir  = allArchetypes.FirstOrDefault(a => a.Name == "Gardevoir");
-                Archetype? klawf      = allArchetypes.FirstOrDefault(a => a.Name == "Klawf");
-
-                if (other == null || charizard == null || regidrago == null || miraidon == null)
+                // "Other" is always seeded by ArchetypeOperations regardless of Limitless result.
+                Archetype? other = allArchetypes.FirstOrDefault(a => a.Name == "Other");
+                if (other == null)
                 {
-                    logger.LogError("DebugDataSeeder: required archetypes missing — aborting");
+                    logger.LogError("DebugDataSeeder: 'Other' archetype missing after GetAllAsync — aborting");
                     return;
                 }
-                ragingBolt ??= other; gardevoir ??= other; klawf ??= other;
+
+                // Substring match so "Charizard ex" (live Limitless) and "Charizard" (offline default) both resolve.
+                // Falls back to Other for any archetype not currently in meta.
+                static Archetype? Find(List<Archetype> list, string keyword) =>
+                    list.FirstOrDefault(a => a.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+
+                Archetype charizard  = Find(allArchetypes, "Charizard")  ?? other;
+                Archetype regidrago  = Find(allArchetypes, "Regidrago")  ?? other;
+                Archetype miraidon   = Find(allArchetypes, "Miraidon")   ?? other;
+                Archetype ragingBolt = Find(allArchetypes, "Raging Bolt") ?? other;
+                Archetype gardevoir  = Find(allArchetypes, "Gardevoir")  ?? other;
+                Archetype klawf      = Find(allArchetypes, "Klawf")      ?? other;
 
                 List<Tags> allTags = await factory.Tags.GetAllAsync();
                 Tags? lucky       = allTags.FirstOrDefault(t => t.Name == "Lucky");
