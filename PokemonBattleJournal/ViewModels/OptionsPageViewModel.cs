@@ -29,7 +29,7 @@
         {
             if (value is null || value.Id == (_trainer?.Id ?? 0))
                 return;
-            _ = SwitchTrainerAsync(value);
+            SwitchTrainerCommand.Execute(value);
         }
 
         [ObservableProperty]
@@ -494,9 +494,8 @@
             }
             catch (Exception ex)
             {
+                // Log only — called from AppearingAsync before XamlRoot is composed; dialog would crash WinUI.
                 _logger.LogError(ex, "Error loading icon collection from app package");
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
                 return iconCollection;
             }
             finally
