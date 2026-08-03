@@ -78,11 +78,10 @@
         public partial string FileConfirmMessage { get; set; } = "Delete Trainer File?";
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasImportStatus))]
         public partial string ImportStatusMessage { get; set; } = string.Empty;
 
         public bool HasImportStatus => !string.IsNullOrEmpty(ImportStatusMessage);
-
-        partial void OnImportStatusMessageChanged(string value) => OnPropertyChanged(nameof(HasImportStatus));
 
         [RelayCommand]
         public async Task ImportFromTrainerHillAsync()
