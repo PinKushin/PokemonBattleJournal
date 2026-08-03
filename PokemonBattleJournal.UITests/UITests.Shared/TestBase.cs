@@ -89,6 +89,13 @@ namespace UITests
         protected abstract bool TryClickIfPresent(string id, int timeoutMs = 2000);
 
         /// <summary>
+        /// Finds the element, scrolls it into the visible viewport if needed, then clicks.
+        /// Windows: FlaUI ScrollItemPattern brings it on-screen first so WinAppDriver coordinates are valid.
+        /// Android: UiScrollable/UiSelector already handles scrolling at lookup time — plain Click suffices.
+        /// </summary>
+        protected abstract void ScrollIntoViewAndClick(string automationId);
+
+        /// <summary>
         /// Windows-only: open picker, type first letter to select item, Tab to confirm.
         /// Override in Windows BaseTest. Android tests never reach this — guarded by
         /// <c>if (App is not WindowsDriver)</c> at the call site.

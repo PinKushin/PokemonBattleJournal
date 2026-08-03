@@ -126,6 +126,30 @@ namespace UITests
             return false;
         }
 
+        // Scrolls the element with the given AutomationId into the viewport via FlaUI's
+        // IUIAutomationScrollItemPattern, then clicks it via WinAppDriver. Use this instead
+        // of FindUIElement(...).Click() whenever the target may be off-screen in a long list
+        // (e.g. delete buttons in OptionsPage, rows in ReadJournal after many inserts).
+        // If ScrollIntoView is unsupported or fails, the WinAppDriver click still runs — it
+        // succeeds when the element was already on-screen, and surfaces the real error otherwise.
+        protected override void ScrollIntoViewAndClick(string automationId)
+        {
+            try
+            {
+                string handleStr = App.CurrentWindowHandle;
+                IntPtr hwnd = new IntPtr(Convert.ToInt64(
+                    handleStr.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+                        ? handleStr : "0x" + handleStr, 16));
+                AutomationElement window = UIA.FromHandle(hwnd);
+                AutomationElement? el = window.FindFirstDescendant(cf => cf.ByAutomationId(automationId));
+                if (el is not null && el.Patterns.ScrollItem.IsSupported)
+                    el.Patterns.ScrollItem.Pattern.ScrollIntoView();
+            }
+            catch (Exception ex) { NavLog($"ScrollIntoView({automationId}) failed: {ex.Message}"); }
+
+            App.FindElement(MobileBy.AccessibilityId(automationId)).Click();
+        }
+
         // Click picker, type first letter to select item, Tab to confirm.
         // Re-anchor after close so the UIA root reflects any IsVisible changes that fired
         // while the dropdown was open (e.g. Game3Tab becoming visible via ShowGame3).

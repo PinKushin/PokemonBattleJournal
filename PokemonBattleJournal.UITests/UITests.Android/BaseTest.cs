@@ -51,6 +51,10 @@ namespace UITests
                 $".scrollIntoView(new UiSelector().description(\"{androidDescription}\"))"));
 
         // Uses resourceId — reliable on Android even after IsVisible binding cascades reset content-desc.
+        // Android: UiScrollable scrolls to the element during lookup, so plain FindUIElement+Click suffices.
+        protected override void ScrollIntoViewAndClick(string automationId) =>
+            FindUIElement(automationId).Click();
+
         protected override bool TryClickIfPresent(string id, int timeoutMs = 2000)
         {
             string resourceId = $"{PackageName}:id/{id}";

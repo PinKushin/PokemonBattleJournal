@@ -190,7 +190,7 @@ namespace UITests
             // Wait for row to appear (proves save completed)
             FindUIElement($"DeleteArchetype_{deckName}").ShouldNotBeNull();
 
-            FindUIElement($"DeleteArchetype_{deckName}").Click();
+            ScrollIntoViewAndClick($"DeleteArchetype_{deckName}");
 
             // Verify gone
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
@@ -215,7 +215,7 @@ namespace UITests
             // Wait for row to appear (proves save completed)
             FindUIElement($"DeleteTag_{tagName}").ShouldNotBeNull();
 
-            FindUIElement($"DeleteTag_{tagName}").Click();
+            ScrollIntoViewAndClick($"DeleteTag_{tagName}");
 
             // Verify gone
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
