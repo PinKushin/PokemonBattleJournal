@@ -80,6 +80,10 @@
         [ObservableProperty]
         public partial string ImportStatusMessage { get; set; } = string.Empty;
 
+        public bool HasImportStatus => !string.IsNullOrEmpty(ImportStatusMessage);
+
+        partial void OnImportStatusMessageChanged(string value) => OnPropertyChanged(nameof(HasImportStatus));
+
         [RelayCommand]
         public async Task ImportFromTrainerHillAsync()
         {
@@ -143,9 +147,9 @@
             }
             catch (Exception ex)
             {
+                // Log only — no dialog from AppearingAsync. ContentDialog requires XamlRoot
+                // which isn't set until the page is fully composed; calling it here crashes WinUI (0xc000027b).
                 _logger.LogError(ex, "Error loading ViewModel: {TrainerName} {@IconCollection}", TrainerName, IconCollection);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
             }
         }
 

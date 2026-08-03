@@ -73,17 +73,19 @@ namespace UITests
                 foreach (var proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
                     try { proc.Kill(true); proc.WaitForExit(5_000); } catch { }
 
-                Log("3. BuildWindowsApp");
+                Log("3. WipeAppDatabase");
+                WipeAppDatabase();
+
+                Log("4. BuildWindowsApp");
                 var buildTimer = System.Diagnostics.Stopwatch.StartNew();
                 string exePath = BuildWindowsApp();
                 buildTimer.Stop();
-                Log($"3. BuildWindowsApp done ({buildTimer.ElapsedMilliseconds}ms)");
+                Log($"4. BuildWindowsApp done ({buildTimer.ElapsedMilliseconds}ms)");
                 PerfLog($"{logPrefix} BuildWindowsApp completed ({buildTimer.ElapsedMilliseconds}ms)");
-                // No pre-wipe — app seeds UITestTrainer in #if DEBUG if absent (idempotent)
                 windowsOptions.App = exePath;
             }
 
-            Log("4. new WindowsDriver");
+            Log("5. new WindowsDriver");
             var driverTimer = System.Diagnostics.Stopwatch.StartNew();
             Exception? lastEx = null;
             for (int attempt = 0; attempt < 3; attempt++)
@@ -103,7 +105,7 @@ namespace UITests
             }
             if (lastEx != null) throw new InvalidOperationException("Failed to create WindowsDriver after 3 attempts", lastEx);
             driverTimer.Stop();
-            Log($"4. WindowsDriver created ({driverTimer.ElapsedMilliseconds}ms)");
+            Log($"5. WindowsDriver created ({driverTimer.ElapsedMilliseconds}ms)");
             PerfLog($"{logPrefix} WindowsDriver instantiated ({driverTimer.ElapsedMilliseconds}ms)");
             
             driver!.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
@@ -112,11 +114,11 @@ namespace UITests
             // FindElement blocks until the element appears (up to 15s implicit wait).
             // The hamburger/OK menu is the first interactive UIA element — if it's visible
             // the Shell nav is wired up and NavigateTo will succeed immediately.
-            Log("5. Wait for Shell");
+            Log("6. Wait for Shell");
             var shellWaitTimer = System.Diagnostics.Stopwatch.StartNew();
             driver.FindElement(MobileBy.AccessibilityId("OK"));
             shellWaitTimer.Stop();
-            Log($"5. Shell ready ({shellWaitTimer.ElapsedMilliseconds}ms)");
+            Log($"6. Shell ready ({shellWaitTimer.ElapsedMilliseconds}ms)");
             PerfLog($"{logPrefix} Shell ready ({shellWaitTimer.ElapsedMilliseconds}ms)");
             
             setupTimer.Stop();
@@ -152,6 +154,22 @@ namespace UITests
             foreach (string dir in dirs)
                 foreach (string f in FindFiles(dir, pattern))
                     yield return f;
+        }
+
+        private static void WipeAppDatabase()
+        {
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string? dbPath = FindFiles(localAppData, "PokemonBattleJournal.db3").FirstOrDefault();
+            if (dbPath == null) return;
+            try
+            {
+                File.Delete(dbPath);
+                Log($"WipeAppDatabase: deleted {dbPath}");
+            }
+            catch (Exception ex)
+            {
+                Log($"WipeAppDatabase failed: {ex.Message}");
+            }
         }
 
         private static void CleanupTestTrainer()

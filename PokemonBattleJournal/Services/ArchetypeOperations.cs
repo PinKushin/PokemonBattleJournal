@@ -22,8 +22,13 @@ namespace PokemonBattleJournal.Services
         /// </summary>
         public async Task<List<Archetype>> GetAllAsync()
         {
-            // Fetch from network BEFORE acquiring the DB lock — Limitless HTTP can take seconds
-            List<MetaDeck> metaDecks = await _metaService.GetTopDecksAsync(10);
+            // Fetch from network BEFORE acquiring the DB lock — Limitless HTTP can take seconds.
+            // Wrap in its own try/catch: a network failure must not bubble to the outer catch,
+            // which calls ModalErrorHandler — showing a ContentDialog during AppearingAsync
+            // before the page's XamlRoot is composed crashes WinUI (0xc000027b).
+            List<MetaDeck> metaDecks = [];
+            try { metaDecks = await _metaService.GetTopDecksAsync(10); }
+            catch (Exception ex) { _logger.LogWarning(ex, "Limitless fetch failed — using offline fallback"); }
 
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
@@ -69,9 +74,8 @@ namespace PokemonBattleJournal.Services
             }
             catch (Exception ex)
             {
+                // Log only — no dialog. ModalErrorHandler from AppearingAsync crashes WinUI (0xc000027b).
                 _logger.LogError(ex, "Error getting archetypes");
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
                 return [];
             }
             finally

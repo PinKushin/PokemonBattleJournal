@@ -233,7 +233,7 @@
                 FontFamily="SairaRegular"
                 FontSize="12"
                 HorizontalOptions="Center"
-                IsVisible="{Binding ImportStatusMessage, Converter={toolkit:IsNotNullOrEmptyConverter}}"
+                IsVisible="{Binding HasImportStatus}"
                 Text="{Binding ImportStatusMessage}"
                 TextColor="{StaticResource PokeYellow}" />
 

@@ -41,30 +41,24 @@
                 // DisplayPromptAsync from firing (which crashes on WinUI before XamlRoot is set)
                 await factory.Trainers.SetActiveAsync(trainer);
 
-                // Seed archetypes directly — bypasses the HTTP meta-deck call in GetAllAsync
-                SQLiteAsyncConnection db = await factory.GetDatabaseAsync();
-                SemaphoreSlim sem = factory.GetLock();
-
-                Archetype other, charizard, regidrago, miraidon;
-                await sem.WaitAsync();
-                try
+                // Use the real seeding path — same as production. GetAllAsync seeds offline
+                // defaults when the DB is empty, so this also tests that path works correctly.
+                List<Archetype> allArchetypes = await factory.Archetypes.GetAllAsync();
+                Archetype? other     = allArchetypes.FirstOrDefault(a => a.Name == "Other");
+                Archetype? charizard = allArchetypes.FirstOrDefault(a => a.Name == "Charizard");
+                Archetype? regidrago = allArchetypes.FirstOrDefault(a => a.Name == "Regidrago");
+                Archetype? miraidon  = allArchetypes.FirstOrDefault(a => a.Name == "Miraidon");
+                if (other == null || charizard == null || regidrago == null || miraidon == null)
                 {
-                    other = await SeedArchetypeAsync(db, "Other", "ball_icon.png");
-                    charizard = await SeedArchetypeAsync(db, "Charizard", "charizard.png");
-                    regidrago = await SeedArchetypeAsync(db, "Regidrago", "regidrago.png");
-                    miraidon = await SeedArchetypeAsync(db, "Miraidon", "miraidon.png");
+                    logger.LogError("Debug seed: required archetypes missing after GetAllAsync — aborting match seed");
+                    return;
                 }
-                finally { sem.Release(); }
 
-                // Seed tags for the active trainer
-                Tags lucky, earlyStart;
-                await sem.WaitAsync();
-                try
-                {
-                    lucky = await SeedTagAsync(db, "Lucky", trainer.Id);
-                    earlyStart = await SeedTagAsync(db, "Early Start", trainer.Id);
-                }
-                finally { sem.Release(); }
+                // Seed global tags (GetAllAsync seeds them if absent) then look up a few for use below
+                List<Tags> allTags = await factory.Tags.GetAllAsync();
+                Tags? lucky     = allTags.FirstOrDefault(t => t.Name == "Lucky");
+                Tags? earlyStart = allTags.FirstOrDefault(t => t.Name == "Early Start");
+                Tags? unlucky   = allTags.FirstOrDefault(t => t.Name == "Unlucky");
 
                 // BO1 matches — mixed results, varied archetypes and dates
                 DateTime baseDate = DateTime.UtcNow.AddDays(-7);
@@ -73,8 +67,8 @@
                 [
                     (other,     charizard, MatchResult.Win,  1u, baseDate,             null),
                     (charizard, regidrago, MatchResult.Win,  2u, baseDate.AddDays(1),  null),
-                    (regidrago, miraidon,  MatchResult.Win,  1u, baseDate.AddDays(2),  null),
-                    (other,     regidrago, MatchResult.Loss, 2u, baseDate.AddDays(3),  lucky),
+                    (regidrago, miraidon,  MatchResult.Win,  1u, baseDate.AddDays(2),  lucky),
+                    (other,     regidrago, MatchResult.Loss, 2u, baseDate.AddDays(3),  unlucky),
                     (charizard, miraidon,  MatchResult.Loss, 1u, baseDate.AddDays(4),  null),
                     (miraidon,  other,     MatchResult.Tie,  2u, baseDate.AddDays(5),  earlyStart),
                 ];
@@ -115,7 +109,7 @@
                         EndTime = baseDate.AddDays(6).AddMinutes(45)
                     },
                     [
-                        new Game { Result = MatchResult.Win,  Turn = 1, Notes = "BO3-G1", Tags = [lucky] },
+                        new Game { Result = MatchResult.Win,  Turn = 1, Notes = "BO3-G1", Tags = lucky != null ? [lucky] : null },
                         new Game { Result = MatchResult.Loss, Turn = 2, Notes = "BO3-G2" },
                         new Game { Result = MatchResult.Win,  Turn = 1, Notes = "BO3-G3" }
                     ]);
@@ -135,7 +129,7 @@
                     [
                         new Game { Result = MatchResult.Loss, Turn = 2, Notes = "BO3-G1" },
                         new Game { Result = MatchResult.Win,  Turn = 1, Notes = "BO3-G2" },
-                        new Game { Result = MatchResult.Loss, Turn = 2, Notes = "BO3-G3", Tags = [earlyStart] }
+                        new Game { Result = MatchResult.Loss, Turn = 2, Notes = "BO3-G3", Tags = earlyStart != null ? [earlyStart] : null }
                     ]);
             }
             catch (Exception ex)
@@ -144,23 +138,8 @@
             }
         }
 
-        private static async Task<Archetype> SeedArchetypeAsync(SQLiteAsyncConnection db, string name, string imagePath)
-        {
-            Archetype? existing = await db.Table<Archetype>().Where(a => a.Name == name).FirstOrDefaultAsync();
-            if (existing != null) return existing;
-            Archetype arch = new() { Name = name, ImagePath = imagePath };
-            await db.InsertAsync(arch);
-            return arch;
-        }
 
-        private static async Task<Tags> SeedTagAsync(SQLiteAsyncConnection db, string name, uint trainerId)
-        {
-            Tags? existing = await db.Table<Tags>().Where(t => t.Name == name).FirstOrDefaultAsync();
-            if (existing != null) return existing;
-            Tags tag = new() { Name = name, TrainerId = trainerId };
-            await db.InsertAsync(tag);
-            return tag;
-        }
+
 #endif
     }
 }

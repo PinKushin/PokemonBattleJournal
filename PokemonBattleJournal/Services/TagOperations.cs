@@ -38,9 +38,8 @@
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
+                // Log only — callers may invoke this from AppearingAsync before XamlRoot is set.
                 _logger.LogError(ex, "Error getting tags");
-                error.HandleError(ex);
                 return [];
             }
             finally
