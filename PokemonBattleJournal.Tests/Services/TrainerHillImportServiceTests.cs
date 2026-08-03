@@ -1,10 +1,62 @@
 using System.Text.Json;
+using PokemonBattleJournal.Scraper.Models;
 using PokemonBattleJournal.Services.Import;
 
 namespace PokemonBattleJournal.Tests.Services
 {
     public class TrainerHillImportServiceTests
     {
+        // ---------------------------------------------------------------------------
+        // BuildSlugLookup / LookupSlug
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void BuildSlugLookup_SimpleSlug_Matches()
+        {
+            Dictionary<string, string> lookup = TrainerHillImportService.BuildSlugLookup(
+                [new MetaDeck("Dragapult Dusknoir", "")]);
+            TrainerHillImportService.LookupSlug("dragapult-dusknoir", lookup).ShouldBe("Dragapult Dusknoir");
+        }
+
+        [Test]
+        public void BuildSlugLookup_PossessiveApostropheRemoved_MatchesRocketSlug()
+        {
+            Dictionary<string, string> lookup = TrainerHillImportService.BuildSlugLookup(
+                [new MetaDeck("Rocket's Honchkrow", "")]);
+            TrainerHillImportService.LookupSlug("rockets-honchkrow", lookup).ShouldBe("Rocket's Honchkrow");
+        }
+
+        [Test]
+        public void BuildSlugLookup_PossessiveSDropped_MatchesNSlug()
+        {
+            Dictionary<string, string> lookup = TrainerHillImportService.BuildSlugLookup(
+                [new MetaDeck("N's Zoroark", "")]);
+            TrainerHillImportService.LookupSlug("n-zoroark", lookup).ShouldBe("N's Zoroark");
+        }
+
+        [Test]
+        public void BuildSlugLookup_LimitlessVersionQualifier_MatchesSlugWithoutVersion()
+        {
+            Dictionary<string, string> lookup = TrainerHillImportService.BuildSlugLookup(
+                [new MetaDeck("Dragapult ex / Dusknoir", "")]);
+            TrainerHillImportService.LookupSlug("dragapult-dusknoir", lookup).ShouldBe("Dragapult ex / Dusknoir");
+        }
+
+        [Test]
+        public void BuildSlugLookup_UnknownSlug_ReturnsNull()
+        {
+            Dictionary<string, string> lookup = TrainerHillImportService.BuildSlugLookup(
+                [new MetaDeck("Other", "")]);
+            TrainerHillImportService.LookupSlug("unknown-deck", lookup).ShouldBeNull();
+        }
+
+        [Test]
+        public void BuildSlugLookup_EmptyList_ReturnsEmptyLookup()
+        {
+            Dictionary<string, string> lookup = TrainerHillImportService.BuildSlugLookup([]);
+            TrainerHillImportService.LookupSlug("anything", lookup).ShouldBeNull();
+        }
+
         // ---------------------------------------------------------------------------
         // SlugToName
         // ---------------------------------------------------------------------------

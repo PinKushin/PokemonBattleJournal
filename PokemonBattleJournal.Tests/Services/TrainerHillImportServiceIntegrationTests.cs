@@ -1,5 +1,7 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
+using PokemonBattleJournal.Scraper.Interfaces;
+using PokemonBattleJournal.Scraper.Models;
 using PokemonBattleJournal.Services.Import;
 using SQLite;
 
@@ -15,7 +17,14 @@ namespace PokemonBattleJournal.Tests.Services
         public async Task SetUp()
         {
             _factory = new InMemorySqliteConnectionFactory();
-            _sut = new TrainerHillImportService(_factory, Substitute.For<ILogger<TrainerHillImportService>>());
+
+            ILimitlessMetaService emptyLimitless = Substitute.For<ILimitlessMetaService>();
+            emptyLimitless.GetTopDecksAsync(Arg.Any<int>()).Returns([]);
+
+            _sut = new TrainerHillImportService(
+                _factory,
+                Substitute.For<ILogger<TrainerHillImportService>>(),
+                emptyLimitless);
             _ = await _factory.GetDatabaseAsync();
 
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
@@ -206,6 +215,29 @@ namespace PokemonBattleJournal.Tests.Services
 
             imported.ShouldBe(1);
             errors.ShouldNotBeEmpty();
+        }
+
+        [Test]
+        public async Task ImportAsync_SlugMatchesLimitlessDeck_UsesLimitlessName()
+        {
+            ILimitlessMetaService metaService = Substitute.For<ILimitlessMetaService>();
+            metaService.GetTopDecksAsync(Arg.Any<int>())
+                .Returns([new MetaDeck("N's Zoroark", "some-url")]);
+            TrainerHillImportService sut = new(
+                _factory,
+                Substitute.For<ILogger<TrainerHillImportService>>(),
+                metaService);
+
+            const string json = """
+                [{"playing":"n-zoroark","against":"other","time":"2026-07-18 19:08:53","result":"Win",
+                  "game1":{"result":"Win","turn":1,"tags":[],"notes":null}}]
+                """;
+
+            await sut.ImportAsync(ToStream(json), _trainerId);
+
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+            (await db.Table<Archetype>().Where(a => a.Name == "N's Zoroark").CountAsync()).ShouldBe(1);
+            (await db.Table<Archetype>().Where(a => a.Name == "N Zoroark").CountAsync()).ShouldBe(0);
         }
 
         // ---------------------------------------------------------------------------

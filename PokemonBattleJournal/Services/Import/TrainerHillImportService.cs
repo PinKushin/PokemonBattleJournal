@@ -1,19 +1,29 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using PokemonBattleJournal.Interfaces;
+using PokemonBattleJournal.Scraper.Interfaces;
+using PokemonBattleJournal.Scraper.Models;
 using SQLite;
 
 namespace PokemonBattleJournal.Services.Import
 {
     public class TrainerHillImportService : ITrainerHillImportService
     {
+        private static readonly string[] VersionTokens = ["ex", "v", "vmax", "vstar", "gx", "ace", "sp"];
+
         private readonly ISqliteConnectionFactory _factory;
         private readonly ILogger<TrainerHillImportService> _logger;
+        private readonly ILimitlessMetaService _limitlessService;
 
-        public TrainerHillImportService(ISqliteConnectionFactory factory, ILogger<TrainerHillImportService> logger)
+        public TrainerHillImportService(
+            ISqliteConnectionFactory factory,
+            ILogger<TrainerHillImportService> logger,
+            ILimitlessMetaService limitlessService)
         {
             _factory = factory;
             _logger = logger;
+            _limitlessService = limitlessService;
         }
 
         public async Task<(int Imported, List<string> Errors)> ImportAsync(Stream jsonStream, uint trainerId)
@@ -39,6 +49,9 @@ namespace PokemonBattleJournal.Services.Import
             if (entries is null || entries.Count == 0)
                 return (imported, errors);
 
+            List<MetaDeck> metaDecks = await _limitlessService.GetTopDecksAsync(int.MaxValue);
+            Dictionary<string, string> slugLookup = BuildSlugLookup(metaDecks);
+
             foreach (TrainerHillEntry entry in entries)
             {
                 try
@@ -56,8 +69,10 @@ namespace PokemonBattleJournal.Services.Import
                         continue;
                     }
 
-                    uint playingId = await ResolveArchetypeAsync(SlugToName(entry.Playing));
-                    uint againstId = await ResolveArchetypeAsync(SlugToName(entry.Against));
+                    string playingName = LookupSlug(entry.Playing, slugLookup) ?? SlugToName(entry.Playing);
+                    string againstName = LookupSlug(entry.Against, slugLookup) ?? SlugToName(entry.Against);
+                    uint playingId = await ResolveArchetypeAsync(playingName);
+                    uint againstId = await ResolveArchetypeAsync(againstName);
 
                     DateTime datePlayed = DateTime.TryParse(
                         entry.Time, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dt)
@@ -164,6 +179,53 @@ namespace PokemonBattleJournal.Services.Import
             finally
             {
                 _ = _factory.GetLock().Release();
+            }
+        }
+
+        internal static Dictionary<string, string> BuildSlugLookup(IEnumerable<MetaDeck> decks)
+        {
+            Dictionary<string, string> lookup = new(StringComparer.OrdinalIgnoreCase);
+            foreach (MetaDeck deck in decks)
+            {
+                foreach (string key in NormalizationKeys(deck.Name))
+                    _ = lookup.TryAdd(key, deck.Name);
+            }
+            return lookup;
+        }
+
+        internal static string? LookupSlug(string slug, Dictionary<string, string> lookup)
+        {
+            string key = slug.ToLowerInvariant().Replace('-', ' ');
+            return lookup.TryGetValue(key, out string? name) ? name : null;
+        }
+
+        private static IEnumerable<string> NormalizationKeys(string name)
+        {
+            string lower = name.ToLowerInvariant()
+                .Replace('/', ' ')
+                .Replace('-', ' ');
+            lower = Regex.Replace(lower, @"\s+", " ").Trim();
+
+            string versionPattern = $@"\b({string.Join("|", VersionTokens)})\b";
+            HashSet<string> seen = [];
+
+            // Two possessive variants × two version-strip variants = up to 4 keys
+            foreach (bool stripPossessive in new[] { false, true })
+            {
+                string step = stripPossessive
+                    ? Regex.Replace(lower, @"'s\b", "")    // N's → "n", Rocket's → "rocket"
+                    : lower.Replace("'", "");               // N's → "ns", Rocket's → "rockets"
+                step = Regex.Replace(step, @"\s+", " ").Trim();
+
+                foreach (bool stripVersion in new[] { false, true })
+                {
+                    string key = stripVersion
+                        ? Regex.Replace(step, versionPattern, " ")
+                        : step;
+                    key = Regex.Replace(key, @"\s+", " ").Trim();
+                    if (!string.IsNullOrEmpty(key) && seen.Add(key))
+                        yield return key;
+                }
             }
         }
 
