@@ -5,7 +5,19 @@ metadata:
   type: project
 ---
 
-## Status: PARTIALLY FIXED — needs more CI runs to confirm
+## Status: TWO DISTINCT FAILURE CLASSES
+
+### Class 1 — BO3 tab visibility race (`BO3GameTabs_DisplayedWhenBO3Active`) — FIXED
+
+**Root cause:** `BO3GamesLayout` and `Game1Tab` have no `IsVisible` binding — always in the UIA tree. `Game2Tab.IsVisible` is bound to `BO3Toggle`. After `BOSwitch.Click()`, WinAppDriver found both always-visible elements instantly, then timed out on `Game2Tab` because the `BO3Toggle` binding cascade had not completed.
+
+**Fix (commit 43b2a90):** `EnsureBO3On()` now polls `BO3StatusLabel.Text == "Best of 3"` after clicking before returning. Syncs on the same property change that makes `Game2Tab` visible, eliminating the race.
+
+**Pattern:** any test that checks `IsVisible`-bound elements immediately after a toggle click is susceptible to this. Fix: always poll a label/indicator that confirms the state flip before looking for conditionally-visible elements.
+
+---
+
+### Class 2 — Picker animation + ShowGame3 cascade (`Game3Tab_ShowsWhenGame1IsTie`, `Game3Tab_ShowsGamePanel`) — PARTIALLY FIXED
 
 Two Windows UI tests have been persistently flaky:
 - `MainPage_Game3Tab_ShowsWhenGame1IsTie`

@@ -28,3 +28,12 @@ Result: Windows app window crashes mid-seed (CloseAsync failure or popup lifecyc
 3. **Pending**: proper Android fix still needed
 
 Reverted SelectionMode.Single change. Original TapGestureRecognizer restored.
+
+## Accessibility IDs required on all interactive popup elements
+
+Every element in `ComboBoxPopup` that Appium or screen readers need must have an `AutomationId`. Added in commit 4092182/167d915:
+
+- `SearchBar` → `AutomationId = "ArchetypeSearchBar"`
+- Cancel `Button` → `AutomationId = "ArchetypePopupCancel"`
+
+**Why:** On Windows, `MobileBy.AccessibilityId` matches `AutomationId` — it does NOT fall back to `Text`. A button with `Text = "Cancel"` and no `AutomationId` is invisible to WinAppDriver. Tests that relied on `AccessibilityId("Cancel")` failed on CI even though the button was visible. Use `TryClickIfPresent("ArchetypePopupCancel")` in test cleanup, not text-based lookup.
