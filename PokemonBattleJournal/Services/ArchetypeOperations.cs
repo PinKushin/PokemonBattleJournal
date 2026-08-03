@@ -185,6 +185,20 @@ namespace PokemonBattleJournal.Services
             }
         }
 
+        // Limitless CDN uses different naming conventions than Pokémon Showdown sprites.
+        // Map CDN filename (after hyphen→underscore) to the local Showdown sprite name.
+        private static readonly Dictionary<string, string> _spriteAliases = new(StringComparer.OrdinalIgnoreCase)
+        {
+            // Ogerpon: Limitless omits "_mask"; Showdown includes it
+            { "ogerpon.png",             "ogerpon_teal_mask.png" },
+            { "ogerpon_wellspring.png",  "ogerpon_wellspring_mask.png" },
+            { "ogerpon_hearthflame.png", "ogerpon_hearthflame_mask.png" },
+            { "ogerpon_cornerstone.png", "ogerpon_cornerstone_mask.png" },
+            // Mega forms Limitless labels that have no Mega in the games
+            { "greninja_mega.png", "greninja.png" },
+            { "starmie_mega.png",  "starmie.png" },
+        };
+
         private static string TryResolveLocalSprite(string deckName, string imageUrl = "")
         {
             if (!string.IsNullOrWhiteSpace(imageUrl) &&
@@ -192,7 +206,10 @@ namespace PokemonBattleJournal.Services
             {
                 string file = Path.GetFileName(uri.AbsolutePath);
                 if (!string.IsNullOrEmpty(file))
-                    return file.Replace('-', '_');
+                {
+                    string candidate = file.Replace('-', '_');
+                    return _spriteAliases.TryGetValue(candidate, out string? alias) ? alias : candidate;
+                }
             }
 
             // Name-based fallback: take first Pokemon in multi-Pokemon names

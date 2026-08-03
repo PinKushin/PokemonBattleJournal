@@ -98,6 +98,43 @@ namespace PokemonBattleJournal.Tests.Services
         }
 
         [Test]
+        public async Task GetAllAsync_OgerponBox_ResolvesToTealMaskSprite()
+        {
+            var metaService = Substitute.For<ILimitlessMetaService>();
+            metaService.GetTopDecksAsync(Arg.Any<int>())
+                .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
+                {
+                    new("Ogerpon Box", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png"),
+                }));
+            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+
+            List<Archetype> archetypes = await sut.GetAllAsync();
+
+            Archetype? saved = archetypes.FirstOrDefault(a => a.Name == "Ogerpon Box");
+            saved.ShouldNotBeNull();
+            saved!.ImagePath.ShouldBe("ogerpon_teal_mask.png");
+        }
+
+        [Test]
+        public async Task GetAllAsync_OgerponWellspring_ResolvesToWellspringMaskSprite()
+        {
+            var metaService = Substitute.For<ILimitlessMetaService>();
+            metaService.GetTopDecksAsync(Arg.Any<int>())
+                .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
+                {
+                    new("Ogerpon Meganium", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png",
+                        "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon-wellspring.png"),
+                }));
+            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+
+            List<Archetype> archetypes = await sut.GetAllAsync();
+
+            Archetype? saved = archetypes.FirstOrDefault(a => a.Name == "Ogerpon Meganium");
+            saved.ShouldNotBeNull();
+            saved!.ImagePath2.ShouldBe("ogerpon_wellspring_mask.png");
+        }
+
+        [Test]
         public async Task GetAllAsync_WithMetaDecks_UpsertsMetaArchetypes()
         {
             // Re-create the SUT with a metaService that returns real decks
