@@ -63,13 +63,13 @@ namespace PokemonBattleJournal.Services
                         new() { Name = "Raging Bolt", ImagePath = "raging_bolt.png" },
                         new() { Name = "Gardevoir", ImagePath = "gardevoir.png" },
                         new() { Name = "Miraidon", ImagePath = "miraidon.png" },
-                        new() { Name = "Other", ImagePath = "ball_icon.png" }
+                        new() { Name = "Other", ImagePath = "substitute.png" }
                     });
                 }
                 // Always ensure "Other" exists as a catch-all
                 await db.ExecuteAsync(
                     "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
-                    "Other", "ball_icon.png");
+                    "Other", "substitute.png");
                 return await db.Table<Archetype>().ToListAsync();
             }
             catch (Exception ex)

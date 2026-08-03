@@ -79,10 +79,10 @@ namespace PokemonBattleJournal.ViewModels
         public partial string? AgainstName { get; set; } = "other";
 
         [ObservableProperty]
-        public partial string? PlayingIconSource { get; set; } = "ball_icon.png";
+        public partial string? PlayingIconSource { get; set; } = "substitute.png";
 
         [ObservableProperty]
-        public partial string? AgainstIconSource { get; set; } = "ball_icon.png";
+        public partial string? AgainstIconSource { get; set; } = "substitute.png";
 
         [ObservableProperty]
         public partial List<Tags>? TagsSelectedGame1 { get; set; }
@@ -181,8 +181,8 @@ namespace PokemonBattleJournal.ViewModels
                 OverallResult = SelectedMatch.Result;
                 PlayingName = SelectedMatch.Playing?.Name ?? "Unknown";
                 AgainstName = SelectedMatch.Against?.Name ?? "Unknown";
-                PlayingIconSource = SelectedMatch.Playing?.ImagePath ?? "ball_icon.png";
-                AgainstIconSource = SelectedMatch.Against?.ImagePath ?? "ball_icon.png";
+                PlayingIconSource = SelectedMatch.Playing?.ImagePath ?? "substitute.png";
+                AgainstIconSource = SelectedMatch.Against?.ImagePath ?? "substitute.png";
 
                 LoadGameDetails();
             }
@@ -280,8 +280,8 @@ namespace PokemonBattleJournal.ViewModels
 
         private void ResetDisplay()
         {
-            PlayingIconSource = "ball_icon.png";
-            AgainstIconSource = "ball_icon.png";
+            PlayingIconSource = "substitute.png";
+            AgainstIconSource = "substitute.png";
             PlayingName = "other";
             AgainstName = "other";
             SelectedNote = "Select Match";

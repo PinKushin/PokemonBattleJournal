@@ -145,7 +145,7 @@ namespace PokemonBattleJournal.Services.Import
                 await _factory.GetLock().WaitAsync();
                 await db.ExecuteAsync(
                     "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
-                    name, "ball_icon.png");
+                    name, "substitute.png");
                 Archetype? archetype = await db.Table<Archetype>()
                     .Where(a => a.Name == name)
                     .FirstOrDefaultAsync();

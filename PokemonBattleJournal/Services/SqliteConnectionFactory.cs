@@ -61,7 +61,7 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
                 // Migrate any CDN URLs left over from an old import to the default ball icon.
                 // ArchetypeOperations.GetAllAsync resolves proper local sprites on next load.
                 await _database.ExecuteAsync(
-                    "UPDATE Archetype SET ImagePath = 'ball_icon.png' WHERE ImagePath LIKE 'http%'");
+                    "UPDATE Archetype SET ImagePath = 'substitute.png' WHERE ImagePath LIKE 'http%'");
             }
         }
         finally

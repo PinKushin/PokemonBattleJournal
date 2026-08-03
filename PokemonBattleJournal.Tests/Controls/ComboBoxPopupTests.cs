@@ -12,7 +12,7 @@ public class ComboBoxPopupTests
         new Item("N's Zoroark ex", "https://example.com/zoroark.png"),
         new Item("Alakazam Powerful Hand", "https://example.com/alakazam.png"),
         new Item("Hydrapple ex", "https://example.com/hydrapple.png"),
-        new Item("Other", "ball_icon.png"),
+        new Item("Other", "substitute.png"),
     ];
 
     [Test]
