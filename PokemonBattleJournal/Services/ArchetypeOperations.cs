@@ -40,7 +40,7 @@ namespace PokemonBattleJournal.Services
 #pragma warning disable S3267 // Loop body contains awaits; cannot be replaced with LINQ Select
                     foreach (MetaDeck deck in metaDecks)
                     {
-                        string imagePath = TryResolveLocalSprite(deck.Name);
+                        string imagePath = TryResolveLocalSprite(deck.Name, deck.ImageUrl);
                         await db.ExecuteAsync(
                             "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
                             deck.Name, imagePath);
@@ -176,11 +176,24 @@ namespace PokemonBattleJournal.Services
             }
         }
 
-        // Maps a Limitless deck name to a local PokemonSprite filename.
-        // e.g. "Charizard ex" → "charizard.png", "Raging Bolt ex" → "raging_bolt.png"
-        private static string TryResolveLocalSprite(string deckName)
+        // Maps a Limitless deck to a local PokemonSprite filename.
+        // Primary: derive from the CDN image URL — the filename already IS the sprite name;
+        //   replace hyphens with underscores to match the MAUI asset naming convention.
+        //   e.g. "…/dragapult-dusknoir.png" → "dragapult_dusknoir.png"
+        // Fallback (empty URL): parse the deck name — strip multi-Pokemon slash, strip
+        //   "ex/GX/V/…" suffix, lowercase + underscores.
+        //   e.g. "Raging Bolt ex" → "raging_bolt.png"
+        private static string TryResolveLocalSprite(string deckName, string imageUrl = "")
         {
-            string name = deckName.Split('&')[0].Trim();
+            if (!string.IsNullOrWhiteSpace(imageUrl))
+            {
+                string file = Path.GetFileName(new Uri(imageUrl).AbsolutePath);
+                if (!string.IsNullOrEmpty(file))
+                    return file.Replace('-', '_');
+            }
+
+            // Name-based fallback: take first Pokemon in multi-Pokemon names
+            string name = deckName.Split(['&', '/'])[0].Trim();
             name = Regex.Replace(name, @"\s+(ex|EX|GX|V|VMAX|VSTAR|VUNION|tera|Tera)$", "", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)).Trim();
             return Regex.Replace(name.ToLowerInvariant(), @"\s+", "_", RegexOptions.None, TimeSpan.FromSeconds(1)) + ".png";
         }
