@@ -176,13 +176,6 @@ namespace PokemonBattleJournal.Services
             }
         }
 
-        // Maps a Limitless deck to a local PokemonSprite filename.
-        // Primary: derive from the CDN image URL — the filename already IS the sprite name;
-        //   replace hyphens with underscores to match the MAUI asset naming convention.
-        //   e.g. "…/dragapult-dusknoir.png" → "dragapult_dusknoir.png"
-        // Fallback (empty URL): parse the deck name — strip multi-Pokemon slash, strip
-        //   "ex/GX/V/…" suffix, lowercase + underscores.
-        //   e.g. "Raging Bolt ex" → "raging_bolt.png"
         private static string TryResolveLocalSprite(string deckName, string imageUrl = "")
         {
             if (!string.IsNullOrWhiteSpace(imageUrl))
@@ -193,7 +186,7 @@ namespace PokemonBattleJournal.Services
             }
 
             // Name-based fallback: take first Pokemon in multi-Pokemon names
-            string name = deckName.Split(['&', '/'])[0].Trim();
+            string name = deckName.Split(['&', '/'], StringSplitOptions.None)[0].Trim();
             name = Regex.Replace(name, @"\s+(ex|EX|GX|V|VMAX|VSTAR|VUNION|tera|Tera)$", "", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)).Trim();
             return Regex.Replace(name.ToLowerInvariant(), @"\s+", "_", RegexOptions.None, TimeSpan.FromSeconds(1)) + ".png";
         }

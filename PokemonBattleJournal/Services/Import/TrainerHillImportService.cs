@@ -149,7 +149,7 @@ namespace PokemonBattleJournal.Services.Import
                 Archetype? archetype = await db.Table<Archetype>()
                     .Where(a => a.Name == name)
                     .FirstOrDefaultAsync();
-                return archetype is not null ? (uint)archetype.Id : 0u;
+                return archetype is not null ? archetype.Id : 0u;
             }
             finally
             {
@@ -185,11 +185,13 @@ namespace PokemonBattleJournal.Services.Import
         internal static Dictionary<string, string> BuildSlugLookup(IEnumerable<MetaDeck> decks)
         {
             Dictionary<string, string> lookup = new(StringComparer.OrdinalIgnoreCase);
+#pragma warning disable S3267 // SelectMany would hurt readability: each key must be paired with its source deck.Name
             foreach (MetaDeck deck in decks)
             {
                 foreach (string key in NormalizationKeys(deck.Name))
                     _ = lookup.TryAdd(key, deck.Name);
             }
+#pragma warning restore S3267
             return lookup;
         }
 
@@ -204,25 +206,24 @@ namespace PokemonBattleJournal.Services.Import
             string lower = name.ToLowerInvariant()
                 .Replace('/', ' ')
                 .Replace('-', ' ');
-            lower = Regex.Replace(lower, @"\s+", " ").Trim();
+            lower = Regex.Replace(lower, @"\s+", " ", RegexOptions.None, TimeSpan.FromSeconds(1)).Trim();
 
             string versionPattern = $@"\b({string.Join("|", VersionTokens)})\b";
             HashSet<string> seen = [];
 
-            // Two possessive variants × two version-strip variants = up to 4 keys
             foreach (bool stripPossessive in new[] { false, true })
             {
                 string step = stripPossessive
-                    ? Regex.Replace(lower, @"'s\b", "")    // N's → "n", Rocket's → "rocket"
-                    : lower.Replace("'", "");               // N's → "ns", Rocket's → "rockets"
-                step = Regex.Replace(step, @"\s+", " ").Trim();
+                    ? Regex.Replace(lower, @"'s\b", "", RegexOptions.None, TimeSpan.FromSeconds(1))
+                    : lower.Replace("'", "");
+                step = Regex.Replace(step, @"\s+", " ", RegexOptions.None, TimeSpan.FromSeconds(1)).Trim();
 
                 foreach (bool stripVersion in new[] { false, true })
                 {
                     string key = stripVersion
-                        ? Regex.Replace(step, versionPattern, " ")
+                        ? Regex.Replace(step, versionPattern, " ", RegexOptions.None, TimeSpan.FromSeconds(1))
                         : step;
-                    key = Regex.Replace(key, @"\s+", " ").Trim();
+                    key = Regex.Replace(key, @"\s+", " ", RegexOptions.None, TimeSpan.FromSeconds(1)).Trim();
                     if (!string.IsNullOrEmpty(key) && seen.Add(key))
                         yield return key;
                 }
