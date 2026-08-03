@@ -1,5 +1,7 @@
 # Pokemon Battle Journal
 
+**Website:** https://pinkushin.github.io/PokemonBattleJournal/
+
 A .NET MAUI app for logging and analyzing **Pokemon TCG** battle records across Windows and Android.
 
 Record matches, track win rates, and review your performance against specific archetypes — all stored locally with no account required.

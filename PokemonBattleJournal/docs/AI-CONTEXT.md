@@ -1,7 +1,8 @@
 # PokemonBattleJournal — AI Context
 
-> **Last updated:** 2026-07-30 (NUnit migration + UI test perf refactor — see session log)
-> **Solution file:** `PokemonBattleJournal.slnx` (not `.sln`)  
+> **Last updated:** 2026-08-02 (responsive MainPage layout + GitHub Pages site)
+> **Solution file:** `PokemonBattleJournal.slnx` (not `.sln`)
+> **Project website:** https://pinkushin.github.io/PokemonBattleJournal/ (deployed via `.github/workflows/static.yml` from `index.html` at repo root)
 > **Read this first** when working in this repo. Update the [Session log](#session-log) whenever scope, decisions, or blockers change — especially before long multi-step work.
 
 ---
