@@ -52,17 +52,6 @@
         <Setter Property="VerticalOptions" Value="Center" />
     </Style>
 
-    <!--  Selectable tag label inside game panels  -->
-    <Style x:Key="GameTagLabel" TargetType="Label">
-        <Setter Property="Margin" Value="0,0,40,0" />
-        <Setter Property="Padding" Value="10,0,0,0" />
-        <Setter Property="FontAutoScalingEnabled" Value="True" />
-        <Setter Property="HorizontalOptions" Value="Center" />
-        <Setter Property="HorizontalTextAlignment" Value="End" />
-        <Setter Property="VerticalOptions" Value="Center" />
-        <Setter Property="VerticalTextAlignment" Value="Center" />
-    </Style>
-
     <!--  BO3 toggle label — Best of 1 / Best of 3  -->
     <Style x:Key="BO3Label" TargetType="Label">
         <Setter Property="FontFamily" Value="SairaRegular" />

@@ -1,4 +1,5 @@
-﻿global using CommunityToolkit.Mvvm.ComponentModel;
+﻿global using System.Collections.ObjectModel;
+global using CommunityToolkit.Mvvm.ComponentModel;
 global using CommunityToolkit.Mvvm.Input;
 global using Microsoft.Extensions.Logging;
 global using PokemonBattleJournal.Interfaces;

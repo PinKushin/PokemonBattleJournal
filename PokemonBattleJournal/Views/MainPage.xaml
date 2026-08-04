@@ -37,6 +37,14 @@
             x:Key="BO3TrackColorConverter"
             FalseObject="#444444"
             TrueObject="{StaticResource PokeBlue}" />
+        <toolkit:BoolToObjectConverter
+            x:Key="TagSelectedBgConverter"
+            FalseObject="Transparent"
+            TrueObject="{StaticResource PokeBlue}" />
+        <toolkit:BoolToObjectConverter
+            x:Key="TagSelectedTextConverter"
+            FalseObject="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource Gray100}}"
+            TrueObject="White" />
     </ContentPage.Resources>
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
@@ -298,40 +306,45 @@
 
                     <!--#region Game 1 Panel-->
                     <VerticalStackLayout IsVisible="{Binding IsGame1Selected}">
-                        <CollectionView
-                            x:Name="TagsView"
-                            AutomationId="TagsView"
-                            SemanticProperties.Description="Game 1 tags"
-                            SemanticProperties.Hint="Select tags that describe game 1"
-                            CanReorderItems="True"
-                            ItemSizingStrategy="MeasureAllItems"
-                            ItemsSource="{Binding TagCollection}"
-                            MinimumHeightRequest="100"
-                            SelectedItems="{Binding TagsSelected, Mode=TwoWay}"
-                            SelectionMode="Multiple">
-                            <CollectionView.ItemsLayout>
-                                <GridItemsLayout Orientation="Horizontal" Span="2" />
-                            </CollectionView.ItemsLayout>
-                            <CollectionView.Header>
-                                <Label
-                                    Margin="0,0,10,0"
-                                    HorizontalOptions="Center"
-                                    HorizontalTextAlignment="Center"
-                                    Text="Tags:"
-                                    VerticalOptions="Center"
-                                    VerticalTextAlignment="Center" />
-                            </CollectionView.Header>
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate>
-                                    <HorizontalStackLayout>
-                                        <Label
-                                            x:DataType="models:Tags"
-                                            Style="{StaticResource GameTagLabel}"
-                                            Text="{Binding Name}" />
-                                    </HorizontalStackLayout>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
+                        <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="44">
+                            <Label
+                                Grid.Column="0"
+                                Margin="0,4,10,0"
+                                Text="Tags:"
+                                VerticalOptions="Start" />
+                            <FlexLayout
+                                x:Name="TagsView"
+                                Grid.Column="1"
+                                AutomationId="TagsView"
+                                SemanticProperties.Description="Game 1 tags"
+                                AlignItems="Start"
+                                Direction="Row"
+                                Wrap="Wrap"
+                                BindableLayout.ItemsSource="{Binding Game1TagCollection}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodel:TagViewModel">
+                                        <Border
+                                            Margin="2"
+                                            Padding="8,4"
+                                            BackgroundColor="{Binding IsSelected, Converter={StaticResource TagSelectedBgConverter}}"
+                                            SemanticProperties.Description="{Binding Name}"
+                                            SemanticProperties.Hint="Double tap to select or deselect"
+                                            Stroke="{StaticResource PokeBlue}"
+                                            StrokeShape="RoundRectangle 6"
+                                            StrokeThickness="1">
+                                            <Label
+                                                FontAutoScalingEnabled="True"
+                                                Text="{Binding Name}"
+                                                TextColor="{Binding IsSelected, Converter={StaticResource TagSelectedTextConverter}}"
+                                                VerticalOptions="Center" />
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                            </Border.GestureRecognizers>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </FlexLayout>
+                        </Grid>
                         <Editor
                             AutoSize="TextChanges"
                             AutomationId="UserNoteInput"
@@ -383,39 +396,44 @@
 
                     <!--#region Game 2 Panel-->
                     <VerticalStackLayout IsVisible="{Binding IsGame2Selected}">
-                        <CollectionView
-                            AutomationId="Match2Tags"
-                            SemanticProperties.Description="Game 2 tags"
-                            SemanticProperties.Hint="Select tags that describe game 2"
-                            CanReorderItems="True"
-                            ItemSizingStrategy="MeasureAllItems"
-                            ItemsSource="{Binding TagCollection}"
-                            MinimumHeightRequest="100"
-                            SelectedItems="{Binding Match2TagsSelected, Mode=TwoWay}"
-                            SelectionMode="Multiple">
-                            <CollectionView.ItemsLayout>
-                                <GridItemsLayout Orientation="Horizontal" Span="2" />
-                            </CollectionView.ItemsLayout>
-                            <CollectionView.Header>
-                                <Label
-                                    Margin="0,0,10,0"
-                                    HorizontalOptions="Center"
-                                    HorizontalTextAlignment="Center"
-                                    Text="Tags:"
-                                    VerticalOptions="Center"
-                                    VerticalTextAlignment="Center" />
-                            </CollectionView.Header>
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate>
-                                    <HorizontalStackLayout>
-                                        <Label
-                                            x:DataType="models:Tags"
-                                            Style="{StaticResource GameTagLabel}"
-                                            Text="{Binding Name}" />
-                                    </HorizontalStackLayout>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
+                        <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="44">
+                            <Label
+                                Grid.Column="0"
+                                Margin="0,4,10,0"
+                                Text="Tags:"
+                                VerticalOptions="Start" />
+                            <FlexLayout
+                                Grid.Column="1"
+                                AutomationId="Match2Tags"
+                                SemanticProperties.Description="Game 2 tags"
+                                AlignItems="Start"
+                                Direction="Row"
+                                Wrap="Wrap"
+                                BindableLayout.ItemsSource="{Binding Game2TagCollection}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodel:TagViewModel">
+                                        <Border
+                                            Margin="2"
+                                            Padding="8,4"
+                                            BackgroundColor="{Binding IsSelected, Converter={StaticResource TagSelectedBgConverter}}"
+                                            SemanticProperties.Description="{Binding Name}"
+                                            SemanticProperties.Hint="Double tap to select or deselect"
+                                            Stroke="{StaticResource PokeBlue}"
+                                            StrokeShape="RoundRectangle 6"
+                                            StrokeThickness="1">
+                                            <Label
+                                                FontAutoScalingEnabled="True"
+                                                Text="{Binding Name}"
+                                                TextColor="{Binding IsSelected, Converter={StaticResource TagSelectedTextConverter}}"
+                                                VerticalOptions="Center" />
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                            </Border.GestureRecognizers>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </FlexLayout>
+                        </Grid>
                         <Editor
                             AutoSize="TextChanges"
                             AutomationId="UserNoteInput2"
@@ -467,39 +485,44 @@
 
                     <!--#region Game 3 Panel-->
                     <VerticalStackLayout IsVisible="{Binding IsGame3Selected}">
-                        <CollectionView
-                            AutomationId="Match3Tags"
-                            SemanticProperties.Description="Game 3 tags"
-                            SemanticProperties.Hint="Select tags that describe game 3"
-                            CanReorderItems="True"
-                            ItemSizingStrategy="MeasureAllItems"
-                            ItemsSource="{Binding TagCollection}"
-                            MinimumHeightRequest="100"
-                            SelectedItems="{Binding Match3TagsSelected, Mode=TwoWay}"
-                            SelectionMode="Multiple">
-                            <CollectionView.ItemsLayout>
-                                <GridItemsLayout Orientation="Horizontal" Span="2" />
-                            </CollectionView.ItemsLayout>
-                            <CollectionView.Header>
-                                <Label
-                                    Margin="0,0,10,0"
-                                    HorizontalOptions="Center"
-                                    HorizontalTextAlignment="Center"
-                                    Text="Tags:"
-                                    VerticalOptions="Center"
-                                    VerticalTextAlignment="Center" />
-                            </CollectionView.Header>
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate>
-                                    <HorizontalStackLayout>
-                                        <Label
-                                            x:DataType="models:Tags"
-                                            Style="{StaticResource GameTagLabel}"
-                                            Text="{Binding Name}" />
-                                    </HorizontalStackLayout>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
+                        <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="44">
+                            <Label
+                                Grid.Column="0"
+                                Margin="0,4,10,0"
+                                Text="Tags:"
+                                VerticalOptions="Start" />
+                            <FlexLayout
+                                Grid.Column="1"
+                                AutomationId="Match3Tags"
+                                SemanticProperties.Description="Game 3 tags"
+                                AlignItems="Start"
+                                Direction="Row"
+                                Wrap="Wrap"
+                                BindableLayout.ItemsSource="{Binding Game3TagCollection}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodel:TagViewModel">
+                                        <Border
+                                            Margin="2"
+                                            Padding="8,4"
+                                            BackgroundColor="{Binding IsSelected, Converter={StaticResource TagSelectedBgConverter}}"
+                                            SemanticProperties.Description="{Binding Name}"
+                                            SemanticProperties.Hint="Double tap to select or deselect"
+                                            Stroke="{StaticResource PokeBlue}"
+                                            StrokeShape="RoundRectangle 6"
+                                            StrokeThickness="1">
+                                            <Label
+                                                FontAutoScalingEnabled="True"
+                                                Text="{Binding Name}"
+                                                TextColor="{Binding IsSelected, Converter={StaticResource TagSelectedTextConverter}}"
+                                                VerticalOptions="Center" />
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                            </Border.GestureRecognizers>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </FlexLayout>
+                        </Grid>
                         <Editor
                             AutoSize="TextChanges"
                             AutomationId="UserNoteInput3"
