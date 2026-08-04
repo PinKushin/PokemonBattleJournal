@@ -135,6 +135,25 @@ namespace UITests
         protected abstract string GetElementText(string automationId);
 
         /// <summary>
+        /// Returns true if the element is currently present in the accessibility tree.
+        /// Uses platform-correct lookup (resource-id on Android, AccessibilityId on Windows).
+        /// Always runs with ImplicitWait = 0 and restores it on exit.
+        /// </summary>
+        protected bool IsElementPresent(string id)
+        {
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try { return IsElementPresentCore(id); }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+        }
+
+        /// <summary>
+        /// Platform-specific presence check with ImplicitWait already set to zero by caller.
+        /// Windows default uses AccessibilityId. Android BaseTest overrides with resourceId.
+        /// </summary>
+        protected virtual bool IsElementPresentCore(string id) =>
+            App.FindElements(MobileBy.AccessibilityId(id)).Count > 0;
+
+        /// <summary>
         /// Spins (no sleep) until the element with <paramref name="automationId"/> disappears
         /// from the accessibility tree or <paramref name="timeoutMs"/> elapses.
         /// Use after closing a popup/modal to sync on its full dismissal before the next interaction.

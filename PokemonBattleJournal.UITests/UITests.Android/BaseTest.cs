@@ -45,6 +45,15 @@ namespace UITests
             }
         }
 
+        // AccessibilityId on Android maps to content-desc, not resource-id. AutomationId → resource-id.
+        // Override IsElementPresentCore to use resource-id so presence checks are correct.
+        protected override bool IsElementPresentCore(string id)
+        {
+            string resourceId = $"{PackageName}:id/{id}";
+            return App.FindElements(MobileBy.AndroidUIAutomator(
+                $"new UiSelector().resourceId(\"{resourceId}\")")).Count > 0;
+        }
+
         protected override AppiumElement FindByDescription(string _, string androidDescription) =>
             App.FindElement(MobileBy.AndroidUIAutomator(
                 $"new UiScrollable(new UiSelector().scrollable(true).instance(0))" +

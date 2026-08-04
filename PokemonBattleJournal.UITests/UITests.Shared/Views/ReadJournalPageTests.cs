@@ -20,22 +20,18 @@ namespace UITests
         // Opens the detail panel for the first match row without toggling.
         // NUnit runs tests alphabetically; BO3Match opens the row first, then SelectMatch_* tests
         // would re-click and collapse it. This helper skips the click when detail is already visible.
+        // IsElementPresent uses resource-id on Android (not AccessibilityId/content-desc) so the
+        // check is correct across platforms.
         private void EnsureMatchDetailOpen()
         {
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            bool alreadyOpen = App.FindElements(MobileBy.AccessibilityId("PlayingNameLabel")).Count > 0;
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
-            if (!alreadyOpen)
+            if (!IsElementPresent("PlayingNameLabel"))
                 FindFirstMatchRow().Click();
         }
 
         // Same guard for the BO3 detail: skip click if Game2TagsView is already showing.
         private void EnsureBO3MatchDetailOpen()
         {
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            bool alreadyOpen = App.FindElements(MobileBy.AccessibilityId("Game2TagsView")).Count > 0;
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
-            if (!alreadyOpen)
+            if (!IsElementPresent("Game2TagsView"))
                 FindFirstMatchRow().Click();
         }
 
