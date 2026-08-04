@@ -11,10 +11,12 @@ Record matches, track win rates, and review your performance against specific ar
 ## Features
 
 - **Match logging** — BO1 and BO3 formats, with per-game results, tags, notes, start/end times, and coin flip
-- **Archetype picker** — live meta deck list fetched from [limitlesstcg.com](https://limitlesstcg.com/decks) on launch, with searchable dropdown and deck images; falls back to local defaults when offline
-- **Trainer stats** — win rate, matchup matrix, and performance breakdowns per archetype
+- **Archetype picker** — live meta deck list fetched from [limitlesstcg.com](https://limitlesstcg.com/decks) on launch, with searchable dropdown and deck images (dual-icon support); falls back to local defaults when offline
+- **Trainer stats & charts** — win rate, streaks, average match duration, and 8 LiveCharts2 charts: matchup matrix, win rate over time, most played, archetype win rates, opponent performance, tag usage, match length, first-turn split
 - **BO3 tab switcher** — progressive Game 1 / 2 / 3 tabs; Game 3 shown only when the match result is split or both games tied (official tournament rules)
-- **Journal view** — filterable history of all recorded matches
+- **Journal view** — history of all recorded matches with expandable per-game detail
+- **TrainerHill import** — import battle logs exported from [trainerhill.com](https://trainerhill.com)
+- **Multi-trainer** — create and switch between trainer profiles on the Options page
 - **Tags** — Early Start, Donked Rival, Lucky, Behind Early, Got Donked, Unlucky, Punished, Never Punished
 
 ---
@@ -100,6 +102,14 @@ Run a single test by name:
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --filter "FullyQualifiedName~MethodName"
 ```
 
+### Integration tests (no device required)
+
+Real SQLite operations against a unique temp DB file per test:
+
+```powershell
+dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj
+```
+
 If tests fail to build, restore the scraper project first — the test project references it:
 
 ```powershell
@@ -159,30 +169,18 @@ dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
 
 ---
 
-## Benchmarks
-
-Benchmarks only work in Release configuration:
-
-```powershell
-.\PokemonBattleJournal.Benchmarks\Run.ps1
-```
-
-Do not run with `dotnet run` or in Debug — results will be invalid and the run may fail.
-
----
-
 ## Project structure
 
 ```
-PokemonBattleJournal/          # MAUI app
-PokemonBattleJournal.Scraper/  # Limitless TCG meta deck fetcher
-PokemonBattleJournal.Tests/    # Unit tests (NUnit, NSubstitute, Shouldly)
+PokemonBattleJournal/              # MAUI app
+PokemonBattleJournal.Scraper/      # Limitless TCG meta deck fetcher
+PokemonBattleJournal.Tests/        # Unit tests (NUnit, NSubstitute, Shouldly)
+PokemonBattleJournal.IntegrationTests/  # SQLite integration tests (real DB file per test)
 PokemonBattleJournal.UITests/
-  UITests.Windows/             # Appium Windows UI tests
-  UITests.Android/             # Appium Android UI tests
-  UITests.Shared/              # Shared test logic
-PokemonBattleJournal.Benchmarks/
-PokemonBattleJournal/docs/     # AI-CONTEXT.md, memory/, coverage-report/
+  UITests.Windows/                 # Appium Windows UI tests
+  UITests.Android/                 # Appium Android UI tests
+  UITests.Shared/                  # Shared test logic
+PokemonBattleJournal/docs/         # AI-CONTEXT.md, ROADMAP.md, memory/, coverage-report/
 ```
 
 ---

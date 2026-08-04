@@ -134,6 +134,11 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             Margin = new Thickness(0, 0, 0, 4),
             AutomationId = "ArchetypeSearchBar",
         };
+        // NOTE: Do NOT call SemanticProperties.SetDescription on this SearchBar.
+        // On Android inside a CommunityToolkit Popup, that call causes the entire popup
+        // to fail to render (verified 2026-08-04 — DUMP showed no popup elements in tree
+        // after PlayerArchetype.Click when Description was set). AutomationId alone maps
+        // to resource-id reliably here.
         searchBar.TextChanged += (s, e) =>
         {
             string query = e.NewTextValue?.Trim() ?? string.Empty;
@@ -152,6 +157,9 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             BackgroundColor = accentColor.MultiplyAlpha(0.2f),
             Margin = new Thickness(0, 5, 0, 8)
         };
+        // Do not set SemanticProperties.Description here either — even though Button is a
+        // simpler widget than SearchBar, the safer path is to leave popup element accessibility
+        // to AutomationId (resource-id) only. See searchBar comment above.
         closeButton.Clicked += async (s, e) =>
         {
             if (closing) return;

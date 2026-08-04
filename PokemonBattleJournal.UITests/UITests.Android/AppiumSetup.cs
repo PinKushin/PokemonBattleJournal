@@ -59,8 +59,12 @@ namespace UITests
             step3Timer.Stop();
             Log($"3. StartAppiumLocalServer done ({step3Timer.ElapsedMilliseconds}ms)");
 
-            bool useInstalled = !string.IsNullOrEmpty(
-                Environment.GetEnvironmentVariable("ANDROID_USE_INSTALLED"));
+            // Default = true (safe path: force-stop + wipe .db3 only) so local Test Explorer
+            // runs work without any env setup — the VS-deployed Fast Deployment overrides
+            // survive the run. CI opts into the full rebuild + pm clear path by setting
+            // ANDROID_USE_INSTALLED=0 in ui-tests-android.yml.
+            bool useInstalled =
+                Environment.GetEnvironmentVariable("ANDROID_USE_INSTALLED") != "0";
 
             AppiumOptions androidOptions = new()
             {
@@ -142,6 +146,25 @@ if (useInstalled)
         public void RunAfterAllTests()
         {
             var cleanupTimer = System.Diagnostics.Stopwatch.StartNew();
+
+            // Pull the in-app ComboBoxControl popup lifecycle log before force-stopping.
+            // App writes to FileSystem.CacheDirectory; use run-as to read from app-private
+            // cache dir. Empty output = OnTapped never fired (popup click not registering).
+            Log("Tearing down: Pull combobox_popup.log");
+            try
+            {
+                string destPath = Path.Combine(Path.GetTempPath(), "UITests.PopupLog.txt");
+                if (File.Exists(destPath)) File.Delete(destPath);
+                string cat = RunAdb($"shell run-as {AppPackage} cat /data/data/{AppPackage}/cache/combobox_popup.log", timeoutMs: 5_000);
+                if (!string.IsNullOrWhiteSpace(cat))
+                {
+                    File.WriteAllText(destPath, cat);
+                    Log($"Tearing down: Pulled combobox_popup.log ({cat.Length} chars) → {destPath}");
+                }
+                else Log("Tearing down: combobox_popup.log empty or missing on device");
+            }
+            catch (Exception ex) { Log($"Tearing down: pull popup log failed: {ex.GetType().Name}: {ex.Message}"); }
+
             Log("Tearing down: Force-stop app");
             var stopAppTimer = System.Diagnostics.Stopwatch.StartNew();
             RunAdb($"shell am force-stop {AppPackage}", timeoutMs: 5_000);

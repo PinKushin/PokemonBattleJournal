@@ -104,6 +104,21 @@ namespace UITests
             throw new PlatformNotSupportedException("SelectWindowsPickerItem is Windows-only.");
 
         /// <summary>
+        /// Android-only escape hatch: fires the Android BACK keyevent via adb to dismiss
+        /// a popup/dialog when the in-app Cancel button is unreachable. No-op on Windows.
+        /// </summary>
+        protected virtual void SendAndroidBack() { }
+
+        /// <summary>
+        /// Diagnostic: dumps every visible element's resource-id / content-desc / className / text
+        /// to PerfLog with the given context label. Android BaseTest implements this; other
+        /// platforms are no-op. Use inside a catch block or after an unexpected failure to see
+        /// what IS in the UIA tree so you can tell whether the id is wrong, the wrong window is
+        /// active, or the popup is already gone.
+        /// </summary>
+        protected virtual void DumpVisibleElements(string context, int maxItems = 40) { }
+
+        /// <summary>
         /// Polls via platform-aware single-shot lookup until the element shows <paramref name="expected"/> text
         /// or <paramref name="timeoutMs"/> elapses. Uses a 200ms implicit wait per iteration.
         /// Safer than WebDriverWait + MobileBy.AccessibilityId, which maps to content-desc on Android

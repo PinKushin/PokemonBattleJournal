@@ -32,14 +32,17 @@ dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
 # Single unit test
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --filter "FullyQualifiedName~MethodName"
 
+# Integration tests (real SQLite, temp DB file per test)
+dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj
+
 # Windows UI tests (WinAppDriver + Appium — app auto-built and launched)
 dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
 
-# Android UI tests (requires pixel_7_-_api_35 AVD; emulator booted automatically)
+# Android UI tests (requires pixel_7_-_api_35 AVD; emulator booted automatically).
+# Default assumes the app is already deployed (VS Fast Deployment) — safe path:
+# force-stop + delete .db3 only. Set ANDROID_USE_INSTALLED=0 (CI does) to force
+# full EmbedAssembliesIntoApk build + adb install + pm clear.
 dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
-
-# Benchmarks (Release only)
-.\PokemonBattleJournal.Benchmarks\Run.ps1
 
 # Kill orphaned app after failed Appium run
 Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
@@ -99,11 +102,13 @@ In this project:
 - **UI tests (Appium):** every Shell page needs navigation + element-visible test; every data page needs a data-presence assertion test (not just "element exists")
 - `SeedTestData()` runs in `AppiumSetup` constructor: handles first-boot trainer prompt, selects "Other" for both PlayerArchetype and RivalArchetype via `ArchetypeItem_Other` AutomationId, then saves 3 Win matches. `SaveMatchAsync` clears the form on success so no navigation needed between seed iterations.
 - Seed failures throw `InvalidOperationException` — never swallowed silently
-- Windows UI tests: `WipeAppData()` deletes DB + preferences before each run so first-boot prompt always fires on a clean slate
+- Windows UI tests: `WipeAppData()` deletes the SQLite DB before each run so first-boot prompt always fires on a clean slate (all state lives in the `.db3` — the Preferences API is not used)
+- Android taps can silently miss MAUI gesture handlers — any tap-driven interaction needs the click-verify-retry pattern (see `docs/memory/feedback_android_flaky_tap_retry.md`)
+- Diagnostic logs after UI test runs: `%TEMP%\UITests.PerfLog.txt` (per-element FIND stage timing, rotates `.1`/`.2`), `%TEMP%\UITests.NavLog.txt` (navigation), `%TEMP%\UITests.Android.setup.log` (AppiumSetup steps), `%TEMP%\UITests.PopupLog.txt` (in-app ComboBox popup lifecycle, pulled via adb at teardown)
 
 ## Platform notes
 
 - Windows: unpackaged (`WindowsPackageType=None`); debug exe at `bin\Debug\net10.0-windows10.0.19041.0\win10-x64\PokemonBattleJournal.exe`
-- Android UI tests: AVD `pixel_7_-_api_35`; `EnsureEmulatorRunning()` verifies correct AVD by name via `adb emu avd name`, boots it if absent, then uninstalls previous APK to clear signing conflicts
+- Android UI tests: AVD `pixel_7_-_api_35`; `EnsureEmulatorRunning()` verifies correct AVD by name via `adb emu avd name` and boots it if absent
+- Android local workflow: deploy once from VS (Fast Deployment), then rerun tests freely — never `pm clear` a VS-deployed app (wipes `.__override__/`, crashes on launch)
 - Android Release: `RunAOTCompilation=False`, `PublishTrimmed=False`
-- Benchmarks fail under Debug; always use Release + `Run.ps1`

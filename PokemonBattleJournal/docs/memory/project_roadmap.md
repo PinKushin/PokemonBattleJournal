@@ -48,6 +48,21 @@ Implementation plan (TDD):
 4. OptionsPage: "Import" button (`FilePicker.PickAsync` → JSON file) + "Export" button (`FileSaver.SaveAsync`)
 5. Both services injected via DI; no SQL in the services directly
 
+### Export — two modes
+
+**TrainerHill export (per-trainer):**
+- Output same JSON shape as the import format above (single trainer's matches only)
+- TrainerHill has no multi-profile support — it stores everything in browser cookies per account — so export is always scoped to one trainer
+- OptionsPage: "Export to TrainerHill format" exports the *active* trainer's matches
+- Filename suggestion: `trainerhill-battle-log-{TrainerName}-{date}.json`
+
+**Full backup export:**
+- User chooses: all trainers or a single trainer
+- JSON envelope wraps multiple trainer exports: `{ "trainers": [ { "name": "...", "matches": [...] } ] }`
+- OptionsPage: "Export backup" with a picker or radio for "All trainers" vs "Active trainer only"
+- Filename suggestion: `pbj-backup-{date}.json` or `pbj-backup-{TrainerName}-{date}.json`
+- Backup format should be importable back in as a restore (import service reads both flat array and backup envelope)
+
 ## Deck Maker
 
 Build and store deck lists tied to archetypes. Goals:
@@ -100,6 +115,20 @@ See [[project_combobox_cancel_hang]] for investigation notes.
 
 ---
 
+## Website Refresh (feat/site-refresh — separate branch, later)
+
+`index.html` at repo root (GitHub Pages via static.yml). Current AI-built lander is solid; refinements in priority order:
+
+1. ~~**Legal disclaimer**~~ — **Done 2026-08-04.** Footer disclaimer added to index.html: unofficial fan-made tool, not affiliated with Nintendo/The Pokémon Company/Game Freak/Creatures Inc., trademarks acknowledged.
+2. **App screenshots section** — feature tour with real UI captures (charts, journal, main page). Biggest visual impact.
+3. **Auto-updating stats** — replace hardcoded "505 COMMITS" / "530+ TESTS" / fake ticker meta shares with shields.io badges or drop numbers.
+4. **Ticker honesty** — remove "UTC // LIVE" claim or make decorative-obvious; data is static.
+5. **Download section** — add Releases download buttons once the installer ships (pairs with Real Installer roadmap item).
+6. **Verify hero-bg asset** — `.hero-bg` image must resolve on Pages; broken bg fails silently at 40% opacity.
+7. **Accessibility pass** — skip-link, focus states on nav, contrast check on 9px `--muted` mono text (likely fails WCAG).
+
+---
+
 ## Deck Comparer
 
 Compare two deck lists side-by-side:
@@ -108,3 +137,102 @@ Compare two deck lists side-by-side:
 - Useful for tracking meta evolution between tournament seasons
 
 Likely a sub-view of DeckPage rather than its own Shell page.
+
+---
+
+## AOT Compatibility (long-term)
+
+Make the whole app AOT-compatible so Release builds run through NativeAOT / full Mono AOT — faster startup, smaller runtime footprint, and (on Android) `pm clear` becomes safe because assemblies live in the APK instead of `.__override__/`, unblocking cleaner test isolation.
+
+**Current state:** Android Release explicitly sets `RunAOTCompilation=False` + `PublishTrimmed=False` (see CLAUDE.md) because deps aren't ready. Fast Deployment (Debug) uses Mono JIT + external assemblies.
+
+**Blockers per dep:**
+- **SQLite-net-pcl** — heavy runtime reflection on table mapping. Swap for source-generator variant, or migrate to EF Core 9 with compiled model.
+- **CommunityToolkit.Mvvm** — already AOT-safe via source generators. ✓
+- **CommunityToolkit.Maui popups** — reflection in `ShowPopupAsync<T>`; audit for trim warnings.
+- **LiveCharts2** — reflection-heavy property binding; check trim/AOT support.
+- **MAUI XAML bindings** — every `Binding` needs `x:DataType` (compiled bindings). Runtime bindings crash under AOT. Do an audit pass and fill in `x:DataType` everywhere.
+
+**Enablement steps:**
+1. Set `<IsAotCompatible>true</IsAotCompatible>` + `<TrimMode>full</TrimMode>` in csproj (Release).
+2. `dotnet publish -c Release -f net10.0-android /p:PublishAot=true` (later: iOS too).
+3. Fix every IL2026 / IL3050 warning by adding `[DynamicallyAccessedMembers]` where reflection is unavoidable, or refactor to source generators.
+4. Verify all UI tests still pass on the AOT build.
+
+Once AOT is on for Android, delete the "pm clear vs Fast Deployment" workaround memory — the whole class of bug disappears.
+
+---
+
+## Real Installer (Windows/Android)
+
+Right now Windows deploys as an unpackaged .exe (`WindowsPackageType=None`) and Android deploys through VS Fast Deployment for dev. Ship a real installer for released builds:
+
+- **Windows** — MSIX package with Start Menu entry, uninstaller, auto-update; or WiX MSI. Improves startup because the CLR loads from a fixed install path (no per-user reprovisioning) and Windows can prefetch. Also gives file associations for `.trainerhill.json` imports.
+- **Android** — signed release APK/AAB via Play Store or F-Droid. AAB with dynamic delivery is smaller and installs faster on device than a monolithic APK.
+- **macOS/iOS** — future, once MAUI targets are enabled again.
+
+Bundling with AOT + an installer is the combo: no Fast Deployment paths on user machines, no assembly resolution overhead, clean uninstall, real update channel.
+
+---
+
+## Loading Gates + Optional Loading Indicator
+
+**The backend gate matters more than any visual.** Confirmed 2026-08-04: Android UIA
+server waits ~20 s per element lookup when the UI thread is busy on async render —
+regardless of how much data is on screen (dropping ReadJournal seed from 14 → 4
+matches did nothing). A named `IsBusy_*` flag that flips fast is what unblocks UI
+tests; the animated indicator is user polish on top.
+
+### Named busy tokens (primary design)
+
+Every async load declares a scoped `IsBusy_*` bool property on its VM, not a single
+page-wide flag. Multiple concurrent loads each own their own gate so tests can wait
+for the specific data they care about:
+
+```csharp
+public partial bool IsBusy_ChartData { get; set; }
+public partial bool IsBusy_MatchHistory { get; set; }
+public partial bool IsBusy_ArchetypeList { get; set; }
+```
+
+Each async op wraps in try/finally so the flag always clears:
+
+```csharp
+try { IsBusy_ChartData = true; await LoadChartsAsync(); }
+finally { IsBusy_ChartData = false; }
+```
+
+Each bool binds to a hidden **1×1 Label** in XAML with a stable AutomationId:
+
+```xml
+<Label WidthRequest="1" HeightRequest="1" Opacity="0"
+       AutomationId="Busy_ChartData"
+       IsVisible="{Binding IsBusy_ChartData}" />
+```
+
+Tests then `WaitUntilGone("Busy_ChartData")` before element lookups. No arbitrary
+sleeps. UIA server sees the flag flip to hidden the moment the load completes.
+
+Global `IsAnyBusy` computed from the set (any bool true) drives the optional
+visible spinner. Registry / dict of tokens is overkill until dozens of concurrent
+loads coexist — start with per-property.
+
+### Where the gates go
+
+- **TrainerPage** — `IsBusy_ChartData` around chart calc pipeline
+- **ReadJournalPage** — `IsBusy_MatchHistory` around match list + detail load
+- **MainPage** — `IsBusy_ArchetypeList` around Limitless fetch on first popup open
+- **OptionsPage** — `IsBusy_ArchetypeList` shared with MainPage
+
+### Optional visual indicator
+
+Once the gates ship, layer on a user-facing indicator:
+- ActivityIndicator or Lottie animated icon (PokéBall spinning fits theme)
+- Bind IsVisible to `IsAnyBusy` for full-page overlay, or specific `IsBusy_*` for inline
+- Respect `AccessibilitySettings.IsReduceMotionEnabled` — swap animation for static "Loading…" label
+- Overlay uses semi-transparent scrim over content; inline uses a small spinner in the section
+
+### TDD
+
+- Write a failing test that opens TrainerPage, asserts `Busy_ChartData` is visible, then waits for it to disappear within 5 s and asserts chart elements are present. Then wire the gate to make it pass.
+- Repeat per gate.
