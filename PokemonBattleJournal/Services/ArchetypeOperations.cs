@@ -71,6 +71,7 @@ namespace PokemonBattleJournal.Services
                         new() { Name = "Raging Bolt", ImagePath = "raging_bolt.png" },
                         new() { Name = "Gardevoir", ImagePath = "gardevoir.png" },
                         new() { Name = "Miraidon", ImagePath = "miraidon.png" },
+                        new() { Name = "Dragapult ex / Dusknoir", ImagePath = "dragapult.png", ImagePath2 = "dusknoir.png" },
                         new() { Name = "Other", ImagePath = "substitute.png" }
                     });
                 }
@@ -78,6 +79,14 @@ namespace PokemonBattleJournal.Services
                 await db.ExecuteAsync(
                     "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
                     "Other", "substitute.png");
+                // Always ensure at least one dual-icon archetype exists for UI test coverage
+                // and as an offline fallback when Limitless doesn't return this deck.
+                await db.ExecuteAsync(
+                    "INSERT OR IGNORE INTO Archetype (Name, ImagePath, ImagePath2) VALUES (?, ?, ?)",
+                    "Dragapult ex / Dusknoir", "dragapult.png", "dusknoir.png");
+                await db.ExecuteAsync(
+                    "UPDATE Archetype SET ImagePath2 = ? WHERE Name = ? AND ImagePath2 IS NULL",
+                    "dusknoir.png", "Dragapult ex / Dusknoir");
                 return await db.Table<Archetype>().ToListAsync();
             }
             catch (Exception ex)

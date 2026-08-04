@@ -114,6 +114,18 @@
                     <!--#endregion-->
                 </StackLayout>
                 <!--#endregion-->
+                <!-- Dual-icon sentinels: 1×1 labels visible only when the selected archetype has a second icon.
+                     Direct page-level children so they appear in the UIA tree for test automation. -->
+                <Label
+                    AutomationId="PlayerArchetypeIcon2"
+                    HeightRequest="1"
+                    IsVisible="{Binding IsPlayerArchetype2Visible}"
+                    WidthRequest="1" />
+                <Label
+                    AutomationId="RivalArchetypeIcon2"
+                    HeightRequest="1"
+                    IsVisible="{Binding IsRivalArchetype2Visible}"
+                    WidthRequest="1" />
                 <!--#region BO3 Switch & Display-->
                 <Label AutomationId="MatchFormatHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Match Format" />
                 <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">

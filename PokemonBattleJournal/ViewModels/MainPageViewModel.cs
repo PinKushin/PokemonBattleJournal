@@ -81,7 +81,19 @@ namespace PokemonBattleJournal.ViewModels
         public partial Archetype? PlayerSelected { get; set; }
 
         [ObservableProperty]
+        public partial bool IsPlayerArchetype2Visible { get; set; }
+
+        partial void OnPlayerSelectedChanged(Archetype? value) =>
+            IsPlayerArchetype2Visible = !string.IsNullOrEmpty(value?.ImagePath2);
+
+        [ObservableProperty]
         public partial Archetype? RivalSelected { get; set; }
+
+        [ObservableProperty]
+        public partial bool IsRivalArchetype2Visible { get; set; }
+
+        partial void OnRivalSelectedChanged(Archetype? value) =>
+            IsRivalArchetype2Visible = !string.IsNullOrEmpty(value?.ImagePath2);
 
         [ObservableProperty]
         public partial string? UserNoteInput { get; set; }
