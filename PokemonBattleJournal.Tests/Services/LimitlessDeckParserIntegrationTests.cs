@@ -1,4 +1,3 @@
-using PokemonBattleJournal.Scraper.Models;
 using PokemonBattleJournal.Scraper.Services;
 using System.Reflection;
 

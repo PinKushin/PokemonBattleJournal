@@ -41,13 +41,21 @@ namespace PokemonBattleJournal.Services
                     foreach (MetaDeck deck in metaDecks)
                     {
                         string imagePath = TryResolveLocalSprite(deck.Name, deck.ImageUrl);
+                        string? imagePath2 = deck.SecondaryImageUrl != null
+                            ? TryResolveLocalSprite(deck.Name, deck.SecondaryImageUrl)
+                            : null;
                         await db.ExecuteAsync(
-                            "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
-                            deck.Name, imagePath);
-                        // Fix existing rows that still reference CDN URLs
+                            "INSERT OR IGNORE INTO Archetype (Name, ImagePath, ImagePath2) VALUES (?, ?, ?)",
+                            deck.Name, imagePath, imagePath2);
+                        // Fix existing rows with CDN ImagePath or substitute.png placeholder (e.g. from TrainerHill import)
                         await db.ExecuteAsync(
-                            "UPDATE Archetype SET ImagePath = ? WHERE Name = ? AND ImagePath LIKE 'http%'",
+                            "UPDATE Archetype SET ImagePath = ? WHERE Name = ? AND (ImagePath LIKE 'http%' OR ImagePath = 'substitute.png')",
                             imagePath, deck.Name);
+                        // Backfill ImagePath2 for rows that don't have it yet
+                        if (imagePath2 != null)
+                            await db.ExecuteAsync(
+                                "UPDATE Archetype SET ImagePath2 = ? WHERE Name = ? AND ImagePath2 IS NULL",
+                                imagePath2, deck.Name);
                     }
 #pragma warning restore S3267
                 }
@@ -63,6 +71,7 @@ namespace PokemonBattleJournal.Services
                         new() { Name = "Raging Bolt", ImagePath = "raging_bolt.png" },
                         new() { Name = "Gardevoir", ImagePath = "gardevoir.png" },
                         new() { Name = "Miraidon", ImagePath = "miraidon.png" },
+                        new() { Name = "Dragapult ex / Dusknoir", ImagePath = "dragapult.png", ImagePath2 = "dusknoir.png" },
                         new() { Name = "Other", ImagePath = "substitute.png" }
                     });
                 }
@@ -70,6 +79,14 @@ namespace PokemonBattleJournal.Services
                 await db.ExecuteAsync(
                     "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
                     "Other", "substitute.png");
+                // Always ensure at least one dual-icon archetype exists for UI test coverage
+                // and as an offline fallback when Limitless doesn't return this deck.
+                await db.ExecuteAsync(
+                    "INSERT OR IGNORE INTO Archetype (Name, ImagePath, ImagePath2) VALUES (?, ?, ?)",
+                    "Dragapult ex / Dusknoir", "dragapult.png", "dusknoir.png");
+                await db.ExecuteAsync(
+                    "UPDATE Archetype SET ImagePath2 = ? WHERE Name = ? AND ImagePath2 IS NULL",
+                    "dusknoir.png", "Dragapult ex / Dusknoir");
                 return await db.Table<Archetype>().ToListAsync();
             }
             catch (Exception ex)
@@ -113,7 +130,7 @@ namespace PokemonBattleJournal.Services
         /// <summary>
         /// Saves an archetype to the database.
         /// </summary>
-        public async Task<int> SaveAsync(string name, string imgPath, uint trainerId)
+        public async Task<int> SaveAsync(string name, string imgPath, uint trainerId, string? imgPath2 = null)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -136,6 +153,7 @@ namespace PokemonBattleJournal.Services
             {
                 Name = name,
                 ImagePath = imgPath,
+                ImagePath2 = imgPath2,
                 TrainerId = trainerId
             };
 
@@ -178,13 +196,9 @@ namespace PokemonBattleJournal.Services
 
         private static string TryResolveLocalSprite(string deckName, string imageUrl = "")
         {
-            if (!string.IsNullOrWhiteSpace(imageUrl) &&
-                Uri.TryCreate(imageUrl, UriKind.Absolute, out Uri? uri))
-            {
-                string file = Path.GetFileName(uri.AbsolutePath);
-                if (!string.IsNullOrEmpty(file))
-                    return file.Replace('-', '_');
-            }
+            string? fromUrl = SpriteResolver.FromUrl(imageUrl);
+            if (fromUrl != null)
+                return fromUrl;
 
             // Name-based fallback: take first Pokemon in multi-Pokemon names
             string name = deckName.Split(['&', '/'], StringSplitOptions.None)[0].Trim();

@@ -397,6 +397,39 @@ namespace UITests
         }
 
         [Test]
+        public void MainPage_PlayerArchetype_DualIconDeck_ShowsBothIcons()
+        {
+            ScrollPageToTop();
+            FindUIElement("PlayerArchetype").Click();
+            try
+            {
+                FindUIElement("ArchetypeItem_Dragapult ex / Dusknoir").Click();
+                WaitUntilGone("ArchetypeItem_Dragapult ex / Dusknoir");
+            }
+            finally { TryClickIfPresent("ArchetypePopupCancel"); }
+
+            // Second icon should now be visible in the PlayerArchetype picker
+            FindUIElement("PlayerArchetypeIcon2").ShouldNotBeNull();
+
+            // Rival archetype still shows single-icon (Other/substitute) — second icon not visible
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
+            {
+                App.FindElements(MobileBy.AccessibilityId("RivalArchetypeIcon2")).Count.ShouldBe(0,
+                    "Rival second icon should be hidden when a single-icon archetype is selected");
+            }
+            finally
+            {
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+                // Reset PlayerArchetype back to Other so match-save tests stay clean
+                ScrollPageToTop();
+                FindUIElement("PlayerArchetype").Click();
+                try { FindUIElement("ArchetypeItem_Other").Click(); }
+                finally { TryClickIfPresent("ArchetypePopupCancel"); }
+            }
+        }
+
+        [Test]
         public void MainPage_ArchetypePicker_Search_FiltersResults()
         {
             ScrollPageToTop();

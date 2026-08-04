@@ -10,6 +10,7 @@ namespace PokemonBattleJournal.Models
         [Unique]
         public string Name { get; set; } = string.Empty;
         public string? ImagePath { get; set; }
+        public string? ImagePath2 { get; set; }
 
         [ForeignKey(typeof(Trainer)), Indexed]
         public uint TrainerId { get; set; }

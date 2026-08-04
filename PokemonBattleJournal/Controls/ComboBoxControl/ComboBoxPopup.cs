@@ -17,7 +17,8 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
         Color backgroundColor,
         Color accentColor,
         double popupWidth,
-        double itemHeight)
+        double itemHeight,
+        string imageMemberPath2 = "")
     {
         BackgroundColor = Colors.Transparent;
         var closing = false;
@@ -44,10 +45,31 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
                 Aspect = Aspect.AspectFit,
                 VerticalOptions = LayoutOptions.Center,
                 HorizontalOptions = LayoutOptions.Start,
-                Margin = new Thickness(10, 0, 10, 0)
+                Margin = new Thickness(10, 0, 4, 0)
             };
             image.SetBinding(Image.SourceProperty, new Binding(imageMemberPath));
             image.SetBinding(SemanticProperties.DescriptionProperty, new Binding(displayMemberPath, stringFormat: "{0} icon"));
+
+            var image2 = new Image
+            {
+                HeightRequest = 26,
+                WidthRequest = 26,
+                Aspect = Aspect.AspectFit,
+                VerticalOptions = LayoutOptions.Center,
+                HorizontalOptions = LayoutOptions.Start,
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            bool hasSecondIcon = !string.IsNullOrEmpty(imageMemberPath2);
+            if (hasSecondIcon)
+            {
+                image2.SetBinding(Image.SourceProperty, new Binding(imageMemberPath2));
+                image2.SetBinding(VisualElement.IsVisibleProperty,
+                    new Binding(imageMemberPath2, converter: StringNotEmptyConverter.Instance));
+            }
+            else
+            {
+                image2.IsVisible = false;
+            }
 
             var label = new Label
             {
@@ -56,7 +78,6 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
                 TextColor = accentColor
             };
             label.SetBinding(Label.TextProperty, new Binding(displayMemberPath));
-            Grid.SetColumn(label, 1);
 
             var tap = new TapGestureRecognizer();
             tap.Tapped += async (s, e) =>
@@ -67,6 +88,13 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
                     await CloseAsync(new PickerResult(item));
             };
 
+            var iconStack = new HorizontalStackLayout
+            {
+                Spacing = 0,
+                VerticalOptions = LayoutOptions.Center,
+                Children = { image, image2 }
+            };
+
             var grid = new Grid
             {
                 ColumnDefinitions =
@@ -74,10 +102,11 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
                     new ColumnDefinition(GridLength.Auto),
                     new ColumnDefinition(GridLength.Star)
                 ],
-                Children = { image, label },
+                Children = { iconStack, label },
                 HeightRequest = itemHeight,
                 BackgroundColor = backgroundColor
             };
+            Grid.SetColumn(label, 1);
             grid.SetBinding(AutomationIdProperty, new Binding(displayMemberPath, stringFormat: "ArchetypeItem_{0}"));
             grid.SetBinding(SemanticProperties.HintProperty, new Binding(displayMemberPath, stringFormat: "Double tap to select {0}"));
             grid.GestureRecognizers.Add(tap);

@@ -1,6 +1,5 @@
-﻿#pragma warning disable IDE0058 // Expression value is never used
+#pragma warning disable IDE0058 // Expression value is never used
 using PokemonBattleJournal.Interfaces;
-using SQLite;
 
 namespace PokemonBattleJournal.Tests.ViewModels
 {

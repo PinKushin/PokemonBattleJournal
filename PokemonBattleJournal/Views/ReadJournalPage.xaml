@@ -38,12 +38,19 @@
                     <!--  Matchup header  -->
                     <HorizontalStackLayout
                         HorizontalOptions="Center"
-                        Spacing="8">
+                        Spacing="4">
                         <Image
                             AutomationId="PlayingIcon"
                             SemanticProperties.Description="Your deck icon"
                             HeightRequest="48"
                             Source="{Binding PlayingIconSource}"
+                            WidthRequest="48" />
+                        <Image
+                            AutomationId="PlayingIcon2"
+                            SemanticProperties.Description="Your deck second icon"
+                            HeightRequest="48"
+                            IsVisible="{Binding HasPlayingIcon2}"
+                            Source="{Binding PlayingIconSource2}"
                             WidthRequest="48" />
                         <Label
                             FontFamily="SairaRegular"
@@ -72,6 +79,13 @@
                             SemanticProperties.Description="Opponent deck icon"
                             HeightRequest="48"
                             Source="{Binding AgainstIconSource}"
+                            WidthRequest="48" />
+                        <Image
+                            AutomationId="AgainstIcon2"
+                            SemanticProperties.Description="Opponent deck second icon"
+                            HeightRequest="48"
+                            IsVisible="{Binding HasAgainstIcon2}"
+                            Source="{Binding AgainstIconSource2}"
                             WidthRequest="48" />
                     </HorizontalStackLayout>
 

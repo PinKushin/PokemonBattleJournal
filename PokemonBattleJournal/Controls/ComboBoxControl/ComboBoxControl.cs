@@ -14,6 +14,8 @@ public class ComboBoxControl : ContentView
     private readonly Border _border;
     private readonly Label _selectedLabel;
     private readonly Image _selectedIcon;
+    private readonly Image _selectedIcon2;
+    private readonly Border _icon2Wrapper;
     private readonly Label _arrowLabel;
     private readonly Label _placeholderLabel;
 #pragma warning restore S1450
@@ -30,6 +32,9 @@ public class ComboBoxControl : ContentView
 
     public static readonly BindableProperty ImageMemberPathProperty =
         BindableProperty.Create(nameof(ImageMemberPath), typeof(string), typeof(ComboBoxControl), "ImagePath");
+
+    public static readonly BindableProperty ImageMemberPath2Property =
+        BindableProperty.Create(nameof(ImageMemberPath2), typeof(string), typeof(ComboBoxControl), "ImagePath2");
 
     public static readonly BindableProperty PlaceholderProperty =
         BindableProperty.Create(nameof(Placeholder), typeof(string), typeof(ComboBoxControl), "Select...");
@@ -61,7 +66,7 @@ public class ComboBoxControl : ContentView
     public static readonly BindableProperty PopupWidthProperty =
         BindableProperty.Create(nameof(PopupWidth), typeof(double), typeof(ComboBoxControl), 200.0);
 
-    public IEnumerable? ItemsSource
+public IEnumerable? ItemsSource
     {
         get => (IEnumerable?)GetValue(ItemsSourceProperty);
         set => SetValue(ItemsSourceProperty, value);
@@ -83,6 +88,12 @@ public class ComboBoxControl : ContentView
     {
         get => (string)GetValue(ImageMemberPathProperty);
         set => SetValue(ImageMemberPathProperty, value);
+    }
+
+    public string ImageMemberPath2
+    {
+        get => (string)GetValue(ImageMemberPath2Property);
+        set => SetValue(ImageMemberPath2Property, value);
     }
 
     public string Placeholder
@@ -174,10 +185,27 @@ public class ComboBoxControl : ContentView
             WidthRequest = 28,
             HeightRequest = 28,
             VerticalOptions = LayoutOptions.Center,
-            HorizontalOptions = LayoutOptions.Start,
             Aspect = Aspect.AspectFit,
             IsVisible = false
         };
+
+        _selectedIcon2 = new Image
+        {
+            WidthRequest = 28,
+            HeightRequest = 28,
+            VerticalOptions = LayoutOptions.Center,
+            Aspect = Aspect.AspectFit,
+        };
+
+        _icon2Wrapper = new Border
+        {
+            Padding = 0,
+            StrokeThickness = 0,
+            BackgroundColor = Colors.Transparent,
+            Content = _selectedIcon2,
+            IsVisible = false,
+        };
+        Microsoft.Maui.Controls.SemanticProperties.SetDescription(_icon2Wrapper, "Second deck icon");
 
         _arrowLabel = new Label
         {
@@ -191,15 +219,15 @@ public class ComboBoxControl : ContentView
 
         var iconAndText = new HorizontalStackLayout
         {
-            Spacing = 8,
+            Spacing = 4,
             VerticalOptions = LayoutOptions.Center,
             HorizontalOptions = LayoutOptions.Start,
-            Children = { _selectedIcon, _selectedLabel, _placeholderLabel }
+            Children = { _selectedIcon, _icon2Wrapper, _selectedLabel, _placeholderLabel }
         };
 
         var contentLayout = new Grid
         {
-            Padding = new Thickness(12, 4),
+            Padding = new Thickness(12, 4, 20, 4),
             ColumnDefinitions =
             [
                 new ColumnDefinition(GridLength.Star),
@@ -246,16 +274,21 @@ public class ComboBoxControl : ContentView
         {
             _placeholderLabel.IsVisible = false;
             _selectedLabel.IsVisible = true;
-            var name = SelectedItem.GetType().GetProperty(DisplayMemberPath)?.GetValue(SelectedItem)?.ToString() ?? "";
-            var imagePath = SelectedItem.GetType().GetProperty(ImageMemberPath)?.GetValue(SelectedItem)?.ToString();
+            var type = SelectedItem.GetType();
+            var name = type.GetProperty(DisplayMemberPath)?.GetValue(SelectedItem)?.ToString() ?? "";
+            var imagePath = type.GetProperty(ImageMemberPath)?.GetValue(SelectedItem)?.ToString();
+            var imagePath2 = type.GetProperty(ImageMemberPath2)?.GetValue(SelectedItem)?.ToString();
             _selectedLabel.Text = name;
             _selectedIcon.Source = imagePath;
+            _selectedIcon2.Source = imagePath2;
+            _icon2Wrapper.IsVisible = !string.IsNullOrEmpty(imagePath2);
         }
         else
         {
             _placeholderLabel.IsVisible = true;
             _selectedLabel.IsVisible = false;
             _selectedIcon.Source = "ball_icon.png";
+            _icon2Wrapper.IsVisible = false;
         }
     }
 
@@ -270,7 +303,8 @@ public class ComboBoxControl : ContentView
             PopupBackgroundColor,
             PopupAccentColor,
             PopupWidth,
-            ItemHeight);
+            ItemHeight,
+            ImageMemberPath2);
 
         var popupResult = await Shell.Current.CurrentPage.ShowPopupAsync<ComboBoxPopup.PickerResult?>(popup, new PopupOptions
         {

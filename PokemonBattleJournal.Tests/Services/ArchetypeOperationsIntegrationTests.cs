@@ -1,4 +1,3 @@
-using SQLite;
 
 namespace PokemonBattleJournal.Tests.Services
 {
@@ -98,6 +97,43 @@ namespace PokemonBattleJournal.Tests.Services
         }
 
         [Test]
+        public async Task GetAllAsync_OgerponBox_ResolvesToTealMaskSprite()
+        {
+            var metaService = Substitute.For<ILimitlessMetaService>();
+            metaService.GetTopDecksAsync(Arg.Any<int>())
+                .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
+                {
+                    new("Ogerpon Box", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png"),
+                }));
+            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+
+            List<Archetype> archetypes = await sut.GetAllAsync();
+
+            Archetype? saved = archetypes.FirstOrDefault(a => a.Name == "Ogerpon Box");
+            saved.ShouldNotBeNull();
+            saved!.ImagePath.ShouldBe("ogerpon_teal_mask.png");
+        }
+
+        [Test]
+        public async Task GetAllAsync_OgerponWellspring_ResolvesToWellspringMaskSprite()
+        {
+            var metaService = Substitute.For<ILimitlessMetaService>();
+            metaService.GetTopDecksAsync(Arg.Any<int>())
+                .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
+                {
+                    new("Ogerpon Meganium", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png",
+                        "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon-wellspring.png"),
+                }));
+            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+
+            List<Archetype> archetypes = await sut.GetAllAsync();
+
+            Archetype? saved = archetypes.FirstOrDefault(a => a.Name == "Ogerpon Meganium");
+            saved.ShouldNotBeNull();
+            saved!.ImagePath2.ShouldBe("ogerpon_wellspring_mask.png");
+        }
+
+        [Test]
         public async Task GetAllAsync_WithMetaDecks_UpsertsMetaArchetypes()
         {
             // Re-create the SUT with a metaService that returns real decks
@@ -166,6 +202,62 @@ namespace PokemonBattleJournal.Tests.Services
             // Archetype must still exist in the DB
             Archetype? still = await _sut.GetByIdAsync(archetype.Id);
             still.ShouldNotBeNull();
+        }
+
+        [Test]
+        public async Task SaveAsync_WithSecondIcon_PersistsImagePath2()
+        {
+            uint trainerId = await SeedTrainerAsync();
+
+            int affected = await _sut.SaveAsync("Charizard ex / Pidgeot ex", "charizard_ex.png", trainerId, "pidgeot_ex.png");
+
+            affected.ShouldBeGreaterThan(0);
+            List<Archetype> archetypes = await _sut.GetAllAsync();
+            Archetype? saved = archetypes.FirstOrDefault(a => a.Name == "Charizard ex / Pidgeot ex");
+            saved.ShouldNotBeNull();
+            saved!.ImagePath2.ShouldBe("pidgeot_ex.png");
+        }
+
+        [Test]
+        public async Task GetAllAsync_WithMetaDeckHavingSecondaryImage_PersistsImagePath2()
+        {
+            var metaService = Substitute.For<ILimitlessMetaService>();
+            metaService.GetTopDecksAsync(Arg.Any<int>())
+                .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
+                {
+                    new("Charizard ex / Pidgeot ex", "https://cdn.example.com/charizard_ex.png", "https://cdn.example.com/pidgeot_ex.png"),
+                }));
+            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+
+            List<Archetype> archetypes = await sut.GetAllAsync();
+
+            Archetype? saved = archetypes.FirstOrDefault(a => a.Name == "Charizard ex / Pidgeot ex");
+            saved.ShouldNotBeNull();
+            saved!.ImagePath2.ShouldBe("pidgeot_ex.png");
+        }
+
+        [Test]
+        public async Task GetAllAsync_ArchetypeCreatedByImportWithSubstitute_GetsProperSpriteFromMeta()
+        {
+            // Simulate TrainerHill import creating archetype with substitute.png placeholder
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+            await db.ExecuteAsync(
+                "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
+                "Ogerpon Box", "substitute.png");
+
+            var metaService = Substitute.For<ILimitlessMetaService>();
+            metaService.GetTopDecksAsync(Arg.Any<int>())
+                .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
+                {
+                    new("Ogerpon Box", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png"),
+                }));
+            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+
+            List<Archetype> archetypes = await sut.GetAllAsync();
+
+            Archetype? saved = archetypes.FirstOrDefault(a => a.Name == "Ogerpon Box");
+            saved.ShouldNotBeNull();
+            saved!.ImagePath.ShouldBe("ogerpon_teal_mask.png");
         }
 
         [Test]

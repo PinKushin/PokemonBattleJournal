@@ -1,5 +1,4 @@
 using System.Text.Json;
-using PokemonBattleJournal.Scraper.Models;
 using PokemonBattleJournal.Services.Import;
 
 namespace PokemonBattleJournal.Tests.Services

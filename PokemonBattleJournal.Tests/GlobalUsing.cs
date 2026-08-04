@@ -1,10 +1,12 @@
 ﻿global using Microsoft.Extensions.Logging;
 global using NSubstitute;
+global using NUnit.Framework;
 global using PokemonBattleJournal.Interfaces;
 global using PokemonBattleJournal.Models;
 global using PokemonBattleJournal.Scraper.Interfaces;
+global using PokemonBattleJournal.Scraper.Models;
 global using PokemonBattleJournal.Services;
 global using PokemonBattleJournal.Utilities;
 global using PokemonBattleJournal.ViewModels;
 global using Shouldly;
-global using NUnit.Framework;
+global using SQLite;
