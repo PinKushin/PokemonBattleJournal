@@ -309,9 +309,9 @@
                         <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="44">
                             <Label
                                 Grid.Column="0"
-                                Margin="0,4,10,0"
+                                Margin="0,0,10,0"
                                 Text="Tags:"
-                                VerticalOptions="Start" />
+                                VerticalOptions="Center" />
                             <FlexLayout
                                 x:Name="TagsView"
                                 Grid.Column="1"
@@ -324,6 +324,7 @@
                                 <BindableLayout.ItemTemplate>
                                     <DataTemplate x:DataType="viewmodel:TagViewModel">
                                         <Border
+                                            MinimumWidthRequest="140"
                                             Margin="2"
                                             Padding="8,4"
                                             BackgroundColor="{Binding IsSelected, Converter={StaticResource TagSelectedBgConverter}}"
@@ -399,9 +400,9 @@
                         <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="44">
                             <Label
                                 Grid.Column="0"
-                                Margin="0,4,10,0"
+                                Margin="0,0,10,0"
                                 Text="Tags:"
-                                VerticalOptions="Start" />
+                                VerticalOptions="Center" />
                             <FlexLayout
                                 Grid.Column="1"
                                 AutomationId="Match2Tags"
@@ -413,6 +414,7 @@
                                 <BindableLayout.ItemTemplate>
                                     <DataTemplate x:DataType="viewmodel:TagViewModel">
                                         <Border
+                                            MinimumWidthRequest="140"
                                             Margin="2"
                                             Padding="8,4"
                                             BackgroundColor="{Binding IsSelected, Converter={StaticResource TagSelectedBgConverter}}"
@@ -488,9 +490,9 @@
                         <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="44">
                             <Label
                                 Grid.Column="0"
-                                Margin="0,4,10,0"
+                                Margin="0,0,10,0"
                                 Text="Tags:"
-                                VerticalOptions="Start" />
+                                VerticalOptions="Center" />
                             <FlexLayout
                                 Grid.Column="1"
                                 AutomationId="Match3Tags"
@@ -502,6 +504,7 @@
                                 <BindableLayout.ItemTemplate>
                                     <DataTemplate x:DataType="viewmodel:TagViewModel">
                                         <Border
+                                            MinimumWidthRequest="140"
                                             Margin="2"
                                             Padding="8,4"
                                             BackgroundColor="{Binding IsSelected, Converter={StaticResource TagSelectedBgConverter}}"

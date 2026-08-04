@@ -10,3 +10,4 @@ global using PokemonBattleJournal.Utilities;
 global using PokemonBattleJournal.ViewModels;
 global using Shouldly;
 global using SQLite;
+global using System.Collections.ObjectModel;
