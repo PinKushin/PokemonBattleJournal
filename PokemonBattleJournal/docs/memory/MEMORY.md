@@ -61,3 +61,5 @@
 - [Branch proactively](feedback_branch_proactively.md) — Create a feature branch before any task that makes sense as its own PR; don't wait to be asked. Announce branch name in first response.
 - [Branch merge policy](feedback_branch_merge_policy.md) — Auto-merge to master once feature done + unit + integration + UI tests (Windows + Android) all pass locally. Never auto-PR to repos user doesn't own.
 - [ComboBox Cancel hang bug](project_combobox_cancel_hang.md) — Cancel button on MainPage archetype pickers freezes app; requires force-close; root cause unknown; needs regression UI test before fix.
+- [SQLite LINQ preference](feedback_sqlite_linq.md) — New DB queries use SQLite-net LINQ API (Table<T>().Where(...)); don't convert existing raw SQL — separate task.
+- [FlexLayout chip sizing](feedback_flexlayout_chip_sizing.md) — MinimumWidthRequest on child Border forces even row wrapping without truncating text; FlexLayout.Basis caps width and causes truncation; always set Wrap="Wrap" explicitly (default is Nowrap).
