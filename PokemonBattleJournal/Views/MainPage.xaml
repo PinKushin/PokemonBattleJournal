@@ -298,30 +298,27 @@
 
                     <!--#region Game 1 Panel-->
                     <VerticalStackLayout IsVisible="{Binding IsGame1Selected}">
-                        <CollectionView
-                            x:Name="TagsView"
-                            AutomationId="TagsView"
-                            SemanticProperties.Description="Game 1 tags"
-                            SemanticProperties.Hint="Select tags that describe game 1"
-                            CanReorderItems="True"
-                            ItemSizingStrategy="MeasureAllItems"
-                            ItemsSource="{Binding TagCollection}"
-                            MinimumHeightRequest="100"
-                            SelectedItems="{Binding TagsSelected, Mode=TwoWay}"
-                            SelectionMode="Multiple">
-                            <CollectionView.ItemsLayout>
-                                <GridItemsLayout Orientation="Horizontal" Span="2" />
-                            </CollectionView.ItemsLayout>
-                            <CollectionView.Header>
-                                <Label
-                                    Margin="0,0,10,0"
-                                    HorizontalOptions="Center"
-                                    HorizontalTextAlignment="Center"
-                                    Text="Tags:"
-                                    VerticalOptions="Center"
-                                    VerticalTextAlignment="Center" />
-                            </CollectionView.Header>
-                            <CollectionView.ItemTemplate>
+                        <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="100">
+                            <Label
+                                Grid.Column="0"
+                                Margin="0,0,10,0"
+                                Text="Tags:"
+                                VerticalOptions="Center" />
+                            <CollectionView
+                                x:Name="TagsView"
+                                Grid.Column="1"
+                                AutomationId="TagsView"
+                                SemanticProperties.Description="Game 1 tags"
+                                SemanticProperties.Hint="Select tags that describe game 1"
+                                CanReorderItems="True"
+                                ItemSizingStrategy="MeasureAllItems"
+                                ItemsSource="{Binding TagCollection}"
+                                SelectedItems="{Binding TagsSelected, Mode=TwoWay}"
+                                SelectionMode="Multiple">
+                                <CollectionView.ItemsLayout>
+                                    <GridItemsLayout Orientation="Vertical" Span="4" />
+                                </CollectionView.ItemsLayout>
+                                <CollectionView.ItemTemplate>
                                 <DataTemplate>
                                     <HorizontalStackLayout>
                                         <Label
@@ -332,6 +329,7 @@
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
                         </CollectionView>
+                        </Grid>
                         <Editor
                             AutoSize="TextChanges"
                             AutomationId="UserNoteInput"
@@ -383,29 +381,26 @@
 
                     <!--#region Game 2 Panel-->
                     <VerticalStackLayout IsVisible="{Binding IsGame2Selected}">
-                        <CollectionView
-                            AutomationId="Match2Tags"
-                            SemanticProperties.Description="Game 2 tags"
-                            SemanticProperties.Hint="Select tags that describe game 2"
-                            CanReorderItems="True"
-                            ItemSizingStrategy="MeasureAllItems"
-                            ItemsSource="{Binding TagCollection}"
-                            MinimumHeightRequest="100"
-                            SelectedItems="{Binding Match2TagsSelected, Mode=TwoWay}"
-                            SelectionMode="Multiple">
-                            <CollectionView.ItemsLayout>
-                                <GridItemsLayout Orientation="Horizontal" Span="2" />
-                            </CollectionView.ItemsLayout>
-                            <CollectionView.Header>
-                                <Label
-                                    Margin="0,0,10,0"
-                                    HorizontalOptions="Center"
-                                    HorizontalTextAlignment="Center"
-                                    Text="Tags:"
-                                    VerticalOptions="Center"
-                                    VerticalTextAlignment="Center" />
-                            </CollectionView.Header>
-                            <CollectionView.ItemTemplate>
+                        <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="100">
+                            <Label
+                                Grid.Column="0"
+                                Margin="0,0,10,0"
+                                Text="Tags:"
+                                VerticalOptions="Center" />
+                            <CollectionView
+                                Grid.Column="1"
+                                AutomationId="Match2Tags"
+                                SemanticProperties.Description="Game 2 tags"
+                                SemanticProperties.Hint="Select tags that describe game 2"
+                                CanReorderItems="True"
+                                ItemSizingStrategy="MeasureAllItems"
+                                ItemsSource="{Binding TagCollection}"
+                                SelectedItems="{Binding Match2TagsSelected, Mode=TwoWay}"
+                                SelectionMode="Multiple">
+                                <CollectionView.ItemsLayout>
+                                    <GridItemsLayout Orientation="Vertical" Span="4" />
+                                </CollectionView.ItemsLayout>
+                                <CollectionView.ItemTemplate>
                                 <DataTemplate>
                                     <HorizontalStackLayout>
                                         <Label
@@ -416,6 +411,7 @@
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
                         </CollectionView>
+                        </Grid>
                         <Editor
                             AutoSize="TextChanges"
                             AutomationId="UserNoteInput2"
@@ -467,29 +463,26 @@
 
                     <!--#region Game 3 Panel-->
                     <VerticalStackLayout IsVisible="{Binding IsGame3Selected}">
-                        <CollectionView
-                            AutomationId="Match3Tags"
-                            SemanticProperties.Description="Game 3 tags"
-                            SemanticProperties.Hint="Select tags that describe game 3"
-                            CanReorderItems="True"
-                            ItemSizingStrategy="MeasureAllItems"
-                            ItemsSource="{Binding TagCollection}"
-                            MinimumHeightRequest="100"
-                            SelectedItems="{Binding Match3TagsSelected, Mode=TwoWay}"
-                            SelectionMode="Multiple">
-                            <CollectionView.ItemsLayout>
-                                <GridItemsLayout Orientation="Horizontal" Span="2" />
-                            </CollectionView.ItemsLayout>
-                            <CollectionView.Header>
-                                <Label
-                                    Margin="0,0,10,0"
-                                    HorizontalOptions="Center"
-                                    HorizontalTextAlignment="Center"
-                                    Text="Tags:"
-                                    VerticalOptions="Center"
-                                    VerticalTextAlignment="Center" />
-                            </CollectionView.Header>
-                            <CollectionView.ItemTemplate>
+                        <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="100">
+                            <Label
+                                Grid.Column="0"
+                                Margin="0,0,10,0"
+                                Text="Tags:"
+                                VerticalOptions="Center" />
+                            <CollectionView
+                                Grid.Column="1"
+                                AutomationId="Match3Tags"
+                                SemanticProperties.Description="Game 3 tags"
+                                SemanticProperties.Hint="Select tags that describe game 3"
+                                CanReorderItems="True"
+                                ItemSizingStrategy="MeasureAllItems"
+                                ItemsSource="{Binding TagCollection}"
+                                SelectedItems="{Binding Match3TagsSelected, Mode=TwoWay}"
+                                SelectionMode="Multiple">
+                                <CollectionView.ItemsLayout>
+                                    <GridItemsLayout Orientation="Vertical" Span="4" />
+                                </CollectionView.ItemsLayout>
+                                <CollectionView.ItemTemplate>
                                 <DataTemplate>
                                     <HorizontalStackLayout>
                                         <Label
@@ -500,6 +493,7 @@
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
                         </CollectionView>
+                        </Grid>
                         <Editor
                             AutoSize="TextChanges"
                             AutomationId="UserNoteInput3"

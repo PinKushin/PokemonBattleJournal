@@ -57,3 +57,6 @@
 - [ReadJournal test toggle-collapse guard](feedback_readjournal_test_toggle.md) — NUnit alpha order: BO3Match opens row first; SelectMatch_* tests re-click and collapse it; fix: EnsureMatchDetailOpen() checks PlayingNameLabel visibility before clicking.
 - [Dual-icon archetype support](project_dual_icon_archetypes.md) — Archetype.ImagePath2 optional; MetaDeck.SecondaryImageUrl; ComboBox/ReadJournal show second icon when present; bool VM props for IsVisible; no converter in XAML.
 - [No IsNotNullConverter in XAML](feedback_no_isnot_null_converter_in_xaml.md) — IsNotNullConverter crashed OptionsPage; always use explicit bool VM property for IsVisible bindings instead.
+- [CollectionView GridItemsLayout on Windows](project_collectionview_gridlayout_windows.md) — Span mutation causes native ItemsRepeater flash; CollectionView.Header always above in Vertical mode; fix: static Span=4, label in external Grid column.
+- [Branch proactively](feedback_branch_proactively.md) — Create a feature branch before any task that makes sense as its own PR; don't wait to be asked. Announce branch name in first response.
+- [Branch merge policy](feedback_branch_merge_policy.md) — Auto-merge to master once feature done + unit + integration + UI tests (Windows + Android) all pass locally. Never auto-PR to repos user doesn't own.
