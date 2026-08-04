@@ -510,8 +510,10 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             await _viewModel.AppearingAsync();
 
-            _viewModel.TagCollection.ShouldNotBeNull();
-            _viewModel.TagCollection!.Count.ShouldBe(2);
+            _viewModel.Game1TagCollection.ShouldNotBeNull();
+            _viewModel.Game1TagCollection!.Count.ShouldBe(2);
+            _viewModel.Game2TagCollection.ShouldNotBeNull();
+            _viewModel.Game3TagCollection.ShouldNotBeNull();
         }
 
         // ---------------------------------------------------------------------------
@@ -551,7 +553,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public void HasUnsavedData_TagsSelected_ReturnsTrue()
         {
-            _viewModel.TagsSelected = [new Tags { Name = "Lucky" }];
+            var tag = new TagViewModel(new Tags { Name = "Lucky" }) { IsSelected = true };
+            _viewModel.Game1TagCollection = new ObservableCollection<TagViewModel>([tag]);
 
             _viewModel.HasUnsavedData.ShouldBeTrue();
         }
@@ -751,13 +754,15 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public void OnBO3ToggleChanged_WhenDisabling_ClearsMatch2And3TagsSelected()
         {
             _viewModel.BO3Toggle = true;
-            _viewModel.Match2TagsSelected = [new Tags { Name = "Lucky" }];
-            _viewModel.Match3TagsSelected = [new Tags { Name = "Aggro" }];
+            var t2 = new TagViewModel(new Tags { Name = "Lucky" }) { IsSelected = true };
+            var t3 = new TagViewModel(new Tags { Name = "Aggro" }) { IsSelected = true };
+            _viewModel.Game2TagCollection = new ObservableCollection<TagViewModel>([t2]);
+            _viewModel.Game3TagCollection = new ObservableCollection<TagViewModel>([t3]);
 
             _viewModel.BO3Toggle = false;
 
-            _viewModel.Match2TagsSelected.ShouldBeNull();
-            _viewModel.Match3TagsSelected.ShouldBeNull();
+            _viewModel.Game2TagCollection.ShouldAllBe(t => !t.IsSelected);
+            _viewModel.Game3TagCollection.ShouldAllBe(t => !t.IsSelected);
         }
     }
 

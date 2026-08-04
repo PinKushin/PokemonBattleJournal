@@ -16,7 +16,7 @@ namespace PokemonBattleJournal.ViewModels
             PlayerSelected != null ||
             RivalSelected != null ||
             !string.IsNullOrWhiteSpace(UserNoteInput) ||
-            TagsSelected?.Count > 0;
+            Game1TagCollection?.Any(t => t.IsSelected) == true;
 
         public MainPageViewModel(ILogger<MainPageViewModel> logger, ISqliteConnectionFactory connection, IMatchResultsCalculatorFactory calculatorFactory, ITrainerSwitchService switchService)
         {
@@ -49,9 +49,9 @@ namespace PokemonBattleJournal.ViewModels
             UserNoteInput = string.Empty;
             UserNoteInput2 = string.Empty;
             UserNoteInput3 = string.Empty;
-            TagsSelected = null;
-            Match2TagsSelected = null;
-            Match3TagsSelected = null;
+            foreach (var t in Game1TagCollection ?? []) t.IsSelected = false;
+            foreach (var t in Game2TagCollection ?? []) t.IsSelected = false;
+            foreach (var t in Game3TagCollection ?? []) t.IsSelected = false;
             Result = default;
             Result2 = default;
             Result3 = default;
@@ -140,8 +140,8 @@ namespace PokemonBattleJournal.ViewModels
             {
                 Result2 = null;
                 Result3 = null;
-                Match2TagsSelected = null;
-                Match3TagsSelected = null;
+                foreach (var t in Game2TagCollection ?? []) t.IsSelected = false;
+                foreach (var t in Game3TagCollection ?? []) t.IsSelected = false;
                 UserNoteInput2 = null;
                 UserNoteInput3 = null;
                 IsGame1Selected = true;
@@ -228,16 +228,13 @@ namespace PokemonBattleJournal.ViewModels
 
         //Tags
         [ObservableProperty]
-        public partial List<Tags>? TagCollection { get; set; }
+        public partial ObservableCollection<TagViewModel>? Game1TagCollection { get; set; }
 
         [ObservableProperty]
-        public partial IList<object>? TagsSelected { get; set; }
+        public partial ObservableCollection<TagViewModel>? Game2TagCollection { get; set; }
 
         [ObservableProperty]
-        public partial IList<object>? Match2TagsSelected { get; set; }
-
-        [ObservableProperty]
-        public partial IList<object>? Match3TagsSelected { get; set; }
+        public partial ObservableCollection<TagViewModel>? Game3TagCollection { get; set; }
 
         [ObservableProperty]
         public partial bool? IsToggled { get; set; }
@@ -294,7 +291,10 @@ namespace PokemonBattleJournal.ViewModels
                 TrainerName = _trainer?.Name ?? TrainerName;
                 WelcomeMsg = $"Welcome {TrainerName}";
                 Archetypes = await _connection.Archetypes.GetAllAsync();
-                TagCollection = await _connection.Tags.GetAllAsync();
+                var allTags = await _connection.Tags.GetAllAsync();
+                Game1TagCollection = new ObservableCollection<TagViewModel>(allTags.Select(t => new TagViewModel(t)));
+                Game2TagCollection = new ObservableCollection<TagViewModel>(allTags.Select(t => new TagViewModel(t)));
+                Game3TagCollection = new ObservableCollection<TagViewModel>(allTags.Select(t => new TagViewModel(t)));
 
             }
             catch (Exception ex)
@@ -422,11 +422,11 @@ namespace PokemonBattleJournal.ViewModels
                 Game game1 = new()
                 {
                     Result = Result,
-                    Tags = TagsSelected?.OfType<Tags>().ToList() ?? [], // Allow null to mean no tags
+                    Tags = Game1TagCollection?.Where(t => t.IsSelected).Select(t => t.Model).ToList() ?? [],
                     Turn = FirstCheck ? 1u : 2u,
                     Notes = UserNoteInput
                 };
-                _logger.LogDebug("Saving Game1 Tags: {@Tags}, from {@TagsSelect}", game1.Tags, TagsSelected);
+                _logger.LogDebug("Saving Game1 Tags: {@Tags}", game1.Tags);
                 games.Add(game1);
 
                 if (BO3Toggle)
@@ -434,7 +434,7 @@ namespace PokemonBattleJournal.ViewModels
                     Game game2 = new()
                     {
                         Result = Result2,
-                        Tags = Match2TagsSelected?.OfType<Tags>().ToList() ?? [], // Allow null to mean no tags
+                        Tags = Game2TagCollection?.Where(t => t.IsSelected).Select(t => t.Model).ToList() ?? [],
                         Turn = FirstCheck2 ? 1u : 2u,
                         Notes = UserNoteInput2
                     };
@@ -444,7 +444,7 @@ namespace PokemonBattleJournal.ViewModels
                     Game game3 = new()
                     {
                         Result = Result3,
-                        Tags = Match3TagsSelected?.OfType<Tags>().ToList() ?? [], // Allow null to mean no tags
+                        Tags = Game3TagCollection?.Where(t => t.IsSelected).Select(t => t.Model).ToList() ?? [],
                         Turn = FirstCheck3 ? 1u : 2u,
                         Notes = UserNoteInput3
                     };
