@@ -104,6 +104,37 @@ namespace UITests
             throw new PlatformNotSupportedException("SelectWindowsPickerItem is Windows-only.");
 
         /// <summary>
+        /// Polls via platform-aware single-shot lookup until the element shows <paramref name="expected"/> text
+        /// or <paramref name="timeoutMs"/> elapses. Uses a 200ms implicit wait per iteration.
+        /// Safer than WebDriverWait + MobileBy.AccessibilityId, which maps to content-desc on Android
+        /// (not AutomationId/resource-id) and silently never finds elements that only have AutomationId set.
+        /// </summary>
+        protected void WaitUntilText(string automationId, string expected, int timeoutMs = 5000)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(200);
+            try
+            {
+                while (DateTime.UtcNow < deadline)
+                {
+                    try
+                    {
+                        if (GetElementText(automationId) == expected)
+                            return;
+                    }
+                    catch (OpenQA.Selenium.NoSuchElementException) { }
+                }
+            }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+        }
+
+        /// <summary>
+        /// Single-shot element text read using the platform's native selector (resource-id on Android,
+        /// AccessibilityId on Windows). ImplicitWait must be set by the caller.
+        /// </summary>
+        protected abstract string GetElementText(string automationId);
+
+        /// <summary>
         /// Spins (no sleep) until the element with <paramref name="automationId"/> disappears
         /// from the accessibility tree or <paramref name="timeoutMs"/> elapses.
         /// Use after closing a popup/modal to sync on its full dismissal before the next interaction.

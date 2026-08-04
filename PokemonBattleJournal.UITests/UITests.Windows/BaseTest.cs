@@ -102,6 +102,9 @@ namespace UITests
             }
         }
 
+        protected override string GetElementText(string automationId) =>
+            App.FindElement(MobileBy.AccessibilityId(automationId)).Text;
+
         protected override AppiumElement FindByDescription(string windowsId, string _) =>
             App.FindElement(MobileBy.AccessibilityId(windowsId));
 

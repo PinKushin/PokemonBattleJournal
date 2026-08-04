@@ -100,8 +100,10 @@ namespace UITests
             // visible so they resolve instantly after the click — before the binding cascade
             // completes. Poll until the label confirms BO3 is active so callers can rely on
             // Game2Tab being in the UIA tree.
-            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(5));
-            wait.Until(_ => App.FindElement(MobileBy.AccessibilityId("BO3StatusLabel")).Text == "Best of 3");
+            // NOTE: MobileBy.AccessibilityId maps to content-desc on Android (NOT AutomationId).
+            // FindUIElement is platform-aware (resource-id on Android, AccessibilityId on Windows)
+            // but has a 10s internal poll — too slow for a 5s deadline loop. Use WaitUntilText instead.
+            WaitUntilText("BO3StatusLabel", "Best of 3", timeoutMs: 5000);
         }
 
         // ---------------------------------------------------------------------------

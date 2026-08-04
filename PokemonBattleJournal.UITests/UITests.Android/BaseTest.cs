@@ -55,6 +55,13 @@ namespace UITests
         protected override void ScrollIntoViewAndClick(string automationId) =>
             FindUIElement(automationId).Click();
 
+        protected override string GetElementText(string automationId)
+        {
+            string resourceId = $"{PackageName}:id/{automationId}";
+            return App.FindElement(MobileBy.AndroidUIAutomator(
+                $"new UiSelector().resourceId(\"{resourceId}\")")).Text;
+        }
+
         protected override bool TryClickIfPresent(string id, int timeoutMs = 2000)
         {
             string resourceId = $"{PackageName}:id/{id}";
