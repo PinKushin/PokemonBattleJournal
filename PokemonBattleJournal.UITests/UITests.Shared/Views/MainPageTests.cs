@@ -432,6 +432,28 @@ namespace UITests
         }
 
         [Test]
+        public void MainPage_PlayerArchetype_Cancel_DismissesPopup()
+        {
+            ScrollPageToTop();
+            FindUIElement("PlayerArchetype").Click();
+            FindUIElement("ArchetypeSearchBar"); // popup is open
+            FindUIElement("ArchetypePopupCancel").Click();
+            // If the cancel hang reproduces, WaitUntilGone times out (3s) and the test fails.
+            WaitUntilGone("ArchetypeSearchBar", timeoutMs: 3000);
+        }
+
+        [Test]
+        public void MainPage_RivalArchetype_Cancel_DismissesPopup()
+        {
+            ScrollPageToTop();
+            WaitUntilGone("ArchetypeSearchBar"); // ensure no leftover popup from prior test
+            FindUIElement("RivalArchetype").Click();
+            FindUIElement("ArchetypeSearchBar"); // popup is open
+            FindUIElement("ArchetypePopupCancel").Click();
+            WaitUntilGone("ArchetypeSearchBar", timeoutMs: 3000);
+        }
+
+        [Test]
         public void MainPage_ArchetypePicker_Search_FiltersResults()
         {
             ScrollPageToTop();
