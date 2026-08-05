@@ -85,8 +85,15 @@ jobs:
           # shutdown sequence — crashpad_handler doesn't necessarily exist yet by the
           # moment a single one-shot pkill runs right after dotnet test exits. Loop for
           # up to ~20s catching it whenever it actually spawns, instead of one shot.
+          #
+          # CRITICAL: pkill without -f matches against /proc/[pid]/comm, which the Linux
+          # kernel truncates to 15 chars (TASK_COMM_LEN=16 including the null terminator).
+          # "crashpad_handler" is 16 characters — it gets truncated to "crashpad_handle"
+          # in comm, so a bare `pkill crashpad_handler` can NEVER match, confirmed by the
+          # hang still reproducing after the loop above shipped. `-f` matches the full
+          # command line instead of the truncated short name.
           # See https://github.com/ReactiveCircus/android-emulator-runner/issues/385
-          script: dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --filter "FullyQualifiedName~${{ matrix.fixture }}" --logger "trx;LogFileName=android-ui-tests-${{ matrix.fixture }}.trx" ; code=$? ; adb logcat -d > /tmp/UITests.Android.logcat.txt ; for i in 1 2 3 4 5 6 7 8 9 10 ; do pkill -SIGKILL crashpad_handler 2>/dev/null && break ; sleep 2 ; done ; exit $code
+          script: dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --filter "FullyQualifiedName~${{ matrix.fixture }}" --logger "trx;LogFileName=android-ui-tests-${{ matrix.fixture }}.trx" ; code=$? ; adb logcat -d > /tmp/UITests.Android.logcat.txt ; for i in 1 2 3 4 5 6 7 8 9 10 ; do pkill -f -SIGKILL crashpad_handler 2>/dev/null && break ; sleep 2 ; done ; exit $code
         env:
           CI: true
           ANDROID_USE_INSTALLED: "0"
