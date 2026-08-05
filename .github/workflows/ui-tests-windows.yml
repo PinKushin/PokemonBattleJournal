@@ -21,8 +21,11 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Cache NuGet packages
-        uses: actions/cache@v6
+      # Restore-only: the matching save runs in exactly one fixture (see "Save NuGet
+      # cache" below). actions/cache would add a post-step to all five matrix jobs.
+      - name: Restore NuGet cache
+        id: nuget-cache
+        uses: actions/cache/restore@v6
         with:
           path: ~/.nuget/packages
           key: nuget-windows-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
@@ -45,6 +48,27 @@ jobs:
 
       - name: Restore
         run: dotnet restore PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
+
+      # Exactly one fixture saves, and only when the primary key actually missed.
+      # Previously all five jobs ran actions/cache with the same key: on any key
+      # rotation (a .csproj edit, or the 2026-08-05 LF switch, which changed every
+      # checked-out file's bytes and so the hashFiles result) all five spent ~173s
+      # compressing the NuGet cache and four then died with "Unable to reserve cache
+      # with key ..., another job may be creating this cache" — ~11 min of wasted
+      # runner time per run, with one job hanging long enough to need cancelling by
+      # hand.
+      #
+      # Only one job has a save step now, so finishing order is irrelevant and there is
+      # nothing left to contend over. The fixture is designated arbitrarily — any single
+      # one works. always() means a test failure still saves; the only run that skips
+      # the save is one where this specific job is cancelled, costing one cold restore
+      # next time.
+      - name: Save NuGet cache
+        if: always() && matrix.fixture == 'AboutPageTests' && steps.nuget-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-windows-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
 
       - name: Run Windows UI Tests
         env:
