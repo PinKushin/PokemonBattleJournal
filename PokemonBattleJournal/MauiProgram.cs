@@ -53,10 +53,15 @@ namespace PokemonBattleJournal
                     options.Debug = true;
                     options.TracesSampleRate = 1.0F;
                     options.MaxBreadcrumbs = 1000;
+                    // Debug builds (dev machines, CI emulators) tag as development so
+                    // Sentry alert rules can be scoped to production-only — keeps CI/test
+                    // error events out of email while still recording them.
+                    options.Environment = "development";
 #else
                     options.Debug = false;
                     options.TracesSampleRate = 0.1;
                     options.MaxBreadcrumbs = 300;
+                    options.Environment = "production";
 #endif
                 });
             string logsDir = Path.Combine(FileHelper.GetAppDataPath(), "Logs");
