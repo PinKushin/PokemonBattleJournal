@@ -38,10 +38,12 @@ jobs:
       - name: Install MAUI Android workload
         run: dotnet workload install maui-android
 
+      # sdkmanager isn't on PATH outside the emulator action — use ANDROID_HOME directly.
       - name: Install Android SDK platform 35
         run: |
-          yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0' platform-tools > /dev/null
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0' platform-tools > /dev/null
 
       # EmbedAssembliesIntoApk required: Appium installs via adb but never pushes
       # fast-deploy assemblies, so without it monodroid aborts "No assemblies found"
