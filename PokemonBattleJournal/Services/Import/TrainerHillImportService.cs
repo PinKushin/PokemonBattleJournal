@@ -145,39 +145,32 @@ namespace PokemonBattleJournal.Services.Import
             string imagePath = SpriteResolver.FromUrl(deck?.ImageUrl) ?? "substitute.png";
             string? imagePath2 = SpriteResolver.FromUrl(deck?.SecondaryImageUrl);
 
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
-            try
-            {
-                await _factory.GetLock().WaitAsync();
+            using DbSession session = await _factory.BeginAsync();
+            SQLiteAsyncConnection db = session.Connection;
+            await db.ExecuteAsync(
+                "INSERT OR IGNORE INTO Archetype (Name, ImagePath, ImagePath2) VALUES (?, ?, ?)",
+                name, imagePath, imagePath2);
+            // Upgrade substitute.png placeholder if we now have a real sprite
+            if (imagePath != "substitute.png")
                 await db.ExecuteAsync(
-                    "INSERT OR IGNORE INTO Archetype (Name, ImagePath, ImagePath2) VALUES (?, ?, ?)",
-                    name, imagePath, imagePath2);
-                // Upgrade substitute.png placeholder if we now have a real sprite
-                if (imagePath != "substitute.png")
-                    await db.ExecuteAsync(
-                        "UPDATE Archetype SET ImagePath = ? WHERE Name = ? AND ImagePath = 'substitute.png'",
-                        imagePath, name);
-                if (imagePath2 != null)
-                    await db.ExecuteAsync(
-                        "UPDATE Archetype SET ImagePath2 = ? WHERE Name = ? AND ImagePath2 IS NULL",
-                        imagePath2, name);
-                Archetype? archetype = await db.Table<Archetype>()
-                    .Where(a => a.Name == name)
-                    .FirstOrDefaultAsync();
-                return archetype is not null ? archetype.Id : 0u;
-            }
-            finally
-            {
-                _ = _factory.GetLock().Release();
-            }
+                    "UPDATE Archetype SET ImagePath = ? WHERE Name = ? AND ImagePath = 'substitute.png'",
+                    imagePath, name);
+            if (imagePath2 != null)
+                await db.ExecuteAsync(
+                    "UPDATE Archetype SET ImagePath2 = ? WHERE Name = ? AND ImagePath2 IS NULL",
+                    imagePath2, name);
+            Archetype? archetype = await db.Table<Archetype>()
+                .Where(a => a.Name == name)
+                .FirstOrDefaultAsync();
+            return archetype is not null ? archetype.Id : 0u;
         }
 
         private async Task<Tags?> ResolveTagAsync(string name, uint trainerId)
         {
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+            using DbSession session = await _factory.BeginAsync();
+            SQLiteAsyncConnection db = session.Connection;
             try
             {
-                await _factory.GetLock().WaitAsync();
                 Tags? existing = await db.Table<Tags>().Where(t => t.Name == name).FirstOrDefaultAsync();
                 if (existing is not null)
                     return existing;
@@ -190,10 +183,6 @@ namespace PokemonBattleJournal.Services.Import
             {
                 // Concurrent insert race — fetch what's there
                 return await db.Table<Tags>().Where(t => t.Name == name).FirstOrDefaultAsync();
-            }
-            finally
-            {
-                _ = _factory.GetLock().Release();
             }
         }
 

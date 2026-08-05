@@ -6,12 +6,12 @@ namespace PokemonBattleJournal.Services
 {
     public class ArchetypeOperations : IArchetypeOperations
     {
-        private readonly SqliteConnectionFactory _factory;
+        private readonly ISqliteConnectionFactory _factory;
         private readonly ILogger _logger;
         private readonly IErrorHandler _errorHandler;
         private readonly ILimitlessMetaService _metaService;
 
-        internal ArchetypeOperations(SqliteConnectionFactory factory, ILogger logger, ILimitlessMetaService metaService, IErrorHandler errorHandler)
+        internal ArchetypeOperations(ISqliteConnectionFactory factory, ILogger logger, ILimitlessMetaService metaService, IErrorHandler errorHandler)
         {
             _factory = factory;
             _logger = logger;
@@ -32,10 +32,10 @@ namespace PokemonBattleJournal.Services
             try { metaDecks = await _metaService.GetTopDecksAsync(10); }
             catch (Exception ex) { _logger.LogWarning(ex, "Limitless fetch failed — using offline fallback"); }
 
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
+                using DbSession session = await _factory.BeginAsync();
+                SQLiteAsyncConnection db = session.Connection;
                 // Always try to upsert current meta decks so new archetypes appear each launch
                 if (metaDecks.Count > 0)
                 {
@@ -97,10 +97,6 @@ namespace PokemonBattleJournal.Services
                 _logger.LogError(ex, "Error getting archetypes");
                 return [];
             }
-            finally
-            {
-                _ = _factory.GetLock().Release();
-            }
         }
 
         /// <summary>
@@ -108,11 +104,10 @@ namespace PokemonBattleJournal.Services
         /// </summary>
         public async Task<Archetype?> GetByIdAsync(uint id)
         {
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
-                return await db.Table<Archetype>()
+                using DbSession session = await _factory.BeginAsync();
+                return await session.Connection.Table<Archetype>()
                     .Where(i => i.Id == id)
                     .FirstOrDefaultAsync();
             }
@@ -121,10 +116,6 @@ namespace PokemonBattleJournal.Services
                 _logger.LogError(ex, "Error getting archetype by ID: {Id}", id);
                 _errorHandler.HandleError(ex);
                 return null;
-            }
-            finally
-            {
-                _ = _factory.GetLock().Release();
             }
         }
 
@@ -149,7 +140,6 @@ namespace PokemonBattleJournal.Services
             }
 
             _logger.LogDebug("SaveAsync: saving archetype {Name} for trainer {TrainerId}", name, trainerId);
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             Archetype archetype = new()
             {
                 Name = name,
@@ -160,9 +150,9 @@ namespace PokemonBattleJournal.Services
 
             try
             {
-                await _factory.GetLock().WaitAsync();
+                using DbSession session = await _factory.BeginAsync();
                 int affected = 0;
-                await db.RunInTransactionAsync(tran =>
+                await session.Connection.RunInTransactionAsync(tran =>
                 {
                     affected = tran.Insert(archetype);
                 });
@@ -185,10 +175,6 @@ namespace PokemonBattleJournal.Services
                 _logger.LogError(ex, "Error saving archetype: {Name} - {Message}", name, ex.Message);
                 _errorHandler.HandleError(ex);
                 return 0;
-            }
-            finally
-            {
-                _ = _factory.GetLock().Release();
             }
         }
 
@@ -220,13 +206,12 @@ namespace PokemonBattleJournal.Services
             }
 
             _logger.LogDebug("DeleteAsync: deleting archetype {Name} ({Id})", archetype.Name, archetype.Id);
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
+                using DbSession session = await _factory.BeginAsync();
 
                 int affected = 0;
-                await db.RunInTransactionAsync(tran =>
+                await session.Connection.RunInTransactionAsync(tran =>
                 {
                     // Check if this archetype is used in any matches (must be inside transaction)
                     int matchCount = tran.ExecuteScalar<int>(
@@ -280,10 +265,6 @@ namespace PokemonBattleJournal.Services
                 _logger.LogError(ex, "Error deleting archetype: {Name} - {Message}", archetype.Name, ex.Message);
                 _errorHandler.HandleError(ex);
                 return 0;
-            }
-            finally
-            {
-                _ = _factory.GetLock().Release();
             }
         }
     }
