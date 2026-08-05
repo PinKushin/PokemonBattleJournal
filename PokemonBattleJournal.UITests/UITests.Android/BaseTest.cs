@@ -111,8 +111,24 @@ namespace UITests
             finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
             PerfLog($"FIND '{id}' STAGE2_MISS after {stage2Sw.ElapsedMilliseconds}ms → try scrollIntoView");
 
-            // Stage 3: UiScrollable — scrolls the main page to bring off-screen elements into view
+            // Stage 3: UiScrollable — scrolls the main page to bring off-screen elements into view.
+            // Scroll to the TOP first: scrollIntoView only flings forward/down, so an element
+            // ABOVE the current viewport is otherwise permanently unreachable. Observed on CI
+            // (run 30985133240, OptionsPageTests): SaveTag left the page scrolled to the bottom
+            // and every above-the-fold element in the rest of the fixture — including the
+            // top-of-page TrainerSectionHeading — STAGE3_FAILed at a uniform ~16s.
             var stage3Sw = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+                App.FindElement(MobileBy.AndroidUIAutomator(
+                    $"new UiScrollable(new UiSelector().scrollable(true).packageName(\"{PackageName}\").instance(0))" +
+                    ".scrollToBeginning(100)"));
+            }
+            catch (OpenQA.Selenium.NoSuchElementException)
+            {
+                // Page may not be scrollable at all (content fits the screen) — nothing to reset.
+            }
             try
             {
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
