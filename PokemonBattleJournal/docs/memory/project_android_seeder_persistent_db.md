@@ -41,6 +41,14 @@ never checks `ExitCode`, and redirects stderr without ever reading it — so
 genuinely works. This is a local-only defect, which is exactly why local runs accumulate state
 while CI stays clean.
 
+**The fix does NOT make the seeder newly load-bearing** (a claim in the
+`fix/clicktab-verify-retry` merge message that overstated the risk — user corrected it
+2026-08-05). `pm clear` already wipes all app data, so **every CI run, across all five
+fixtures, has always started from an empty DB and re-seeded from scratch** — and has been
+green doing so. Fixing the local wipe moves local onto the path CI has been continuously
+proving. The risk ran the other way: local was the environment testing against stale
+accumulated data, i.e. the weaker signal of the two.
+
 The seeder's count-check (below) is still correct and worth keeping — it defends against a
 half-seeded DB regardless of why one exists.
 
