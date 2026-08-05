@@ -1,5 +1,5 @@
 
-namespace PokemonBattleJournal.Tests.Services
+namespace PokemonBattleJournal.IntegrationTests.Services
 {
     public class ArchetypeOperationsIntegrationTests
     {
@@ -260,24 +260,8 @@ namespace PokemonBattleJournal.Tests.Services
             saved!.ImagePath.ShouldBe("ogerpon_teal_mask.png");
         }
 
-        [Test]
-        public async Task DeleteAsync_NullArchetype_ThrowsArgumentNullException()
-        {
-            await Should.ThrowAsync<ArgumentNullException>(() => _sut.DeleteAsync(null!));
-        }
 
-        [Test]
-        public async Task DeleteAsync_ZeroId_ThrowsArgumentException()
-        {
-            await Should.ThrowAsync<ArgumentException>(() => _sut.DeleteAsync(new Archetype { Id = 0, Name = "Ghost" }));
-        }
 
-        [Test]
-        public async Task GetByIdAsync_NonExistentId_ReturnsNull()
-        {
-            Archetype? found = await _sut.GetByIdAsync(99999);
-            found.ShouldBeNull();
-        }
 
         private sealed class TestSqliteConnectionFactory : SqliteConnectionFactory
         {

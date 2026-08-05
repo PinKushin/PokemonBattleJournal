@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging.Abstractions;
-using PokemonBattleJournal.Scraper.Models;
 using PokemonBattleJournal.Scraper.Services;
 
 namespace PokemonBattleJournal.IntegrationTests.Scraper;
@@ -7,7 +5,7 @@ namespace PokemonBattleJournal.IntegrationTests.Scraper;
 /// <summary>
 /// Live network tests against limitlesstcg.com. Run on a schedule, not on every push.
 /// A failure here means Limitless changed their page structure — update LimitlessDeckParser
-/// and refresh PokemonBattleJournal.Tests/Fixtures/limitless_decks_snapshot.html.
+/// and refresh PokemonBattleJournal.IntegrationTests/Fixtures/limitless_decks_snapshot.html.
 /// </summary>
 [Category("LiveWeb")]
 public class LimitlessLiveWebTests

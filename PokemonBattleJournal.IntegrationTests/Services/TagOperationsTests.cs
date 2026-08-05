@@ -1,4 +1,3 @@
-using PokemonBattleJournal.Models;
 
 namespace PokemonBattleJournal.IntegrationTests.Services;
 

@@ -1,4 +1,3 @@
-using PokemonBattleJournal.Models;
 using static PokemonBattleJournal.Models.MatchResult;
 
 namespace PokemonBattleJournal.IntegrationTests.Services;

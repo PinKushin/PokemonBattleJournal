@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Logging.Abstractions;
-using PokemonBattleJournal.Models;
-using PokemonBattleJournal.Services;
 
 namespace PokemonBattleJournal.IntegrationTests.Services;
 

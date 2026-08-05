@@ -1,9 +1,7 @@
 using System.Text;
-using Microsoft.Extensions.Logging;
-using PokemonBattleJournal.Scraper.Interfaces;
 using PokemonBattleJournal.Services.Import;
 
-namespace PokemonBattleJournal.Tests.Services
+namespace PokemonBattleJournal.IntegrationTests.Services
 {
     public class TrainerHillImportServiceIntegrationTests
     {

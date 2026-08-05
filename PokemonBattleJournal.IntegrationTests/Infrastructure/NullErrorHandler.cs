@@ -1,4 +1,3 @@
-using PokemonBattleJournal.Services;
 
 namespace PokemonBattleJournal.IntegrationTests.Infrastructure;
 
