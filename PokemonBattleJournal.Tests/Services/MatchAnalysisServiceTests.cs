@@ -388,6 +388,40 @@ namespace PokemonBattleJournal.Tests.Services
             result.ShouldBe(TimeSpan.Zero);
         }
 
+        /// <summary>
+        /// Points must come out in chronological order regardless of the input order.
+        /// </summary>
+        /// <remarks>
+        /// Regression for a bug found 2026-08-05. The method groups by date but never ordered by
+        /// it, and <c>GroupBy</c> preserves first-occurrence order of the source — so the series
+        /// came out in whatever order the matches arrived. <c>GetByTrainerIdAsync</c> issues no
+        /// ORDER BY, so that is insertion order, and the win-rate line chart drew segments
+        /// jumping backwards in time whenever a match was logged out of sequence.
+        ///
+        /// This belongs to the analysis service rather than the caller: a chart series is
+        /// meaningless unordered, so ordering is part of producing it correctly, not something
+        /// each consumer should remember.
+        /// </remarks>
+        [Test]
+        public void CalculateWinRateOverTime_UnorderedInput_ReturnsPointsInChronologicalOrder()
+        {
+            List<MatchEntry> matches =
+            [
+                new() { Result = MatchResult.Win, DatePlayed = new DateTime(2026, 7, 20, 0, 0, 0, DateTimeKind.Utc) },
+                new() { Result = MatchResult.Loss, DatePlayed = new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new() { Result = MatchResult.Win, DatePlayed = new DateTime(2026, 7, 10, 0, 0, 0, DateTimeKind.Utc) },
+            ];
+
+            ObservableCollection<TimeDataPoint> result = _service.CalculateWinRateOverTime(matches);
+
+            result.Select(p => p.Date).ShouldBe(
+            [
+                new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc),
+                new DateTime(2026, 7, 10, 0, 0, 0, DateTimeKind.Utc),
+                new DateTime(2026, 7, 20, 0, 0, 0, DateTimeKind.Utc),
+            ]);
+        }
+
         [Test]
         public void CalculateWinRateOverTime_EmptyList_ReturnsEmpty()
         {

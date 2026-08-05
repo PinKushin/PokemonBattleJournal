@@ -3,6 +3,7 @@ using LiveChartsCore.SkiaSharpView.Maui;
 using PokemonBattleJournal.Interfaces;
 using PokemonBattleJournal.Scraper.Interfaces;
 using PokemonBattleJournal.Scraper.Services;
+using PokemonBattleJournal.Services.Export;
 using PokemonBattleJournal.Services.Import;
 using Serilog;
 using SkiaSharp.Views.Maui.Controls.Hosting;
@@ -110,6 +111,7 @@ namespace PokemonBattleJournal
             builder.Services.AddSingleton<IMatchAnalysisService, MatchAnalysisService>();
             builder.Services.AddSingleton<ITrainerSwitchService, TrainerSwitchService>();
             builder.Services.AddSingleton<ITrainerHillImportService, TrainerHillImportService>();
+            builder.Services.AddSingleton<IExportService, ExportService>();
             builder.Services.AddSingleton<AppShellViewModel>();
             builder.Services.AddSingleton<AppShell>();
 

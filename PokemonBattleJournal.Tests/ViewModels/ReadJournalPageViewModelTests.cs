@@ -22,6 +22,45 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel = new ReadJournalPageViewModel(_mockLogger, _mockConnectionFactory, _mockSwitchService, Substitute.For<IErrorHandler>());
         }
 
+        /// <summary>
+        /// The journal must list the most recently played match first.
+        /// </summary>
+        /// <remarks>
+        /// Regression for a bug found 2026-08-05. <c>GetByTrainerIdAsync</c> issues no ORDER BY,
+        /// so matches arrive in insertion order and the view model assigned them straight to
+        /// <c>MatchHistory</c> — the journal listed oldest first. It went unnoticed because
+        /// DebugDataSeeder inserts in date order for a fresh database, making insertion order
+        /// and date order agree; they diverge as soon as a match is added out of sequence, which
+        /// the seeder itself does by dating its BO3 matches a day ahead.
+        ///
+        /// It also silently broke ReadJournalPage_BO3Match_ShowsGame2And3TagViews, whose helper
+        /// clicks the first row on the documented assumption that it is the newest match. The
+        /// first row was actually the oldest — a BO1 — and the test only passed because
+        /// phantom Game2/Game3 objects made the views appear on every match
+        /// (see MatchOperations.LoadRelatedDataAsync).
+        /// </remarks>
+        [Test]
+        public async Task AppearingAsync_Matches_AreOrderedNewestFirst()
+        {
+            Trainer trainer = new() { Id = 1, Name = "Ash", IsActive = true };
+            _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
+
+            // Deliberately handed over oldest-first, the order the database returns.
+            List<MatchEntry> matches =
+            [
+                new() { Id = 1, DatePlayed = new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new() { Id = 2, DatePlayed = new DateTime(2026, 7, 20, 0, 0, 0, DateTimeKind.Utc) },
+                new() { Id = 3, DatePlayed = new DateTime(2026, 7, 10, 0, 0, 0, DateTimeKind.Utc) },
+            ];
+            _mockConnectionFactory.Matches.GetByTrainerIdAsync(trainer.Id, true)
+                .Returns(Task.FromResult(matches));
+
+            await _viewModel.AppearingAsync();
+
+            _viewModel.MatchHistory.ShouldNotBeNull();
+            _viewModel.MatchHistory!.Select(m => m.Id).ShouldBe([2u, 3u, 1u]);
+        }
+
         [Test]
         public void ReadJournalPageViewModel_Constructor_SetsWelcomeMsg()
         {

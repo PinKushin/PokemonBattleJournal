@@ -1,3 +1,6 @@
+using System.Text;
+using CommunityToolkit.Maui.Storage;
+
 namespace PokemonBattleJournal.ViewModels
 {
     public partial class OptionsPageViewModel : ObservableObject
@@ -10,8 +13,9 @@ namespace PokemonBattleJournal.ViewModels
         private readonly ITrainerSwitchService _switchService;
         private readonly AppShellViewModel _shellVm;
         private readonly ITrainerHillImportService _importService;
+        private readonly IExportService _exportService;
 
-        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService, AppShellViewModel shellVm, ITrainerHillImportService importService, IErrorHandler errorHandler)
+        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService, AppShellViewModel shellVm, ITrainerHillImportService importService, IExportService exportService, IErrorHandler errorHandler)
         {
             _connection = connection;
             _logger = logger;
@@ -19,6 +23,7 @@ namespace PokemonBattleJournal.ViewModels
             _switchService = switchService;
             _shellVm = shellVm;
             _importService = importService;
+            _exportService = exportService;
         }
 
         [ObservableProperty]
@@ -140,6 +145,103 @@ namespace PokemonBattleJournal.ViewModels
                 ImportStatusMessage = "Import failed";
                 _errorHandler.HandleError(ex);
             }
+        }
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasExportStatus))]
+        public partial string ExportStatusMessage { get; set; } = string.Empty;
+
+        public bool HasExportStatus => !string.IsNullOrEmpty(ExportStatusMessage);
+
+        /// <summary>
+        /// Exports the active trainer's matches in TrainerHill's format.
+        /// </summary>
+        [RelayCommand]
+        public async Task ExportTrainerHillAsync()
+        {
+            if (_trainer is null)
+            {
+                _logger.LogWarning("Export not started: no active trainer");
+                ExportStatusMessage = "No active trainer to export";
+                return;
+            }
+
+            await SaveExportAsync(
+                () => _exportService.ExportTrainerHillAsync(_trainer.Id),
+                $"trainerhill-battle-log-{SanitizeForFileName(_trainer.Name)}-{DateTime.Now:yyyy-MM-dd}.json");
+        }
+
+        /// <summary>
+        /// Exports every trainer in the app's own backup envelope.
+        /// </summary>
+        [RelayCommand]
+        public async Task ExportBackupAsync() =>
+            await SaveExportAsync(
+                () => _exportService.ExportBackupAsync(),
+                $"pbj-backup-{DateTime.Now:yyyy-MM-dd}.json");
+
+        /// <summary>
+        /// Serializes, then writes the result wherever the user chooses.
+        /// </summary>
+        /// <remarks>
+        /// Shared by both export commands because the only difference between them is which
+        /// serializer runs and what the file is called.
+        ///
+        /// The busy gate deliberately covers only the serialize step, not the save dialog:
+        /// the dialog is user browsing time, and gating it would leave Busy_Mutating visible
+        /// for as long as the user takes to choose a folder — the same reasoning as the import
+        /// picker.
+        /// </remarks>
+        private async Task SaveExportAsync(Func<Task<string>> serialize, string suggestedFileName)
+        {
+            try
+            {
+                string json;
+                IsBusyMutating = true;
+                try
+                {
+                    json = await serialize();
+                }
+                finally
+                {
+                    IsBusyMutating = false;
+                }
+
+                using MemoryStream stream = new(Encoding.UTF8.GetBytes(json));
+                FileSaverResult result = await FileSaver.Default.SaveAsync(suggestedFileName, stream);
+
+                if (!result.IsSuccessful)
+                {
+                    // Cancelling the dialog surfaces here as an unsuccessful result, so this is
+                    // the normal "changed my mind" path as well as the genuine failure path.
+                    // Log at Information and say nothing alarming.
+                    _logger.LogInformation(result.Exception, "Export not saved: {File}", suggestedFileName);
+                    ExportStatusMessage = string.Empty;
+                    return;
+                }
+
+                _logger.LogInformation("Exported to {Path}", result.FilePath);
+                ExportStatusMessage = $"Exported to {Path.GetFileName(result.FilePath)}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during export of {File}", suggestedFileName);
+                ExportStatusMessage = "Export failed";
+                _errorHandler.HandleError(ex);
+            }
+        }
+
+        /// <summary>Strips characters that are illegal in a file name on any target platform.</summary>
+        private static string SanitizeForFileName(string? name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return "trainer";
+
+            // Path.GetInvalidFileNameChars() is platform-specific and Android's set is smaller
+            // than Windows', so an export named on one platform could be unopenable on another.
+            // An explicit allowlist keeps the suggested name portable.
+            char[] cleaned = [.. name.Select(c => char.IsLetterOrDigit(c) || c is '-' or '_' ? c : '-')];
+            return new string(cleaned).Trim('-');
         }
 
         /// <summary>

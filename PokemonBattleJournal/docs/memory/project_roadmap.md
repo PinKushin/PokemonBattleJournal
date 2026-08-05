@@ -143,6 +143,37 @@ When the archetype ComboBox is tapped, animate the pokeball icon as if it's open
 
 6. **Accessibility:** Check `AccessibilitySettings.IsReduceMotionEnabled` — skip animation and open immediately if true.
 
+## ReadJournal: games 2 and 3 are only half-displayed (found 2026-08-05, NOT started)
+
+**Game 2 and game 3 notes have never been shown.** `ReadJournalPageViewModel` computes
+`SelectedNote2` and `SelectedNote3` and keeps them up to date, but `ReadJournalPage.xaml` binds
+only `SelectedNote` — the other two are calculated and discarded. Game 1's notes are the only
+notes the user has ever seen.
+
+The tag views for games 2 and 3 *are* bound (`Game2TagsView`, `Game3TagsView`), but until
+2026-08-05 they were visible on **every** match, including best-of-one, because
+`MatchOperations.LoadRelatedDataAsync` left phantom `Game2`/`Game3` objects in place — copies
+of game 1 — and the `IsVisible` binding tests those for null. That is fixed
+([[project_db_session_lock_pairing]] is unrelated; the phantom fix lives in
+`MatchOperations.LoadRelatedDataAsync` with a regression test in
+`MatchOperationsIntegrationTests`). So the section now correctly appears only for BO2/BO3
+matches — but with no notes.
+
+What to do:
+
+1. Bind `SelectedNote2` / `SelectedNote3` alongside the existing game 2 and 3 tag views, with
+   the same visibility rule so they appear only when the game exists.
+2. Give the notes editors `AutomationId`s and `SemanticProperties`, as `SelectedMatchNotes`
+   already has, and a UI test per the "every data page needs a data-presence assertion" rule.
+3. While in there, consider replacing the `IsNotNullConverter` visibility bindings with
+   explicit bool view-model properties — the project already ruled that converter out after it
+   crashed OptionsPage ([[feedback_no_isnot_null_converter_in_xaml]]), and ReadJournal is the
+   last place still using it.
+
+**Do not "fix" this by reverting the phantom-game change.** The phantoms made a BO1 match
+render three tag sections, which is the bug the user reported as *"the tags for each game are
+all shown at once"*.
+
 ## Known Bugs (fix before first release)
 
 **There has never been a release.** Nothing has shipped, so every bug listed here is a

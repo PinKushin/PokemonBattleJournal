@@ -34,7 +34,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 Substitute.For<ILogger<AppShellViewModel>>());
 
             // SUT
-            _viewModel = new OptionsPageViewModel(_mockLogger, _mockConnectionFactory, _mockSwitchService, _shellVm, Substitute.For<ITrainerHillImportService>(), Substitute.For<IErrorHandler>());
+            _viewModel = new OptionsPageViewModel(_mockLogger, _mockConnectionFactory, _mockSwitchService, _shellVm, Substitute.For<ITrainerHillImportService>(), Substitute.For<IExportService>(), Substitute.For<IErrorHandler>());
         }
 
         [Test]

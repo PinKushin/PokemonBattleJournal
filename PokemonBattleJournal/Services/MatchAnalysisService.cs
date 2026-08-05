@@ -18,7 +18,12 @@ namespace PokemonBattleJournal.Services
 
         public ObservableCollection<TimeDataPoint> CalculateWinRateOverTime(List<MatchEntry> matches)
         {
+            // OrderBy is load-bearing, not cosmetic. GroupBy preserves first-occurrence order of
+            // the source, and GetByTrainerIdAsync issues no ORDER BY — so without this the line
+            // chart drew segments jumping backwards in time as soon as a match was logged out of
+            // sequence.
             return [.. matches.GroupBy(m => m.DatePlayed.Date)
+              .OrderBy(g => g.Key)
               .Select(g => new TimeDataPoint
               {
                   Date = g.Key,
