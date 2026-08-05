@@ -154,7 +154,13 @@ jobs:
           profile: pixel_7
           avd-name: pixel_7_-_api_35
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 3072
+          # -gpu guest (was swiftshader_indirect): host-side swiftshader translation
+          # exhausts its ColorBuffer pool near the end of MainPageTests' popup-heavy
+          # fixture — "Failed to find ColorBuffer: NNN" printed at the exact moment the
+          # last two tests' elements vanish from the tree (3 consecutive runs, same
+          # pair). guest renders inside the emulated system — slower, but no host
+          # translator buffer pool to exhaust.
+          emulator-options: -no-snapshot-save -no-window -gpu guest -noaudio -no-boot-anim -memory 3072
           disable-animations: true
           script: dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --filter "FullyQualifiedName~${{ matrix.fixture }}" --logger "trx;LogFileName=android-ui-tests-${{ matrix.fixture }}.trx" ; code=$? ; timeout 20 adb logcat -d > /tmp/UITests.Android.logcat.txt 2>/dev/null || true ; pkill -f -SIGKILL 'crashpad_handle[r]' 2>/dev/null || true ; exit $code
         env:

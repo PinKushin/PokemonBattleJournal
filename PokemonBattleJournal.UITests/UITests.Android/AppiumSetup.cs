@@ -150,10 +150,28 @@ if (useInstalled)
 
             Log("5. new AndroidDriver");
             var step5Timer = System.Diagnostics.Stopwatch.StartNew();
-            driver = new AndroidDriver(
-                new Uri("http://127.0.0.1:4723/"),
-                androidOptions,
-                TimeSpan.FromMinutes(5));
+            // Driver-creation retry: UIAutomator2's session init shells settings commands
+            // via adb, and on a freshly-booted CI emulator adbd can be starved enough to
+            // report "device offline" transiently — observed twice (runs 30984076303,
+            // 30989085956) killing an entire fixture from OneTimeSetUp. WaitForEmulatorBoot
+            // between attempts polls until adb responds sanely again.
+            const int driverAttempts = 3;
+            for (int attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    driver = new AndroidDriver(
+                        new Uri("http://127.0.0.1:4723/"),
+                        androidOptions,
+                        TimeSpan.FromMinutes(5));
+                    break;
+                }
+                catch (OpenQA.Selenium.WebDriverException ex) when (attempt < driverAttempts)
+                {
+                    Log($"5. AndroidDriver attempt {attempt} failed: {ex.GetType().Name}: {ex.Message.Split('\n')[0]} — re-checking boot, retrying");
+                    WaitForEmulatorBoot(timeoutSeconds: 60);
+                }
+            }
             step5Timer.Stop();
             Log($"5. AndroidDriver created ({step5Timer.ElapsedMilliseconds}ms)");
             PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] AndroidDriver instantiated ({step5Timer.ElapsedMilliseconds}ms)");
