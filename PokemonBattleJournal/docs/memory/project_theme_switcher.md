@@ -14,18 +14,23 @@ In-app theme switcher is a planned long-term feature.
 
 **How to apply:** Don't hardcode colors anywhere — always use `DynamicResource`/`AppThemeBinding` or pass colors as parameters so a future theme switch can propagate correctly. Never bake `PokeBlue`/`PokeYellow`/`OffBlack` as literals into C# code.
 
-## Flyout (hamburger) icon tinting — found 2026-08-05
+## Flyout (hamburger) icon — invisible on Android light mode, found 2026-08-05
 
-`Shell.FlyoutIcon` is `ball_icon.png` by design — the Pokéball IS the hamburger on every
-platform. Windows shows it untinted (true red/white ball). **Android tints it with
-`Shell.ForegroundColor`**: light mode had ForegroundColor = PokeBlue = the nav bar
-background, so the ball rendered invisible (still clickable, still in the UIA tree —
-Appium/screen readers unaffected). Fixed to PokeYellow in `Styles.xaml` (commit on
-feat/ci-matrix-per-fixture) — now a visible yellow silhouette, matching TitleColor.
+**Observed facts only (mechanism NOT yet verified):**
+- On the Android emulator (light theme by default), the hamburger/flyout button is
+  invisible but fully functional — clickable at its expected position, present in the UIA
+  tree with content-desc "Open navigation drawer" (Appium and screen readers unaffected).
+- On Windows and/or dark mode, the flyout button shows as the Pokéball (`ball_icon.png`,
+  set as `Shell.FlyoutIcon` in Styles.xaml:510).
+- `Shell.ForegroundColor` in light mode was `PokeBlue` — the same StaticResource as the
+  Shell nav bar background. Changed to `PokeYellow` on `feat/ci-matrix-per-fixture` as the
+  probable fix; **not yet visually confirmed on the emulator**.
 
-**Remaining polish for the theme-switcher work:** to show the true-color untinted ball on
-Android (matching Windows), the ForegroundColor tint must be stripped from the flyout icon
-via an Android handler/platform tweak — a plain style change can't do it, the tint always
-applies. Low priority; the silhouette is visible and on-palette.
+**Unverified:** whether Android tints the custom FlyoutIcon with ForegroundColor, or
+whether `Shell.FlyoutIcon` simply doesn't apply on Android (known MAUI inconsistency) and
+the default hamburger glyph was being drawn in ForegroundColor blue-on-blue. Verify by
+looking at the emulator after the PokeYellow change: a yellow Pokéball silhouette means
+tinted custom icon; a yellow standard hamburger glyph means FlyoutIcon isn't applying on
+Android at all (different bug). Update this note once seen.
 
 [[project_roadmap]]
