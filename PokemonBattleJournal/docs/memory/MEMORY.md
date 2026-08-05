@@ -27,7 +27,7 @@
 - [NavigateTo required in every test](feedback_navigate_to_every_test.md) — Every Appium test must call NavigateTo; discovery order is non-deterministic; silent cascade if missing.
 - [Android element lookup strategy](project_android_element_lookup.md) — Direct resourceId (3s) first, UiScrollable fallback (10s); empty Entry returns placeholder not null.
 - [UI test nav diagnostic log](project_uitest_nav_log.md) — %TEMP%\UITests.NavLog.txt; read after VS runs to debug cascades; reset each run by AppiumSetup.
-- [CI workflow structure](project_ci_workflows.md) — 3 separate workflows: ci.yml (unit+integration+coverage), ui-tests-windows.yml, ui-tests-android.yml; Android CI uses API 34 default image.
+- [CI workflow structure](project_ci_workflows.md) — 3 separate workflows: ci.yml (unit+integration+coverage), ui-tests-windows.yml, ui-tests-android.yml; Android CI uses API 35 default image (must match AppiumSetup.cs AvdName constant).
 - [Android CI build fixes](project_ci_android_build_fixes.md) — AppIcon path case (Appicon vs AppIcon) breaks Linux; iOS/macOS TFMs must be conditioned out on Linux; EmbedAssembliesIntoApk passed at build time only.
 - [Windows picker child window on CI](project_windows_picker_ci.md) — MAUI Picker may open as owned child window on Windows Server CI; SelectWindowsPickerItem helper iterates all App.WindowHandles.
 - [SQLite integration test isolation](project_integration_test_isolation.md) — Unique GUID temp file per test (not :memory:); must close connection before file delete; ArchetypeOperations needs metaService mock returning empty list.
@@ -67,4 +67,4 @@
 - [ReadJournal Android slowdown — RESOLVED](project_readjournal_android_slow.md) — root cause: 3 tag CollectionViews kept UI thread busy → every UiAutomator call burned ~20s waitForIdle; FlexLayout+BindableLayout swap dropped SelectMatch 50-111s → 92-368ms; suite 18m → 8m44s.
 - [Android flaky tap retry pattern](feedback_android_flaky_tap_retry.md) — Appium clicks silently miss MAUI gesture handlers; click-verify-retry against a state change, verify with viewport-visible elements only, throw on final failure. Made MainPage Android 25/25.
 - [Loading gates](project_loading_gates.md) — named IsBusy* props on all 4 data-page VMs + hidden Busy_* sentinel Labels + WaitUntilBusyGone test sync; TCS-gated unit test technique; CollectionView-count discipline on Android.
-- [Android CI GPU flake](project_android_ci_gpu_flake.md) — GitHub-hosted Android CI failed on EVERY run this session (ColorBuffer GPU emulation errors), even commits verified 72/72 locally; infra issue not a code regression; do not chase with more test retry logic.
+- [Android CI GPU flake — RESOLVED](project_android_ci_gpu_flake.md) — AVD name mismatch (code `pixel_7_-_api_35` vs workflow `_34`) spawned a duplicate emulator, starving GPU; fixed by aligning workflow to api-level 35.
