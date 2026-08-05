@@ -180,6 +180,63 @@ Right now Windows deploys as an unpackaged .exe (`WindowsPackageType=None`) and 
 
 Bundling with AOT + an installer is the combo: no Fast Deployment paths on user machines, no assembly resolution overhead, clean uninstall, real update channel.
 
+### Code signing — hard budget constraint (stated 2026-08-05)
+
+**The user has no budget for code-signing certificates.** Commercial OV/EV Windows certs run
+several hundred USD per year (and since 2023 require hardware-token/HSM storage, which pushes
+the cost up further). Do not plan around buying one. This constrains the release design, so
+the free paths below are the real options:
+
+**Android — genuinely free.** Android signing involves no CA at all: a self-generated
+`keytool` keystore *is* the standard mechanism, not a workaround. A signed release APK on
+GitHub Releases costs nothing. **The keystore must be backed up permanently — losing it means
+never being able to update the app.** Google Play is a one-time developer registration fee
+(~$25, verify current), F-Droid is free; neither is required for sideloading.
+
+**Windows — unsigned is worse than it sounds on Windows 11.** Two separate mechanisms:
+
+1. **Mark of the Web.** Downloaded files carry a `Zone.Identifier` ADS; Properties → *Unblock*
+   clears it. An `.exe` can usually be run via *More info* → *Run anyway*, but MotW blocks
+   `.ps1`, `.chm`, and app-loaded DLLs harder — and Explorer propagates MotW to every file
+   extracted from a downloaded ZIP, which matters because a self-contained build is an exe
+   surrounded by many DLLs. User has been burned by this repeatedly.
+2. **Smart App Control (Win11 22H2+).** Can block unsigned apps outright **with no "Run
+   anyway" option**. Re-enabling SAC after disabling it requires an OS reinstall. Only active
+   on clean installs (starts in evaluation mode), so not universal — but for affected users an
+   unsigned app simply does not run.
+
+Free routes that actually clear this, in preference order:
+
+- **SignPath.io** — free Authenticode signing for open-source projects, integrates with GitHub
+  Actions. Real signature, $0. **Best fit for this project.**
+- **Microsoft Store** — Microsoft signs the MSIX; no warning at all. Individual developer
+  registration was historically a small one-time fee (~$19) and may since have been
+  reduced/waived — verify. Costs Store packaging + review instead of money.
+- **Certum Open Source Code Signing** — OSS-specific cert, historically ~€30/yr. Cheap but not
+  free.
+- **Ship unsigned on GitHub Releases** — $0, works for a developer audience who will click
+  through, hostile for normal Win11 users. Acceptable for v0.1 only.
+
+**Never self-sign for public Windows distribution.** It is worse than unsigned: MSIX sideload
+then requires users to install your certificate into Trusted Root — scarier and more work.
+
+### Self-contained deployment — decided
+
+Ship Windows **self-contained** (`SelfContained=true` + `WindowsAppSDKSelfContained=true`).
+This eliminates the entire "user didn't install .NET / the Windows App SDK and the app
+crashes" failure class — nothing to document, nothing for users to get wrong. Required
+anyway for an unpackaged app without the WindowsAppSDK runtime present.
+
+Correcting a misconception recorded here deliberately: self-contained is **not** a runtime
+performance hit, and it does **not** affect SmartScreen either way. Runtime speed is
+essentially unchanged (ReadyToRun can make startup *faster*). What it actually costs is
+**download size** (well over 100 MB vs a small fraction of that) and **servicing** — you own
+the bundled runtime, so a .NET security patch means cutting a new release rather than users
+getting it from Windows Update. Signing and deployment mode are independent concerns.
+
+**Realistic free-tier first release:** signed Android APK (real signing, $0) + self-contained
+Windows build signed via SignPath, both on GitHub Releases.
+
 ---
 
 ## Loading Gates + Optional Loading Indicator
