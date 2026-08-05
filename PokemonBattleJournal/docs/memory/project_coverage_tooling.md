@@ -41,7 +41,21 @@ and do not add any other `*.runsettings` to the repo root. The CI workflows neve
 it — they pass `--collect "XPlat Code Coverage"` directly — so nothing else had to change;
 only explicit local `--settings build/coverage.runsettings` runs are affected.
 
-**The whole thing works from the CLI, no VS needed.** Do NOT pass `--settings
+**Just run the script — `build/coverage.ps1` (added 2026-08-05).** It does the whole sequence
+and encodes every gotcha listed below, so there is no reason to run the steps by hand:
+
+```powershell
+./build/coverage.ps1 -IncludeUI
+```
+
+Without `-IncludeUI` it is unit + integration only (fast, but Views/Controls/App/MauiProgram
+sit near 0%). `-SkipReport` collects and merges without running ReportGenerator, for when you
+only want the `.coverage` to open in VS. It fails fast if a suite fails, wipes stale
+`.coverage` files first (they would otherwise be swept into the merge and inflate the
+result), prints the block-coverage table, and converts ReportGenerator's CRLF output to LF so
+the tracked report files do not fight `.gitattributes`.
+
+**The underlying commands, if you ever need them directly.** Do NOT pass `--settings
 build/coverage.runsettings` here or it routes to coverlet again:
 
 ```bash
@@ -67,12 +81,24 @@ Gotchas, all hit and confirmed:
 - **Double-clicking the `.coverage` file opens it straight in VS's Code Coverage Results
   window** — the familiar report, without needing Test Explorer to run the coverage itself.
 
-**CI can run it.** Both `ci.yml` jobs are `runs-on: windows-latest`, and the built-in
-collector needs only `Microsoft.NET.Test.Sdk` ≥ 15.8 (the repo is on 18.8.1) plus
-`Microsoft.CodeCoverage` (18.8.1, already referenced). `--collect "Code Coverage;Format=Cobertura"`
-emits cobertura directly for the existing ReportGenerator step, but that throws block coverage
-away — to keep it, publish the `.coverage` or converted XML as an artifact. Not wired up; see
-[[feedback_dont_churn_stable_ci]] before changing the workflows.
+**CI can run it, but is deliberately NOT wired up (decided 2026-08-05).** Both `ci.yml` jobs
+are `runs-on: windows-latest`, and the built-in collector needs only
+`Microsoft.NET.Test.Sdk` ≥ 15.8 (the repo is on 18.8.1) plus `Microsoft.CodeCoverage`
+(18.8.1, already referenced). `--collect "Code Coverage;Format=Cobertura"` emits cobertura
+directly for the existing ReportGenerator step, but that throws block coverage away — to keep
+it you would publish the `.coverage` or converted XML as an artifact.
+
+Why it was left alone, after the user asked to change the non-UI jobs *only if they needed
+it*: they don't. `ci.yml` runs unit + integration only, so switching those to the built-in
+collector cannot recover the UI coverage — that is structural, not a config problem. It would
+buy a slightly different number and nothing else. The UI coverage would have to come from
+`ui-tests-windows.yml`, which is a **5-way per-fixture matrix**: five partial `.coverage`
+files, needing artifact upload plus a merge job, on a suite whose timing stability was hard
+won and which instrumentation would slow down. See [[feedback_dont_churn_stable_ci]]. The
+script gives the same number locally on demand.
+
+The runsettings move affects nothing in CI either — no workflow references the file; they
+pass `--collect` directly.
 
 ## The UI tests ARE captured from the CLI — verified 2026-08-05
 

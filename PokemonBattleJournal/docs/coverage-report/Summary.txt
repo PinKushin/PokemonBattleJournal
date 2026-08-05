@@ -1,5 +1,5 @@
 Summary
-  Generated on: 08/05/26 - 5:47:41 PM
+  Generated on: 08/05/26 - 6:19:19 PM
   Parser: DynamicCodeCoverage
   Assemblies: 2
   Classes: 82
@@ -8,7 +8,7 @@ Summary
   Covered lines: 3279
   Uncovered lines: 1971
   Coverable lines: 5250
-  Total lines: 8413
+  Total lines: 8350
   Method coverage: 55.3% (231 of 417)
   Full method coverage: 46.2% (193 of 417)
   Covered methods: 231
@@ -88,10 +88,10 @@ PokemonBattleJournal.dll                                                        
   WinRT.PokemonBattleJournalGenericHelpers.IReadOnlyList_System_Collections_Generic_IEnumerable_char_                                      0%
   WinRT.PokemonBattleJournalGenericHelpers.IReadOnlyList_System_Collections_Generic_IEnumerable_object_                                    0%
   WinRT.PokemonBattleJournalGenericHelpers.IReadOnlyList_System_Collections_IEnumerable                                                    0%
-  WinRT.PokemonBattleJournalVtableClasses.PokemonBattleJournal_AppWinRTTypeDetails                                                         0%
   WinRT.PokemonBattleJournalVtableClasses.PokemonBattleJournal_PokemonBattleJournal_XamlTypeInfo_XamlMemberWinRTTypeDetails                0%
   WinRT.PokemonBattleJournalVtableClasses.PokemonBattleJournal_PokemonBattleJournal_XamlTypeInfo_XamlMetaDataProviderWinRTTypeDetails      0%
   WinRT.PokemonBattleJournalVtableClasses.PokemonBattleJournal_PokemonBattleJournal_XamlTypeInfo_XamlUserTypeWinRTTypeDetails            100%
+  WinRT.PokemonBattleJournalVtableClasses.PokemonBattleJournal_Views_MainPageWinRTTypeDetails                                              0%
   WinRT.PokemonBattleJournalVtableClasses.PokemonBattleJournal_WinUI_AppWinRTTypeDetails                                                 100%
 
 PokemonBattleJournal.Scraper.dll                                                                                                         100%
