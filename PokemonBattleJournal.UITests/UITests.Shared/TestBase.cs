@@ -169,6 +169,27 @@ namespace UITests
             App.FindElements(MobileBy.AccessibilityId(id)).Count > 0;
 
         /// <summary>
+        /// Waits for a loading-gate sentinel (Busy_*) to leave the tree using the
+        /// platform-correct lookup (resource-id on Android, AccessibilityId on Windows).
+        /// Call after NavigateTo so element queries run against a settled page instead of
+        /// burning the UiAutomator waitForIdle budget mid-load. Returns true if the gate
+        /// cleared within the deadline, false on timeout (page may never have shown it —
+        /// a gate that never appears also returns true immediately, which is fine: load
+        /// already finished before we looked).
+        /// </summary>
+        protected bool WaitUntilBusyGone(string sentinelId, int timeoutMs = 10000)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            while (DateTime.UtcNow < deadline)
+            {
+                if (!IsElementPresent(sentinelId))
+                    return true;
+            }
+            NavLog($"WaitUntilBusyGone('{sentinelId}') timed out after {timeoutMs}ms");
+            return false;
+        }
+
+        /// <summary>
         /// Spins (no sleep) until the element with <paramref name="automationId"/> disappears
         /// from the accessibility tree or <paramref name="timeoutMs"/> elapses.
         /// Use after closing a popup/modal to sync on its full dismissal before the next interaction.

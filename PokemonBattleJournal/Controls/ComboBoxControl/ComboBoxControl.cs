@@ -299,7 +299,14 @@ public IEnumerable? ItemsSource
             string path = Path.Combine(FileSystem.Current.CacheDirectory, "combobox_popup.log");
             File.AppendAllText(path, $"[{DateTime.Now:HH:mm:ss.fff}] {message}{Environment.NewLine}");
         }
-        catch { }
+        catch (IOException)
+        {
+            // Diagnostic log write is best-effort — losing a line must never break the popup.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Same: cache dir may be briefly locked/unavailable during app teardown.
+        }
         System.Diagnostics.Debug.WriteLine(message);
     }
 

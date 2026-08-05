@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-**Status:** open. Blocks fast local Android test iteration.
+**Status: RESOLVED 2026-08-04** on branch `feat/loading-gates`. Root cause confirmed: the three tag **CollectionViews** in the detail card kept the Android UI thread perpetually busy, so every UiAutomator call burned the full ~20 s waitForIdle budget. Swapping them for FlexLayout + BindableLayout (plus IsBusy gates for test sync) dropped SelectMatch tests from **50-111 s to 92-368 ms** and the full Android suite from 18m19s to **8m44s, 72/72 green**. `MatchHistoryList` CollectionView did NOT need replacing — the tag CollectionViews alone were the stall. Analysis below kept for reference.
 
 Android ReadJournalPage `SelectMatch_*` tests take 50s+ per test. User confirmed they all use the same already-open row and do NOT click anything between tests — so it's NOT re-open-row overhead.
 

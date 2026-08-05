@@ -127,10 +127,18 @@
             }
         }
 
+        /// <summary>
+        /// Loading gate: true while trainers + archetypes + tags load. Bound to the
+        /// hidden Busy_ArchetypeList sentinel Label for UI test sync.
+        /// </summary>
+        [ObservableProperty]
+        public partial bool IsBusyArchetypeList { get; set; }
+
         [RelayCommand]
         public async Task AppearingAsync()
         {
             _logger.LogInformation("OptionsPageViewModel appearing");
+            IsBusyArchetypeList = true;
             try
             {
                 IconCollection = await PopulateIconCollectionAsync();
@@ -149,6 +157,10 @@
                 // Log only — no dialog from AppearingAsync. ContentDialog requires XamlRoot
                 // which isn't set until the page is fully composed; calling it here crashes WinUI (0xc000027b).
                 _logger.LogError(ex, "Error loading ViewModel: {TrainerName} {@IconCollection}", TrainerName, IconCollection);
+            }
+            finally
+            {
+                IsBusyArchetypeList = false;
             }
         }
 

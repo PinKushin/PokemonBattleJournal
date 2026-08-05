@@ -126,12 +126,19 @@ namespace PokemonBattleJournal.ViewModels
         [ObservableProperty]
         public partial List<MatchEntry>? MatchHistory { get; set; }
 
-
+        /// <summary>
+        /// Loading gate: true while the match-history load is in flight. Bound to the
+        /// hidden Busy_MatchHistory sentinel Label so UI tests can sync on load completion
+        /// instead of polling arbitrary elements.
+        /// </summary>
+        [ObservableProperty]
+        public partial bool IsBusyMatchHistory { get; set; }
 
         [RelayCommand]
         public async Task AppearingAsync()
         {
             _logger.LogInformation("ReadJournalPageViewModel appearing");
+            IsBusyMatchHistory = true;
             try
             {
                 await _semaphore.WaitAsync();
@@ -174,9 +181,8 @@ namespace PokemonBattleJournal.ViewModels
             finally
             {
                 _semaphore.Release();
+                IsBusyMatchHistory = false;
             }
-
-
         }
 
         [RelayCommand]

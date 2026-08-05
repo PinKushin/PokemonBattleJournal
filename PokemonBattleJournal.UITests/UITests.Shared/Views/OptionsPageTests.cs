@@ -3,7 +3,12 @@ namespace UITests
     public partial class OptionsPageTests : BaseTest
     {
         [OneTimeSetUp]
-        public void SetUp() => NavigateTo("Options");
+        public void SetUp()
+        {
+            NavigateTo("Options");
+            // Sync on trainers + archetypes + tags load before any element queries.
+            WaitUntilBusyGone("Busy_ArchetypeList");
+        }
 
         // ---------------------------------------------------------------------------
         // Cleanup helpers — only called by tests that create data

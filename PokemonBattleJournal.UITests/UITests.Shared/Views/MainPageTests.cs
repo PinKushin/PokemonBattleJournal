@@ -6,6 +6,8 @@ namespace UITests
         public void SetUp()
         {
             NavigateTo("Journal Entry");
+            // Sync on archetypes + tags load (incl. possible Limitless fetch) before tests run.
+            WaitUntilBusyGone("Busy_ArchetypeList", timeoutMs: 15000);
             ScrollPageToTop();
         }
 
@@ -261,14 +263,35 @@ namespace UITests
         [Test]
         public void MainPage_UserNoteInput_ShowTextEntry()
         {
+            // Type-verify-retry: SendKeys drops keystrokes on slow CI runners (Windows CI
+            // observed "Hello " — the "World" never arrived) and Android CI throws
+            // StaleElementReferenceException when the Editor re-renders between find and
+            // type. Re-find the element every attempt (heals staleness) and verify the
+            // full text landed before asserting.
+            const string expected = "Hello World";
             try
             {
-                AppiumElement userEntry = FindUIElement("UserNoteInput");
-                userEntry.Click();
-                userEntry.SendKeys("Hello World");
-                userEntry.ShouldNotBeNull();
-                // Re-fetch element so WinAppDriver returns current Value, not cached state.
-                FindUIElement("UserNoteInput").Text.ShouldContain("Hello World");
+                string actual = "";
+                for (int i = 0; i < 3; i++)
+                {
+                    try
+                    {
+                        AppiumElement userEntry = FindUIElement("UserNoteInput");
+                        userEntry.Click();
+                        userEntry.Clear();
+                        userEntry.SendKeys(expected);
+                        // Re-fetch so the driver returns current value, not cached state.
+                        actual = FindUIElement("UserNoteInput").Text;
+                        if (actual.Contains(expected, StringComparison.OrdinalIgnoreCase))
+                            break;
+                        PerfLog($"UserNoteInput attempt {i + 1}: typed text incomplete ('{actual}') — retyping");
+                    }
+                    catch (OpenQA.Selenium.StaleElementReferenceException)
+                    {
+                        PerfLog($"UserNoteInput attempt {i + 1}: stale element — re-finding");
+                    }
+                }
+                actual.ShouldContain(expected);
             }
             finally { ClearUserNoteInput(); }
         }

@@ -119,8 +119,28 @@ namespace PokemonBattleJournal.ViewModels
         [ObservableProperty]
         public partial ICartesianAxis[] FirstTurnYAxes { get; set; } = [new Axis()];
 
+        /// <summary>
+        /// Loading gate: true while match data loads and chart series are computed.
+        /// Bound to the hidden Busy_ChartData sentinel Label for UI test sync.
+        /// </summary>
+        [ObservableProperty]
+        public partial bool IsBusyChartData { get; set; }
+
         [RelayCommand]
         public async Task AppearingAsync()
+        {
+            IsBusyChartData = true;
+            try
+            {
+                await LoadTrainerDataAsync();
+            }
+            finally
+            {
+                IsBusyChartData = false;
+            }
+        }
+
+        private async Task LoadTrainerDataAsync()
         {
             _logger.LogInformation("TrainerPage appearing");
             List<MatchEntry>? matches = null;

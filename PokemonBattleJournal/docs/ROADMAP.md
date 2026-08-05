@@ -81,7 +81,7 @@ Tracked here so nothing gets lost between sessions. Bugs first (things broken ri
 1. ~~**B-01, B-02, B-03**~~ — done
 2. ~~**F-03 → F-10**~~ — done (LiveCharts2 charts live)
 3. ~~**F-11 → F-18**~~ — done (styling pass complete)
-4. **Loading gates + ReadJournal Android test slowdown** — named `IsBusy_*` gates per `docs/memory/project_roadmap.md`; swap ReadJournal CollectionViews for FlexLayout
+4. ~~**Loading gates + ReadJournal Android test slowdown**~~ — **Done 2026-08-04** (feat/loading-gates): IsBusy* gates on all 4 data pages + Busy_* sentinels + WaitUntilBusyGone; ReadJournal tag CollectionViews → FlexLayout. SelectMatch tests 50-111s → sub-second; Android suite 18m → 8m44s, 72/72.
 5. **TrainerHill export + full backup export** — see `docs/memory/project_roadmap.md`
 6. **F-19** — Windows Appium driver replacement (in progress externally)
 7. **F-13, F-15, F-16** — ReadJournalPage filter/search, archetype management UI, trainer name edit
