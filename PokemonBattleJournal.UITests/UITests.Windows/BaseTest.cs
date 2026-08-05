@@ -9,6 +9,11 @@ namespace UITests
         private static UIA3Automation? _uia;
         private static UIA3Automation UIA => _uia ??= new UIA3Automation();
 
+        // Timing log threshold. A hit on a warm tree costs ~150-250ms; anything above this is
+        // the expensive full-descendant-walk case worth attributing, so the threshold keeps
+        // the log readable instead of one line per lookup.
+        private const int SlowAttemptMs = 750;
+
         protected override void DoNavigateTo(string pageTitle)
         {
             PerfLog($"NAV click OK");
@@ -22,11 +27,6 @@ namespace UITests
         // element tree so MAUI IsVisible binding cascades (async on the UI thread) are detected
         // reliably. Once FlaUI confirms the element exists, spin-re-anchor WinAppDriver until it
         // picks it up too, then return the Appium handle for downstream test interactions.
-        // Attempts slower than this are logged individually. A hit on a warm tree costs
-        // ~150-250ms; anything above this is the expensive full-descendant-walk case we
-        // are trying to attribute, so the threshold keeps the log readable.
-        private const int SlowAttemptMs = 750;
-
         protected override AppiumElement FindUIElement(string id)
         {
             var deadline = DateTime.UtcNow.AddSeconds(30);
@@ -70,7 +70,7 @@ namespace UITests
             }
             finally
             {
-                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+                App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait;
                 if (total.ElapsedMilliseconds > SlowAttemptMs)
                     PerfLog($"FIND '{id}': done in {total.ElapsedMilliseconds}ms over {iteration + 1} attempt(s)");
             }
@@ -127,33 +127,40 @@ namespace UITests
             App.FindElement(MobileBy.AccessibilityId(windowsId));
 
         // AccessibilityId = AutomationId on Windows — reliable, does not reset after binding cascades.
+        // The element is optional by contract, so timeoutMs is pinned as the implicit wait rather
+        // than left at the ambient value. Previously this inherited the 5s ambient and a single
+        // FindElement consumed 6.7s against a 2000ms budget — the deadline check only runs once
+        // the call returns, so the loop could not enforce its own limit. Android's override has
+        // always done it this way; this brings Windows in line.
         protected override bool TryClickIfPresent(string id, int timeoutMs = 2000)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             var total = System.Diagnostics.Stopwatch.StartNew();
-            while (DateTime.UtcNow < deadline)
+            try
             {
-                try
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(timeoutMs);
+                while (DateTime.UtcNow < deadline)
                 {
-                    App.FindElement(MobileBy.AccessibilityId(id)).Click();
-                    if (total.ElapsedMilliseconds > SlowAttemptMs)
-                        PerfLog($"TryClickIfPresent('{id}'): clicked after {total.ElapsedMilliseconds}ms (budget {timeoutMs}ms)");
-                    return true;
+                    try
+                    {
+                        App.FindElement(MobileBy.AccessibilityId(id)).Click();
+                        if (total.ElapsedMilliseconds > SlowAttemptMs)
+                            PerfLog($"TryClickIfPresent('{id}'): clicked after {total.ElapsedMilliseconds}ms (budget {timeoutMs}ms)");
+                        return true;
+                    }
+                    catch (OpenQA.Selenium.NoSuchElementException) when (DateTime.UtcNow < deadline) { }
+                    catch (Exception ex)
+                    {
+                        PerfLog($"TryClickIfPresent('{id}'): gave up after {total.ElapsedMilliseconds}ms (budget {timeoutMs}ms) — {ex.GetType().Name}");
+                        NavLog($"TryClickIfPresent({id}): {ex.GetType().Name}: {ex.Message}");
+                        return false;
+                    }
                 }
-                catch (OpenQA.Selenium.NoSuchElementException) when (DateTime.UtcNow < deadline) { }
-                catch (Exception ex)
-                {
-                    // A single FindElement can overrun the whole budget: the ambient implicit
-                    // wait plus the UIA descendant walk are both charged to one call, so the
-                    // deadline check only runs once the call finally returns.
-                    PerfLog($"TryClickIfPresent('{id}'): gave up after {total.ElapsedMilliseconds}ms (budget {timeoutMs}ms) — {ex.GetType().Name}");
-                    NavLog($"TryClickIfPresent({id}): {ex.GetType().Name}: {ex.Message}");
-                    return false;
-                }
+                if (total.ElapsedMilliseconds > SlowAttemptMs)
+                    PerfLog($"TryClickIfPresent('{id}'): deadline exit after {total.ElapsedMilliseconds}ms (budget {timeoutMs}ms)");
+                return false;
             }
-            if (total.ElapsedMilliseconds > SlowAttemptMs)
-                PerfLog($"TryClickIfPresent('{id}'): deadline exit after {total.ElapsedMilliseconds}ms (budget {timeoutMs}ms)");
-            return false;
+            finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
         }
 
         // Scrolls the element with the given AutomationId into the viewport via FlaUI's

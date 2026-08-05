@@ -48,7 +48,7 @@ namespace UITests
                         }
                     }
                 }
-                finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
+                finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
 
                 if (menuOpen)
                 {
@@ -71,6 +71,9 @@ namespace UITests
         // Stage 2 is necessary because popups open in a separate Android Dialog window whose
         // children may not be under the main app scrollable, and UiScrollable(instance=0)
         // targets the main ScrollView. AccessibilityId works cross-window.
+        // Stage 3 fling budget — see the finally block in FindUIElement.
+        private static readonly TimeSpan Stage3ScrollWait = TimeSpan.FromSeconds(10);
+
         protected override AppiumElement FindUIElement(string id)
         {
             string resourceId = $"{PackageName}:id/{id}";
@@ -95,7 +98,7 @@ namespace UITests
                     catch (OpenQA.Selenium.NoSuchElementException) { break; }
                 }
             }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
+            finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
             PerfLog($"FIND '{id}' STAGE1_MISS after {stage1Sw.ElapsedMilliseconds}ms → try content-desc");
 
             // Stage 2: AccessibilityId (content-desc) — cross-window, covers popup Dialog elements
@@ -108,7 +111,7 @@ namespace UITests
                 return el;
             }
             catch (OpenQA.Selenium.NoSuchElementException) { }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
+            finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
             PerfLog($"FIND '{id}' STAGE2_MISS after {stage2Sw.ElapsedMilliseconds}ms → try scrollIntoView");
 
             // Stage 3: UiScrollable — scrolls the main page to bring off-screen elements into view.
@@ -131,7 +134,10 @@ namespace UITests
             }
             try
             {
-                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                // Operational timeout, not the ambient: scrollIntoView may fling through a
+                // long page before the element enters the viewport, so it keeps its own 10s
+                // budget independent of AmbientImplicitWait.
+                App.Manage().Timeouts().ImplicitWait = Stage3ScrollWait;
                 var el = App.FindElement(MobileBy.AndroidUIAutomator(
                     $"new UiScrollable(new UiSelector().scrollable(true).packageName(\"{PackageName}\").instance(0))" +
                     $".scrollIntoView({directSelector})"));
@@ -143,6 +149,13 @@ namespace UITests
                 PerfLog($"FIND '{id}' STAGE3_FAIL after {stage3Sw.ElapsedMilliseconds}ms (total {overallSw.ElapsedMilliseconds}ms): {ex.GetType().Name}");
                 DumpVisibleElements($"FIND '{id}' STAGE3_FAIL");
                 throw;
+            }
+            finally
+            {
+                // Stage 3 previously left the ambient at its own 10s value for every later
+                // call in the session — the leak that made the effective ambient depend on
+                // which helper ran last.
+                App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait;
             }
         }
 
@@ -203,7 +216,7 @@ namespace UITests
                 }
             }
             catch (Exception ex) { PerfLog($"DUMP [{context}] failed: {ex.GetType().Name}: {ex.Message}"); }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
+            finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
         }
 
         /// <summary>
@@ -305,7 +318,7 @@ namespace UITests
             }
             finally
             {
-                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait;
             }
         }
     }

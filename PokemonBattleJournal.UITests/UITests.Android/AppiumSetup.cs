@@ -175,7 +175,7 @@ if (useInstalled)
             step5Timer.Stop();
             Log($"5. AndroidDriver created ({step5Timer.ElapsedMilliseconds}ms)");
             PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] AndroidDriver instantiated ({step5Timer.ElapsedMilliseconds}ms)");
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
 
             Log("6. WaitForActivity");
             var step6Timer = System.Diagnostics.Stopwatch.StartNew();
@@ -260,7 +260,7 @@ if (useInstalled)
             }
             finally
             {
-                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
             }
         }
 

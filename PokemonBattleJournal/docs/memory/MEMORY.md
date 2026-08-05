@@ -24,7 +24,7 @@
 - [Security standards](feedback_security.md) — Never introduce SQL injection, XSS, command injection, path traversal, or insecure deserialization. Verify before marking any task done that touches SQL, file I/O, HTTP clients, or user-supplied data.
 - [SQLite only — no Preferences](project_sqlite_only.md) — Preferences API is not used; all state is in the .db3 file. CLAUDE.md reference to preferences.dat is stale.
 - [No sleeps in UI tests](feedback_no_sleeps_in_tests.md) — Never use Thread.Sleep/Task.Delay in Appium tests or seed setup; sync on element discovery via implicit wait instead.
-- [UI test implicit wait limits](feedback_uitest_timeouts.md) — 5s Windows, 10s Android; 15s is a test bug not a timeout; fast-fail cleanup paths use 0ms.
+- [UI test implicit wait limits](feedback_uitest_timeouts.md) — 5s ambient on BOTH platforms via TestBase.AmbientImplicitWait (no per-platform literals); optional-element lookups MUST use TimeSpan.Zero — an absent element costs ~6.8s at the ambient wait vs ~215ms when present.
 - [NavigateTo required in every test](feedback_navigate_to_every_test.md) — Every Appium test must call NavigateTo; discovery order is non-deterministic; silent cascade if missing.
 - [Android element lookup strategy](project_android_element_lookup.md) — Direct resourceId (3s) first, UiScrollable fallback (10s); empty Entry returns placeholder not null.
 - [UI test nav diagnostic log](project_uitest_nav_log.md) — %TEMP%\UITests.NavLog.txt; read after VS runs to debug cascades; reset each run by AppiumSetup.
