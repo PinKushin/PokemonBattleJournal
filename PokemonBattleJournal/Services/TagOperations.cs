@@ -1,14 +1,16 @@
-﻿namespace PokemonBattleJournal.Services
+namespace PokemonBattleJournal.Services
 {
     public class TagOperations : ITagOperations
     {
         private readonly SqliteConnectionFactory _factory;
         private readonly ILogger _logger;
+        private readonly IErrorHandler _errorHandler;
 
-        internal TagOperations(SqliteConnectionFactory factory, ILogger logger)
+        internal TagOperations(SqliteConnectionFactory factory, ILogger logger, IErrorHandler errorHandler)
         {
             _factory = factory;
             _logger = logger;
+            _errorHandler = errorHandler;
         }
 
         /// <summary>
@@ -63,9 +65,8 @@
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Error getting tag by ID: {Id}", id);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return null;
             }
             finally
@@ -106,23 +107,20 @@
             }
             catch (ArgumentException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Invalid data when saving tag: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (SQLiteException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Database error when saving tag: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Error saving tag: {TagName} - {Message}", tagTxt, ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             finally
@@ -195,23 +193,20 @@
             }
             catch (ArgumentException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Invalid data when deleting tag: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (SQLiteException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Database error when deleting tag: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Error deleting tag: {TagName} - {Message}", tag.Name ?? "Unknown", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             finally

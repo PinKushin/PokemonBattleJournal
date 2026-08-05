@@ -13,7 +13,7 @@ public sealed class TestSqliteConnectionFactory : SqliteConnectionFactory, IAsyn
     private readonly string _dbPath;
 
     public TestSqliteConnectionFactory(ILimitlessMetaService metaService)
-        : base(NullLogger<SqliteConnectionFactory>.Instance, metaService)
+        : base(NullLogger<SqliteConnectionFactory>.Instance, metaService, new NullErrorHandler())
     {
         _dbPath = Path.Combine(Path.GetTempPath(), $"pbjtest_{Guid.NewGuid():N}.db3");
     }

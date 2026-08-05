@@ -1,18 +1,20 @@
-﻿using PokemonBattleJournal.Utilities;
+using PokemonBattleJournal.Utilities;
 
 namespace PokemonBattleJournal.ViewModels
 {
     public partial class ReadJournalPageViewModel : ObservableObject
     {
         private readonly ILogger<ReadJournalPageViewModel> _logger;
+        private readonly IErrorHandler _errorHandler;
         private readonly ISqliteConnectionFactory _connection;
         private readonly ITrainerSwitchService _switchService;
         private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-        public ReadJournalPageViewModel(ILogger<ReadJournalPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService)
+        public ReadJournalPageViewModel(ILogger<ReadJournalPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService, IErrorHandler errorHandler)
         {
             WelcomeMsg = $"{TrainerName}'s Journal";
             _logger = logger;
+            _errorHandler = errorHandler;
             _connection = connection;
             _switchService = switchService;
             _switchService.TrainerChanged += OnTrainerChanged;
@@ -174,8 +176,7 @@ namespace PokemonBattleJournal.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in AppearingAsync");
-                ModalErrorHandler errorHandler = new();
-                errorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return;
             }
             finally
@@ -211,8 +212,7 @@ namespace PokemonBattleJournal.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading match details");
-                ModalErrorHandler errorHandler = new();
-                errorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 ResetDisplay();
             }
         }

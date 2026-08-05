@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using PokemonBattleJournal.Scraper.Interfaces;
 using PokemonBattleJournal.Scraper.Models;
 
@@ -8,12 +8,14 @@ namespace PokemonBattleJournal.Services
     {
         private readonly SqliteConnectionFactory _factory;
         private readonly ILogger _logger;
+        private readonly IErrorHandler _errorHandler;
         private readonly ILimitlessMetaService _metaService;
 
-        internal ArchetypeOperations(SqliteConnectionFactory factory, ILogger logger, ILimitlessMetaService metaService)
+        internal ArchetypeOperations(SqliteConnectionFactory factory, ILogger logger, ILimitlessMetaService metaService, IErrorHandler errorHandler)
         {
             _factory = factory;
             _logger = logger;
+            _errorHandler = errorHandler;
             _metaService = metaService;
         }
 
@@ -117,8 +119,7 @@ namespace PokemonBattleJournal.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting archetype by ID: {Id}", id);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return null;
             }
             finally
@@ -170,22 +171,19 @@ namespace PokemonBattleJournal.Services
             catch (ArgumentException ex)
             {
                 _logger.LogError(ex, "Invalid data when saving archetype: {Message}", ex.Message);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (SQLiteException ex)
             {
                 _logger.LogError(ex, "Database error when saving archetype: {Message}", ex.Message);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving archetype: {Name} - {Message}", name, ex.Message);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             finally
@@ -262,29 +260,25 @@ namespace PokemonBattleJournal.Services
             catch (ArgumentException ex)
             {
                 _logger.LogError(ex, "Invalid data when deleting archetype: {Message}", ex.Message);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogError(ex, "Cannot delete archetype: {Message}", ex.Message);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (SQLiteException ex)
             {
                 _logger.LogError(ex, "Database error when deleting archetype: {Message}", ex.Message);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting archetype: {Name} - {Message}", archetype.Name, ex.Message);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             finally

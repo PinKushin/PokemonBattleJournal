@@ -298,7 +298,7 @@ namespace PokemonBattleJournal.Tests.Services
             private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"pbj_test_{Guid.NewGuid():N}.db3");
 
             public InMemorySqliteConnectionFactory()
-                : base(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>())
+                : base(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>(), Substitute.For<IErrorHandler>())
             { }
 
             protected override string GetDbPath() => _dbPath;

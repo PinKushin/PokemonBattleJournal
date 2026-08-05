@@ -13,12 +13,14 @@ namespace PokemonBattleJournal.ViewModels
     {
         private readonly ISqliteConnectionFactory _connection;
         private readonly ILogger<TrainerPageViewModel> _logger;
+        private readonly IErrorHandler _errorHandler;
         private readonly IMatchAnalysisService _analysisService;
         private readonly ITrainerSwitchService _switchService;
 
-        public TrainerPageViewModel(ILogger<TrainerPageViewModel> logger, ISqliteConnectionFactory connection, IMatchAnalysisService analysisService, ITrainerSwitchService switchService)
+        public TrainerPageViewModel(ILogger<TrainerPageViewModel> logger, ISqliteConnectionFactory connection, IMatchAnalysisService analysisService, ITrainerSwitchService switchService, IErrorHandler errorHandler)
         {
             _logger = logger;
+            _errorHandler = errorHandler;
             _connection = connection;
             _analysisService = analysisService;
             _switchService = switchService;
@@ -161,8 +163,7 @@ namespace PokemonBattleJournal.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading Trainer Page data");
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return;
             }
 

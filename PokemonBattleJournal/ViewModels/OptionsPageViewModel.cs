@@ -1,4 +1,4 @@
-﻿namespace PokemonBattleJournal.ViewModels
+namespace PokemonBattleJournal.ViewModels
 {
     public partial class OptionsPageViewModel : ObservableObject
     {
@@ -6,14 +6,16 @@
         private readonly SemaphoreSlim _semaphore = new(1, 1);
         private Trainer? _trainer;
         private readonly ILogger<OptionsPageViewModel> _logger;
+        private readonly IErrorHandler _errorHandler;
         private readonly ITrainerSwitchService _switchService;
         private readonly AppShellViewModel _shellVm;
         private readonly ITrainerHillImportService _importService;
 
-        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService, AppShellViewModel shellVm, ITrainerHillImportService importService)
+        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService, AppShellViewModel shellVm, ITrainerHillImportService importService, IErrorHandler errorHandler)
         {
             _connection = connection;
             _logger = logger;
+            _errorHandler = errorHandler;
             _switchService = switchService;
             _shellVm = shellVm;
             _importService = importService;
@@ -136,8 +138,7 @@
             {
                 _logger.LogError(ex, "Error during TrainerHill import");
                 ImportStatusMessage = "Import failed";
-                ModalErrorHandler handler = new();
-                handler.HandleError(ex);
+                _errorHandler.HandleError(ex);
             }
         }
 
@@ -234,8 +235,7 @@
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting trainer {TrainerName}", trainer.Name);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return;
             }
             finally
@@ -291,8 +291,7 @@
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving Trainer: {TrainerName}", TrainerName);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
             }
             finally
             {
@@ -336,8 +335,7 @@
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving Tag: {TagInput}", TagInput);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
             }
             finally
             {
@@ -384,8 +382,7 @@
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving Archetype: {DeckName} {DeckIcon}", NewDeckName, NewDeckIcon);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
             }
             finally
             {
@@ -415,8 +412,7 @@
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting Archetype: {Name}", archetype.Name);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
             }
             finally
             {
@@ -444,8 +440,7 @@
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting Tag: {Name}", tag.Name);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
             }
             finally
             {
@@ -467,8 +462,7 @@
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving all");
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
             }
         }
 
@@ -492,8 +486,7 @@
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting Trainer: {TrainerName}", TrainerName);
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return;
             }
             finally

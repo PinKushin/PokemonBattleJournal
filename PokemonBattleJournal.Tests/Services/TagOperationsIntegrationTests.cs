@@ -10,7 +10,7 @@ namespace PokemonBattleJournal.Tests.Services
         public async Task SetUp()
         {
             _factory = new TestSqliteConnectionFactory();
-            _sut = new TagOperations(_factory, Substitute.For<ILogger>());
+            _sut = new TagOperations(_factory, Substitute.For<ILogger>(), Substitute.For<IErrorHandler>());
             _ = await _factory.GetDatabaseAsync();
         }
 
@@ -132,7 +132,7 @@ namespace PokemonBattleJournal.Tests.Services
             private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"pbj_tag_test_{Guid.NewGuid():N}.db3");
 
             public TestSqliteConnectionFactory()
-                : base(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>())
+                : base(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>(), Substitute.For<IErrorHandler>())
             { }
 
             protected override string GetDbPath() => _dbPath;

@@ -1,4 +1,4 @@
-﻿using PokemonBattleJournal.Interfaces;
+using PokemonBattleJournal.Interfaces;
 
 namespace PokemonBattleJournal.Tests.ViewModels
 {
@@ -27,14 +27,14 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 Substitute.For<ILogger<MainPageViewModel>>(),
                 _mockConnectionFactory,
                 Substitute.For<IMatchResultsCalculatorFactory>(),
-                _mockSwitchService);
+                _mockSwitchService, Substitute.For<IErrorHandler>());
             _shellVm = new AppShellViewModel(
                 _mockSwitchService,
                 mainPageVm,
                 Substitute.For<ILogger<AppShellViewModel>>());
 
             // SUT
-            _viewModel = new OptionsPageViewModel(_mockLogger, _mockConnectionFactory, _mockSwitchService, _shellVm, Substitute.For<ITrainerHillImportService>());
+            _viewModel = new OptionsPageViewModel(_mockLogger, _mockConnectionFactory, _mockSwitchService, _shellVm, Substitute.For<ITrainerHillImportService>(), Substitute.For<IErrorHandler>());
         }
 
         [Test]

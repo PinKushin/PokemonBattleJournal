@@ -31,7 +31,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _mockTrainerOps.GetByNameAsync(Arg.Any<string>())
                 .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
             // SUT
-            _viewModel = new MainPageViewModel(_mockLogger, _mockConnectionFactory, _mockCalculatorFactory, _mockSwitchService);
+            _viewModel = new MainPageViewModel(_mockLogger, _mockConnectionFactory, _mockCalculatorFactory, _mockSwitchService, Substitute.For<IErrorHandler>());
         }
 
         [Test]

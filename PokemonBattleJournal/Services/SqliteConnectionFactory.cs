@@ -1,4 +1,4 @@
-﻿using PokemonBattleJournal.Scraper.Interfaces;
+using PokemonBattleJournal.Scraper.Interfaces;
 
 namespace PokemonBattleJournal.Services;
 
@@ -10,12 +10,12 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
     private SQLiteAsyncConnection? _database;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    public SqliteConnectionFactory(ILogger logger, ILimitlessMetaService metaService)
+    public SqliteConnectionFactory(ILogger logger, ILimitlessMetaService metaService, IErrorHandler errorHandler)
     {
-        Trainers = new TrainerOperations(this, logger);
-        Matches = new MatchOperations(this, logger);
-        Archetypes = new ArchetypeOperations(this, logger, metaService);
-        Tags = new TagOperations(this, logger);
+        Trainers = new TrainerOperations(this, logger, errorHandler);
+        Matches = new MatchOperations(this, logger, errorHandler);
+        Archetypes = new ArchetypeOperations(this, logger, metaService, errorHandler);
+        Tags = new TagOperations(this, logger, errorHandler);
     }
 
     public ITrainerOperations Trainers { get; }

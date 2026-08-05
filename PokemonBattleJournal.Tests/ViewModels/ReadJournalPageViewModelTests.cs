@@ -1,4 +1,4 @@
-﻿namespace PokemonBattleJournal.Tests.ViewModels
+namespace PokemonBattleJournal.Tests.ViewModels
 {
     public class ReadJournalPageViewModelTests
     {
@@ -19,7 +19,7 @@
             _mockConnectionFactory.Matches.Returns(Substitute.For<IMatchOperations>());
 
             // SUT
-            _viewModel = new ReadJournalPageViewModel(_mockLogger, _mockConnectionFactory, _mockSwitchService);
+            _viewModel = new ReadJournalPageViewModel(_mockLogger, _mockConnectionFactory, _mockSwitchService, Substitute.For<IErrorHandler>());
         }
 
         [Test]

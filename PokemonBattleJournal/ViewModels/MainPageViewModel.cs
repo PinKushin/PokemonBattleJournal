@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using PokemonBattleJournal.Utilities;
 
 namespace PokemonBattleJournal.ViewModels
@@ -6,6 +6,7 @@ namespace PokemonBattleJournal.ViewModels
     public partial class MainPageViewModel : ObservableObject
     {
         private readonly ILogger<MainPageViewModel> _logger;
+        private readonly IErrorHandler _errorHandler;
         private readonly ISqliteConnectionFactory _connection;
         private readonly SemaphoreSlim _semaphore = new(1, 1);
         private Trainer? _trainer;
@@ -18,9 +19,10 @@ namespace PokemonBattleJournal.ViewModels
             !string.IsNullOrWhiteSpace(UserNoteInput) ||
             Game1TagCollection?.Any(t => t.IsSelected) == true;
 
-        public MainPageViewModel(ILogger<MainPageViewModel> logger, ISqliteConnectionFactory connection, IMatchResultsCalculatorFactory calculatorFactory, ITrainerSwitchService switchService)
+        public MainPageViewModel(ILogger<MainPageViewModel> logger, ISqliteConnectionFactory connection, IMatchResultsCalculatorFactory calculatorFactory, ITrainerSwitchService switchService, IErrorHandler errorHandler)
         {
             _logger = logger;
+            _errorHandler = errorHandler;
             _connection = connection;
             _calculatorFactory = calculatorFactory;
             _switchService = switchService;
@@ -307,8 +309,7 @@ namespace PokemonBattleJournal.ViewModels
             }
             catch (Exception ex)
             {
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 _logger.LogError(ex, "Error Loading ViewModel");
             }
             finally
@@ -506,8 +507,7 @@ namespace PokemonBattleJournal.ViewModels
                 SavedFileDisplay = "Save Failed: Invalid Data";
                 ValidationMessage = $"Invalid data: {ex.Message}";
                 HasValidationErrors = true;
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 _logger.LogError(ex, "Invalid data when saving match");
                 return 0;
             }
@@ -516,8 +516,7 @@ namespace PokemonBattleJournal.ViewModels
                 SavedFileDisplay = "Save Failed: Database Error";
                 ValidationMessage = $"Database error: {ex.Message}";
                 HasValidationErrors = true;
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 _logger.LogError(ex, "Database error when saving match");
                 return 0;
             }
@@ -526,8 +525,7 @@ namespace PokemonBattleJournal.ViewModels
                 SavedFileDisplay = "Save Failed: Unexpected Error";
                 ValidationMessage = $"An unexpected error occurred: {ex.Message}";
                 HasValidationErrors = true;
-                ModalErrorHandler modalErrorHandler = new();
-                modalErrorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 _logger.LogError(ex, "Error saving match");
                 return 0;
             }

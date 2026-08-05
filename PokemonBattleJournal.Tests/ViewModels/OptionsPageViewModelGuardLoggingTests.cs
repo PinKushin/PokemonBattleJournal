@@ -40,7 +40,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 Substitute.For<ILogger<MainPageViewModel>>(),
                 _mockConnectionFactory,
                 Substitute.For<IMatchResultsCalculatorFactory>(),
-                switchService);
+                switchService, Substitute.For<IErrorHandler>());
             var shellVm = new AppShellViewModel(
                 switchService,
                 mainPageVm,
@@ -48,7 +48,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             _viewModel = new OptionsPageViewModel(
                 _logger, _mockConnectionFactory, switchService, shellVm,
-                Substitute.For<ITrainerHillImportService>());
+                Substitute.For<ITrainerHillImportService>(), Substitute.For<IErrorHandler>());
         }
 
         private void ShouldHaveWarned(string containing)
