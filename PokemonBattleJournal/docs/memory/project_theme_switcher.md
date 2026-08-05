@@ -10,6 +10,12 @@ metadata:
 
 In-app theme switcher is a planned long-term feature.
 
+**Scheduling (user, 2026-08-05):** theming comes *after* the remaining feature work —
+export, loading indicator, archetype management UI (F-15), trainer name editing (F-16),
+ReadJournal filter/search (F-13) — and is followed by the site refresh, which shares its
+visual identity. Reason: theming a UI that is still gaining controls means doing it twice.
+See [[project_roadmap]] and `docs/ROADMAP.md` for the full order.
+
 **Why:** Android emulator (clean install) starts in light theme, so the app currently renders with light colors on Android even though the dev's intention is dark-first. A theme switcher would let users (and test environments) control this explicitly.
 
 **How to apply:** Don't hardcode colors anywhere — always use `DynamicResource`/`AppThemeBinding` or pass colors as parameters so a future theme switch can propagate correctly. Never bake `PokeBlue`/`PokeYellow`/`OffBlack` as literals into C# code.

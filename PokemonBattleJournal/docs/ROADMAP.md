@@ -88,13 +88,15 @@ Tracked here so nothing gets lost between sessions. Bugs first (things broken ri
 
 6. **TrainerHill export + full backup export** — biggest user-facing value; format already reverse-engineered. See `docs/memory/project_roadmap.md`.
 7. **Loading indicator** — design locked (partial arc + Pokéball on the leading edge); gates and sentinels already shipped.
-8. **Theming** — in-app light/dark theme switcher. See `docs/memory/project_theme_switcher.md`.
-9. **Site refresh** — finishes the theming work with a shared visual identity; self-hosted fonts, reconsider type choices.
+8. **F-15 — Archetype management UI** — add/rename/delete custom archetypes on OptionsPage. `ArchetypeOperations.SaveAsync` already exists with no UI reaching it, so this is the smallest gap between existing capability and what a user can actually do.
+9. **F-16 — Trainer name editing** — edit in place without re-triggering the first-start flow.
+10. **F-13 — ReadJournalPage filter/search** — narrow the journal list by archetype or date. Grows in value as a user accumulates matches, so it pairs naturally with export.
+11. **Theming** — in-app light/dark theme switcher. See `docs/memory/project_theme_switcher.md`. Deliberately after the feature work above (user, 2026-08-05): theming a UI that is still gaining controls means doing it twice.
+12. **Site refresh** — finishes the theming work with a shared visual identity; self-hosted fonts, reconsider type choices.
 
 Unscheduled / no strong ordering yet:
 
 - **F-19** — Windows Appium driver replacement (in progress externally)
-- **F-13, F-15, F-16** — ReadJournalPage filter/search, archetype management UI, trainer name edit
 - **F-20, F-22** — configurable AVD, archetype periodic refresh
 - **AOT compatibility + real installer** — see `docs/memory/project_roadmap.md`; no longer blocked on budget (Android signing is free, SignPath covers Windows)
 
