@@ -20,8 +20,13 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 ## Commands
 
 ```powershell
-# Build (Windows)
-dotnet build PokemonBattleJournal.slnx -f net10.0-windows10.0.19041.0
+# Build the app for Windows. -f must target the app project, NOT the solution —
+# the test and scraper projects do not target the Windows TFM, so passing -f to
+# PokemonBattleJournal.slnx fails with NETSDK1005 on every one of them.
+dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
+
+# Build everything (all projects, all their own TFMs — no -f)
+dotnet build PokemonBattleJournal.slnx
 
 # Run (Windows)
 dotnet run --project PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
@@ -103,7 +108,7 @@ In this project:
 
 ## Platform notes
 
-- Windows: unpackaged (`WindowsPackageType=None`); debug exe at `bin\Debug\net10.0-windows10.0.19041.0\win10-x64\PokemonBattleJournal.exe`
+- Windows: unpackaged (`WindowsPackageType=None`); debug exe at `bin\Debug\net10.0-windows10.0.19041.0\win-x64\PokemonBattleJournal.exe`
 - Android UI tests: AVD `pixel_7_-_api_35`; `EnsureEmulatorRunning()` verifies correct AVD by name via `adb emu avd name`, boots it if absent, then uninstalls previous APK to clear signing conflicts
 - Android Release: `RunAOTCompilation=False`, `PublishTrimmed=False`
 - Benchmarks fail under Debug; always use Release + `Run.ps1`

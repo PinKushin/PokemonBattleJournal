@@ -156,23 +156,27 @@ PokemonBattleJournal.slnx
 │   ├── Views/                            # XAML Shell pages
 │   ├── Services/                         # DB + business logic
 │   ├── Interfaces/                       # Service contracts
-│   ├── Utilities/                        # File, prefs, threading, calculations
+│   ├── Utilities/                        # FileHelper, MainThreadHelper, TaskUtilities, Calculations
 │   ├── Controls/                         # ComboBoxControl, ImagePicker
 │   ├── Platforms/                        # Android, iOS, MacCatalyst, Windows, Tizen
 │   └── Resources/                        # Fonts, sprites, styles, images
 ├── PokemonBattleJournal.Tests/           # Unit tests (excluded from Release solution build)
+├── PokemonBattleJournal.IntegrationTests/ # Real SQLite, temp DB per test (excluded from Release solution build)
 ├── PokemonBattleJournal.Scraper/         # SOLID scraper library — Limitless TCG meta service
-├── PokemonBattleJournal.Benchmarks/      # BenchmarkDotNet (PokemonBattleJournal.Benchmarking.csproj)
 └── PokemonBattleJournal.UITests/
     ├── UITests.Shared/                   # Shared Appium tests + server helper
     ├── UITests.Windows/                  # Windows Appium runner (port 4724)
     └── UITests.Android/                  # Android Appium runner
 ```
 
+Authoritative list is `PokemonBattleJournal.slnx` — the seven projects above are exactly
+what it contains. (A `PokemonBattleJournal.Benchmarks/` BenchmarkDotNet project was listed
+here until 2026-08-05; it has never existed in the repo.)
+
 **Build notes**
 
 - Open/build with **`PokemonBattleJournal.slnx` only**. Do **not** recreate `PokemonBattleJournal.sln`.
-- Debug profile launches the Windows **`.exe`** at `bin\Debug\net10.0-windows10.0.19041.0\win10-x64\PokemonBattleJournal.exe`.
+- Debug profile launches the Windows **`.exe`** at `bin\Debug\net10.0-windows10.0.19041.0\win-x64\PokemonBattleJournal.exe`.
 - `PokemonBattleJournal.Tests` has `<Build Solution="Release|*" Project="false" />` — Release solution builds skip unit tests.
 - Main app: `WindowsPackageType=None` (unpackaged Windows).
 - Windows DB path is GUID-based (`%LOCALAPPDATA%\User Name\{GUID}\Data\PokemonBattleJournal.db3`) — external processes can't compute it; use in-app seeding.
@@ -351,7 +355,7 @@ XAML bindings by page:
 
 | Platform | Notes |
 |---|---|
-| Windows | Unpackaged; exe at `bin\Debug\net10.0-windows10.0.19041.0\win10-x64\PokemonBattleJournal.exe`; DB at `%LOCALAPPDATA%\User Name\{GUID}\Data\PokemonBattleJournal.db3` |
+| Windows | Unpackaged; exe at `bin\Debug\net10.0-windows10.0.19041.0\win-x64\PokemonBattleJournal.exe`; DB at `%LOCALAPPDATA%\User Name\{GUID}\Data\PokemonBattleJournal.db3` |
 | Android | `RunAOTCompilation=False`, `PublishTrimmed=False` in Release; AVD `pixel_7_-_api_35` |
 | iOS / MacCatalyst | Min OS 15.0 |
 
@@ -390,8 +394,13 @@ XAML bindings by page:
 ## Commands cheat sheet
 
 ```powershell
-# Build main app (Windows)
-dotnet build PokemonBattleJournal.slnx -f net10.0-windows10.0.19041.0
+# Build main app (Windows). -f must target the app project, NOT the solution — the
+# test and scraper projects do not target the Windows TFM, so passing -f to
+# PokemonBattleJournal.slnx fails with NETSDK1005 on every one of them.
+dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
+
+# Build everything (all projects, all their own TFMs — no -f)
+dotnet build PokemonBattleJournal.slnx
 
 # Unit tests only
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
