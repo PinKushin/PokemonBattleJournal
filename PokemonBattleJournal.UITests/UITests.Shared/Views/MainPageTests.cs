@@ -70,6 +70,7 @@ namespace UITests
         // the ScrollView to the top because the page itself does not expose a scroll helper.
         private void ScrollPageToTop()
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             if (App is AndroidDriver)
             {
                 try
@@ -78,6 +79,7 @@ namespace UITests
                         "new UiScrollable(new UiSelector().scrollable(true).instance(0)).scrollToBeginning(100)"));
                 }
                 catch { }
+                if (sw.ElapsedMilliseconds > 750) PerfLog($"ScrollPageToTop (Android): {sw.ElapsedMilliseconds}ms");
                 return;
             }
 
@@ -88,6 +90,7 @@ namespace UITests
                 App.FindElement(MobileBy.AccessibilityId("MainPageScrollView")).SendKeys(OpenQA.Selenium.Keys.Home);
             }
             catch { }
+            if (sw.ElapsedMilliseconds > 750) PerfLog($"ScrollPageToTop (Windows): {sw.ElapsedMilliseconds}ms");
         }
 
         private void CloseWindowsPickers(params string[] ids)
@@ -95,11 +98,16 @@ namespace UITests
             if (App is not WindowsDriver) return;
             foreach (string id in ids)
             {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
                 try
                 {
                     App.FindElement(MobileBy.AccessibilityId(id)).SendKeys(OpenQA.Selenium.Keys.Escape);
+                    PerfLog($"CloseWindowsPickers('{id}'): escaped in {sw.ElapsedMilliseconds}ms");
                 }
-                catch (OpenQA.Selenium.NoSuchElementException) { }
+                catch (OpenQA.Selenium.NoSuchElementException)
+                {
+                    PerfLog($"CloseWindowsPickers('{id}'): absent, cost {sw.ElapsedMilliseconds}ms");
+                }
             }
         }
 

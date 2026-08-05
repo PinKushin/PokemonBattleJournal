@@ -55,7 +55,15 @@ namespace UITests
 
         protected void InvalidateCurrentPage() => _currentPage = null;
 
-        protected static void ClickTab(AppiumElement tabElement) => tabElement.Click();
+        // Timed so a slow Click round-trip is attributable: on Windows the driver charges the
+        // UIA tree walk to the click itself, which can dwarf the element lookup that preceded it.
+        protected static void ClickTab(AppiumElement tabElement)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            tabElement.Click();
+            if (sw.ElapsedMilliseconds > 750)
+                PerfLog($"ClickTab: click took {sw.ElapsedMilliseconds}ms");
+        }
 
         // Template method: handles page-tracking and logging; platform provides navigation steps.
         protected void NavigateTo(string pageTitle)

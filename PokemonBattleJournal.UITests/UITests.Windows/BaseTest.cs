@@ -22,26 +22,41 @@ namespace UITests
         // element tree so MAUI IsVisible binding cascades (async on the UI thread) are detected
         // reliably. Once FlaUI confirms the element exists, spin-re-anchor WinAppDriver until it
         // picks it up too, then return the Appium handle for downstream test interactions.
+        // Attempts slower than this are logged individually. A hit on a warm tree costs
+        // ~150-250ms; anything above this is the expensive full-descendant-walk case we
+        // are trying to attribute, so the threshold keeps the log readable.
+        private const int SlowAttemptMs = 750;
+
         protected override AppiumElement FindUIElement(string id)
         {
             var deadline = DateTime.UtcNow.AddSeconds(30);
+            var total = System.Diagnostics.Stopwatch.StartNew();
             int iteration = 0;
             try
             {
                 while (true)
                 {
+                    var attempt = System.Diagnostics.Stopwatch.StartNew();
                     try
                     {
                         App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(500);
-                        return App.FindElement(MobileBy.AccessibilityId(id));
+                        AppiumElement found = App.FindElement(MobileBy.AccessibilityId(id));
+                        if (attempt.ElapsedMilliseconds > SlowAttemptMs)
+                            PerfLog($"FIND '{id}': HIT on attempt {iteration + 1} after {attempt.ElapsedMilliseconds}ms (total {total.ElapsedMilliseconds}ms)");
+                        return found;
                     }
                     catch (OpenQA.Selenium.NoSuchElementException) when (DateTime.UtcNow < deadline)
                     {
+                        if (attempt.ElapsedMilliseconds > SlowAttemptMs)
+                            PerfLog($"FIND '{id}': MISS on attempt {iteration + 1} after {attempt.ElapsedMilliseconds}ms (implicit wait 500ms — remainder is the UIA tree walk)");
+
                         if (++iteration % 4 == 0)
                         {
                             // Standard re-anchor for elements that are just slow to appear.
+                            var anchor = System.Diagnostics.Stopwatch.StartNew();
                             try { App.SwitchTo().Window(App.CurrentWindowHandle); }
                             catch (Exception ex) { NavLog($"re-anchor failed: {ex.Message}"); }
+                            PerfLog($"FIND '{id}': re-anchor took {anchor.ElapsedMilliseconds}ms (iteration {iteration})");
 
                             // If WinAppDriver keeps missing it, check the live UIA tree directly.
                             if (IsVisibleViaUIA(id))
@@ -56,6 +71,8 @@ namespace UITests
             finally
             {
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+                if (total.ElapsedMilliseconds > SlowAttemptMs)
+                    PerfLog($"FIND '{id}': done in {total.ElapsedMilliseconds}ms over {iteration + 1} attempt(s)");
             }
         }
 
@@ -91,8 +108,9 @@ namespace UITests
                     handleStr.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? handleStr : "0x" + handleStr,
                     16));
                 AutomationElement window = UIA.FromHandle(hwnd);
+                var sw = System.Diagnostics.Stopwatch.StartNew();
                 bool found = window.FindFirstDescendant(cf => cf.ByAutomationId(automationId)) != null;
-                NavLog($"UIA check '{automationId}': {(found ? "FOUND" : "not found")}");
+                NavLog($"UIA check '{automationId}': {(found ? "FOUND" : "not found")} in {sw.ElapsedMilliseconds}ms");
                 return found;
             }
             catch (Exception ex)
@@ -112,20 +130,29 @@ namespace UITests
         protected override bool TryClickIfPresent(string id, int timeoutMs = 2000)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            var total = System.Diagnostics.Stopwatch.StartNew();
             while (DateTime.UtcNow < deadline)
             {
                 try
                 {
                     App.FindElement(MobileBy.AccessibilityId(id)).Click();
+                    if (total.ElapsedMilliseconds > SlowAttemptMs)
+                        PerfLog($"TryClickIfPresent('{id}'): clicked after {total.ElapsedMilliseconds}ms (budget {timeoutMs}ms)");
                     return true;
                 }
                 catch (OpenQA.Selenium.NoSuchElementException) when (DateTime.UtcNow < deadline) { }
                 catch (Exception ex)
                 {
+                    // A single FindElement can overrun the whole budget: the ambient implicit
+                    // wait plus the UIA descendant walk are both charged to one call, so the
+                    // deadline check only runs once the call finally returns.
+                    PerfLog($"TryClickIfPresent('{id}'): gave up after {total.ElapsedMilliseconds}ms (budget {timeoutMs}ms) — {ex.GetType().Name}");
                     NavLog($"TryClickIfPresent({id}): {ex.GetType().Name}: {ex.Message}");
                     return false;
                 }
             }
+            if (total.ElapsedMilliseconds > SlowAttemptMs)
+                PerfLog($"TryClickIfPresent('{id}'): deadline exit after {total.ElapsedMilliseconds}ms (budget {timeoutMs}ms)");
             return false;
         }
 
@@ -158,11 +185,16 @@ namespace UITests
         // while the dropdown was open (e.g. Game3Tab becoming visible via ShowGame3).
         protected override void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName)
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             pickerElement.Click();
+            long clickMs = sw.ElapsedMilliseconds;
             pickerElement.SendKeys(itemName[0].ToString());
+            long letterMs = sw.ElapsedMilliseconds - clickMs;
             pickerElement.SendKeys(OpenQA.Selenium.Keys.Tab);
+            long tabMs = sw.ElapsedMilliseconds - clickMs - letterMs;
             try { App.SwitchTo().Window(App.CurrentWindowHandle); }
             catch (Exception ex) { NavLog($"re-anchor after picker failed: {ex.Message}"); }
+            PerfLog($"SelectWindowsPickerItem('{itemName}'): click {clickMs}ms, letter {letterMs}ms, tab {tabMs}ms, re-anchor {sw.ElapsedMilliseconds - clickMs - letterMs - tabMs}ms");
         }
     }
 }
