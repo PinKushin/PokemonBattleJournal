@@ -280,6 +280,12 @@ namespace UITests
                         userEntry.Click();
                         userEntry.Clear();
                         userEntry.SendKeys(expected);
+                        // Android: the soft keyboard opened by SendKeys covers the lower
+                        // half of the screen; elements under it (this Editor included, and
+                        // WentFirstLabel in the next test) drop out of the visible UIA tree
+                        // until it's dismissed — the source of the stale-then-unfindable
+                        // tail-pair failures on CI. No-op on Windows.
+                        DismissKeyboard();
                         // Poll instead of a single immediate read — SendKeys can return before
                         // the bound Text property finishes propagating back to the native
                         // control, which previously raced a same-instant Text read into "".

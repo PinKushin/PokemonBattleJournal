@@ -121,6 +121,14 @@ namespace UITests
         protected virtual void SendAndroidBack() { }
 
         /// <summary>
+        /// Dismisses the soft keyboard if present. Android-only concern: after SendKeys the
+        /// keyboard covers the lower half of the screen, and elements under it never enter
+        /// the visible UIA tree — no amount of ScrollView scrolling brings them back while
+        /// it's up. No-op on Windows.
+        /// </summary>
+        protected virtual void DismissKeyboard() { }
+
+        /// <summary>
         /// Diagnostic: dumps every visible element's resource-id / content-desc / className / text
         /// to PerfLog with the given context label. Android BaseTest implements this; other
         /// platforms are no-op. Use inside a catch block or after an unexpected failure to see

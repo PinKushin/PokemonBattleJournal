@@ -237,6 +237,30 @@ namespace UITests
             }
         }
 
+        // Evidence (CI run 30986172378, MainPageTests): UserNoteInput found in 32ms, typed
+        // into, then went stale — and a full top-to-bottom stage-3 sweep couldn't find it
+        // OR WentFirstLabel (both lower-half elements) afterward. The soft keyboard opened
+        // by SendKeys covers the bottom of the screen and everything under it drops out of
+        // the visible UIA tree until dismissed.
+        protected override void DismissKeyboard()
+        {
+            try
+            {
+                if (App is AndroidDriver android && android.IsKeyboardShown())
+                {
+                    android.HideKeyboard();
+                    PerfLog("DismissKeyboard: hid soft keyboard");
+                }
+            }
+            catch (OpenQA.Selenium.WebDriverException ex)
+            {
+                // Keyboard state queries can race the keyboard's own animation — a miss
+                // here only means the next find may still see a covered viewport, which
+                // the caller's retry loop handles. Log, never fail the test from cleanup.
+                PerfLog($"DismissKeyboard: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}");
+            }
+        }
+
         // AccessibilityId on Android maps to content-desc, not resource-id. AutomationId → resource-id.
         // Override IsElementPresentCore to use resource-id so presence checks are correct.
         protected override bool IsElementPresentCore(string id)

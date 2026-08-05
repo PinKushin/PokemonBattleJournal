@@ -190,8 +190,34 @@ if (useInstalled)
                 }
                 step7Timer.Stop();
                 if (!ready)
+                {
+                    // Diagnostic dump before failing: one CI instance (run 30986172378,
+                    // ReadJournalPageTests) had the app fully rendered — MainPage composed,
+                    // Limitless fetched, trainer loaded per logcat — yet "Open navigation
+                    // drawer" returned "Found zero matches" in 4ms for 90 straight seconds,
+                    // while the identical APK exposed it instantly on 4 sibling emulators.
+                    // Capture what the toolbar/tree actually contains so the next occurrence
+                    // is diagnosable instead of guessable.
+                    try
+                    {
+                        var descs = driver.FindElements(MobileBy.AndroidUIAutomator(
+                            "new UiSelector().descriptionMatches(\".+\")"));
+                        Log($"7. GATE TIMEOUT: {descs.Count} elements with content-desc:");
+                        foreach (var el in descs.Take(25))
+                        {
+                            try { Log($"     desc='{el.GetDomAttribute("content-desc")}' class='{el.GetDomAttribute("className")}'"); }
+                            catch (OpenQA.Selenium.StaleElementReferenceException) { Log("     <stale>"); }
+                        }
+                        string src = driver.PageSource ?? "";
+                        Log($"7. GATE TIMEOUT: PageSource first 4000 chars:\n{src[..Math.Min(4000, src.Length)]}");
+                    }
+                    catch (OpenQA.Selenium.WebDriverException ex)
+                    {
+                        Log($"7. GATE TIMEOUT: diagnostic dump failed: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}");
+                    }
                     throw new InvalidOperationException(
                         $"App not ready: flyout hamburger never appeared within 90s of activity start ({step7Timer.ElapsedMilliseconds}ms elapsed).");
+                }
                 Log($"7. WaitForAppReady done ({step7Timer.ElapsedMilliseconds}ms)");
                 PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] WaitForAppReady completed ({step7Timer.ElapsedMilliseconds}ms)");
             }
