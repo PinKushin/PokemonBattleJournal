@@ -200,14 +200,9 @@ namespace UITests
 
             ScrollIntoViewAndClick($"DeleteArchetype_{deckName}");
 
-            // Verify gone
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            try
-            {
-                bool still = App.FindElements(MobileBy.AccessibilityId($"DeleteArchetype_{deckName}")).Count > 0;
-                still.ShouldBeFalse("Archetype row should be removed after delete");
-            }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+            // Verify gone — polled, phantom-element tolerant (delete + list rebind is async).
+            WaitUntilRemoved($"DeleteArchetype_{deckName}")
+                .ShouldBeTrue("Archetype row should be removed after delete");
         }
 
         [Test]
@@ -225,14 +220,9 @@ namespace UITests
 
             ScrollIntoViewAndClick($"DeleteTag_{tagName}");
 
-            // Verify gone
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            try
-            {
-                bool still = App.FindElements(MobileBy.AccessibilityId($"DeleteTag_{tagName}")).Count > 0;
-                still.ShouldBeFalse("Tag row should be removed after delete");
-            }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+            // Verify gone — polled, phantom-element tolerant (delete + list rebind is async).
+            WaitUntilRemoved($"DeleteTag_{tagName}")
+                .ShouldBeTrue("Tag row should be removed after delete");
         }
     }
 }

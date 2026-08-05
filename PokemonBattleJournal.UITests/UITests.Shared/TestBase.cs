@@ -190,6 +190,37 @@ namespace UITests
         }
 
         /// <summary>
+        /// Polls until the element is removed from the tree (platform-correct lookup),
+        /// treating WinAppDriver's phantom-element race as "still being removed".
+        /// While a list rebinds after a row delete, FindElements can return an element
+        /// whose ID is null/empty, which surfaces as InvalidOperationException — observed
+        /// on CI in OptionsPage delete tests. That is a transient mid-removal state, not
+        /// a test failure. Returns true when the element is confirmed gone, false on timeout.
+        /// </summary>
+        protected bool WaitUntilRemoved(string id, int timeoutMs = 5000)
+        {
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
+            {
+                var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+                while (DateTime.UtcNow < deadline)
+                {
+                    try
+                    {
+                        if (!IsElementPresentCore(id))
+                            return true;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Phantom element mid-removal — keep polling.
+                    }
+                }
+                return false;
+            }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+        }
+
+        /// <summary>
         /// Spins (no sleep) until the element with <paramref name="automationId"/> disappears
         /// from the accessibility tree or <paramref name="timeoutMs"/> elapses.
         /// Use after closing a popup/modal to sync on its full dismissal before the next interaction.
