@@ -36,7 +36,7 @@ public class ArchetypeOperationsTests : IAsyncDisposable
     private ArchetypeOperations CreateSut()
     {
         ArgumentNullException.ThrowIfNull(_factory);
-        return new(_factory, NullLogger<ArchetypeOperations>.Instance, new NullMetaService());
+        return new(_factory, NullLogger<ArchetypeOperations>.Instance, new NullMetaService(), new NullErrorHandler());
     }
 
     [Test]
@@ -208,7 +208,7 @@ public class ArchetypeOperationsTests : IAsyncDisposable
         Trainer trainer = await EnsureTrainerAsync();
         var metaService = new FakeMetaService();
         ArgumentNullException.ThrowIfNull(_factory);
-        var sut = new ArchetypeOperations(_factory, NullLogger<ArchetypeOperations>.Instance, metaService);
+        var sut = new ArchetypeOperations(_factory, NullLogger<ArchetypeOperations>.Instance, metaService, Substitute.For<IErrorHandler>());
 
         List<Archetype> archetypes = await sut.GetAllAsync();
 
@@ -222,7 +222,7 @@ public class ArchetypeOperationsTests : IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(_factory);
         var cdnMetaService = new CdnMetaService();
-        var sut = new ArchetypeOperations(_factory, NullLogger<ArchetypeOperations>.Instance, cdnMetaService);
+        var sut = new ArchetypeOperations(_factory, NullLogger<ArchetypeOperations>.Instance, cdnMetaService, Substitute.For<IErrorHandler>());
 
         // First call seeds meta deck with CDN URL
         await sut.GetAllAsync();

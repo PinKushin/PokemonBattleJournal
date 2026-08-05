@@ -1,15 +1,17 @@
-﻿using SQLiteNetExtensionsAsync.Extensions;
+using SQLiteNetExtensionsAsync.Extensions;
 namespace PokemonBattleJournal.Services
 {
     public class MatchOperations : IMatchOperations
     {
         private readonly SqliteConnectionFactory _factory;
         private readonly ILogger _logger;
+        private readonly IErrorHandler _errorHandler;
 
-        public MatchOperations(SqliteConnectionFactory factory, ILogger logger)
+        public MatchOperations(SqliteConnectionFactory factory, ILogger logger, IErrorHandler errorHandler)
         {
             _factory = factory;
             _logger = logger;
+            _errorHandler = errorHandler;
         }
 
         /// <summary>
@@ -27,9 +29,8 @@ namespace PokemonBattleJournal.Services
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Error getting all match entries");
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return [];
             }
             finally
@@ -121,23 +122,20 @@ namespace PokemonBattleJournal.Services
             }
             catch (ArgumentException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Invalid data when saving match entry: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (SQLiteException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Database error when saving match entry: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Unexpected error saving match entry: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             finally
@@ -166,9 +164,8 @@ namespace PokemonBattleJournal.Services
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Error loading match entry");
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return null;
             }
             finally
@@ -207,9 +204,8 @@ namespace PokemonBattleJournal.Services
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Error loading trainer matches");
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return [];
             }
             finally
@@ -291,16 +287,14 @@ namespace PokemonBattleJournal.Services
             }
             catch (SQLiteException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Database error when deleting match entry: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Error deleting match entry: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             finally

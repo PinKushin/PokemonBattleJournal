@@ -94,12 +94,17 @@ namespace PokemonBattleJournal
             builder.Services.AddSingleton<IMetaServiceFactory, MetaServiceFactory>();
             builder.Services.AddSingleton<ILimitlessMetaService>(sp =>
                 sp.GetRequiredService<IMetaServiceFactory>().Create());
+            // Concrete handler shows a modal; everything depends on the interface so tests
+            // and any future non-UI host can substitute it. Previously new()'d at 54 call
+            // sites, which made every catch path untestable — see project_error_handler_di.
+            builder.Services.AddSingleton<IErrorHandler, ModalErrorHandler>();
             builder.Services.AddSingleton<ISqliteConnectionFactory>(sp =>
             {
                 ILoggerFactory loggerFactory = sp.GetRequiredService<ILoggerFactory>();
                 ILogger<SqliteConnectionFactory> logger = loggerFactory.CreateLogger<SqliteConnectionFactory>();
                 ILimitlessMetaService metaService = sp.GetRequiredService<ILimitlessMetaService>();
-                return new SqliteConnectionFactory(logger, metaService);
+                IErrorHandler errorHandler = sp.GetRequiredService<IErrorHandler>();
+                return new SqliteConnectionFactory(logger, metaService, errorHandler);
             });
             builder.Services.AddSingleton<IMatchResultsCalculatorFactory, MatchResultCalculatorFactory>();
             builder.Services.AddSingleton<IMatchAnalysisService, MatchAnalysisService>();

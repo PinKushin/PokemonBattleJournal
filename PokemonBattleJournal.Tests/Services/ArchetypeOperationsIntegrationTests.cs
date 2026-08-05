@@ -13,7 +13,7 @@ namespace PokemonBattleJournal.Tests.Services
             var metaService = Substitute.For<ILimitlessMetaService>();
             metaService.GetTopDecksAsync(Arg.Any<int>())
                 .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>()));
-            _sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+            _sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
             _ = await _factory.GetDatabaseAsync();
         }
 
@@ -105,7 +105,7 @@ namespace PokemonBattleJournal.Tests.Services
                 {
                     new("Ogerpon Box", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png"),
                 }));
-            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
 
             List<Archetype> archetypes = await sut.GetAllAsync();
 
@@ -124,7 +124,7 @@ namespace PokemonBattleJournal.Tests.Services
                     new("Ogerpon Meganium", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png",
                         "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon-wellspring.png"),
                 }));
-            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
 
             List<Archetype> archetypes = await sut.GetAllAsync();
 
@@ -144,7 +144,7 @@ namespace PokemonBattleJournal.Tests.Services
                     new("Pikachu", "https://cdn.example.com/pikachu.png"),
                     new("Eevee", "https://cdn.example.com/eevee.png"),
                 }));
-            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
 
             List<Archetype> archetypes = await sut.GetAllAsync();
 
@@ -227,7 +227,7 @@ namespace PokemonBattleJournal.Tests.Services
                 {
                     new("Charizard ex / Pidgeot ex", "https://cdn.example.com/charizard_ex.png", "https://cdn.example.com/pidgeot_ex.png"),
                 }));
-            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
 
             List<Archetype> archetypes = await sut.GetAllAsync();
 
@@ -251,7 +251,7 @@ namespace PokemonBattleJournal.Tests.Services
                 {
                     new("Ogerpon Box", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png"),
                 }));
-            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService);
+            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
 
             List<Archetype> archetypes = await sut.GetAllAsync();
 
@@ -284,7 +284,7 @@ namespace PokemonBattleJournal.Tests.Services
             private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"pbj_archetype_test_{Guid.NewGuid():N}.db3");
 
             public TestSqliteConnectionFactory()
-                : base(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>())
+                : base(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>(), Substitute.For<IErrorHandler>())
             { }
 
             protected override string GetDbPath() => _dbPath;

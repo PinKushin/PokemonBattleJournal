@@ -1,14 +1,16 @@
-﻿namespace PokemonBattleJournal.Services
+namespace PokemonBattleJournal.Services
 {
     public class TrainerOperations : ITrainerOperations
     {
         private readonly SqliteConnectionFactory _factory;
         private readonly ILogger _logger;
+        private readonly IErrorHandler _errorHandler;
 
-        internal TrainerOperations(SqliteConnectionFactory factory, ILogger logger)
+        internal TrainerOperations(SqliteConnectionFactory factory, ILogger logger, IErrorHandler errorHandler)
         {
             _factory = factory;
             _logger = logger;
+            _errorHandler = errorHandler;
         }
 
         /// <summary>
@@ -27,9 +29,8 @@
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Error retrieving trainers");
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return [];
             }
             finally
@@ -106,23 +107,20 @@
             }
             catch (ArgumentException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Invalid data when retrieving trainer: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return null;
             }
             catch (SQLiteException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Database error when retrieving trainer: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return null;
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Error retrieving trainer by name: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return null;
             }
             finally
@@ -146,9 +144,8 @@
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Error retrieving trainer by id {Id}: {Message}", id, ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return null;
             }
             finally
@@ -253,23 +250,20 @@
             }
             catch (ArgumentException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Invalid data when deleting trainer: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (SQLiteException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Database error when deleting trainer: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (Exception ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Error deleting trainer: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             finally
@@ -315,31 +309,27 @@
             }
             catch (ArgumentException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Invalid data when saving trainer: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (InvalidOperationException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Operation error when saving trainer: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (SQLiteException ex)
             {
-                ModalErrorHandler error = new();
                 _logger.LogError(ex, "Database error when saving trainer: {Message}", ex.Message);
-                error.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             catch (Exception ex)
             {
                 // Log the error
-                ModalErrorHandler errorHandler = new();
                 _logger.LogError(ex, "Unexpected error saving trainer: {Message}", ex.Message);
-                errorHandler.HandleError(ex);
+                _errorHandler.HandleError(ex);
                 return 0;
             }
             finally

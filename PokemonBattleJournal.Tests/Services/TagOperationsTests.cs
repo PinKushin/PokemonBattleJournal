@@ -1,4 +1,4 @@
-﻿namespace PokemonBattleJournal.Tests.Services
+namespace PokemonBattleJournal.Tests.Services
 {
     public class TagOperationsTests
     {
@@ -9,9 +9,9 @@
         [SetUp]
         public void SetUp()
         {
-            _mockFactory = Substitute.For<SqliteConnectionFactory>(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>());
+            _mockFactory = Substitute.For<SqliteConnectionFactory>(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>(), Substitute.For<IErrorHandler>());
             _mockLogger = Substitute.For<ILogger>();
-            _sut = new TagOperations(_mockFactory, _mockLogger);
+            _sut = new TagOperations(_mockFactory, _mockLogger, Substitute.For<IErrorHandler>());
         }
 
         [Test]

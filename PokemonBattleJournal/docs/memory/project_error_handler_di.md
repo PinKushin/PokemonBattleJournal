@@ -86,3 +86,58 @@ ViewModels deciding whether to surface anything. That is a redesign; injecting t
 preserves current behaviour exactly while fixing DI, testability and the CI hazard. Revisit
 once the inline validation label lands ([[project_roadmap]]), since that is the mechanism
 that would replace most of these modals.
+
+---
+
+## What the refactor exposed — two follow-ups (found 2026-08-05)
+
+Injecting the seam immediately revealed that the seam **cannot currently be tested**, for two
+independent reasons. Both were invisible while the handler was `new`'d inline.
+
+### 1. `GetDatabaseAsync()` sits OUTSIDE the try block — 20 call sites
+
+Every operation follows this shape:
+
+```csharp
+public async Task<List<Tags>> GetAllAsync()
+{
+    SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();   // <-- OUTSIDE
+    try { … }
+    catch (Exception ex) { _logger.LogError(…); _errorHandler.HandleError(ex); }
+}
+```
+
+**A database connection failure is therefore unhandled.** It escapes the method, the error
+handler never fires, nothing is logged, and the app crashes rather than surfacing anything.
+The `catch` only ever covers query failures. Counts: `TrainerOperations` 7, `MatchOperations`
+5, `TagOperations` 4, `ArchetypeOperations` 4 — **20 total**.
+
+Proven accidentally: a test pointing the factory at an invalid path threw
+`SQLite.SQLiteException : Could not open database file … (CannotOpen)` straight out of the
+method, past the catch.
+
+Fixing this is a genuine behaviour change (connection failures would start being handled
+rather than crashing) across 20 sites, so it wants its own branch and its own tests. It is
+also the *prerequisite* for testing the error-handler seam on read paths.
+
+### 2. Services depend on the concrete `SqliteConnectionFactory`, and `GetDatabaseAsync` is not virtual
+
+Only `GetDbPath()` is `protected virtual` — which is why `TestSqliteConnectionFactory`
+overrides that and nothing else. So a failure cannot be induced by substitution; NSubstitute
+cannot stub `GetDatabaseAsync` on the concrete type. Any error-path test today must cause a
+**real** SQLite failure, which makes it an integration test by definition.
+
+The clean fix is for the operations services to depend on `ISqliteConnectionFactory` rather
+than the concrete class — the same Dependency Inversion issue this branch is fixing for
+`IErrorHandler`, one layer down.
+
+### Consequence for testing (user caught this)
+
+A first attempt at `ErrorHandlerInvocationTests` was written into
+`PokemonBattleJournal.Tests` and **removed** — it induced a real SQLite failure, making it an
+integration test in the unit project, i.e. exactly the mistake
+[[project_test_project_consolidation]] exists to clean up. User flagged it: *"should that be
+in unit tests or integration since its calling the real path."*
+
+**Do not re-add error-path tests until #1 is fixed.** Until `GetDatabaseAsync` is inside the
+try, there is no reachable failure mode on the read paths to assert against.

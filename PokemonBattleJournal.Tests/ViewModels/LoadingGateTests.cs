@@ -23,7 +23,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             return new ReadJournalPageViewModel(
                 Substitute.For<ILogger<ReadJournalPageViewModel>>(),
                 factory,
-                Substitute.For<ITrainerSwitchService>());
+                Substitute.For<ITrainerSwitchService>(), Substitute.For<IErrorHandler>());
         }
 
         [Test]
@@ -74,7 +74,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 Substitute.For<ILogger<TrainerPageViewModel>>(),
                 factory,
                 analysis,
-                Substitute.For<ITrainerSwitchService>());
+                Substitute.For<ITrainerSwitchService>(), Substitute.For<IErrorHandler>());
         }
 
         [Test]
@@ -123,7 +123,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 Substitute.For<ILogger<MainPageViewModel>>(),
                 factory,
                 Substitute.For<IMatchResultsCalculatorFactory>(),
-                Substitute.For<ITrainerSwitchService>());
+                Substitute.For<ITrainerSwitchService>(), Substitute.For<IErrorHandler>());
         }
 
         [Test]
@@ -184,7 +184,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 Substitute.For<ILogger<MainPageViewModel>>(),
                 factory,
                 calculatorFactory,
-                Substitute.For<ITrainerSwitchService>());
+                Substitute.For<ITrainerSwitchService>(), Substitute.For<IErrorHandler>());
             vm.TrainerName = "Test";
             vm.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
             vm.RivalSelected = new Archetype { Id = 2, Name = "Water" };
@@ -248,7 +248,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 Substitute.For<ILogger<MainPageViewModel>>(),
                 factory,
                 Substitute.For<IMatchResultsCalculatorFactory>(),
-                switchService);
+                switchService, Substitute.For<IErrorHandler>());
             var shellVm = new AppShellViewModel(
                 switchService,
                 mainVm,
@@ -258,7 +258,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 factory,
                 switchService,
                 shellVm,
-                Substitute.For<ITrainerHillImportService>());
+                Substitute.For<ITrainerHillImportService>(), Substitute.For<IErrorHandler>());
         }
 
         [Test]
@@ -313,7 +313,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 Substitute.For<ILogger<MainPageViewModel>>(),
                 factory,
                 Substitute.For<IMatchResultsCalculatorFactory>(),
-                switchService);
+                switchService, Substitute.For<IErrorHandler>());
             var shellVm = new AppShellViewModel(
                 switchService,
                 mainVm,
@@ -323,7 +323,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 factory,
                 switchService,
                 shellVm,
-                Substitute.For<ITrainerHillImportService>());
+                Substitute.For<ITrainerHillImportService>(), Substitute.For<IErrorHandler>());
 
             // AppearingAsync sets the private _trainer field from ActiveTrainer — required
             // before Save/Delete commands will run their body instead of early-returning.

@@ -1,4 +1,4 @@
-﻿namespace PokemonBattleJournal.Tests.Services
+namespace PokemonBattleJournal.Tests.Services
 {
     public class ArchetypeOperationsTests
     {
@@ -9,9 +9,9 @@
         [SetUp]
         public void SetUp()
         {
-            _mockFactory = Substitute.For<SqliteConnectionFactory>(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>());
+            _mockFactory = Substitute.For<SqliteConnectionFactory>(Substitute.For<ILogger<SqliteConnectionFactory>>(), Substitute.For<ILimitlessMetaService>(), Substitute.For<IErrorHandler>());
             _mockLogger = Substitute.For<ILogger>();
-            _sut = new ArchetypeOperations(_mockFactory, _mockLogger, Substitute.For<ILimitlessMetaService>());
+            _sut = new ArchetypeOperations(_mockFactory, _mockLogger, Substitute.For<ILimitlessMetaService>(), Substitute.For<IErrorHandler>());
         }
 
         [Test]
