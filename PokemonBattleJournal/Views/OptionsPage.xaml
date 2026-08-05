@@ -27,6 +27,14 @@
             MaximumWidthRequest="480"
             Spacing="12">
 
+            <!--  Loading-gate sentinel: visible while trainers + archetypes + tags load.
+                  UI tests WaitUntilGone("Busy_ArchetypeList") before list assertions.  -->
+            <Label
+                AutomationId="Busy_ArchetypeList"
+                HeightRequest="1"
+                IsVisible="{Binding IsBusyArchetypeList}"
+                WidthRequest="1" />
+
             <!--  Trainer section  -->
             <Label AutomationId="TrainerSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Trainer" />
 

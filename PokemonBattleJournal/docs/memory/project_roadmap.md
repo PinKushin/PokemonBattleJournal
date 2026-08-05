@@ -177,6 +177,13 @@ Bundling with AOT + an installer is the combo: no Fast Deployment paths on user 
 
 ## Loading Gates + Optional Loading Indicator
 
+**GATES SHIPPED 2026-08-04** (feat/loading-gates): IsBusyMatchHistory / IsBusyChartData /
+IsBusyArchetypeList ×2 live on all four data pages with Busy_* sentinels and
+WaitUntilBusyGone test sync — see [[project_loading_gates]]. Together with the
+ReadJournal FlexLayout swap: SelectMatch tests 50-111 s → sub-second, Android suite
+18 m → 8 m 44 s, 72/72. **Remaining from this entry:** only the optional visual
+indicator (spinner/PokéBall animation) — user polish, unscheduled.
+
 **The backend gate matters more than any visual.** Confirmed 2026-08-04: Android UIA
 server waits ~20 s per element lookup when the UI thread is busy on async render —
 regardless of how much data is on screen (dropping ReadJournal seed from 14 → 4

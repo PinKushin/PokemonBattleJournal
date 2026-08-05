@@ -3,7 +3,12 @@
     public partial class TrainerPageTests : BaseTest
     {
         [OneTimeSetUp]
-        public void SetUp() => NavigateTo("Trainer's Profile");
+        public void SetUp()
+        {
+            NavigateTo("Trainer's Profile");
+            // Sync on match load + chart computation before any element queries.
+            WaitUntilBusyGone("Busy_ChartData", timeoutMs: 15000);
+        }
 
         [Test]
         public void TrainerPage_StatsLabels_Displayed()

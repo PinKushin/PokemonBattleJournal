@@ -248,6 +248,13 @@ namespace PokemonBattleJournal.ViewModels
         /// Load Archetypes and Tags when page appears
         /// </summary>
         /// <returns></returns>
+        /// <summary>
+        /// Loading gate: true while archetypes + tags load. Bound to the hidden
+        /// Busy_ArchetypeList sentinel Label for UI test sync.
+        /// </summary>
+        [ObservableProperty]
+        public partial bool IsBusyArchetypeList { get; set; }
+
         [RelayCommand]
         public async Task AppearingAsync()
         {
@@ -255,6 +262,7 @@ namespace PokemonBattleJournal.ViewModels
             StartTime = DateTime.Now.TimeOfDay;
             EndTime = DateTime.Now.AddMinutes(5).TimeOfDay;
 
+            IsBusyArchetypeList = true;
             try
             {
                 await _semaphore.WaitAsync();
@@ -306,6 +314,7 @@ namespace PokemonBattleJournal.ViewModels
             finally
             {
                 _ = _semaphore.Release();
+                IsBusyArchetypeList = false;
             }
         }
 

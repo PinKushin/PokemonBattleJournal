@@ -22,6 +22,14 @@
     <ScrollView>
         <StackLayout Padding="16" Spacing="8">
 
+            <!--  Loading-gate sentinel: visible while match data + charts compute.
+                  UI tests WaitUntilGone("Busy_ChartData") before chart assertions.  -->
+            <Label
+                AutomationId="Busy_ChartData"
+                HeightRequest="1"
+                IsVisible="{Binding IsBusyChartData}"
+                WidthRequest="1" />
+
             <Grid ColumnDefinitions="*,*,*,*" Margin="0,8,0,4">
                 <StackLayout Grid.Column="0" HorizontalOptions="Center">
                     <Label AutomationId="WinRateStatName" SemanticProperties.Description="Win Rate stat label" Style="{StaticResource StatName}" Text="Win Rate" />

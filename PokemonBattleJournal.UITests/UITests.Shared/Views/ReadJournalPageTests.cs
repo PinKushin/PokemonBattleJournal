@@ -3,7 +3,13 @@ namespace UITests
     public partial class ReadJournalPageTests : BaseTest
     {
         [OneTimeSetUp]
-        public void SetUp() => NavigateTo("Read Journal");
+        public void SetUp()
+        {
+            NavigateTo("Read Journal");
+            // Sync on the match-history load completing before any element queries —
+            // otherwise every UiAutomator call waits out the busy UI thread.
+            WaitUntilBusyGone("Busy_MatchHistory");
+        }
 
         private AppiumElement FindReadJournalElement(string id) => FindUIElement(id);
 
