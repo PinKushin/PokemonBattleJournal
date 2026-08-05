@@ -49,6 +49,20 @@ how MAUI/WinAppDriver expose it, not pure CI noise. The consistent recurrence (3
 session, same test pair, same element) supports a real gap over random flakiness, even
 though a rerun clears it every time.
 
+## Cascade confirmed (run 30980236625, MainPageTests job)
+
+Not an isolated 2-test flake — 6 of 25 `MainPageTests` failed in this run:
+`Game3Tab_ShowsGamePanel`, `Game3Tab_ShowsWhenGame1IsTie` (the 44s hangs described above),
+then `PlayerArchetype_Cancel_DismissesPopup`, `PlayerArchetype_DualIconDeck_ShowsBothIcons`,
+`RivalArchetype_Cancel_DismissesPopup`, `SaveMatch_WithArchetypes_ShowsSavedText` all failed
+at a uniform ~10s each with `OpenArchetypePopup` timing out after 3 clicks. `ResetGame1Tab`
+reports "Game 2/3 panels gone" after the Game3Tab failures, but the app state is evidently
+NOT actually clean — every popup interaction afterward can't open. This is the same
+"single-failure-corrupts-navigation-state" cascade shape documented elsewhere this session
+(see [[project_android_ci_gpu_flake]]) — one root cause (the Game2-panel timing gap above),
+not six independent bugs. Fixing the root `UserNoteInput2`/Game2-panel wait gap should clear
+the whole cascade, not just the two directly-affected tests.
+
 ## Not yet done
 
 - Trace the exact call site of the `UserNoteInput2` polling loop (likely inside the test
