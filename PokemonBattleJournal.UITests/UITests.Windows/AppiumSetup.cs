@@ -25,7 +25,7 @@ namespace UITests
         private static void Log(string message)
         {
             string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
-            if (IsCi) Console.WriteLine($"[AppiumSetup] {line}");
+            if (IsCi) { Console.WriteLine($"[AppiumSetup] {line}"); Console.Out.Flush(); }
             try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.Windows.setup.log"), line + Environment.NewLine); }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
@@ -34,7 +34,7 @@ namespace UITests
         private static void PerfLog(string message)
         {
             string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
-            if (IsCi) Console.WriteLine($"[PerfLog] {line}");
+            if (IsCi) { Console.WriteLine($"[PerfLog] {line}"); Console.Out.Flush(); }
             try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.PerfLog.txt"), line + Environment.NewLine); }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }

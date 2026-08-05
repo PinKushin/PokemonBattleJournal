@@ -28,14 +28,14 @@ namespace UITests
         private static void Log(string message)
         {
             string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
-            if (IsCi) Console.WriteLine($"[AppiumSetup] {line}");
+            if (IsCi) { Console.WriteLine($"[AppiumSetup] {line}"); Console.Out.Flush(); }
             File.AppendAllText(SetupLogPath, line + Environment.NewLine);
         }
 
         private static void PerfLog(string message)
         {
             string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
-            if (IsCi) Console.WriteLine($"[PerfLog] {line}");
+            if (IsCi) { Console.WriteLine($"[PerfLog] {line}"); Console.Out.Flush(); }
             try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.PerfLog.txt"), line + Environment.NewLine); }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }

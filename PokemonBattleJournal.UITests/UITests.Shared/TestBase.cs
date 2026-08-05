@@ -21,7 +21,7 @@ namespace UITests
         protected static void NavLog(string message)
         {
             string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
-            if (IsCi) Console.WriteLine($"[NavLog] {line}");
+            if (IsCi) { Console.WriteLine($"[NavLog] {line}"); Console.Out.Flush(); }
             try { File.AppendAllText(NavLogPath, line + Environment.NewLine); }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
@@ -30,7 +30,7 @@ namespace UITests
         protected static void PerfLog(string message)
         {
             string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
-            if (IsCi) Console.WriteLine($"[PerfLog] {line}");
+            if (IsCi) { Console.WriteLine($"[PerfLog] {line}"); Console.Out.Flush(); }
             try { File.AppendAllText(PerfLogPath, line + Environment.NewLine); }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
