@@ -106,17 +106,28 @@
                 if (file is null)
                     return;
 
-                await using Stream stream = await file.OpenReadAsync();
-                (int imported, List<string> errors) = await _importService.ImportAsync(stream, _trainer.Id);
+                // Gate starts AFTER the file picker returns — the picker is user browsing
+                // time, not app processing time, and would otherwise leave Busy_Mutating
+                // visible for however long the user takes to pick a file.
+                IsBusyMutating = true;
+                try
+                {
+                    await using Stream stream = await file.OpenReadAsync();
+                    (int imported, List<string> errors) = await _importService.ImportAsync(stream, _trainer.Id);
 
-                ImportStatusMessage = errors.Count > 0
-                    ? $"Imported {imported}, {errors.Count} skipped"
-                    : $"Imported {imported} matches";
+                    ImportStatusMessage = errors.Count > 0
+                        ? $"Imported {imported}, {errors.Count} skipped"
+                        : $"Imported {imported} matches";
 
-                _logger.LogInformation("TrainerHill import: {Imported} imported, {Errors} errors", imported, errors.Count);
+                    _logger.LogInformation("TrainerHill import: {Imported} imported, {Errors} errors", imported, errors.Count);
 
-                if (errors.Count > 0)
-                    _logger.LogWarning("TrainerHill import errors: {Errors}", string.Join("; ", errors));
+                    if (errors.Count > 0)
+                        _logger.LogWarning("TrainerHill import errors: {Errors}", string.Join("; ", errors));
+                }
+                finally
+                {
+                    IsBusyMutating = false;
+                }
             }
             catch (Exception ex)
             {
@@ -133,6 +144,19 @@
         /// </summary>
         [ObservableProperty]
         public partial bool IsBusyArchetypeList { get; set; }
+
+        /// <summary>
+        /// Loading gate: true while any Save/Delete/Import/Switch command is mutating the
+        /// DB or reloading trainer-scoped state. Bound to the hidden Busy_Mutating
+        /// sentinel Label. Without this, UI tests race the CollectionView rebind that
+        /// follows a delete — WinAppDriver can return a phantom element whose ID is
+        /// null/empty mid-rebind, surfacing as InvalidOperationException. Covers:
+        /// SaveTrainerAsync, SwitchTrainerAsync, DeleteTrainerFromListAsync,
+        /// DeleteTrainerFileAsync, SaveTagAsync, DeleteTagAsync, SaveArchetypeAsync,
+        /// DeleteArchetypeAsync, ImportFromTrainerHillAsync.
+        /// </summary>
+        [ObservableProperty]
+        public partial bool IsBusyMutating { get; set; }
 
         [RelayCommand]
         public async Task AppearingAsync()
@@ -170,12 +194,20 @@
             if (trainer.Id == (_trainer?.Id ?? 0))
                 return;
 
-            await _switchService.SwitchToAsync(trainer);
-            _trainer = trainer;
-            TrainerName = trainer.Name ?? string.Empty;
-            Title = $"{TrainerName}'s Options";
-            FileConfirmMessage = $"Delete {TrainerName}'s Trainer File?";
-            await _shellVm.LoadAsync();
+            IsBusyMutating = true;
+            try
+            {
+                await _switchService.SwitchToAsync(trainer);
+                _trainer = trainer;
+                TrainerName = trainer.Name ?? string.Empty;
+                Title = $"{TrainerName}'s Options";
+                FileConfirmMessage = $"Delete {TrainerName}'s Trainer File?";
+                await _shellVm.LoadAsync();
+            }
+            finally
+            {
+                IsBusyMutating = false;
+            }
         }
 
         [RelayCommand]
@@ -189,6 +221,7 @@
                 return;
 
             bool deletedActive = trainer.Id == (_trainer?.Id ?? 0);
+            IsBusyMutating = true;
             try
             {
                 await _semaphore.WaitAsync();
@@ -205,6 +238,7 @@
             finally
             {
                 _ = _semaphore.Release();
+                IsBusyMutating = false;
             }
 
             if (deletedActive)
@@ -227,6 +261,7 @@
             }
 
             TrainerName = NameInput;
+            IsBusyMutating = true;
             try
             {
                 await _semaphore.WaitAsync();
@@ -260,19 +295,9 @@
                 _ = _semaphore.Release();
                 NameInput = null;
                 Title = $"{TrainerName}'s Options";
+                IsBusyMutating = false;
             }
         }
-
-        /// <summary>
-        /// Loading gate: true while a Save/Delete Archetype or Tag command is mutating
-        /// the DB and rebinding the corresponding list. Bound to the hidden
-        /// Busy_Mutating sentinel Label. Without this, UI tests race the CollectionView
-        /// rebind that follows a delete — WinAppDriver can return a phantom element whose
-        /// ID is null/empty mid-rebind, surfacing as InvalidOperationException.
-        /// </summary>
-        [ObservableProperty]
-        public partial bool IsBusyMutating { get; set; }
-
         [RelayCommand]
         public async Task SaveTagAsync()
         {
@@ -425,6 +450,7 @@
         {
             if (_trainer is null) return;
 
+            IsBusyMutating = true;
             try
             {
                 await _semaphore.WaitAsync();
@@ -442,6 +468,7 @@
             finally
             {
                 _ = _semaphore.Release();
+                IsBusyMutating = false;
             }
 
             await HandleNoActiveTrainerAsync();

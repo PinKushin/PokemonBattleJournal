@@ -522,6 +522,9 @@ namespace UITests
                     SelectWindowsPickerItem(resultPicker, "Win");
 
                 FindUIElement("SaveMatchButton").Click();
+                // Sync on the DB write settling before polling for the "Saved" text —
+                // avoids racing the save on slower local/CI runs.
+                WaitUntilBusyGone("Busy_Mutating");
 
                 // SavedFileDisplay binding updates to "Saved: Match at …" on success.
                 // SemanticProperties.Description is NOT set on the button so .Text reflects the bound value.
@@ -550,6 +553,7 @@ namespace UITests
                     SelectWindowsPickerItem(resultPicker, "Win");
 
                 FindUIElement("SaveMatchButton").Click();
+                WaitUntilBusyGone("Busy_Mutating");
                 FindUIElement("SaveMatchButton").ShouldNotBeNull();
             }
             finally { CloseWindowsPickers("PossibleResultsPicker"); }

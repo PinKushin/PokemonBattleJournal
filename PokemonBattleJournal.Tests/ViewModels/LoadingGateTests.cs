@@ -161,6 +161,78 @@ namespace PokemonBattleJournal.Tests.ViewModels
         }
 
         // ---------------------------------------------------------------
+        // MainPageViewModel — IsBusyMutating (SaveMatchAsync)
+        // ---------------------------------------------------------------
+
+        private static MainPageViewModel CreateMainVmReadyToSave(
+            out ISqliteConnectionFactory factory, out IMatchResultsCalculatorFactory calculatorFactory)
+        {
+            factory = Substitute.For<ISqliteConnectionFactory>();
+            factory.Trainers.Returns(Substitute.For<ITrainerOperations>());
+            factory.Matches.Returns(Substitute.For<IMatchOperations>());
+            factory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
+            factory.Tags.Returns(Substitute.For<ITagOperations>());
+            calculatorFactory = Substitute.For<IMatchResultsCalculatorFactory>();
+            IMatchResultCalculator calculator = Substitute.For<IMatchResultCalculator>();
+            calculator.CalculateResult(Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>())
+                .Returns(MatchResult.Win);
+            calculatorFactory.GetCalculator(Arg.Any<bool>()).Returns(calculator);
+            factory.Trainers.GetActiveAsync()
+                .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
+
+            var vm = new MainPageViewModel(
+                Substitute.For<ILogger<MainPageViewModel>>(),
+                factory,
+                calculatorFactory,
+                Substitute.For<ITrainerSwitchService>());
+            vm.TrainerName = "Test";
+            vm.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
+            vm.RivalSelected = new Archetype { Id = 2, Name = "Water" };
+            vm.Result = MatchResult.Win;
+            return vm;
+        }
+
+        [Test]
+        public async Task Main_SaveMatchAsync_IsBusyMutating_TrueDuringSave_FalseAfter()
+        {
+            MainPageViewModel vm = CreateMainVmReadyToSave(out ISqliteConnectionFactory factory, out _);
+            var gate = new TaskCompletionSource<int>();
+            factory.Matches.SaveAsync(Arg.Any<MatchEntry>(), Arg.Any<List<Game>>()).Returns(_ => gate.Task);
+
+            Task saving = vm.SaveMatchAsync();
+
+            vm.IsBusyMutating.ShouldBeTrue("busy flag must be up while the match save is in flight");
+
+            gate.SetResult(1);
+            await saving;
+
+            vm.IsBusyMutating.ShouldBeFalse("busy flag must clear when the save settles");
+        }
+
+        [Test]
+        public async Task Main_SaveMatchAsync_SaveThrows_ClearsBusyMutating()
+        {
+            MainPageViewModel vm = CreateMainVmReadyToSave(out ISqliteConnectionFactory factory, out _);
+            factory.Matches.SaveAsync(Arg.Any<MatchEntry>(), Arg.Any<List<Game>>())
+                .Returns(Task.FromException<int>(new InvalidOperationException("boom")));
+
+            await vm.SaveMatchAsync();
+
+            vm.IsBusyMutating.ShouldBeFalse("busy flag must clear even when the save throws");
+        }
+
+        [Test]
+        public async Task Main_SaveMatchAsync_ValidationFails_NeverSetsBusyMutating()
+        {
+            // No PlayerSelected/RivalSelected/Result — fails validation before the gate.
+            MainPageViewModel vm = CreateMainVm(out _);
+
+            await vm.SaveMatchAsync();
+
+            vm.IsBusyMutating.ShouldBeFalse("busy flag must never flip for a save that never reaches the DB");
+        }
+
+        // ---------------------------------------------------------------
         // OptionsPageViewModel — IsBusyArchetypeList
         // ---------------------------------------------------------------
 
@@ -345,6 +417,40 @@ namespace PokemonBattleJournal.Tests.ViewModels
             await vm.SaveArchetypeAsync();
 
             vm.IsBusyMutating.ShouldBeFalse("busy flag must clear even when the save throws");
+        }
+
+        [Test]
+        public async Task Options_SwitchTrainerAsync_IsBusyMutating_FalseAfterSwitchSettles()
+        {
+            // ITrainerSwitchService is injected before OptionsPageViewModel construction
+            // (see CreateOptionsVmWithActiveTrainerAsync), so there's no seam left to gate
+            // SwitchToAsync mid-flight for this test — it only proves the flag clears
+            // cleanly on the ordinary path. The TrueDuring/FalseAfter shape is covered by
+            // Save/Delete Archetype/Tag and DeleteTrainerFileAsync above.
+            (OptionsPageViewModel vm, ISqliteConnectionFactory _) = await CreateOptionsVmWithActiveTrainerAsync();
+            var otherTrainer = new Trainer { Id = 2, Name = "Other" };
+
+            await vm.SwitchTrainerAsync(otherTrainer);
+
+            vm.IsBusyMutating.ShouldBeFalse("busy flag must be back down once the switch settles");
+        }
+
+        [Test]
+        public async Task Options_DeleteTrainerFileAsync_IsBusyMutating_TrueDuringDelete_FalseAfter()
+        {
+            (OptionsPageViewModel vm, ISqliteConnectionFactory factory) = await CreateOptionsVmWithActiveTrainerAsync();
+            var gate = new TaskCompletionSource<int>();
+            factory.Trainers.DeleteAsync(Arg.Any<Trainer>()).Returns(_ => gate.Task);
+            factory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer>()));
+
+            Task deleting = vm.DeleteTrainerFileAsync();
+
+            vm.IsBusyMutating.ShouldBeTrue("busy flag must be up while the trainer file delete is in flight");
+
+            gate.SetResult(1);
+            await deleting;
+
+            vm.IsBusyMutating.ShouldBeFalse("busy flag must clear when the delete settles");
         }
     }
 }
