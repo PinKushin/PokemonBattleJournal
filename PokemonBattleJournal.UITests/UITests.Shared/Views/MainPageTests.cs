@@ -444,12 +444,12 @@ namespace UITests
                 if (App is not WindowsDriver)
                 {
                     SelectAndroidPickerItem(picker1, "Tie");
-                    ClickTab(FindUIElement("Game2Tab"));
+                    ClickTab("Game2Tab", "UserNoteInput2");
                 }
                 else
                 {
                     SelectWindowsPickerItem(picker1, "Tie");
-                    ClickTab(FindUIElement("Game2Tab"));
+                    ClickTab("Game2Tab", "UserNoteInput2");
                 }
 
                 // Wait for Game 2 panel to be active
@@ -490,12 +490,12 @@ namespace UITests
                 if (App is not WindowsDriver)
                 {
                     SelectAndroidPickerItem(picker1, "Win");
-                    ClickTab(FindUIElement("Game2Tab"));
+                    ClickTab("Game2Tab", "UserNoteInput2");
                 }
                 else
                 {
                     SelectWindowsPickerItem(picker1, "Win");
-                    ClickTab(FindUIElement("Game2Tab"));
+                    ClickTab("Game2Tab", "UserNoteInput2");
                 }
 
                 // Wait for Game 2 panel to be active
@@ -507,12 +507,12 @@ namespace UITests
                 if (App is not WindowsDriver)
                 {
                     SelectAndroidPickerItem(picker2, "Loss");
-                    ClickTab(FindUIElement("Game3Tab"));
+                    ClickTab("Game3Tab", "UserNoteInput3");
                 }
                 else
                 {
                     SelectWindowsPickerItem(picker2, "Loss");
-                    ClickTab(FindUIElement("Game3Tab"));
+                    ClickTab("Game3Tab", "UserNoteInput3");
                 }
                 FindUIElement("Match3Tags").ShouldNotBeNull();
                 FindUIElement("UserNoteInput3").ShouldNotBeNull();
