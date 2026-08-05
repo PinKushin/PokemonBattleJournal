@@ -1,18 +1,48 @@
 ---
 name: project_windows_picker_ci
-description: MAUI Picker on Windows CI opens as child window — SelectWindowsPickerItem helper in BaseTest handles this
-metadata: 
-  node_type: memory
+description: "CORRECTED 2026-08-05 — the WindowHandles-iterating SelectWindowsPickerItem was deleted in df081b9. Windows picker selection is keyboard nav: click, first letter, Tab. Do not reinstate the window search."
+metadata:
   type: project
-  originSessionId: 9bcb5645-bb7a-4eb5-8136-ff774166a95e
-  modified: 2026-07-29T18:56:12.453Z
 ---
 
-On Windows Server CI (headless), MAUI's Picker control may open its dropdown as a child popup window rather than within the main app window's UIA tree. `//ListItem[contains(@Name,'Win')]` XPath fails with `NoSuchElementException` after the full implicit wait because WinAppDriver searches only the current window context.
+## Corrected 2026-08-05 — the approach described here no longer exists
 
-**Fix:** `BaseTest.SelectWindowsPickerItem(string itemName)` in `UITests.Shared/BaseTest.cs` iterates all `App.WindowHandles`, switches to each non-main handle, searches for the list item, clicks it, and restores the main window context. Falls back to the main window last. Catches only `NoSuchElementException` per the no-silent-catch rule.
+**Do not reinstate the `App.WindowHandles` iteration.** It was deliberately removed in
+`df081b9` ("use Tab to confirm picker selection instead of Enter on Windows"), which found
+keyboard navigation faster and working on both Windows 11 and Windows Server CI.
 
-Works both locally (item found in main window on first attempt) and CI (found in popup child window).
+**What the code actually does now** (`UITests.Windows/BaseTest.cs`):
 
-**Why:** Windows Server headless rendering may cause WinUI3 ComboBox/Flyout to detach as an owned window in the UIA tree.
-**How to apply:** All future Picker/ComboBox item selections in Windows UI tests should call `SelectWindowsPickerItem("ItemName")` rather than bare XPath on `App`.
+```csharp
+protected override void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName)
+{
+    pickerElement.Click();                            // open the dropdown
+    pickerElement.SendKeys(itemName[0].ToString());   // first letter jumps to the item
+    pickerElement.SendKeys(OpenQA.Selenium.Keys.Tab); // Tab confirms and closes
+    // then re-anchor, so IsVisible cascades that fired while the dropdown was open are seen
+}
+```
+
+Measured 2026-08-05 and not a bottleneck: `click 225ms, letter 33ms, tab 58ms,
+re-anchor 19ms` — ~330ms total. It was ruled out as the cause of the Game3Tab stall
+(see [[project_game3tab_ci_flake_recurring]]).
+
+**Two details worth keeping, both learned the hard way:**
+
+1. **Tab, not Enter.** `Keys.Enter` inside a MAUI Picker/ComboBox on Windows propagated to
+   `SaveMatchButton`, clearing the BO3 layout and failing the Game3Tab tests (`df081b9`).
+2. **Two separate `SendKeys` calls.** The letter and the Tab must not be combined into one
+   string — a combined string stalled on Windows (`f2768f5`).
+
+## The original observation (kept for context)
+
+On Windows Server CI, MAUI's Picker *may* open its dropdown as a child popup window rather
+than inside the main window's UIA tree, so `//ListItem[contains(@Name,'Win')]` XPath could
+fail with `NoSuchElementException`. That observation was real. The fix simply removed the
+need to find the popup at all — keyboard navigation never queries the dropdown's UIA tree,
+so where the popup lives stopped mattering.
+
+## Related
+
+- [[feedback_combobox_popup_platforms]] — confirmed ComboBox platform constraints
+- [[project_uitest_nav_cascade_fix]] — the SendKeys split

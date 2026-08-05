@@ -82,10 +82,20 @@ Tracked here so nothing gets lost between sessions. Bugs first (things broken ri
 2. ~~**F-03 → F-10**~~ — done (LiveCharts2 charts live)
 3. ~~**F-11 → F-18**~~ — done (styling pass complete)
 4. ~~**Loading gates + ReadJournal Android test slowdown**~~ — **Done 2026-08-04** (feat/loading-gates): IsBusy* gates on all 4 data pages + Busy_* sentinels + WaitUntilBusyGone; ReadJournal tag CollectionViews → FlexLayout. SelectMatch tests 50-111s → sub-second; Android suite 18m → 8m44s, 72/72.
-5. **TrainerHill export + full backup export** — see `docs/memory/project_roadmap.md`
-6. **F-19** — Windows Appium driver replacement (in progress externally)
-7. **F-13, F-15, F-16** — ReadJournalPage filter/search, archetype management UI, trainer name edit
-8. **F-20, F-22** — configurable AVD, archetype periodic refresh
-9. **AOT compatibility + real installer** — long-term, see `docs/memory/project_roadmap.md`
+5. ~~**Game3Tab stall / Windows UI test latency**~~ — **Done 2026-08-05**: absent-element lookups inherited the 5s ambient ImplicitWait (~6.8s each vs 215ms when present). Windows suite ~5min → 1m28s. Also fixed CI cache contention across the matrix and WinAppDriver session backoff.
 
-Feature details for items 4, 5, and 9 live in `PokemonBattleJournal/docs/memory/project_roadmap.md`.
+### Confirmed order from here (user, 2026-08-05)
+
+6. **TrainerHill export + full backup export** — biggest user-facing value; format already reverse-engineered. See `docs/memory/project_roadmap.md`.
+7. **Loading indicator** — design locked (partial arc + Pokéball on the leading edge); gates and sentinels already shipped.
+8. **Theming** — in-app light/dark theme switcher. See `docs/memory/project_theme_switcher.md`.
+9. **Site refresh** — finishes the theming work with a shared visual identity; self-hosted fonts, reconsider type choices.
+
+Unscheduled / no strong ordering yet:
+
+- **F-19** — Windows Appium driver replacement (in progress externally)
+- **F-13, F-15, F-16** — ReadJournalPage filter/search, archetype management UI, trainer name edit
+- **F-20, F-22** — configurable AVD, archetype periodic refresh
+- **AOT compatibility + real installer** — see `docs/memory/project_roadmap.md`; no longer blocked on budget (Android signing is free, SignPath covers Windows)
+
+Feature details for items 6-9 live in `PokemonBattleJournal/docs/memory/project_roadmap.md`.

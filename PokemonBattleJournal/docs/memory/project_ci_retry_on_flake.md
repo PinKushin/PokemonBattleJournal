@@ -5,7 +5,31 @@ metadata:
   type: project
 ---
 
-**Status: proposed, not yet implemented (2026-08-05).**
+**Status: SHELVED 2026-08-05 — superseded by a targeted fix. Do not implement without a new
+reason.**
+
+The concrete failure this was meant to absorb turned out to have a specific, fixable cause.
+CI run `31032240413` (`ReadJournalPageTests`) failed with zero tests executed: WinAppDriver
+was listening but refused every connection (`connect ECONNREFUSED 127.0.0.1:4725`), and the
+driver-creation retry burned all three attempts inside ~20s on a fixed 5s gap. Fixed at the
+source instead — escalating 5s/15s/30s backoff in `UITests.Windows/AppiumSetup.cs`
+(commit `8a4324c`).
+
+**Why that is better than a job-level retry:** it can only cover "the driver never came up."
+A `nick-fields/retry` wrapper around `dotnet test` re-runs *everything*, so it would equally
+mask a genuine regression — the exact thing the plan below worried about but could not
+structurally prevent.
+
+**User position (2026-08-05):** the UI suites are now reliable on both platforms and the user
+is deliberately wary of further churn in CI/test infrastructure — see
+[[feedback_dont_churn_stable_ci]]. Re-open this only if a flake appears that genuinely cannot
+be fixed at its source.
+
+---
+
+## Original plan (kept for reference)
+
+**Status at the time: proposed, not yet implemented (2026-08-05).**
 
 Confirmed on `master` this session: a Windows UI Tests run (`30972824616`) failed hard
 (cascading `NoSuchElementException`, 44s finds) with zero code diff from the previous
