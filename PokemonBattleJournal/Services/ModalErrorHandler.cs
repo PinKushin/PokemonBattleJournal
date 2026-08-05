@@ -13,7 +13,7 @@
         /// <param name="ex">Exception.</param>
         public void HandleError(Exception ex)
         {
-            DisplayAlertAsync(ex).FireAndForgetSafeAsync();
+            _ = DisplayAlertAsync(ex).FireAndForgetSafeAsync();
         }
 
         private static async Task DisplayAlertAsync(Exception ex)

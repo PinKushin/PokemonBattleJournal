@@ -292,12 +292,12 @@ public IEnumerable? ItemsSource
         }
     }
 
-    private static void LogPopupEvent(string message)
+    private static async Task LogPopupEventAsync(string message)
     {
         try
         {
             string path = Path.Combine(FileSystem.Current.CacheDirectory, "combobox_popup.log");
-            File.AppendAllText(path, $"[{DateTime.Now:HH:mm:ss.fff}] {message}{Environment.NewLine}");
+            await File.AppendAllTextAsync(path, $"[{DateTime.Now:HH:mm:ss.fff}] {message}{Environment.NewLine}");
         }
         catch (IOException)
         {
@@ -314,10 +314,10 @@ public IEnumerable? ItemsSource
     {
         try
         {
-            LogPopupEvent($"[ComboBoxControl] OnTapped fired. AutomationId={AutomationId}, ItemsSource={(ItemsSource == null ? "NULL" : "set")}");
+            await LogPopupEventAsync($"[ComboBoxControl] OnTapped fired. AutomationId={AutomationId}, ItemsSource={(ItemsSource == null ? "NULL" : "set")}");
             if (ItemsSource == null)
             {
-                LogPopupEvent("[ComboBoxControl] OnTapped: ItemsSource null, returning");
+                await LogPopupEventAsync("[ComboBoxControl] OnTapped: ItemsSource null, returning");
                 return;
             }
 
@@ -330,13 +330,13 @@ public IEnumerable? ItemsSource
                 PopupWidth,
                 ItemHeight,
                 ImageMemberPath2);
-            LogPopupEvent("[ComboBoxControl] OnTapped: popup constructed, calling ShowPopupAsync");
+            await LogPopupEventAsync("[ComboBoxControl] OnTapped: popup constructed, calling ShowPopupAsync");
 
             Page? currentPage = Shell.Current?.CurrentPage;
-            LogPopupEvent($"[ComboBoxControl] OnTapped: Shell.Current.CurrentPage={(currentPage == null ? "NULL" : currentPage.GetType().Name)}");
+            await LogPopupEventAsync($"[ComboBoxControl] OnTapped: Shell.Current.CurrentPage={(currentPage == null ? "NULL" : currentPage.GetType().Name)}");
             if (currentPage == null)
             {
-                LogPopupEvent("[ComboBoxControl] OnTapped: no CurrentPage — aborting");
+                await LogPopupEventAsync("[ComboBoxControl] OnTapped: no CurrentPage — aborting");
                 return;
             }
 
@@ -345,7 +345,7 @@ public IEnumerable? ItemsSource
                 Shape = null,
                 Shadow = null
             });
-            LogPopupEvent($"[ComboBoxControl] OnTapped: ShowPopupAsync returned, result={(popupResult?.Result == null ? "null" : "picked")}");
+            await LogPopupEventAsync($"[ComboBoxControl] OnTapped: ShowPopupAsync returned, result={(popupResult?.Result == null ? "null" : "picked")}");
 
             if (popupResult?.Result is ComboBoxPopup.PickerResult pickerResult && pickerResult.SelectedItem != null)
             {
@@ -354,7 +354,7 @@ public IEnumerable? ItemsSource
         }
         catch (Exception ex)
         {
-            LogPopupEvent($"[ComboBoxControl] OnTapped THREW: {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
+            await LogPopupEventAsync($"[ComboBoxControl] OnTapped THREW: {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
         }
     }
 }

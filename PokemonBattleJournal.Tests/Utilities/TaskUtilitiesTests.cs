@@ -3,14 +3,15 @@ namespace PokemonBattleJournal.Tests.Utilities
     public class TaskUtilitiesTests
     {
         [Test]
-        public void FireAndForgetSafeAsync_Success_DoesNotThrow()
+        public async Task FireAndForgetSafeAsync_Success_DoesNotThrow()
         {
             // Arrange
             Task successfulTask = Task.CompletedTask;
 
-            // Act & Assert — should not throw
-            // SuppressMessage: FireAndForgetSafeAsync is intentionally async void
-            successfulTask.FireAndForgetSafeAsync();
+            // Act & Assert — the observer task completes without throwing.
+            // FireAndForgetSafeAsync returns the observing Task (no async void),
+            // so tests can await it directly instead of sleeping.
+            await successfulTask.FireAndForgetSafeAsync();
         }
 
         [Test]
@@ -21,11 +22,7 @@ namespace PokemonBattleJournal.Tests.Utilities
             Task failingTask = Task.FromException(new Exception("Test error"));
 
             // Act
-            // SuppressMessage: FireAndForgetSafeAsync is intentionally async void
-            failingTask.FireAndForgetSafeAsync(mockHandler);
-
-            // Allow fire-and-forget to complete
-            await Task.Delay(100);
+            await failingTask.FireAndForgetSafeAsync(mockHandler);
 
             // Assert
             mockHandler.Received(1).HandleError(Arg.Any<Exception>());
@@ -38,10 +35,7 @@ namespace PokemonBattleJournal.Tests.Utilities
             Task failingTask = Task.FromException(new Exception("Test error"));
 
             // Act & Assert — should not throw even with null handler
-            TaskUtilities.FireAndForgetSafeAsync(failingTask, null);
-
-            // Allow fire-and-forget to complete
-            await Task.Delay(100);
+            await TaskUtilities.FireAndForgetSafeAsync(failingTask, null);
         }
 
         [Test]
@@ -50,9 +44,7 @@ namespace PokemonBattleJournal.Tests.Utilities
             ILogger mockLogger = Substitute.For<ILogger>();
             Task failingTask = Task.FromException(new InvalidOperationException("boom"));
 
-            failingTask.FireAndForgetSafeAsync(logger: mockLogger);
-
-            await Task.Delay(100);
+            await failingTask.FireAndForgetSafeAsync(logger: mockLogger);
 
             mockLogger.Received(1).Log(
                 LogLevel.Error,
