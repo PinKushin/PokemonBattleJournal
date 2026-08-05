@@ -7,14 +7,15 @@ on:
     branches: [master, main]
 
 jobs:
-  ui-tests-android:
-    name: Android UI Tests (${{ matrix.fixture }})
+  # Build the APK once — each matrix job used to rebuild the identical APK from
+  # scratch (~18 min on a 2-core runner, ×5 jobs). AppiumSetup.BuildAndroidApk()
+  # skips its in-process build when the APK exists alongside its .uitest sentinel
+  # and no source file is newer, so the matrix jobs just download this artifact,
+  # write the sentinel, and go straight to adb install.
+  build-apk:
+    name: Build Android APK
     runs-on: ubuntu-latest
-    timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        fixture: [AboutPageTests, MainPageTests, OptionsPageTests, ReadJournalPageTests, TrainerPageTests]
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
@@ -36,6 +37,55 @@ jobs:
 
       - name: Install MAUI Android workload
         run: dotnet workload install maui-android
+
+      - name: Install Android SDK platform 35
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0' platform-tools > /dev/null
+
+      # EmbedAssembliesIntoApk required: Appium installs via adb but never pushes
+      # fast-deploy assemblies, so without it monodroid aborts "No assemblies found"
+      # on launch. Matches the arguments AppiumSetup.BuildAndroidApk() would use.
+      - name: Build APK
+        run: dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-android -c Debug -p:EmbedAssembliesIntoApk=true
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-test-apk
+          path: PokemonBattleJournal/bin/Debug/net10.0-android/com.PinKushin.PokemonBattleJournal-Signed.apk
+          if-no-files-found: error
+
+  ui-tests-android:
+    name: Android UI Tests (${{ matrix.fixture }})
+    needs: build-apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        fixture: [AboutPageTests, MainPageTests, OptionsPageTests, ReadJournalPageTests, TrainerPageTests]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-android-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
+          restore-keys: nuget-android-
+
+      # JDK still needed for sdkmanager/avdmanager inside the emulator action;
+      # the maui-android workload is NOT needed here — UITests.Android.csproj is
+      # plain net10.0 with no MAUI project reference, and the APK comes prebuilt.
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
 
       - name: Cache npm / Appium
         uses: actions/cache@v6
@@ -61,8 +111,33 @@ jobs:
       - name: Restore
         run: dotnet restore PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
 
+      - name: Download APK artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: android-test-apk
+          path: PokemonBattleJournal/bin/Debug/net10.0-android/
+
+      # touch: checkout stamps source files with checkout time; the APK must be
+      # newer than every .cs/.xaml/.csproj or AppiumSetup's freshness check
+      # rebuilds anyway. Sentinel marks it test-built (vs VS fast-deploy).
+      - name: Mark APK as test-built
+        run: |
+          touch PokemonBattleJournal/bin/Debug/net10.0-android/com.PinKushin.PokemonBattleJournal-Signed.apk
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > PokemonBattleJournal/bin/Debug/net10.0-android/com.PinKushin.PokemonBattleJournal-Signed.apk.uitest
+
       # avd-name must match the hardcoded "pixel_7_-_api_35" constant in AppiumSetup.cs.
-      # AppiumSetup.BuildAndroidApk() builds and installs the APK; Appium launches by package name only.
+      #
+      # Script notes:
+      # - `timeout 20 adb logcat -d`: AppiumSetup's own teardown kills the emulator
+      #   (ShutdownEmulator runs unconditionally) BEFORE dotnet test exits, so by the
+      #   time this logcat runs there may be no device — adb then prints
+      #   "- waiting for device -" and blocks forever. That was the real cause of the
+      #   teardown hangs (the job cancellation debug line showed the hang inside THIS
+      #   script step, not the action's Terminate Emulator step). timeout caps it.
+      # - pkill -f crashpad_handler: secondary guard for the upstream action teardown
+      #   hang (https://github.com/ReactiveCircus/android-emulator-runner/issues/385).
+      #   -f is required: bare pkill matches /proc/pid/comm which the kernel truncates
+      #   to 15 chars — "crashpad_handler" is 16, so it can never match without -f.
       - name: Run Android UI Tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -74,26 +149,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 3072
           disable-animations: true
-          # crashpad_handler kill before exit works around a documented
-          # reactivecircus/android-emulator-runner hang: the emulator's crash-reporter
-          # child process outlives "adb emu kill" ("stop: Not implemented"), and the
-          # action's own teardown step then hangs forever waiting on the whole process
-          # tree to exit. Our own AppiumSetup.Dispose() already calls "adb emu kill"
-          # during normal NUnit teardown (confirmed via log ordering: "Wait for emulator
-          # ... shutdown gracefully" prints BEFORE the dotnet test runner's own
-          # Passed!/Results File summary), which is what actually kicks off crashpad's
-          # shutdown sequence — crashpad_handler doesn't necessarily exist yet by the
-          # moment a single one-shot pkill runs right after dotnet test exits. Loop for
-          # up to ~20s catching it whenever it actually spawns, instead of one shot.
-          #
-          # CRITICAL: pkill without -f matches against /proc/[pid]/comm, which the Linux
-          # kernel truncates to 15 chars (TASK_COMM_LEN=16 including the null terminator).
-          # "crashpad_handler" is 16 characters — it gets truncated to "crashpad_handle"
-          # in comm, so a bare `pkill crashpad_handler` can NEVER match, confirmed by the
-          # hang still reproducing after the loop above shipped. `-f` matches the full
-          # command line instead of the truncated short name.
-          # See https://github.com/ReactiveCircus/android-emulator-runner/issues/385
-          script: dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --filter "FullyQualifiedName~${{ matrix.fixture }}" --logger "trx;LogFileName=android-ui-tests-${{ matrix.fixture }}.trx" ; code=$? ; adb logcat -d > /tmp/UITests.Android.logcat.txt ; for i in 1 2 3 4 5 6 7 8 9 10 ; do pkill -f -SIGKILL crashpad_handler 2>/dev/null && break ; sleep 2 ; done ; exit $code
+          script: dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --filter "FullyQualifiedName~${{ matrix.fixture }}" --logger "trx;LogFileName=android-ui-tests-${{ matrix.fixture }}.trx" ; code=$? ; timeout 20 adb logcat -d > /tmp/UITests.Android.logcat.txt 2>/dev/null || true ; for i in 1 2 3 4 5 6 7 8 9 10 ; do pkill -f -SIGKILL crashpad_handler 2>/dev/null && break ; sleep 2 ; done ; exit $code
         env:
           CI: true
           ANDROID_USE_INSTALLED: "0"

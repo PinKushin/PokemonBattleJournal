@@ -18,7 +18,19 @@ namespace UITests
             for (int i = 0; i < attempts; i++)
             {
                 PerfLog($"NAV open drawer (attempt {i + 1})");
-                App.FindElement(MobileBy.AccessibilityId("Open navigation drawer")).Click();
+                try
+                {
+                    App.FindElement(MobileBy.AccessibilityId("Open navigation drawer")).Click();
+                }
+                catch (OpenQA.Selenium.NoSuchElementException)
+                {
+                    // Every recorded CI failure was the hamburger itself missing from the
+                    // tree (app still settling after launch), not a click that missed —
+                    // retrying only the post-click verify would let that mode escape on
+                    // attempt 1 unretried.
+                    PerfLog($"NAV hamburger not in tree on attempt {i + 1} — retrying");
+                    continue;
+                }
 
                 var deadline = DateTime.UtcNow.AddMilliseconds(2500);
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(300);
