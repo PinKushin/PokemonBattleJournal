@@ -48,7 +48,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             _viewModel = new OptionsPageViewModel(
                 _logger, _mockConnectionFactory, switchService, shellVm,
-                Substitute.For<ITrainerHillImportService>(), Substitute.For<IErrorHandler>());
+                Substitute.For<ITrainerHillImportService>(), Substitute.For<IExportService>(), Substitute.For<IErrorHandler>());
         }
 
         private void ShouldHaveWarned(string containing)

@@ -328,6 +328,40 @@ namespace PokemonBattleJournal.IntegrationTests.Services
             matches.ShouldBeEmpty();
         }
 
+        /// <summary>
+        /// A best-of-one match must come back with exactly one game.
+        /// </summary>
+        /// <remarks>
+        /// Regression for a phantom-game bug found 2026-08-05 while round-tripping an export.
+        /// <c>MatchEntry</c> declares three <c>[OneToOne]</c> Game properties backed by three
+        /// separate <c>[ForeignKey(typeof(Game))]</c> columns, and SQLite-Net-Extensions cannot
+        /// work out which foreign key feeds which property — so <c>GetWithChildrenAsync</c>
+        /// filled all three from the same row. <c>LoadRelatedDataAsync</c> only assigned the
+        /// slots that had an id, leaving the phantoms in place for every BO1 match loaded with
+        /// related data. ReadJournal renders game details from exactly this call.
+        /// </remarks>
+        [Test]
+        public async Task GetByTrainerIdAsync_BO1Match_HasNoPhantomSecondOrThirdGame()
+        {
+            uint trainerId = await SeedTrainerAsync();
+            uint archetypeId = await SeedArchetypeAsync();
+            MatchEntry match = new()
+            {
+                TrainerId = trainerId,
+                PlayingId = archetypeId,
+                AgainstId = archetypeId,
+                Result = MatchResult.Win,
+            };
+            _ = await _sut.SaveAsync(match, [new Game { Result = MatchResult.Win, Turn = 1 }]);
+
+            List<MatchEntry> loaded = await _sut.GetByTrainerIdAsync(trainerId, includeRelated: true);
+
+            loaded.Count.ShouldBe(1);
+            loaded[0].Game1.ShouldNotBeNull();
+            loaded[0].Game2.ShouldBeNull("a best-of-one match has no second game");
+            loaded[0].Game3.ShouldBeNull("a best-of-one match has no third game");
+        }
+
         [Test]
         public async Task SaveAsync_ZeroTrainerId_ThrowsArgumentException()
         {

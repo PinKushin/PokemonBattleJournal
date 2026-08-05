@@ -255,6 +255,39 @@
                 Text="{Binding ImportStatusMessage}"
                 TextColor="{StaticResource PokeYellow}" />
 
+            <!--  Export  -->
+            <Label AutomationId="ExportSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Export" />
+
+            <Button
+                x:Name="ExportTrainerHillButton"
+                AutomationId="ExportTrainerHillButton"
+                SemanticProperties.Description="Export this trainer's matches in TrainerHill format"
+                SemanticProperties.Hint="Opens a save dialog to write a TrainerHill battle log JSON file"
+                Command="{Binding ExportTrainerHillCommand}"
+                HorizontalOptions="Center"
+                Text="Export to TrainerHill"
+                WidthRequest="220" />
+
+            <Button
+                x:Name="ExportBackupButton"
+                AutomationId="ExportBackupButton"
+                SemanticProperties.Description="Export a full backup of every trainer"
+                SemanticProperties.Hint="Opens a save dialog to write a backup JSON file containing all trainers"
+                Command="{Binding ExportBackupCommand}"
+                HorizontalOptions="Center"
+                Text="Export backup (all trainers)"
+                WidthRequest="220" />
+
+            <Label
+                AutomationId="ExportStatusLabel"
+                SemanticProperties.Description="Export status"
+                FontFamily="SairaRegular"
+                FontSize="12"
+                HorizontalOptions="Center"
+                IsVisible="{Binding HasExportStatus}"
+                Text="{Binding ExportStatusMessage}"
+                TextColor="{StaticResource PokeYellow}" />
+
             <!--  Save all / danger zone  -->
             <BoxView
                 Margin="0,8"

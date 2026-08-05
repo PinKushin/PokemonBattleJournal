@@ -382,6 +382,26 @@ namespace PokemonBattleJournal.Services.Import
             }
         }
 
+        /// <summary>
+        /// Converts an archetype name to the slug form TrainerHill uses.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately built from <see cref="NormalizationKeys"/> so it is the inverse of
+        /// <see cref="LookupSlug"/> by construction rather than by coincidence: the first
+        /// normalization key is the least-stripped one, so the slug keeps version qualifiers
+        /// ("dragapult-ex-dusknoir") and still matches on import.
+        ///
+        /// This is lossy without the Limitless meta list — "dragapult-ex-dusknoir" only becomes
+        /// "Dragapult ex / Dusknoir" again if that deck is known, otherwise
+        /// <see cref="SlugToName"/> yields "Dragapult Ex Dusknoir". That is why the backup format
+        /// writes names verbatim instead of calling this.
+        /// </remarks>
+        internal static string NameToSlug(string name)
+        {
+            string? key = NormalizationKeys(name).FirstOrDefault();
+            return string.IsNullOrEmpty(key) ? name.ToLowerInvariant() : key.Replace(' ', '-');
+        }
+
         internal static string SlugToName(string slug)
         {
             string spaced = slug.Replace('-', ' ');

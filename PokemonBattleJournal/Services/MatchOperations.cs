@@ -310,6 +310,23 @@ namespace PokemonBattleJournal.Services
             {
                 entry.Game3 = await LoadGameWithTagsAsync(db, entry.Game3Id.Value);
             }
+
+            // Assigning only the slots that HAVE an id is not enough: the caller reached here
+            // via GetWithChildrenAsync, and MatchEntry declares three [OneToOne] Game properties
+            // backed by three separate [ForeignKey(typeof(Game))] columns. SQLite-Net-Extensions
+            // cannot tell which foreign key feeds which navigation property, so it populates all
+            // three from the same row. A best-of-one match therefore arrives with a phantom
+            // Game2 and Game3 that are really copies of Game1, and without these lines the
+            // phantoms survive because there is no id to overwrite them with.
+            if (!entry.Game2Id.HasValue)
+            {
+                entry.Game2 = null;
+            }
+
+            if (!entry.Game3Id.HasValue)
+            {
+                entry.Game3 = null;
+            }
         }
 
         private async Task<Game?> LoadGameWithTagsAsync(SQLiteAsyncConnection db, uint gameId)
