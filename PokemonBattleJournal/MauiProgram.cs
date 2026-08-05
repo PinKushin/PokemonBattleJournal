@@ -116,7 +116,17 @@ namespace PokemonBattleJournal
             builder.Services.AddSingleton<AppShell>();
 
             //Link Pages and ViewModels
-            //Main Page
+
+            // MainPage is a singleton for two reasons that genuinely hold — unlike the two
+            // pages below, do NOT make this transient:
+            //  1. AppShellViewModel is a singleton and injects MainPageViewModel to read
+            //     HasUnsavedData before switching trainer. A transient view model would hand
+            //     the shell its own permanently-empty instance (a captive dependency), so the
+            //     "you have unsaved match data" prompt would silently never fire and a
+            //     half-entered match would be lost without warning. It fails silently.
+            //  2. The in-progress entry form surviving navigation is a feature: start logging
+            //     a match, check the journal, come back, form intact.
+            // This is also why the MainPage UI tests need a [TearDown] to reset state.
             builder.Services.AddSingleton<MainPage>();
             builder.Services.AddSingleton<MainPageViewModel>();
 
