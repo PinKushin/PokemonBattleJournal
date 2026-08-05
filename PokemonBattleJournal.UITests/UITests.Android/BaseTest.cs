@@ -4,12 +4,50 @@ namespace UITests
     {
         private const string PackageName = "com.PinKushin.PokemonBattleJournal";
 
+        // Click-verify-retry: Appium's .Click() on the drawer hamburger sometimes never
+        // reaches the MAUI gesture handler on Android (same flaky-tap-miss class documented
+        // for OpenArchetypePopup — see docs/memory/feedback_android_flaky_tap_retry.md).
+        // Every test's [OneTimeSetUp] depends on this one click succeeding, so an unguarded
+        // single attempt here wipes out an entire fixture (confirmed 2026-08-05: MainPageTests
+        // 25/25 and OptionsPageTests 21/21 failed in a single CI run from exactly this miss,
+        // while AboutPageTests/ReadJournalPageTests/TrainerPageTests — separate emulator
+        // processes, same code path — passed clean).
         protected override void DoNavigateTo(string pageTitle)
         {
-            PerfLog($"NAV open drawer");
-            App.FindElement(MobileBy.AccessibilityId("Open navigation drawer")).Click();
-            PerfLog($"NAV click '{pageTitle}'");
-            App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")")).Click();
+            const int attempts = 3;
+            for (int i = 0; i < attempts; i++)
+            {
+                PerfLog($"NAV open drawer (attempt {i + 1})");
+                App.FindElement(MobileBy.AccessibilityId("Open navigation drawer")).Click();
+
+                var deadline = DateTime.UtcNow.AddMilliseconds(2500);
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(300);
+                bool menuOpen;
+                try
+                {
+                    menuOpen = false;
+                    while (DateTime.UtcNow < deadline)
+                    {
+                        if (App.FindElements(MobileBy.AndroidUIAutomator(
+                                $"new UiSelector().text(\"{pageTitle}\")")).Count > 0)
+                        {
+                            menuOpen = true;
+                            break;
+                        }
+                    }
+                }
+                finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
+
+                if (menuOpen)
+                {
+                    PerfLog($"NAV click '{pageTitle}' (attempt {i + 1})");
+                    App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")")).Click();
+                    return;
+                }
+                PerfLog($"NAV drawer did not open on attempt {i + 1} — retrying");
+            }
+            throw new OpenQA.Selenium.NoSuchElementException(
+                $"Navigation drawer did not open after {attempts} clicks (target '{pageTitle}').");
         }
 
         // Three-stage lookup:
