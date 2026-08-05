@@ -2,7 +2,7 @@ name: Android UI Tests
 
 on:
   push:
-    branches: [master, main, 'feature/**']
+    branches: ['**']
   pull_request:
     branches: [master, main]
 
@@ -72,6 +72,7 @@ jobs:
           script: dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --logger "trx;LogFileName=android-ui-tests.trx"
         env:
           CI: true
+          ANDROID_USE_INSTALLED: "0"
 
       - name: Upload results
         if: always()

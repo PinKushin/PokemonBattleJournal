@@ -32,8 +32,35 @@ namespace UITests
         private void ResetGame1Tab()
         {
             ScrollPageToTop();
-            if (!TryClickIfPresent("Game1Tab"))
-                TestContext.WriteLine("WARN: ResetGame1Tab — Game1Tab not found; next test may inherit dirty state.");
+            // Click-verify-retry. A single click is not enough: Appium taps sometimes never
+            // reach the handler on Android (proved via popup lifecycle log — same disease as
+            // OpenArchetypePopup). If Game1Tab isn't actually selected, the whole Game 1 panel
+            // (IsVisible={Binding IsGame1Selected}) stays hidden → ResultPicker/TagsView/
+            // UserNoteInput/WentFirstLabel vanish for downstream tests → cascade of 17-20 s
+            // STAGE3 timeouts. Verify the panel marker (PossibleResultsPicker) is present
+            // after each click; retry up to 3 times; fail loudly if it never comes back.
+            // Verify by the OTHER panels' content leaving the tree — NOT by Game 1 content
+            // appearing. UiAutomator only exposes elements inside the visible viewport; the
+            // Game 1 picker may be off-screen at the current scroll position even when the
+            // panel switch succeeded, which made an "is Game 1 content present" check loop
+            // forever (observed 2026-08-04, run 3). UserNoteInput2/3 are in the viewport
+            // region we just interacted with, so their disappearance is a reliable signal.
+            for (int i = 0; i < 3; i++)
+            {
+                FindUIElement("Game1Tab").Click();
+                var deadline = DateTime.UtcNow.AddMilliseconds(2500);
+                while (DateTime.UtcNow < deadline)
+                {
+                    if (!IsElementPresent("UserNoteInput2") && !IsElementPresent("UserNoteInput3"))
+                    {
+                        PerfLog($"ResetGame1Tab: Game 2/3 panels gone on attempt {i + 1}");
+                        return;
+                    }
+                }
+                PerfLog($"ResetGame1Tab: attempt {i + 1} — Game 2/3 panel content still visible, retrying click");
+            }
+            throw new OpenQA.Selenium.NoSuchElementException(
+                "ResetGame1Tab: Game 2/3 panel content still present after 3 clicks on Game1Tab.");
         }
 
         // UiScrollable scrollForward() moves toward the end of the list; scrollToBeginning()
@@ -88,22 +115,135 @@ namespace UITests
         // Ensures BO3 is ON regardless of current state (safe to call when BO3 may already be on).
         // Call ScrollPageToTop() before this in tests where a prior test may have scrolled down,
         // so BO3StatusLabel/BOSwitch (near page top) are in view for FindUIElement.
+        // Click-verify-retry: BOSwitch is a Border + TapGestureRecognizer — the same control
+        // shape whose taps Appium sometimes drops on Android (proved via popup lifecycle log).
+        // WaitUntilText returns silently on timeout, so a missed click used to fall through
+        // looking like "label on but tab missing". Each attempt: click, wait for the label to
+        // confirm, then wait for Game2Tab (the IsVisible-bound tab — Game1Tab is always
+        // visible and proves nothing) to enter the tree.
         private void EnsureBO3On()
         {
             AppiumElement label = FindUIElement("BO3StatusLabel");
-            if (label.Text == "Best of 3")
+            if (label.Text == "Best of 3" && IsElementPresent("Game2Tab"))
                 return;
 
-            FindUIElement("BOSwitch").Click();
+            for (int i = 0; i < 3; i++)
+            {
+                if (GetBO3LabelTextSafe() != "Best of 3")
+                {
+                    FindUIElement("BOSwitch").Click();
+                    WaitUntilText("BO3StatusLabel", "Best of 3", timeoutMs: 3000);
+                }
 
-            // Game2Tab.IsVisible is bound to BO3Toggle. BO3GamesLayout and Game1Tab are always
-            // visible so they resolve instantly after the click — before the binding cascade
-            // completes. Poll until the label confirms BO3 is active so callers can rely on
-            // Game2Tab being in the UIA tree.
-            // NOTE: MobileBy.AccessibilityId maps to content-desc on Android (NOT AutomationId).
-            // FindUIElement is platform-aware (resource-id on Android, AccessibilityId on Windows)
-            // but has a 10s internal poll — too slow for a 5s deadline loop. Use WaitUntilText instead.
-            WaitUntilText("BO3StatusLabel", "Best of 3", timeoutMs: 5000);
+                if (GetBO3LabelTextSafe() != "Best of 3")
+                {
+                    PerfLog($"EnsureBO3On: attempt {i + 1} — label did not flip, re-clicking BOSwitch");
+                    continue;
+                }
+
+                var tabSw = System.Diagnostics.Stopwatch.StartNew();
+                var tabDeadline = DateTime.UtcNow.AddMilliseconds(5000);
+                while (DateTime.UtcNow < tabDeadline)
+                {
+                    if (IsElementPresent("Game2Tab"))
+                    {
+                        PerfLog($"EnsureBO3On: Game2Tab appeared in {tabSw.ElapsedMilliseconds}ms (attempt {i + 1})");
+                        return;
+                    }
+                }
+                PerfLog($"EnsureBO3On: attempt {i + 1} — label on but Game2Tab not in tree after {tabSw.ElapsedMilliseconds}ms");
+            }
+            throw new OpenQA.Selenium.NoSuchElementException(
+                "EnsureBO3On: Game2Tab never appeared after 3 BOSwitch attempts.");
+        }
+
+        private string GetBO3LabelTextSafe()
+        {
+            try { return GetElementText("BO3StatusLabel"); }
+            catch (OpenQA.Selenium.NoSuchElementException) { return ""; }
+        }
+
+        // Dismiss the archetype popup reliably on both platforms. On Android, if the Cancel
+        // button click misses (content-desc reset after popup animation, or button off-screen),
+        // fall back to the Android BACK keyevent via adb. WaitUntilGone syncs on the popup
+        // actually leaving the UIA tree so the next test starts on a clean main page.
+        private void DismissArchetypePopup()
+        {
+            PerfLog("DismissArchetypePopup: try TryClickIfPresent(ArchetypePopupCancel)");
+            bool cancelClicked = TryClickIfPresent("ArchetypePopupCancel");
+            PerfLog($"DismissArchetypePopup: cancelClicked={cancelClicked}");
+
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            var pollSw = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                var deadline = DateTime.UtcNow.AddMilliseconds(1500);
+                while (DateTime.UtcNow < deadline)
+                {
+                    if (App.FindElements(MobileBy.AccessibilityId("ArchetypeSearchBar")).Count == 0)
+                    {
+                        PerfLog($"DismissArchetypePopup: OK — searchBar gone via Cancel in {pollSw.ElapsedMilliseconds}ms");
+                        return;
+                    }
+                }
+                PerfLog($"DismissArchetypePopup: searchBar STILL PRESENT after Cancel + {pollSw.ElapsedMilliseconds}ms poll → try BACK");
+            }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+
+            // Cancel didn't dismiss (or the search bar's content-desc is stale). Use BACK.
+            SendAndroidBack();
+
+            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            var backPollSw = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                var deadline = DateTime.UtcNow.AddMilliseconds(1500);
+                while (DateTime.UtcNow < deadline)
+                {
+                    if (App.FindElements(MobileBy.AccessibilityId("ArchetypeSearchBar")).Count == 0)
+                    {
+                        PerfLog($"DismissArchetypePopup: OK — searchBar gone via BACK in {backPollSw.ElapsedMilliseconds}ms");
+                        return;
+                    }
+                }
+                PerfLog($"DismissArchetypePopup: FAIL — searchBar STILL PRESENT after BACK + {backPollSw.ElapsedMilliseconds}ms poll");
+                DumpVisibleElements("DismissArchetypePopup FAIL");
+            }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+        }
+
+        // MAUI Picker on Android opens a native AlertDialog. The option list items are
+        // AppCompat Buttons with text — findable via UiSelector().text(...).
+        // Owns the picker click AND the item selection with retry: popup-lifecycle logging
+        // proved Appium clicks sometimes never reach the tap handler (page still settling
+        // from a scroll fling), so a single click + text lookup is inherently flaky.
+        // Each attempt: click picker, wait up to 2.5s for the dialog item text, click it.
+        private void SelectAndroidPickerItem(AppiumElement picker, string itemText, int attempts = 3)
+        {
+            PerfLog($"SelectAndroidPickerItem('{itemText}'): begin");
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            for (int i = 0; i < attempts; i++)
+            {
+                picker.Click();
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(2500);
+                try
+                {
+                    var el = App.FindElement(MobileBy.AndroidUIAutomator(
+                        $"new UiSelector().text(\"{itemText}\")"));
+                    PerfLog($"SelectAndroidPickerItem('{itemText}'): dialog open on attempt {i + 1} ({sw.ElapsedMilliseconds}ms) — clicking item");
+                    el.Click();
+                    return;
+                }
+                catch (OpenQA.Selenium.NoSuchElementException)
+                {
+                    PerfLog($"SelectAndroidPickerItem('{itemText}'): attempt {i + 1} — dialog item not found, retrying picker click");
+                }
+                finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
+            }
+            PerfLog($"SelectAndroidPickerItem('{itemText}'): FAIL after {attempts} attempts ({sw.ElapsedMilliseconds}ms)");
+            DumpVisibleElements($"SelectAndroidPickerItem('{itemText}') FAIL");
+            throw new OpenQA.Selenium.NoSuchElementException(
+                $"Picker dialog item '{itemText}' not reachable after {attempts} picker clicks.");
         }
 
         // ---------------------------------------------------------------------------
@@ -225,8 +365,7 @@ namespace UITests
                 AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
                 if (App is not WindowsDriver)
                 {
-                    picker1.Click();
-                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Tie\")")).Click();
+                    SelectAndroidPickerItem(picker1, "Tie");
                     ClickTab(FindUIElement("Game2Tab"));
                 }
                 else
@@ -234,7 +373,7 @@ namespace UITests
                     SelectWindowsPickerItem(picker1, "Tie");
                     ClickTab(FindUIElement("Game2Tab"));
                 }
-                
+
                 // Wait for Game 2 panel to be active
                 FindUIElement("UserNoteInput2");
 
@@ -243,8 +382,7 @@ namespace UITests
                 AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
                 if (App is not WindowsDriver)
                 {
-                    picker2.Click();
-                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                    SelectAndroidPickerItem(picker2, "Win");
                 }
                 else
                 {
@@ -273,8 +411,7 @@ namespace UITests
                 AppiumElement picker1 = FindUIElement("PossibleResultsPicker");
                 if (App is not WindowsDriver)
                 {
-                    picker1.Click();
-                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                    SelectAndroidPickerItem(picker1, "Win");
                     ClickTab(FindUIElement("Game2Tab"));
                 }
                 else
@@ -282,7 +419,7 @@ namespace UITests
                     SelectWindowsPickerItem(picker1, "Win");
                     ClickTab(FindUIElement("Game2Tab"));
                 }
-                
+
                 // Wait for Game 2 panel to be active
                 FindUIElement("UserNoteInput2");
 
@@ -291,8 +428,7 @@ namespace UITests
                 AppiumElement picker2 = FindUIElement("PossibleResultsPicker2");
                 if (App is not WindowsDriver)
                 {
-                    picker2.Click();
-                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Loss\")")).Click();
+                    SelectAndroidPickerItem(picker2, "Loss");
                     ClickTab(FindUIElement("Game3Tab"));
                 }
                 else
@@ -344,12 +480,12 @@ namespace UITests
                 ScrollPageToTop();
 
                 // Select player archetype — WaitUntilGone syncs on popup dismissal before opening rival.
-                FindUIElement("PlayerArchetype").Click();
+                OpenArchetypePopup("PlayerArchetype");
                 FindUIElement("ArchetypeItem_Other").Click();
                 WaitUntilGone("ArchetypeItem_Other");
 
                 // Select rival archetype
-                FindUIElement("RivalArchetype").Click();
+                OpenArchetypePopup("RivalArchetype");
                 FindUIElement("ArchetypeItem_Other").Click();
                 WaitUntilGone("ArchetypeItem_Other");
 
@@ -357,8 +493,7 @@ namespace UITests
                 AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
                 if (App is not WindowsDriver)
                 {
-                    resultPicker.Click();
-                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                    SelectAndroidPickerItem(resultPicker, "Win");
                 }
                 else
                     SelectWindowsPickerItem(resultPicker, "Win");
@@ -386,8 +521,7 @@ namespace UITests
                 AppiumElement resultPicker = FindUIElement("PossibleResultsPicker");
                 if (App is not WindowsDriver)
                 {
-                    resultPicker.Click();
-                    App.FindElement(MobileBy.AndroidUIAutomator("new UiSelector().text(\"Win\")")).Click();
+                    SelectAndroidPickerItem(resultPicker, "Win");
                 }
                 else
                     SelectWindowsPickerItem(resultPicker, "Win");
@@ -402,13 +536,13 @@ namespace UITests
         public void MainPage_PlayerArchetype_DualIconDeck_ShowsBothIcons()
         {
             ScrollPageToTop();
-            FindUIElement("PlayerArchetype").Click();
+            OpenArchetypePopup("PlayerArchetype");
             try
             {
                 FindUIElement("ArchetypeItem_Dragapult ex / Dusknoir").Click();
                 WaitUntilGone("ArchetypeItem_Dragapult ex / Dusknoir");
             }
-            finally { TryClickIfPresent("ArchetypePopupCancel"); }
+            finally { DismissArchetypePopup(); }
 
             // Second icon should now be visible in the PlayerArchetype picker
             FindUIElement("PlayerArchetypeIcon2").ShouldNotBeNull();
@@ -425,9 +559,9 @@ namespace UITests
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
                 // Reset PlayerArchetype back to Other so match-save tests stay clean
                 ScrollPageToTop();
-                FindUIElement("PlayerArchetype").Click();
+                OpenArchetypePopup("PlayerArchetype");
                 try { FindUIElement("ArchetypeItem_Other").Click(); }
-                finally { TryClickIfPresent("ArchetypePopupCancel"); }
+                finally { DismissArchetypePopup(); }
             }
         }
 
@@ -435,10 +569,8 @@ namespace UITests
         public void MainPage_PlayerArchetype_Cancel_DismissesPopup()
         {
             ScrollPageToTop();
-            FindUIElement("PlayerArchetype").Click();
-            FindUIElement("ArchetypeSearchBar"); // popup is open
-            FindUIElement("ArchetypePopupCancel").Click();
-            // If the cancel hang reproduces, WaitUntilGone times out (3s) and the test fails.
+            OpenArchetypePopup("PlayerArchetype"); // opens and confirms popup content visible
+            DismissPopupPlatform();
             WaitUntilGone("ArchetypeSearchBar", timeoutMs: 3000);
         }
 
@@ -447,17 +579,56 @@ namespace UITests
         {
             ScrollPageToTop();
             WaitUntilGone("ArchetypeSearchBar"); // ensure no leftover popup from prior test
-            FindUIElement("RivalArchetype").Click();
-            FindUIElement("ArchetypeSearchBar"); // popup is open
-            FindUIElement("ArchetypePopupCancel").Click();
+            OpenArchetypePopup("RivalArchetype"); // opens and confirms popup content visible
+            DismissPopupPlatform();
             WaitUntilGone("ArchetypeSearchBar", timeoutMs: 3000);
+        }
+
+        // Windows: the ComboBoxPopup Cancel Button is the primary dismiss control and is
+        // reachable via UIA. Android: CommunityToolkit Popup dismisses on outside-tap and
+        // via BACK; the Cancel button often isn't in the UIA tree (MAUI popup Dialog window
+        // vs main app scrollable). Use the platform's natural dismiss gesture.
+        private void DismissPopupPlatform()
+        {
+            if (App is WindowsDriver)
+                FindUIElement("ArchetypePopupCancel").Click();
+            else
+                SendAndroidBack();
+        }
+
+        // Opens the archetype popup with click-retry. In-app popup lifecycle logging proved
+        // (2026-08-04, UITests.PopupLog.txt) that Appium's .Click() on the ComboBoxControl
+        // sometimes never reaches the TapGestureRecognizer on Android — OnTapped simply
+        // doesn't fire, most likely because the click lands while the page is still settling
+        // from ScrollPageToTop's UiScrollable fling. The element is found (resource-id
+        // resolves) but the tap misses. Retry the click until popup content actually appears.
+        private void OpenArchetypePopup(string comboBoxId, int attempts = 3)
+        {
+            for (int i = 0; i < attempts; i++)
+            {
+                FindUIElement(comboBoxId).Click();
+
+                // Poll for popup content (search bar) with a short per-attempt deadline.
+                var deadline = DateTime.UtcNow.AddMilliseconds(2500);
+                while (DateTime.UtcNow < deadline)
+                {
+                    if (IsElementPresent("ArchetypeSearchBar"))
+                    {
+                        PerfLog($"OpenArchetypePopup({comboBoxId}): popup open on attempt {i + 1}");
+                        return;
+                    }
+                }
+                PerfLog($"OpenArchetypePopup({comboBoxId}): attempt {i + 1} — popup did not appear, retrying click");
+            }
+            throw new OpenQA.Selenium.NoSuchElementException(
+                $"Archetype popup did not open after {attempts} clicks on '{comboBoxId}'.");
         }
 
         [Test]
         public void MainPage_ArchetypePicker_Search_FiltersResults()
         {
             ScrollPageToTop();
-            FindUIElement("PlayerArchetype").Click();
+            OpenArchetypePopup("PlayerArchetype");
             try
             {
                 // Search bar appears inside the popup
@@ -482,8 +653,7 @@ namespace UITests
             finally
             {
                 // Always close popup so a failure here doesn't cascade to the next test class.
-                TryClickIfPresent("ArchetypePopupCancel");
-                WaitUntilGone("ArchetypeSearchBar");
+                DismissArchetypePopup();
             }
         }
     }

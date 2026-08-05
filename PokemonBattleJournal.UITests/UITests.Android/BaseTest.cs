@@ -12,14 +12,24 @@ namespace UITests
             App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")")).Click();
         }
 
-        // Poll every 500ms for up to 10s with a direct resourceId lookup.
-        // If the element is not found in the viewport after 10s, fall back to UiScrollable
-        // which scrolls the page to bring off-screen elements into view.
+        // Three-stage lookup:
+        //   1. Direct resource-id poll (up to 5s) — fastest, covers most main-page elements.
+        //   2. AccessibilityId (content-desc) single-shot — covers popup Dialog elements and
+        //      MAUI SearchBar/composite controls whose AutomationId does not propagate to
+        //      resource-id on the native widget root.
+        //   3. UiScrollable scrollIntoView — brings off-screen elements into view.
+        // Stage 2 is necessary because popups open in a separate Android Dialog window whose
+        // children may not be under the main app scrollable, and UiScrollable(instance=0)
+        // targets the main ScrollView. AccessibilityId works cross-window.
         protected override AppiumElement FindUIElement(string id)
         {
             string resourceId = $"{PackageName}:id/{id}";
             string directSelector = $"new UiSelector().resourceId(\"{resourceId}\")";
-            var deadline = DateTime.UtcNow.AddSeconds(10);
+            var overallSw = System.Diagnostics.Stopwatch.StartNew();
+
+            // Stage 1: direct resource-id (5s deadline, 500ms per poll)
+            var stage1Sw = System.Diagnostics.Stopwatch.StartNew();
+            var stage1Deadline = DateTime.UtcNow.AddSeconds(5);
             try
             {
                 while (true)
@@ -27,21 +37,137 @@ namespace UITests
                     try
                     {
                         App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(500);
-                        return App.FindElement(MobileBy.AndroidUIAutomator(directSelector));
+                        var el = App.FindElement(MobileBy.AndroidUIAutomator(directSelector));
+                        PerfLog($"FIND '{id}' STAGE1_OK resource-id in {stage1Sw.ElapsedMilliseconds}ms");
+                        return el;
                     }
-                    catch (OpenQA.Selenium.NoSuchElementException) when (DateTime.UtcNow < deadline) { }
+                    catch (OpenQA.Selenium.NoSuchElementException) when (DateTime.UtcNow < stage1Deadline) { }
+                    catch (OpenQA.Selenium.NoSuchElementException) { break; }
                 }
             }
-            catch (OpenQA.Selenium.NoSuchElementException)
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
+            PerfLog($"FIND '{id}' STAGE1_MISS after {stage1Sw.ElapsedMilliseconds}ms → try content-desc");
+
+            // Stage 2: AccessibilityId (content-desc) — cross-window, covers popup Dialog elements
+            var stage2Sw = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(500);
+                var el = App.FindElement(MobileBy.AccessibilityId(id));
+                PerfLog($"FIND '{id}' STAGE2_OK content-desc in {stage2Sw.ElapsedMilliseconds}ms (total {overallSw.ElapsedMilliseconds}ms)");
+                return el;
+            }
+            catch (OpenQA.Selenium.NoSuchElementException) { }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
+            PerfLog($"FIND '{id}' STAGE2_MISS after {stage2Sw.ElapsedMilliseconds}ms → try scrollIntoView");
+
+            // Stage 3: UiScrollable — scrolls the main page to bring off-screen elements into view
+            var stage3Sw = System.Diagnostics.Stopwatch.StartNew();
+            try
             {
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-                return App.FindElement(MobileBy.AndroidUIAutomator(
+                var el = App.FindElement(MobileBy.AndroidUIAutomator(
                     $"new UiScrollable(new UiSelector().scrollable(true).packageName(\"{PackageName}\").instance(0))" +
                     $".scrollIntoView({directSelector})"));
+                PerfLog($"FIND '{id}' STAGE3_OK scrollIntoView in {stage3Sw.ElapsedMilliseconds}ms (total {overallSw.ElapsedMilliseconds}ms)");
+                return el;
             }
-            finally
+            catch (Exception ex)
             {
-                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                PerfLog($"FIND '{id}' STAGE3_FAIL after {stage3Sw.ElapsedMilliseconds}ms (total {overallSw.ElapsedMilliseconds}ms): {ex.GetType().Name}");
+                DumpVisibleElements($"FIND '{id}' STAGE3_FAIL");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Dumps the visible resource-ids and content-descs currently in the UIA tree to PerfLog.
+        /// Useful for diagnosing why a FindUIElement failed — shows what IS present so you can
+        /// see if the id is wrong, on a different element, or if the whole tree is unexpected
+        /// (wrong window, popup gone, etc.). Best-effort — never throws.
+        /// </summary>
+        protected override void DumpVisibleElements(string context, int maxItems = 40)
+        {
+            // Opt-in via env var. Iterating the tree with GetDomAttribute per element issues
+            // ~30+ driver round-trips per dump — running it after every FindUIElement failure
+            // churns the emulator badly enough to destabilize downstream tests (session death
+            // observed on OptionsPage after ~8 dumps during MainPage failures on 2026-08-04).
+            if (Environment.GetEnvironmentVariable("UITEST_DUMP_ON_FAIL") != "1")
+            {
+                PerfLog($"DUMP [{context}] skipped (set UITEST_DUMP_ON_FAIL=1 to enable)");
+                return;
+            }
+            try
+            {
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+                // Get all elements with any resource-id
+                var withResIds = App.FindElements(MobileBy.AndroidUIAutomator(
+                    $"new UiSelector().packageName(\"{PackageName}\").resourceIdMatches(\".+:id/.+\")"));
+                PerfLog($"DUMP [{context}] resource-ids ({withResIds.Count} found, first {maxItems}):");
+                int i = 0;
+                foreach (var el in withResIds)
+                {
+                    if (i++ >= maxItems) { PerfLog($"DUMP [{context}] ...(truncated)"); break; }
+                    try
+                    {
+                        string rid = el.GetDomAttribute("resource-id") ?? "?";
+                        string cd = el.GetDomAttribute("content-desc") ?? "";
+                        string txt = el.Text ?? "";
+                        string cls = el.GetDomAttribute("className") ?? "?";
+                        PerfLog($"  [{cls}] rid={rid} desc='{cd}' text='{txt}'");
+                    }
+                    catch (Exception ex) { PerfLog($"  <read failed: {ex.GetType().Name}>"); }
+                }
+
+                // Also dump elements with content-desc (may not overlap with resource-id set)
+                var withCd = App.FindElements(MobileBy.AndroidUIAutomator(
+                    "new UiSelector().descriptionMatches(\".+\")"));
+                PerfLog($"DUMP [{context}] content-descs ({withCd.Count} found, first {maxItems}):");
+                i = 0;
+                foreach (var el in withCd)
+                {
+                    if (i++ >= maxItems) { PerfLog($"DUMP [{context}] ...(truncated)"); break; }
+                    try
+                    {
+                        string cd = el.GetDomAttribute("content-desc") ?? "?";
+                        string cls = el.GetDomAttribute("className") ?? "?";
+                        PerfLog($"  [{cls}] desc='{cd}'");
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex) { PerfLog($"DUMP [{context}] failed: {ex.GetType().Name}: {ex.Message}"); }
+            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
+        }
+
+        /// <summary>
+        /// Sends the Android BACK keyevent via adb. Dismisses dialogs/popups when the
+        /// in-app Cancel button cannot be found or clicked (e.g. content-desc reset).
+        /// Best-effort — logs failures but never throws.
+        /// </summary>
+        protected override void SendAndroidBack()
+        {
+            PerfLog("SendAndroidBack: firing adb shell input keyevent KEYCODE_BACK");
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo("adb", "shell input keyevent KEYCODE_BACK")
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var proc = System.Diagnostics.Process.Start(psi);
+                bool exited = proc?.WaitForExit(2000) ?? false;
+                string stdout = proc?.StandardOutput.ReadToEnd() ?? "";
+                string stderr = proc?.StandardError.ReadToEnd() ?? "";
+                int code = proc?.ExitCode ?? -1;
+                PerfLog($"SendAndroidBack: exited={exited} code={code} stdout='{stdout.Trim()}' stderr='{stderr.Trim()}'");
+            }
+            catch (Exception ex)
+            {
+                NavLog($"SendAndroidBack failed: {ex.GetType().Name}: {ex.Message}");
+                PerfLog($"SendAndroidBack failed: {ex.GetType().Name}: {ex.Message}");
             }
         }
 

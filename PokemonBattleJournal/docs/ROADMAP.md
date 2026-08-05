@@ -29,24 +29,13 @@ Tracked here so nothing gets lost between sessions. Bugs first (things broken ri
 | # | Description | Notes |
 |---|---|---|
 | F-01 | BO3 result validation — require Game 3 only when ShowGame3 is true | Already partially implemented via `ShowGame3` property and `ValidateEntryAsync`. Needs end-to-end UI test coverage. |
-| F-02 | Clear form after save | After `SaveFile` succeeds, reset all fields to defaults. Currently fields stay populated. |
+| ~~F-02~~ | ~~Clear form after save~~ | **Done.** `SaveMatchAsync` clears the form on success. |
 
 ### TrainerPage — Charts
 
-All 8 chart data sets are wired in `TrainerPageViewModel` and ready. The XAML uses placeholder `Label`s pending safe lazy init.
-
 | # | Chart | Notes |
 |---|---|---|
-| F-03 | Win rate over time | Line chart — `WinRateOverTimeSeries` / `WinRateOverTimeXAxes` / `WinRateOverTimeYAxes` |
-| F-04 | Win/Loss/Tie distribution | Pie or donut chart — `WinLossTieSeries` |
-| F-05 | Matchup win rates by archetype | Bar chart — `MatchupWinRateSeries` / `MatchupXAxes` / `MatchupYAxes` |
-| F-06 | Games played per archetype | Bar chart — `GamesPlayedSeries` / `GamesPlayedXAxes` / `GamesPlayedYAxes` |
-| F-07 | Tag frequency | Bar or column chart — `TagFrequencySeries` / `TagFrequencyXAxes` / `TagFrequencyYAxes` |
-| F-08 | First player win rate | Stat card or single-value chart |
-| F-09 | BO3 vs BO1 performance split | Grouped bar — `BO3WinRateSeries` / `BO3WinRateXAxes` / `BO3WinRateYAxes` |
-| F-10 | Session win rate (today) | Stat card or mini line |
-
-Safe init strategy to investigate: `CollectionChanged`-deferred load, `Loaded` event per chart, or a single `ScrollView` virtualization approach.
+| ~~F-03 → F-10~~ | ~~All 8 charts~~ | **Done.** Implemented with LiveCharts2: matchup matrix, win rate over time, most played, archetype win rates, opponent performance, tag usage, match length, first-turn split. Covered by `TrainerPage_AllEightCharts_Rendered` UI test on both platforms. |
 
 ### ReadJournalPage — Styling
 
@@ -82,7 +71,7 @@ Safe init strategy to investigate: `CollectionChanged`-deferred load, `Loaded` e
 |---|---|---|
 | F-19 | Replace Windows Appium driver | Custom driver in progress to replace WinAppDriver. Better Win32 compatibility and fewer bugs. The exe path in `AppiumSetup.cs` is hardcoded — this is required by WinAppDriver (only way to target an unpackaged Windows app). The custom driver may change this. Update `AppiumSetup.cs` when the new driver is ready. |
 | F-20 | Configurable Android emulator AVD | `pixel_7_-_api_35` is hardcoded in `UITests.Android/AppiumSetup.cs`. Make it configurable via env var or test config file. |
-| F-21 | Multi-trainer switcher | Options page can create trainers but there's no switcher UI. Planned. |
+| ~~F-21~~ | ~~Multi-trainer switcher~~ | **Done.** `TrainerSwitchPicker` on OptionsPage; `ITrainerSwitchService` broadcasts `TrainerChanged` to all VMs. |
 | F-22 | Archetype periodic refresh | Currently upserts on every `GetAllAsync` call (first call per launch). Consider background refresh or a manual "Refresh Meta" button on OptionsPage so existing DB stays current without requiring a restart. |
 
 ---
@@ -90,8 +79,13 @@ Safe init strategy to investigate: `CollectionChanged`-deferred load, `Loaded` e
 ## Priority order (suggested)
 
 1. ~~**B-01, B-02, B-03**~~ — done
-2. **F-03 → F-10** — TrainerPage charts (data is ready, just need safe lazy XAML init)
+2. ~~**F-03 → F-10**~~ — done (LiveCharts2 charts live)
 3. ~~**F-11 → F-18**~~ — done (styling pass complete)
-4. **F-19** — Windows Appium driver replacement (in progress externally)
-5. **F-13, F-15, F-16** — ReadJournalPage filter/search, archetype management UI, trainer name edit
-6. **F-20, F-21, F-22** — infrastructure and multi-trainer
+4. **Loading gates + ReadJournal Android test slowdown** — named `IsBusy_*` gates per `docs/memory/project_roadmap.md`; swap ReadJournal CollectionViews for FlexLayout
+5. **TrainerHill export + full backup export** — see `docs/memory/project_roadmap.md`
+6. **F-19** — Windows Appium driver replacement (in progress externally)
+7. **F-13, F-15, F-16** — ReadJournalPage filter/search, archetype management UI, trainer name edit
+8. **F-20, F-22** — configurable AVD, archetype periodic refresh
+9. **AOT compatibility + real installer** — long-term, see `docs/memory/project_roadmap.md`
+
+Feature details for items 4, 5, and 9 live in `PokemonBattleJournal/docs/memory/project_roadmap.md`.

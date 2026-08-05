@@ -38,13 +38,17 @@
         }
 
         [Test]
-        public void TrainerPage_Charts_Rendered()
+        public void TrainerPage_AllEightCharts_Rendered()
         {
             // FindUIElement implicit wait polls until each chart element appears after LiveCharts renders.
             FindUIElement("MatchupMatrixChart").ShouldNotBeNull();
             FindUIElement("WinRateOverTimeChart").ShouldNotBeNull();
             FindUIElement("MostPlayedChart").ShouldNotBeNull();
             FindUIElement("ArchetypeWinRateChart").ShouldNotBeNull();
+            FindUIElement("OpponentPerformanceChart").ShouldNotBeNull();
+            FindUIElement("TagUsageChart").ShouldNotBeNull();
+            FindUIElement("MatchLengthChart").ShouldNotBeNull();
+            FindUIElement("FirstTurnChart").ShouldNotBeNull();
         }
 
         [Test]
@@ -134,13 +138,5 @@
             FindUIElement("FirstTurnHeading").ShouldNotBeNull();
         }
 
-        [Test]
-        public void TrainerPage_AllCharts_Rendered()
-        {
-            FindUIElement("OpponentPerformanceChart").ShouldNotBeNull();
-            FindUIElement("TagUsageChart").ShouldNotBeNull();
-            FindUIElement("MatchLengthChart").ShouldNotBeNull();
-            FindUIElement("FirstTurnChart").ShouldNotBeNull();
-        }
     }
 }

@@ -60,20 +60,16 @@ namespace PokemonBattleJournal.DevSeed
 
                 DateTime baseDate = DateTime.UtcNow.AddDays(-14);
 
+                // Trimmed from 12 BO1 matches to 2 so the ReadJournal UIA tree is small enough
+                // for Appium's UiAutomator2 server to serialize quickly on Android
+                // (was ~20 s per element lookup with 12+ matches — see
+                // project_readjournal_android_slow memory). Kept: one Win, one Tie —
+                // combined with the two BO3 matches below this gives TrainerPage stats
+                // non-zero Wins/Losses/Ties.
                 (Archetype p, Archetype a, MatchResult res, uint turn, int days, int mins, Tags? tag)[] bo1 =
                 [
                     (other,      charizard,  MatchResult.Win,  1u,  0,  12, null),
-                    (charizard,  regidrago,  MatchResult.Win,  2u,  1,  18, earlyStart),
-                    (regidrago,  miraidon,   MatchResult.Loss, 1u,  2,  22, behindEarly),
-                    (other,      regidrago,  MatchResult.Win,  2u,  3,  15, lucky),
-                    (ragingBolt, charizard,  MatchResult.Loss, 1u,  4,  10, unlucky),
-                    (charizard,  miraidon,   MatchResult.Win,  1u,  5,  20, null),
                     (gardevoir,  ragingBolt, MatchResult.Tie,  2u,  6,  30, null),
-                    (miraidon,   other,      MatchResult.Win,  1u,  7,  11, neverPunish),
-                    (klawf,      charizard,  MatchResult.Loss, 2u,  8,  25, punished),
-                    (regidrago,  gardevoir,  MatchResult.Win,  1u,  9,  14, lucky),
-                    (charizard,  klawf,      MatchResult.Loss, 2u, 10,  19, null),
-                    (other,      miraidon,   MatchResult.Win,  1u, 11,  16, earlyStart),
                 ];
 
                 for (int i = 0; i < bo1.Length; i++)
