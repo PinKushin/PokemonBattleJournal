@@ -32,3 +32,13 @@ when picking replacement fonts (self-hosted or PokemonSolid for accents), priori
 clarity/legibility over the current heavier decorative feel. Don't just 1:1 substitute
 self-hosted Inter/Baloo 2/JetBrains Mono for the exact same look; this is a chance to
 reconsider the type choices themselves.
+
+**Workflow idea for the refresh:** user wants to try feeding screenshots of the actual app
+(or the app itself) alongside the current website into a design tool (Claude Desktop's
+design/vision features) to synthesize a combined visual identity — rather than designing
+the site in isolation from what the app actually looks like. Tried publishing the current
+`index.html` as a Claude Artifact for live iteration (2026-08-05) — the ~400KB single-line
+base64-embedded hero image made the artifact fail to load reliably in the sandbox; user
+decided not to chase it and will work with the raw HTML file directly instead when this
+work starts. If revisiting the Artifact-as-workspace idea, keep embedded images small/avoid
+giant base64 blobs, or use external-but-CSP-safe placeholders instead.
