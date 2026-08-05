@@ -131,6 +131,13 @@
                     HeightRequest="1"
                     IsVisible="{Binding IsBusyArchetypeList}"
                     WidthRequest="1" />
+                <!--  Loading-gate sentinel: visible while SaveMatchAsync is writing to the
+                      DB. UI tests WaitUntilBusyGone("Busy_Mutating") after clicking Save.  -->
+                <Label
+                    AutomationId="Busy_Mutating"
+                    HeightRequest="1"
+                    IsVisible="{Binding IsBusyMutating}"
+                    WidthRequest="1" />
                 <Label
                     AutomationId="PlayerArchetypeIcon2"
                     HeightRequest="1"

@@ -194,13 +194,18 @@ namespace UITests
             input.Clear();
             input.SendKeys(deckName);
             FindUIElement("SaveArchetypeButton").Click();
+            // Sync on the save + AllArchetypes rebind completing before checking the row —
+            // otherwise the CollectionView rebind races the presence check.
+            WaitUntilBusyGone("Busy_Mutating");
 
-            // Wait for row to appear (proves save completed)
             FindUIElement($"DeleteArchetype_{deckName}").ShouldNotBeNull();
 
             ScrollIntoViewAndClick($"DeleteArchetype_{deckName}");
+            // Sync on the delete + rebind completing — same race, opposite direction.
+            WaitUntilBusyGone("Busy_Mutating");
 
-            // Verify gone — polled, phantom-element tolerant (delete + list rebind is async).
+            // Verify gone — polled, phantom-element tolerant as a second line of defense
+            // (WinAppDriver can still return a stale node for a frame after the gate clears).
             WaitUntilRemoved($"DeleteArchetype_{deckName}")
                 .ShouldBeTrue("Archetype row should be removed after delete");
         }
@@ -214,13 +219,16 @@ namespace UITests
             tagInput.Clear();
             tagInput.SendKeys(tagName);
             FindUIElement("SaveTagButton").Click();
+            // Sync on the save + AllTags rebind completing before checking the row.
+            WaitUntilBusyGone("Busy_Mutating");
 
-            // Wait for row to appear (proves save completed)
             FindUIElement($"DeleteTag_{tagName}").ShouldNotBeNull();
 
             ScrollIntoViewAndClick($"DeleteTag_{tagName}");
+            // Sync on the delete + rebind completing.
+            WaitUntilBusyGone("Busy_Mutating");
 
-            // Verify gone — polled, phantom-element tolerant (delete + list rebind is async).
+            // Verify gone — polled, phantom-element tolerant as a second line of defense.
             WaitUntilRemoved($"DeleteTag_{tagName}")
                 .ShouldBeTrue("Tag row should be removed after delete");
         }

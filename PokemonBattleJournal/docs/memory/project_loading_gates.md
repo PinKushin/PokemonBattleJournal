@@ -5,7 +5,43 @@ metadata:
   type: project
 ---
 
-**Status (2026-08-04): VERIFIED.** Windows UI 73/73, Android **72/72 in 8m44s** (down from 18m19s), unit 478/478 (8 new gate tests, TDD red→green). The FlexLayout swap fixed the ReadJournal stall outright: SelectMatch tests 50-111 s → 92-368 ms. Root cause was the three tag CollectionViews; MatchHistoryList did not need replacing.
+**Status (2026-08-04): VERIFIED and merged** (branch `feat/loading-gates`). Windows UI 73/73, Android **72/72 in 8m44s** (down from 18m19s), unit 478/478 (8 new gate tests, TDD red→green). The FlexLayout swap fixed the ReadJournal stall outright: SelectMatch tests 50-111 s → 92-368 ms. Root cause was the three tag CollectionViews; MatchHistoryList did not need replacing.
+
+## Phase 2 (2026-08-05): mutation gates — branch `feat/mutation-busy-gates`, not yet merged
+
+Extended the pattern from page-load reads to mutating commands (Save/Delete), which have
+their own race: the CollectionView rebind after a delete can return a WinAppDriver phantom
+element (null/empty ID → InvalidOperationException) if a test checks presence before the
+rebind settles.
+
+- **MainPageViewModel.IsBusyMutating** — wraps `SaveMatchAsync`. Set AFTER validation +
+  trainer lookup succeed (never flips for a save that fails validation and never reaches
+  the DB) — see `Main_SaveMatchAsync_ValidationFails_NeverSetsBusyMutating` test.
+- **OptionsPageViewModel.IsBusyMutating** — expanded from Save/Delete Archetype+Tag (Phase 1
+  scope) to ALL 9 mutating commands: `SaveTrainerAsync`, `SwitchTrainerAsync`,
+  `DeleteTrainerFromListAsync`, `DeleteTrainerFileAsync`, `ImportFromTrainerHillAsync`,
+  `SaveTagAsync`, `DeleteTagAsync`, `SaveArchetypeAsync`, `DeleteArchetypeAsync`.
+  `ImportFromTrainerHillAsync` is the one exception in placement: the gate starts AFTER
+  `FilePicker.Default.PickAsync` returns, not before — gating through the picker would leave
+  `Busy_Mutating` visible for however long the user spends browsing files, which is user
+  interaction time, not app processing time.
+- New `Busy_Mutating` sentinel on both MainPage.xaml and OptionsPage.xaml (OptionsPage now
+  has two sentinels: `Busy_ArchetypeList` for the page-load gate, `Busy_Mutating` for command
+  gates — they're independent and can both be true simultaneously in theory, though not in
+  practice since AppearingAsync and mutating commands don't usually overlap).
+- `TestBase.WaitUntilRemoved` (added same session, superseded by the gate for the two cases
+  it targeted) is KEPT as a second line of defense in the two Delete tests — WinAppDriver can
+  still return a stale node for one frame after the gate clears, so belt-and-suspenders.
+- MainPage SaveMatch UI tests: `WaitUntilBusyGone("Busy_Mutating")` added right after the
+  Save click, ahead of the pre-existing `WebDriverWait` poll for the "Saved" text — targets
+  save-then-assert races seen on slower local Windows runs (user's own observation, not just
+  CI).
+- 10 new unit tests (TDD, written failing first against not-yet-existing properties/behavior).
+
+**Status:** local unit 488/488, integration 115/115, Windows UI 73/73 (1m49s). Android CI
+blocked by an unrelated infra flake — see [[project_android_ci_gpu_flake]]. NOT merged to
+master as of this writing; holding for explicit user go-ahead per their "tiny tiny bit less
+[proactive about merging]" instruction this session.
 
 ## What was built
 

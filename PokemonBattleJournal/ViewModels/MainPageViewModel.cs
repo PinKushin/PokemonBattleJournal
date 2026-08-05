@@ -373,6 +373,15 @@ namespace PokemonBattleJournal.ViewModels
         }
 
         /// <summary>
+        /// Loading gate: true while SaveMatchAsync is validating/writing/resetting the
+        /// form. Bound to the hidden Busy_Mutating sentinel Label. Local Windows UI runs
+        /// showed save-then-assert races on slower boxes; this gives tests a real signal
+        /// to wait on instead of the button-text poll already in place.
+        /// </summary>
+        [ObservableProperty]
+        public partial bool IsBusyMutating { get; set; }
+
+        /// <summary>
         /// Verify, Serialize, and Save Match Data
         /// </summary>
         [RelayCommand]
@@ -402,6 +411,8 @@ namespace PokemonBattleJournal.ViewModels
                 _logger.LogError("Trainer not found: {TrainerName}", TrainerName);
                 return 0;
             }
+
+            IsBusyMutating = true;
             try
             {
                 await _semaphore.WaitAsync();
@@ -523,6 +534,7 @@ namespace PokemonBattleJournal.ViewModels
             finally
             {
                 _ = _semaphore.Release();
+                IsBusyMutating = false;
             }
         }
     }
