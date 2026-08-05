@@ -1,7 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- net10.0-windows (not plain net10.0): FlaUI 5.0 ships net8.0-windows7.0 assets;
+         a plain TFM can't consume -windows assets so NuGet fell back to the
+         .NET Framework 4.8 asset and raised NU1701. Windows-only test project anyway. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsTestProject>true</IsTestProject>
