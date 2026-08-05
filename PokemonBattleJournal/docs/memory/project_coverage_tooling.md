@@ -13,8 +13,8 @@ Two separate coverage tools give different numbers — both are correct for diff
 
 **To generate coverlet report:**
 ```powershell
-dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --settings coverage.runsettings
-dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj --settings coverage.runsettings
+dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --settings build/coverage.runsettings
+dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj --settings build/coverage.runsettings
 $unit = Get-ChildItem -Recurse "PokemonBattleJournal.Tests/TestResults" -Filter "coverage.cobertura.xml" | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
 $integ = Get-ChildItem -Recurse "PokemonBattleJournal.IntegrationTests/TestResults" -Filter "coverage.cobertura.xml" | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
 reportgenerator "-reports:$unit;$integ" "-targetdir:PokemonBattleJournal/docs/coverage-report" "-reporttypes:Cobertura;TextSummary" "-assemblyfilters:+PokemonBattleJournal;-*.Tests;-*.IntegrationTests;-*.UITests"
@@ -28,17 +28,21 @@ The user prefers VS's report because it reports **block coverage**, which cobert
 carry: cobertura has line and branch only. Block % lives in the binary `.coverage` file and
 survives conversion to VS's own XML, nowhere else.
 
-**Why VS started showing coverlet numbers instead.** `coverage.runsettings` sits in the repo
-root and pins the collector to `XPlat Code Coverage`, which *is* coverlet — the friendly name
-for the built-in collector is plain `"Code Coverage"`. VS auto-detects any `*.runsettings` in
-the solution root (Tools ▸ Options ▸ Test ▸ "Auto detect runsettings files"), so "Analyze Code
-Coverage for All Tests" silently routed through coverlet. Nothing about the VS install is
-broken. Turn that option off (or Test ▸ Configure Run Settings ▸ deselect) to get the native
-collector back. Note the CI workflows never reference this file — they pass
-`--collect "XPlat Code Coverage"` directly — so the file only ever affects local runs.
+**Why VS had been showing coverlet numbers — FIXED 2026-08-05.** The runsettings file used to
+sit in the repo root, and it pins the collector to `XPlat Code Coverage`, which *is* coverlet
+— the friendly name for the built-in collector is plain `"Code Coverage"`. VS auto-detects any
+`*.runsettings` **in the solution root** (Tools ▸ Options ▸ Test ▸ "Auto detect runsettings
+files"), so "Analyze Code Coverage for All Tests" silently routed through coverlet. Nothing
+about the VS install was broken.
+
+The fix was to move it to `build/coverage.runsettings`. Auto-detect only scans the solution
+root, so VS now uses its own collector with no settings to toggle. **Do not move it back**,
+and do not add any other `*.runsettings` to the repo root. The CI workflows never referenced
+it — they pass `--collect "XPlat Code Coverage"` directly — so nothing else had to change;
+only explicit local `--settings build/coverage.runsettings` runs are affected.
 
 **The whole thing works from the CLI, no VS needed.** Do NOT pass `--settings
-coverage.runsettings` here or it routes to coverlet again:
+build/coverage.runsettings` here or it routes to coverlet again:
 
 ```bash
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --collect "Code Coverage" --results-directory TestResults/vscov
@@ -112,7 +116,7 @@ ReportGenerator over the merged file: 62.4% line, 55.3% method (231 of 417). Not
 line/branch only — **block coverage exists solely in the `.coverage` binary and the converted
 VS XML**, so read it from those, or open `.coverage` in VS.
 
-**coverage.runsettings:** at repo root; no ResultsDirectory set (VS manages its own output; custom path creates GUID subfolders per run).
+**coverage.runsettings:** lives at `build/coverage.runsettings` (deliberately NOT the repo root — see above); no ResultsDirectory set (VS manages its own output; custom path creates GUID subfolders per run).
 
 **0% classes (expected, not worth chasing):** Views (XAML code-behind), Controls (ComboBox/ImagePicker), App, AppShell, MauiProgram — all MAUI DI/startup/UI code with no unit-testable surface.
 
