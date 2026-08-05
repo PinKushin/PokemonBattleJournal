@@ -83,7 +83,9 @@ namespace PokemonBattleJournal.Tests.ViewModels
             await _viewModel.AppearingAsync();
             await _viewModel.SaveTagAsync();
 
-            // Assert — should not throw, and tag should not be saved since trainer is null
+            // Assert — the sibling guard-logging test pins that this path WARNS; this one pins
+            // that it also declines the write, which is the behaviour the name claims.
+            _ = _mockConnectionFactory.Tags.DidNotReceive().SaveAsync(Arg.Any<string>(), Arg.Any<uint>());
         }
 
         [Test]
