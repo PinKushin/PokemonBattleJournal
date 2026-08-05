@@ -272,7 +272,7 @@ namespace UITests
             try
             {
                 string actual = "";
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < 5; i++)
                 {
                     try
                     {
@@ -280,6 +280,10 @@ namespace UITests
                         userEntry.Click();
                         userEntry.Clear();
                         userEntry.SendKeys(expected);
+                        // Poll instead of a single immediate read — SendKeys can return before
+                        // the bound Text property finishes propagating back to the native
+                        // control, which previously raced a same-instant Text read into "".
+                        WaitUntilText("UserNoteInput", expected, timeoutMs: 3000);
                         // Re-fetch so the driver returns current value, not cached state.
                         actual = FindUIElement("UserNoteInput").Text;
                         if (actual.Contains(expected, StringComparison.OrdinalIgnoreCase))
