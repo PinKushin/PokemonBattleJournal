@@ -13,6 +13,7 @@
 - [UI test coverage for every Shell page](project_ui_test_coverage.md) — Every Shell page must have a navigation + element-visible Appium test; FindUIElement timeout catches page hangs.
 - [App styling palette and font conventions](project_styling_palette.md) — PokeYellow headings (PokemonSolid), PokeBlue accents, SairaRegular body, PokeYellow input borders; all Shell pages now styled.
 - [Engineering principles](feedback_engineering_principles.md) — DRY, SOLID, design patterns (factory/strategy/repository/command), extensibility, composition over inheritance, full accessibility (AutomationId + SemanticProperties on all elements), error surfacing (no silent catch), and test best practices.
+- [AI docs duplication is OK](feedback_ai_docs_duplication_ok.md) — DRY doesn't apply to global CLAUDE.md vs project-local memory; repo doesn't include the global file, so overlap is expected, not a cleanup target.
 - [MAUI sprite naming constraint](project_sprite_naming_constraint.md) — MAUI assets must be underscore; CDN URLs use hyphens; convert on lookup; substitute.png is 36×36 in Images/ not PokemonSprites/
 - [OptionsPage crash on fresh DB](project_optionspage_crash_fresh_db.md) — 0xc000027b in Microsoft.UI.Xaml.dll when ModalErrorHandler fires during AppearingAsync on fresh DB; fix: log-only in GetAllAsync, no dialog
 - [Substitute sprite](project_substitute_sprite.md) — substitute.png from Pokémon Showdown; "Other"/unknown fallback icon; lives in Images/ not PokemonSprites/
