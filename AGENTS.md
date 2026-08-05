@@ -31,7 +31,9 @@ dotnet build PokemonBattleJournal.slnx
 # Run (Windows)
 dotnet run --project PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
 
-# Unit tests only
+# Fast test project. Mostly unit tests, but note it ALSO contains six
+# *IntegrationTests.cs files under Services/ that hit real SQLite with a temp
+# .db3 per test — so this is not "unit tests only" despite the project name.
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
 
 # Single unit test

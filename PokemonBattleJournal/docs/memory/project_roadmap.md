@@ -352,3 +352,30 @@ Planned, in rough priority order:
    obviously faster than more native AVDs.
 
 Full constraint list in `docs/memory/project_android_test_execution_strategy.md`.
+
+---
+
+## Inline validation feedback (added 2026-08-05, not started)
+
+Guards that decline a save now log a warning naming the missing input
+([[feedback_no_silent_guards]]), which fixes *diagnosis*. It does not fix the user
+experience: someone who leaves a field empty still sees nothing happen at all.
+
+**User's preference (2026-08-05):** a **text label with red text** explaining which step
+failed validation — explicitly preferred over a modal. *"we will probably display a modal or
+better just a text label with red text explaining the verification step failed."*
+
+Design notes for whoever picks this up:
+
+- Inline label near the offending input, not a page-level banner — the point is to say
+  *which* field is wrong, matching the split guards already in `OptionsPageViewModel`.
+- Bind to an observable `…ValidationMessage` string per form (empty = hidden). Use an
+  explicit `bool` VM property for `IsVisible`, never a null-check converter
+  ([[feedback_no_isnot_null_converter_in_xaml]]).
+- Red must come from a theme resource, not a literal, so the theming pass can retint it
+  ([[project_theme_switcher]]). Check contrast in light mode.
+- Accessibility: the label needs `AutomationId` + `SemanticProperties.Description`, and
+  should ideally be announced when it appears.
+- The warning log and the label should share one source of truth so they cannot disagree.
+- MainPage's `SaveMatchAsync` already builds a multi-line validation message string via
+  `ValidateEntryAsync` — reuse that shape rather than inventing a second mechanism.
