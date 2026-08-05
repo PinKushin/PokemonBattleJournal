@@ -1,12 +1,49 @@
 ---
 name: project_test_project_consolidation
-description: "PLANNED — six *IntegrationTests.cs files live in the unit test project and hit real SQLite. Consolidating is a MERGE job, not a delete job: ~11 name collisions across 65 tests, the rest is unique coverage."
+description: "DONE 2026-08-05 — six real-SQLite files moved into the integration project. Unit suite 494 tests/17s -> 418/0.9s; integration 115 -> 180. All 11 name collisions verified semantically identical before removal."
 metadata:
   type: project
 ---
 
-**Status: planned, not started.** Second of three agreed follow-ups (order confirmed by user):
-(1) [[project_error_handler_di]] → **(2) this** → (3) fresh coverage report.
+**Status: COMPLETE 2026-08-05** (`7befb3f`, branch `refactor/consolidate-integration-tests`).
+
+## Outcome
+
+| | before | after |
+|---|---|---|
+| unit (`.Tests`) | 494 tests, **17s** | 418 tests, **0.9s** |
+| integration | 115 tests, 13s | 180 tests, 26s |
+
+The 11-test drop in the total is exactly the duplicates removed. The unit suite going
+sub-second is the real win — fast feedback no longer pays for database I/O.
+
+**The 11 collisions were all semantically identical**, verified body-to-body before anything
+was deleted: same assertion reached through a different fixture (`_sut.GetByIdAsync(99999)`
+vs `_factory.Tags.GetByIdAsync(99999)`, both `ShouldBeNull`). Note the trap in both
+directions — a name-only comparison would have called them duplicates without proof, and a
+text-only comparison would have called them all unique and left 11 tests running twice.
+
+**Files moved wholesale, not rewritten.** Each carries its own private
+`TestSqliteConnectionFactory` and the class names already differed
+(`XxxIntegrationTests` vs `XxxTests`), so no type collisions and no need to touch 54 working
+tests.
+
+**The non-obvious break:** `LimitlessDeckParserIntegrationTests` loads its HTML snapshot via
+`GetManifestResourceNames()`. Moving the `.cs` without the `<EmbeddedResource>` declaration
+broke all 9 of its tests with `TypeInitializationException: Sequence contains no matching
+element`. **If you ever move a test file again, check for embedded resources and fixture
+files it depends on** — the compiler cannot warn you, and the failure names the type
+initializer rather than the missing resource.
+
+`GlobalUsings.cs` in the integration project gained `NSubstitute`, `SQLite`,
+`Microsoft.Extensions.Logging(.Abstractions)` and the `PokemonBattleJournal.*` namespaces,
+because the moved files had relied on the unit project's globals. Per-file usings that became
+redundant were stripped from 11 files; namespaces used in only one or two files were left
+local deliberately.
+
+---
+
+## Original analysis (kept — it is what made the merge safe)
 
 ## The problem
 
