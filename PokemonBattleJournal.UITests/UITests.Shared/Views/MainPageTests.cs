@@ -285,7 +285,13 @@ namespace UITests
                     try
                     {
                         AppiumElement userEntry = FindUIElement("UserNoteInput");
-                        userEntry.Click();
+                        // Windows-only focus click. On Android, logcat proved this click
+                        // BACKGROUNDS THE APP (Window.Deactivated -> stopped 100ms after the
+                        // click command, run 31001057545): the Editor sits at the bottom of
+                        // the screen and the tap lands in the gesture-navigation home zone.
+                        // UiAutomator2's SendKeys sets text directly without needing focus.
+                        if (App is WindowsDriver)
+                            userEntry.Click();
                         userEntry.Clear();
                         userEntry.SendKeys(expected);
                         // Android: the soft keyboard opened by SendKeys covers the lower
