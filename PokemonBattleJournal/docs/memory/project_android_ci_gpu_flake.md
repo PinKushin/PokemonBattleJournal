@@ -1,17 +1,53 @@
 ---
 name: project_android_ci_gpu_flake
-description: RESOLVED — Android CI GPU ColorBuffer errors were caused by a duplicate emulator process from an AVD name mismatch between the workflow and AppiumSetup.cs, not app graphics complexity or runner flakiness
+description: Real root cause is a single long-lived Appium driver session shared across all ~72 tests, degrading over the run on BOTH Windows and Android — not GPU/emulator/graphics-churn. AVD mismatch was a separate, real, already-fixed bug. Not yet fixed.
 metadata:
   type: project
 ---
 
 **Status: PARTIALLY RESOLVED 2026-08-05.** The AVD name mismatch (below) was real and is
-fixed (`c3184c2`). But a run after that fix (30972824626, PerfLog pulled directly) shows
-the ORIGINAL graphics-churn degradation theory was also right — it just wasn't visible
-before because the double-emulator contention was drowning it out. Both are real; both
-need addressing.
+fixed (`c3184c2`). A run after that fix (30972824626, PerfLog pulled directly) then showed
+FindUIElement latency climbing steadily through the suite — but the ACTUAL root cause is
+below (single long-lived driver session), not GPU/graphics-churn. Keep reading before
+acting on the graphics-churn section — it was a plausible-looking dead end.
 
-## UPDATE 2026-08-05 (later): popup-churn degradation confirmed directly
+## UPDATE 2026-08-05 (final): real root cause is a single long-lived driver session, NOT Android GPU
+
+A local Windows UI test PerfLog from earlier the same session (`%TEMP%\UITests.PerfLog.txt`,
+run ~19:15-19:28, well before any Android CI work) shows the **identical** degradation
+shape — `FIND '...' STAGE3_FAIL after 11000ms+` climbing steadily, same as the Android CI
+run. Windows runs on real hardware with a real GPU; there is no shared rendering pipeline
+between Windows (WinAppDriver/UIA) and Android (UIAutomator2/emulator). A GPU-emulation
+theory cannot explain the same symptom appearing identically on both platforms — the
+"app graphics churn" theory in the section below was a coincidental-looking dead end.
+
+The real shared factor: both `PokemonBattleJournal.UITests/UITests.Windows/AppiumSetup.cs`
+and `PokemonBattleJournal.UITests/UITests.Android/AppiumSetup.cs` are `[SetUpFixture]`
+classes using `[OneTimeSetUp]`/`[OneTimeTearDown]` — **one driver session is created once
+for the entire assembly and reused across all ~72 tests in every fixture class**, never
+recycled mid-run. Long-lived Appium/WebDriver sessions are a known category of issue:
+internal element-cache growth and per-call JS/IPC overhead climb over the life of the
+session. That matches the symptom exactly: fast for the first ~20 tests, degrading
+steadily, eventually every `FindElement` times out regardless of platform.
+
+**Not yet fixed — real tradeoff, not a quick patch.** Recycling the driver periodically
+(e.g. once per test-fixture class, or every N tests) would fix the degradation but costs
+real time per recycle (~10s+ driver startup on Android, several seconds on Windows) ×
+however many recycle points are chosen. That directly cuts against the ReadJournal
+FlexLayout win this session (18m19s → 8m44s on Android), which came specifically from
+*avoiding* per-test overhead — see [[project_readjournal_android_slow]]. Any fix here
+needs a deliberate speed-vs-reliability call, not a freelanced change.
+
+**Candidate approaches (not attempted):**
+1. Recycle the driver session once per `[TestFixture]` class instead of once per assembly
+   — bounds the degradation window to however many tests are in the largest fixture
+   (MainPageTests, ~25 tests) instead of the full ~72-test suite.
+2. Recycle after N tests within a long fixture (MainPageTests specifically) via a counter
+   in `TestBase`.
+3. Investigate whether the specific driver/Appium version has a known session-longevity
+   fix or a "reset session" capability that's cheaper than a full teardown/recreate.
+
+## Original graphics-churn dead end (documented for the record, do not act on this)
 
 With the double-emulator noise gone, one clean run's PerfLog shows `FindUIElement` STAGE1
 latencies climbing steadily through `MainPageTests` as popup open/close cycles accumulate:
