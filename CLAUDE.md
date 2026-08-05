@@ -31,9 +31,9 @@ dotnet build PokemonBattleJournal.slnx
 # Run (Windows)
 dotnet run --project PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
 
-# Fast test project. Mostly unit tests, but note it ALSO contains six
-# *IntegrationTests.cs files under Services/ that hit real SQLite with a temp
-# .db3 per test — so this is not "unit tests only" despite the project name.
+# Unit tests — genuinely unit tests now, and fast (~1s for ~460). The six
+# real-SQLite files that used to live here moved to the IntegrationTests
+# project on 2026-08-05; nothing in here touches a database or the network.
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
 
 # Single unit test
@@ -62,14 +62,16 @@ Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 MVVM app: `Views (XAML) → ViewModels → Services → ISqliteConnectionFactory → SQLite`
 
 - **MVVM:** CommunityToolkit.Mvvm source generators (`[ObservableProperty]`, `[RelayCommand]`)
-- **DI:** `MauiProgram.cs` — `MainPage`/`MainPageViewModel` are singletons; all other pages/VMs are transient
-- **DB concurrency:** static `SemaphoreSlim` in `SqliteConnectionFactory`; every DB operation must acquire it
-- **Error handling:** `try/catch` + `ModalErrorHandler.HandleError` in services and VMs — no silent `catch {}`
+- **DI:** `MauiProgram.cs` — the three data pages are **singletons** (`MainPage`, `ReadJournalPage`, `TrainerPage` and their VMs, plus `AppShellViewModel`); only `OptionsPage` and `AboutPage` are transient. Singleton VMs hold state across navigations, which is why MainPage UI tests need a `[TearDown]` to reset it
+- **DB access:** `using DbSession session = await _factory.BeginAsync();` **inside** the `try`. This opens the connection and takes the write lock together, and disposing releases it. Never write a bare `finally { GetLock().Release(); }` — if opening the connection failed, that releases a permit nothing took and throws `SemaphoreFullException` over the real error. See [[project_db_session_lock_pairing]]
+- **Error handling:** `try/catch` + injected `IErrorHandler` (registered in `MauiProgram`, `ModalErrorHandler` in production) — no silent `catch {}`. Never `new ModalErrorHandler()`
 - **Test detection:** `DeviceInfo.Platform == DevicePlatform.Unknown` signals unit test environment (no MAUI runtime)
 
 ### Services
 
-`SqliteConnectionFactory` owns table init and exposes typed operation services (`MatchOperations`, `TrainerOperations`, `ArchetypeOperations`, `TagOperations`). `MatchAnalysisService` computes all stats for `TrainerPageViewModel`. `MatchResultCalculatorFactory` selects `BO1ResultCalculator` or `BO3ResultCalculator` based on match format.
+`SqliteConnectionFactory` owns table init and exposes typed operation services (`MatchOperations`, `TrainerOperations`, `ArchetypeOperations`, `TagOperations`). Those four depend on `ISqliteConnectionFactory`, not the concrete class — that abstraction is what makes connection failures injectable in tests. `MatchAnalysisService` computes all stats for `TrainerPageViewModel`. `MatchResultCalculatorFactory` selects `BO1ResultCalculator` or `BO3ResultCalculator` based on match format.
+
+`Services/Import/TrainerHillImportService` reads TrainerHill JSON, with limits on size, depth, entry count and name lengths enforced **before** any DB write. `Services/Export/ExportService` writes two formats: TrainerHill's (archetype slugs, for interop, lossy) and a backup envelope (names verbatim, lossless). Reading the backup envelope back as a restore is not implemented — see the roadmap.
 
 **Win rate formula (canonical):** `(wins + 0.5 * ties) / total * 100` — defined in `Utilities/Calculations.cs`. All stats code must align with this.
 

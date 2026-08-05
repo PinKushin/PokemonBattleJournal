@@ -13,6 +13,8 @@ Chronological notes for the current / recent work. **Append or edit this section
 
 | Date | Topic | Status / notes |
 |---|---|---|
+| 2026-08-05 | **Import hardening + JSON export, and three bugs they uncovered** (feat/import-hardening-and-export, merged `38404ad`) | Import now bounds byte size, nesting depth, entry count and string lengths, all validated **before** any DB write — archetype and tag names are created on demand, so an over-long name would persist as a row after the import "failed". Two size-check paths because it is platform-dependent: Windows gives a seekable stream whose `Length` settles it without reading, Android's content-provider stream throws on `Length` so the cap is counted while copying. Export ships two formats differing in fidelity: TrainerHill's (archetype **slugs**, for interop, lossy because recovering the name needs the Limitless meta list) and a backup envelope (**names verbatim**, lossless). `NameToSlug` is built from the same normalization keys the import lookup uses, so the two are inverses by construction. **Three unrelated bugs surfaced.** (1) Phantom games: `MatchEntry` declares three `[OneToOne]` `Game` properties over three separate `[ForeignKey(typeof(Game))]` columns, SQLite-Net-Extensions cannot disambiguate and filled all three from one row, so every BO1 match rendered three tag sections. (2) The journal listed **oldest-first** — no `ORDER BY`, passed straight through; hidden because the seeder inserts in date order on a fresh DB. (3) The win-rate line chart drew segments jumping backwards in time — `GroupBy` by date with no `OrderBy`. Bugs 1 and 2 concealed each other: `ReadJournalPage_BO3Match_ShowsGame2And3TagViews` clicks the first row believing it is newest, which unsorted was the *oldest* (a BO1), and it passed only because the phantoms made the views appear. Fixing either alone breaks it; fixing both makes it pass honestly and the fixture drops 35s → 5s. Left for their own branches: backup **restore** (needs trainer creation + duplicate policy) and ReadJournal game 2/3 **notes**, which have never been bound (B-08). Local 457 unit / 180 integration / 76 Windows UI; CI green on all three workflows including Android. |
+| 2026-08-05 | **Docs refresh** (docs/refresh-after-export) | Audit of every doc against reality after the above. Corrected: the unit project no longer contains six real-SQLite files (moved 2026-08-05); DB concurrency is `DbSession`/`BeginAsync`, not "acquire the static semaphore"; error handling is an **injected** `IErrorHandler`, never `new ModalErrorHandler()`; ops services depend on `ISqliteConnectionFactory`. **DI lifetimes were wrong in both instruction files** — they claimed only MainPage was a singleton, but `ReadJournalPage` and `TrainerPage` and their VMs are singletons too; only Options and About are transient. **A previous "correction" was itself wrong**: `PokemonBattleJournal.Benchmarks` was recorded as having "never existed", but `git log` shows it deleted 2026-07-26 in `b0a4ac1`. AGENTS.md still carried a `Run.ps1` invocation for it and was missing the integration-test command entirely. The stale "harden concurrency — static semaphore on transient TrainerPageViewModel" item is stale twice: no VM holds a static semaphore, and that VM is a singleton. |
 | 2026-08-05 | **DB connection failures were unhandled at 20 of 22 sites** (fix/db-connection-error-handling) | `await _factory.GetDatabaseAsync()` sat *above* the `try` in every operations service, so a failure to open the database escaped every catch — no log, no `IErrorHandler`, straight to a crash. The catch only ever covered *query* failures, and opening the connection is the likeliest thing to fail on a real device (corrupt/locked `.db3`, revoked storage permission, full disk). **Moving it inside the try is not sufficient**, which `MatchOperations.SaveAsync` proved: that one site already had it inside, and injecting a connection failure produced `SemaphoreFullException` from `finally { GetLock().Release(); }` releasing a permit `WaitAsync` never took — masking the real error and replacing the return value. The naive fix would have reproduced that 20 more times. Fixed with `Services/DbSession.cs`: `using DbSession session = await _factory.BeginAsync()` pairs connection with held lock and releases on dispose (−103 lines, 22 `finally` blocks deleted). Ordering is load-bearing — open *then* lock, because `InitAsync` takes the same semaphore while creating tables. Secondary wins: the lock is now released *before* the catch body, so `ModalErrorHandler`'s dialog no longer runs while holding the DB semaphore; and operations services now depend on `ISqliteConnectionFactory`, which is both correct DI and the only reason any of this is testable (`GetDatabaseAsync` isn't virtual). 20 new unit tests in `DatabaseConnectionFailureTests`, all confirmed red first. Closes the last open item from [[project_error_handler_di]]; see [[project_db_session_lock_pairing]]. |
 | 2026-08-05 | **Windows UI test latency root-caused + CI cache contention fixed** (fix/windows-uia-lookup-latency, chore/lf-line-endings, fix/ci-cache-save-contention — all merged) | Game3Tab's 20s stall was never WinAppDriver caching or the pickers: any lookup for an element that is **absent** inherited the ambient 5s `ImplicitWait` plus a ~1.8s UIA tree walk — **~6.8s per miss vs ~215ms** for the same call when the element exists. `CloseWindowsPickers` does two guaranteed misses in the Game3 `finally` (both result pickers are `IsVisible=false` once Game 3 is selected), so 13.5s of a 20.3s test was cleanup for elements that were never supposed to be there. Fixed via `TestBase.WithImplicitWait(TimeSpan.Zero, …)` on optional lookups, `TryClickIfPresent` pinning its own budget, and one shared `AmbientImplicitWait` (5s both platforms, replacing a 5s/10s split that flipped depending on which helper ran last). **Windows suite ~5min → 1m28s**; Android unchanged at 72/72 / 8m55s. Same bug explained the long-running "Windows CI flake" — a doomed lookup is charged full retry time, so on a slow runner it tripped `FindUIElement`'s 30s deadline. Also: LF line endings everywhere (renormalization touched only 2 files — the repo already stored LF); CI cache contention (five matrix jobs each compressing the same NuGet cache, four failing to reserve it, ~11 min/run wasted, one job hung until cancelled) fixed with `cache/restore` everywhere + one explicit `cache/save`; WinAppDriver escalating 5s/15s/30s backoff replacing a fixed 5s that gave up ~20s into a listener stall. Docs pass: build command in all three docs could never have worked (`-f` with the Windows TFM against the solution), wrong exe path (`win10-x64` → `win-x64`), a Benchmarks project that never existed, ComboBox Cancel "hang" closed as a transient Windows hiccup. Sentry env tagging + alert scoping to production — **done by user**. |
 | 2026-08-05 | **Android CI fully green — six stacked bugs resolved** (feat/ci-matrix-per-fixture, merged) | First fully-green matrix (CI + Windows 5/5 + Android 5/5 + build job) at `b5ba64b`. The "flake" was six real bugs peeled one per run: (1) AVD name mismatch spawning double emulators; (2) our own `adb logcat` hanging on the emulator our own teardown killed — both AppiumSetup lifecycle ends now CI-gated, the action owns the emulator on CI; (3) pkill comm-truncation + `-f` self-match — `pkill -f 'crashpad_handle[r]'`; (4) transient adbd device-offline at driver creation — 3x retry; (5) launcher-ANR dialog ("Quickstep isn't responding") owning the whole a11y tree — `hide_error_dialogs 1` + in-gate `aerr_wait` auto-dismiss; (6) the note-Editor focus click landing in the gesture-nav home zone and BACKGROUNDING the app (proven by Sentry lifecycle breadcrumbs in logcat) — click now Windows-only + 3-button-nav overlay on the emulator. Structural: per-fixture matrix both platforms, build-once APK artifact job, stage-3 scroll-to-top lookup, 90s app-ready gate with PageSource dump, keyboard dismiss, nav retry, console-mirrored flushed logs. Riders merged: Sentry Serilog sink (handled errors now reach Sentry; env-tagged dev/prod), light-mode hamburger tint fix (PokeBlue-on-PokeBlue). See [[project_android_ci_gpu_flake]] final summary. |
@@ -112,7 +114,7 @@ Chronological notes for the current / recent work. **Append or edit this section
 - [ ] **Add AppiumSetup timestamped logging** — cover emulator/WinAppDriver launch, Appium init, SeedTestData start/end, individual seed steps; write to PerfLog for full timeline
 - [ ] **Merge feature/nunit-migration → master** once Android run confirmed passing
 - [ ] **Fix TrainerPage charts** — lazy/virtualized `CartesianChart` loading to avoid WinUI3 deadlock
-- [ ] **Harden concurrency** — fix static semaphore on transient `TrainerPageViewModel`
+- [x] **Harden concurrency** — done. The claim this tracked ("static semaphore on transient `TrainerPageViewModel`") is stale twice over: no view model holds a `static` semaphore any more (`MainPageViewModel`, `OptionsPageViewModel` and `ReadJournalPageViewModel` each own a `private readonly SemaphoreSlim`, and `TrainerPageViewModel` has none), and `TrainerPageViewModel` is registered as a **singleton**, not transient. Database serialization now lives in `DbSession` — see [[project_db_session_lock_pairing]]
 - [ ] Configurable Android Appium emulator (future)
 
 ---
@@ -142,7 +144,7 @@ Chronological notes for the current / recent work. **Append or edit this section
 | Errors | Sentry.Maui (DSN in `MauiProgram.cs`) |
 | Unit tests | NUnit 4.6.1, NUnit3TestAdapter 6.2.0, Shouldly, NSubstitute |
 | UI tests | Appium (Windows + Android runners, shared tests) |
-| Benchmarks | BenchmarkDotNet |
+| Coverage | .NET built-in "Code Coverage" collector + ReportGenerator (`./build/coverage.ps1`) |
 
 **Syncfusion:** fully removed.
 
@@ -172,8 +174,14 @@ PokemonBattleJournal.slnx
 ```
 
 Authoritative list is `PokemonBattleJournal.slnx` — the seven projects above are exactly
-what it contains. (A `PokemonBattleJournal.Benchmarks/` BenchmarkDotNet project was listed
-here until 2026-08-05; it has never existed in the repo.)
+what it contains.
+
+A `PokemonBattleJournal.Benchmarks/` BenchmarkDotNet project was listed here until
+2026-08-05. **It did exist and was deleted on 2026-07-26 in `b0a4ac1`** ("Remove
+PokemonBattleJournal.Benchmarks project entirely"). A previous cleanup pass recorded it as
+having "never existed in the repo", which is wrong — `git log --all --
+PokemonBattleJournal.Benchmarks` still shows its history. Corrected 2026-08-05. There are no
+benchmarks in this repo today and no `Run.ps1`.
 
 **Build notes**
 
@@ -241,7 +249,8 @@ Views (XAML) ──bind──► ViewModels ──call──► Services ──�
                               └── ModalErrorHandler (alerts on errors)
 ```
 
-- **Concurrency:** static `SemaphoreSlim` on `SqliteConnectionFactory` (correct — singleton); **WARNING:** `TrainerPageViewModel` also has `static SemaphoreSlim _semaphore` but is registered Transient — shared across instances, can deadlock if counter hits 0 at GC. Hardening planned.
+- **Concurrency:** one `SemaphoreSlim` per `SqliteConnectionFactory` instance, taken and released together with the connection by `DbSession` — see [[project_db_session_lock_pairing]]. Never release it in a bare `finally`. `MainPageViewModel`, `OptionsPageViewModel` and `ReadJournalPageViewModel` each hold their own `private readonly SemaphoreSlim` for command re-entrancy.
+  - *Corrected 2026-08-05:* this previously warned that `TrainerPageViewModel` had a `static SemaphoreSlim` while registered Transient and could deadlock. Both halves were false — that view model has no semaphore at all, and it is registered as a **singleton**. Verified against `MauiProgram.cs` and the view model source.
 - **Transactions:** `RunInTransactionAsync` for multi-step saves/deletes.
 - **Match results:** `MatchResultCalculatorFactory` → `BO1ResultCalculator` or `BO3ResultCalculator`.
 - **Stats:** `MatchAnalysisService` (11 calculation methods) feeds `TrainerPageViewModel`.
@@ -346,10 +355,14 @@ XAML bindings by page:
 
 **Android seeding:** same in-app seed runs on install. No sentinel needed — `DisplayPromptAsync` uses native Android dialogs (no XamlRoot requirement); UITestTrainer active means prompt doesn't fire anyway.
 
-### Benchmarks
+### Coverage
 
-- Project: `PokemonBattleJournal.Benchmarks` / `ViewModels/MainPageViewModelBenchmarks`
-- Requires **Release** build; use `Run.ps1`.
+- `./build/coverage.ps1 -IncludeUI` — see [[project_coverage_tooling]].
+- Uses .NET's built-in `"Code Coverage"` collector, **not** coverlet (`"XPlat Code Coverage"`).
+  Only the built-in one instruments the app process the Appium tests drive, so only it can
+  report coverage of Views, Controls, `App` and `MauiProgram`.
+- Block coverage exists only in the `.coverage` binary and its converted XML; cobertura carries
+  line and branch alone.
 
 ---
 
@@ -404,22 +417,26 @@ dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows
 # Build everything (all projects, all their own TFMs — no -f)
 dotnet build PokemonBattleJournal.slnx
 
-# Fast test project. Mostly unit tests, but ALSO contains six *IntegrationTests.cs
-# files under Services/ that hit real SQLite with a temp .db3 per test — not
-# "unit tests only" despite the project name.
+# Unit tests — genuinely unit tests now (~1s). The six real-SQLite files that
+# used to live here moved to the IntegrationTests project on 2026-08-05.
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
+
+# Integration tests (real SQLite, temp DB file per test)
+dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj
 
 # Windows UI tests
 dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
 
-# Android UI tests (needs pixel_7_-_api_35 AVD)
+# Android UI tests (needs pixel_7_-_api_35 AVD). Deploy first if APP code changed,
+# or the suite tests the previously installed build and passes:
+#   dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-android -t:Install
 dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
+
+# Coverage (built-in collector; -IncludeUI is the only way to cover Views/Controls)
+./build/coverage.ps1 -IncludeUI
 
 # Kill orphaned app after failed Appium run
 Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
-
-# Benchmarks (Release)
-.\PokemonBattleJournal.Benchmarks\Run.ps1
 ```
 
 ---

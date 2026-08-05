@@ -16,6 +16,7 @@ Record matches, track win rates, and review your performance against specific ar
 - **BO3 tab switcher** — progressive Game 1 / 2 / 3 tabs; Game 3 shown only when the match result is split or both games tied (official tournament rules)
 - **Journal view** — history of all recorded matches with expandable per-game detail
 - **TrainerHill import** — import battle logs exported from [trainerhill.com](https://trainerhill.com)
+- **Export** — write your matches back out as TrainerHill-format JSON, or as a full backup covering every trainer
 - **Multi-trainer** — create and switch between trainer profiles on the Options page
 - **Tags** — Early Start, Donked Rival, Lucky, Behind Early, Got Donked, Unlucky, Punished, Never Punished
 
@@ -193,7 +194,7 @@ Views (XAML) → ViewModels → Services → ISqliteConnectionFactory → SQLite
 ```
 
 - **MVVM** via CommunityToolkit.Mvvm (`[ObservableProperty]`, `[RelayCommand]`)
-- **DI** in `MauiProgram.cs` — MainPage/VM are singletons; all other pages/VMs are transient
+- **DI** in `MauiProgram.cs` — the three data pages (MainPage, ReadJournalPage, TrainerPage) and their VMs are singletons; OptionsPage and AboutPage are transient
 - **Scraper** — separate `PokemonBattleJournal.Scraper` class library; SOLID factory pattern; no MAUI dependency so it runs in unit tests
 - **Win rate formula:** `(wins + 0.5 × ties) / total × 100`
 
