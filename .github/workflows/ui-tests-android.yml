@@ -74,8 +74,13 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Cache NuGet packages
-        uses: actions/cache@v6
+      # Restore-only. The build-apk job (which this matrix `needs:`) owns the save for
+      # this key, so by the time these jobs run the cache already exists. Using
+      # actions/cache here would add a pointless post-step to all five jobs — and on a
+      # key rotation they would contend with each other exactly as the Windows matrix
+      # did before this change.
+      - name: Restore NuGet cache
+        uses: actions/cache/restore@v6
         with:
           path: ~/.nuget/packages
           key: nuget-android-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
@@ -89,8 +94,12 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Cache npm / Appium
-        uses: actions/cache@v6
+      # Restore-only; a single fixture saves it below. No job outside this matrix uses
+      # this key, so without the split all five would race to create it on every
+      # rotation — and this key rotates on ANY edit to this workflow file.
+      - name: Restore npm / Appium cache
+        id: appium-cache
+        uses: actions/cache/restore@v6
         with:
           path: ~/.npm
           key: appium-android-${{ hashFiles('.github/workflows/ui-tests-android.yml') }}
@@ -103,6 +112,17 @@ jobs:
         run: |
           npm install -g appium
           appium driver install uiautomator2 || appium driver update uiautomator2
+
+      # Only one fixture saves, designated arbitrarily — with a single save step there
+      # is no race, so which one does not matter. Placed right after the install that
+      # populates ~/.npm rather than at job end, so a test failure or a cancelled
+      # emulator step still leaves a usable cache for the next run.
+      - name: Save npm / Appium cache
+        if: always() && matrix.fixture == 'AboutPageTests' && steps.appium-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.npm
+          key: appium-android-${{ hashFiles('.github/workflows/ui-tests-android.yml') }}
 
       - name: Enable KVM
         run: |
