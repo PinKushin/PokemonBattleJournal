@@ -74,7 +74,14 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 3072
           disable-animations: true
-          script: dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --filter "FullyQualifiedName~${{ matrix.fixture }}" --logger "trx;LogFileName=android-ui-tests-${{ matrix.fixture }}.trx" ; code=$? ; adb logcat -d > /tmp/UITests.Android.logcat.txt ; exit $code
+          # crashpad_handler kill before exit works around a documented
+          # reactivecircus/android-emulator-runner hang: the emulator's crash-reporter
+          # child process outlives "adb emu kill" ("stop: Not implemented"), and the
+          # action's own teardown step then hangs forever waiting on the whole process
+          # tree to exit. Killing it ourselves here — inside the script, before the
+          # action's internal teardown runs — avoids the hang.
+          # See https://github.com/ReactiveCircus/android-emulator-runner/issues/385
+          script: dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --filter "FullyQualifiedName~${{ matrix.fixture }}" --logger "trx;LogFileName=android-ui-tests-${{ matrix.fixture }}.trx" ; code=$? ; adb logcat -d > /tmp/UITests.Android.logcat.txt ; pkill -SIGTERM crashpad_handler || true ; sleep 3 ; pkill -SIGKILL crashpad_handler || true ; exit $code
         env:
           CI: true
           ANDROID_USE_INSTALLED: "0"
