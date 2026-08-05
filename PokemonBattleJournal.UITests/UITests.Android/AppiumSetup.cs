@@ -205,6 +205,25 @@ if (useInstalled)
                         ready = true;
                         break;
                     }
+
+                    // A system ANR dialog (observed: launcher/"Quickstep isn't responding"
+                    // during the boot storm) owns the entire accessibility tree while our
+                    // app renders underneath — no element of ours is reachable until it's
+                    // gone. hide_error_dialogs=1 (set in the workflow) only prevents FUTURE
+                    // dialogs; one already showing must be dismissed here. AOSP's ANR
+                    // dialog exposes its Wait button as android:id/aerr_wait.
+                    var anrWait = driver.FindElements(MobileBy.AndroidUIAutomator(
+                        "new UiSelector().resourceId(\"android:id/aerr_wait\")"));
+                    if (anrWait.Count > 0)
+                    {
+                        Log("7. WaitForAppReady: ANR dialog present — clicking Wait to dismiss");
+                        try { anrWait[0].Click(); }
+                        catch (OpenQA.Selenium.WebDriverException ex)
+                        {
+                            // Dialog may vanish between find and click — keep polling either way.
+                            Log($"7. WaitForAppReady: ANR dismiss click failed: {ex.GetType().Name}");
+                        }
+                    }
                 }
                 step7Timer.Stop();
                 if (!ready)
