@@ -47,9 +47,12 @@ here. See `OptionsPageViewModelGuardLoggingTests`.
 ## Still to do — surface it in the UI
 
 Logging fixes diagnosis, not the user experience: a user who mistypes still sees nothing
-happen. User wants validation feedback shown in-app (2026-08-05) — *"probably display a modal
-or better just a text label with red text explaining the verification step failed"*, with a
-label preferred over a modal. Deferred; tracked in [[project_roadmap]].
+happen. User wants validation feedback shown in-app (2026-08-05) as an inline **red text
+label — never a modal**. That is a hard constraint: modals steal focus, may be absent from
+the UIA tree, and can appear when no test is waiting, which has broken this project's
+automation repeatedly (XamlRoot crash, ModalErrorHandler crash on fresh DB, the Android ANR
+dialog owning the whole a11y tree). Deferred; full reasoning and design notes in
+[[project_roadmap]].
 
 ## Related
 
