@@ -38,14 +38,31 @@ FlexLayout win this session (18m19s → 8m44s on Android), which came specifical
 *avoiding* per-test overhead — see [[project_readjournal_android_slow]]. Any fix here
 needs a deliberate speed-vs-reliability call, not a freelanced change.
 
-**Candidate approaches (not attempted):**
-1. Recycle the driver session once per `[TestFixture]` class instead of once per assembly
-   — bounds the degradation window to however many tests are in the largest fixture
-   (MainPageTests, ~25 tests) instead of the full ~72-test suite.
+**Candidate approaches:**
+1. ~~Recycle the driver session once per `[TestFixture]` class instead of once per
+   assembly~~ — **IMPLEMENTED 2026-08-05** via CI matrix split (branch
+   `feat/ci-matrix-per-fixture`), not an in-process driver recycle. Each of the 5 test-
+   fixture classes (`AboutPageTests`, `MainPageTests`, `OptionsPageTests`,
+   `ReadJournalPageTests`, `TrainerPageTests`) now runs as its own GitHub Actions matrix
+   job with `--filter "FullyQualifiedName~<fixture>"`, giving each a genuinely fresh
+   process/driver/emulator instead of just a fresh in-process session — simpler than
+   threading a recycle point through `TestBase`/`AppiumSetup`, at the cost of ~5x
+   build/boot compute (accepted — see [[project_ci_workflows]]). Windows matrix confirmed
+   all 5 jobs green, ~9-10min each running concurrently (wall time flat vs. before, as
+   expected — this trades cost for reliability, not speed). Android matrix result pending
+   as of this writing — that's the real test, since Android was where the degradation
+   actually caused failures.
 2. Recycle after N tests within a long fixture (MainPageTests specifically) via a counter
-   in `TestBase`.
+   in `TestBase` — not needed if the matrix split alone resolves it; keep as a fallback if
+   any single fixture class is still large enough to degrade on its own.
 3. Investigate whether the specific driver/Appium version has a known session-longevity
-   fix or a "reset session" capability that's cheaper than a full teardown/recreate.
+   fix or a "reset session" capability that's cheaper than a full teardown/recreate — not
+   needed given (1) worked.
+
+**Local dev unaffected:** this only changes CI workflow YAML. Local test runs still use one
+shared driver session per platform — that's intentional (Fast Deployment reuse, fast
+iteration matter more locally, and the degradation isn't hit in normal single-fixture local
+runs).
 
 ## Original graphics-churn dead end (documented for the record, do not act on this)
 
