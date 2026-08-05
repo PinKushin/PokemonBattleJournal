@@ -120,11 +120,24 @@ namespace PokemonBattleJournal
             builder.Services.AddSingleton<MainPage>();
             builder.Services.AddSingleton<MainPageViewModel>();
 
-            //Read Journal Page — singleton so match list stays loaded between navigations
+            // Read Journal and Trainer pages are singletons. The original reason (b21e9f4,
+            // "so the match list / charts stay warm between navigations") NO LONGER HOLDS:
+            // both pages fire AppearingCommand on every Appearing and AppearingAsync re-queries
+            // the database and rebuilds the charts, so nothing is actually reused, and the
+            // 500ms pre-warm that commit added was removed again in 8e39188.
+            //
+            // What DOES currently depend on the singleton lifetime is the event subscription.
+            // These view models do `_switchService.TrainerChanged += OnTrainerChanged` in their
+            // constructor and never unsubscribe, and the event holds a strong reference. As
+            // singletons that is harmless — one instance, subscribed once. As transients, every
+            // navigation would leak a view model and add another handler, so one trainer switch
+            // would trigger a full reload per past visit.
+            //
+            // So: fix the subscription (weak event or unsubscribe on Disappearing) BEFORE
+            // changing these back to transient. See ROADMAP.md.
             builder.Services.AddSingleton<ReadJournalPage>();
             builder.Services.AddSingleton<ReadJournalPageViewModel>();
 
-            //Trainer Page — singleton so charts stay warm between navigations
             builder.Services.AddSingleton<TrainerPage>();
             builder.Services.AddSingleton<TrainerPageViewModel>();
 

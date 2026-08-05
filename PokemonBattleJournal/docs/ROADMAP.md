@@ -82,6 +82,7 @@ Tracked here so nothing gets lost between sessions. Bugs first (things broken ri
 | F-20 | Configurable Android emulator AVD | `pixel_7_-_api_35` is hardcoded in `UITests.Android/AppiumSetup.cs`. Make it configurable via env var or test config file. |
 | ~~F-21~~ | ~~Multi-trainer switcher~~ | **Done.** `TrainerSwitchPicker` on OptionsPage; `ITrainerSwitchService` broadcasts `TrainerChanged` to all VMs. |
 | F-22 | Archetype periodic refresh | Currently upserts on every `GetAllAsync` call (first call per launch). Consider background refresh or a manual "Refresh Meta" button on OptionsPage so existing DB stays current without requiring a restart. |
+| F-23 | Fix `TrainerChanged` subscriptions, then return ReadJournal/Trainer pages to transient | Pages were transient by design until `b21e9f4` (2026-07-27) promoted ReadJournalPage and TrainerPage to singletons "so the match list / charts stay warm between navigations", plus a 500ms pre-warm. **Both reasons are gone:** the pre-warm was removed in `8e39188`, and nothing stays warm anyway — each page fires `AppearingCommand` on every `Appearing`, and `AppearingAsync` re-queries the DB and rebuilds the charts. What *does* depend on the singleton lifetime is accidental: `MainPageViewModel`, `ReadJournalPageViewModel` and `TrainerPageViewModel` each do `_switchService.TrainerChanged += OnTrainerChanged` in their constructor and **never unsubscribe**, and the event holds a strong reference. As singletons that is harmless; as transients each navigation would leak a view model and add a handler, so one trainer switch would fire a full reload per past visit. **Fix the subscription first** (weak event via CommunityToolkit's `WeakEventManager`, or unsubscribe on `Disappearing`), then flip the lifetimes. Verify with UI tests — TrainerPage's old navigation hang (B-04) lived in this area. MainPage stays a singleton either way. |
 
 ---
 
@@ -109,6 +110,7 @@ Unscheduled / no strong ordering yet:
 
 - **F-19** — Windows Appium driver replacement (in progress externally)
 - **F-20, F-22** — configurable AVD, archetype periodic refresh
+- **F-23** — fix the TrainerChanged subscriptions, then return ReadJournal/Trainer to transient (user deferred the decision 2026-08-05; the corrected reasoning is in MauiProgram.cs next to the registrations)
 - **AOT compatibility + real installer** — see `docs/memory/project_roadmap.md`; no longer blocked on budget (Android signing is free, SignPath covers Windows)
 
 Feature details for items 7-12 live in `PokemonBattleJournal/docs/memory/project_roadmap.md`.
