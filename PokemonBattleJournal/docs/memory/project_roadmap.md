@@ -106,12 +106,19 @@ When the archetype ComboBox is tapped, animate the pokeball icon as if it's open
 
 6. **Accessibility:** Check `AccessibilitySettings.IsReduceMotionEnabled` — skip animation and open immediately if true.
 
-## Known Bugs (fix before next release)
+## Known Bugs (fix before first release)
 
-### ComboBox Cancel Button Hangs App (MainPage)
-Tapping Cancel on either archetype picker popup on MainPage (Journal Entry) freezes the app — requires force-close. Root cause unknown. Likely async deadlock in popup dismiss path. TDD approach: write failing UI test that taps Cancel and asserts popup dismisses within 3 seconds, then fix.
+**There has never been a release.** Nothing has shipped, so every bug listed here is a
+first-release blocker by definition, and the release vehicle itself is still an open roadmap
+item (see *Real Installer (Windows/Android)* below).
 
-See [[project_combobox_cancel_hang]] for investigation notes.
+*None currently open.*
+
+### ~~ComboBox Cancel Button Hangs App (MainPage)~~ — CLOSED 2026-08-05, not a bug
+Was a transient Windows OS hiccup, not application behavior — user confirmed 2026-08-05,
+never reproduced. Regression UI tests for Cancel dismissal were added anyway (merged
+`5c9b7da`) and are kept. Do not hunt for an async deadlock in the popup dismiss path.
+See [[project_combobox_cancel_hang]].
 
 ---
 
