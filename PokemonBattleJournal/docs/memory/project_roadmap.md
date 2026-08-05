@@ -231,13 +231,25 @@ loads coexist — start with per-property.
 - **MainPage** — `IsBusy_ArchetypeList` around Limitless fetch on first popup open
 - **OptionsPage** — `IsBusy_ArchetypeList` shared with MainPage
 
-### Optional visual indicator
+### Optional visual indicator — DESIGN LOCKED (2026-08-04, mockup provided by user)
 
-Once the gates ship, layer on a user-facing indicator:
-- ActivityIndicator or Lottie animated icon (PokéBall spinning fits theme)
-- Bind IsVisible to `IsAnyBusy` for full-page overlay, or specific `IsBusy_*` for inline
-- Respect `AccessibilitySettings.IsReduceMotionEnabled` — swap animation for static "Loading…" label
-- Overlay uses semi-transparent scrim over content; inline uses a small spinner in the section
+Fluent-style ring spinner, NOT a full solid ring and NOT a simple spinning Pokéball alone:
+
+- **Partial arc**, not a closed circle. Solid/opaque red near the leading edge, fading to
+  transparent trailing behind it — matches the "chasing itself" Windows modern spinner look.
+- **Pokéball rides the leading edge** of the arc, positioned at the arc's head like a comet.
+- **Pokéball spins on its own axis** independently while it also orbits around the circle path.
+- Arc color: red (primary choice) or PokeBlue — both hold up in light and dark mode. White ruled out (invisible/low-contrast on light backgrounds).
+- Reference mockup: user-provided image — red arc, gray/white Pokéball dot at the 12 o'clock
+  leading point, trail fading counter-clockwise from the ball.
+- Bind IsVisible to `IsAnyBusy` for full-page overlay, or specific `IsBusy_*`/`IsBusyMutating`
+  for inline per-action indicators.
+- Respect `AccessibilitySettings.IsReduceMotionEnabled` — swap animation for static "Loading…" label.
+- Overlay uses semi-transparent scrim over content; inline uses a small version in the section/button.
+- Implementation approach: likely custom `GraphicsView`/`SKCanvasView` (SkiaSharp is already a
+  dependency via LiveCharts2) drawing an arc + rotating Pokéball sprite, animated via a
+  `Microsoft.Maui.Animations` ticker or simple `Dispatcher.StartTimer` angle increment. Lottie
+  is an alternative if a matching animation is easier to source/build externally.
 
 ### TDD
 
