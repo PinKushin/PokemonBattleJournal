@@ -255,3 +255,29 @@ Fluent-style ring spinner, NOT a full solid ring and NOT a simple spinning Poké
 
 - Write a failing test that opens TrainerPage, asserts `Busy_ChartData` is visible, then waits for it to disappear within 5 s and asserts chart elements are present. Then wire the gate to make it pass.
 - Repeat per gate.
+
+---
+
+## Android test execution strategy (added 2026-08-05, not started)
+
+Android UI jobs now finish faster on CI than the Windows ones, while the same 72 tests run
+serially in **8m55s** locally (Windows: 73 tests, **1m28s**). The gap is the execution
+environment — the emulator on Windows — not the hardware; the user's machine outclasses a
+GitHub Ubuntu runner.
+
+Planned, in rough priority order:
+
+1. **Default Android UI testing to CI.** Keep local runs for targeted `--filter` debugging
+   rather than full sweeps.
+2. **Auto-target a real phone.** If a physical device is attached, run there; otherwise boot
+   the AVD. Automatic detection via `adb devices`, with an env-var override in the shape of
+   the existing `ANDROID_USE_INSTALLED`.
+3. **Local parallelism** to match what the CI matrix gets. Needs distinct AVDs, adb/Appium
+   ports, and app data per instance — `AppiumSetup` currently owns a single driver, port and
+   emulator, so concurrent fixtures would fight over one `.db3`.
+4. **Evaluate WSL2** (Ubuntu already installed) as an emulator host — requires nested
+   virtualization + KVM, and a real phone would need `usbipd-win` forwarding. Spike before
+   committing; the emulator would contend with Hyper-V for the same hardware, so it is not
+   obviously faster than more native AVDs.
+
+Full constraint list in `docs/memory/project_android_test_execution_strategy.md`.
