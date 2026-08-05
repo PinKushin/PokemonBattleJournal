@@ -205,6 +205,13 @@ never being able to update the app.** Google Play is a one-time developer regist
    on clean installs (starts in evaluation mode), so not universal — but for affected users an
    unsigned app simply does not run.
 
+**Do not conflate those two.** The user's own machine is the MotW case (#1) — every exe
+downloaded from the internet has to be unblocked via Properties — not SAC. #2 is a risk to
+*other* users on affected Win11 installs, not an observed behavior here. Worth knowing: if
+"Run anyway" is never offered and Properties is the only route, Windows Security →
+Reputation-based protection → "Check apps and files" is likely set to **Block** rather than
+Warn, which is stricter than the default.
+
 Free routes that actually clear this, in preference order:
 
 - **SignPath.io** — free Authenticode signing for open-source projects, integrates with GitHub
