@@ -17,6 +17,7 @@
 - [MAUI sprite naming constraint](project_sprite_naming_constraint.md) — MAUI assets must be underscore; CDN URLs use hyphens; convert on lookup; substitute.png is 36×36 in Images/ not PokemonSprites/
 - [OptionsPage crash on fresh DB](project_optionspage_crash_fresh_db.md) — 0xc000027b in Microsoft.UI.Xaml.dll when ModalErrorHandler fires during AppearingAsync on fresh DB; fix: log-only in GetAllAsync, no dialog
 - [Substitute sprite](project_substitute_sprite.md) — substitute.png from Pokémon Showdown; "Other"/unknown fallback icon; lives in Images/ not PokemonSprites/
+- [SQLite security pins](project_sqlite_security_pins.md) — SQLitePCLRaw.lib.e_sqlite3 3.53.3 / .android 2.1.12 override bundle_green's vulnerable 2.1.11 (GHSA-2m69-gcr7-jv3q). Look like duplicate cruft; removing them = 14x NU1903. Already `>=`, not exact pins. XA4301 is unrelated and benign.
 - [Project roadmap](project_roadmap.md) — Planned features: JSON import/export (TrainerHill format with archetype slug resolution), deck maker (deck lists tied to archetypes), deck comparer (side-by-side diff).
 - [Project website](project_website.md) — https://pinkushin.github.io/PokemonBattleJournal/ deployed from index.html at repo root via static.yml workflow.
 - [Theme switcher goal](project_theme_switcher.md) — Long-term: in-app theme switcher; Android emulator defaults light; never hardcode colors.

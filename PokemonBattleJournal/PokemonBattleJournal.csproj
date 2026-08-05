@@ -110,6 +110,14 @@
 		<PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
 		<PackageReference Include="SQLite.Net.Extensions.Async" Version="3.0.1" />
 		<PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
+		<!-- SECURITY PIN — do not remove or "consolidate" these two.
+		     bundle_green 2.1.11 transitively resolves SQLitePCLRaw.lib.e_sqlite3 2.1.11 and
+		     SQLitePCLRaw.lib.e_sqlite3.android 2.1.11, both of which carry a known HIGH
+		     severity vulnerability (GHSA-2m69-gcr7-jv3q). These explicit references override
+		     the transitive resolution with patched builds. Removing them looks like tidy
+		     de-duplication and immediately reproduces 14x NU1903 — verified 2026-08-05.
+		     The XA4301 "APK already contains libe_sqlite3.so" warnings are NOT caused by
+		     these pins; they occur with the transitive versions too. -->
 		<PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
 		<PackageReference Include="SQLitePCLRaw.lib.e_sqlite3.android" Version="2.1.12" />
 

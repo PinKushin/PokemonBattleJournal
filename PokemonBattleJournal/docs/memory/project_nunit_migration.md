@@ -23,7 +23,7 @@ Branch `feature/nunit-migration` merged to master. All Android and Windows CI te
 - `ClickTab` simplified to `tabElement.Click()` on all platforms — Button exposes InvokePattern, WinAppDriver invokes it directly
 
 **Coverage (unit + integration via coverlet, master branch):**
-- `coverage.runsettings` at repo root; ResultsDirectory removed (VS manages its own output path)
+- `build/coverage.runsettings` (moved out of the repo root 2026-08-05 so VS stops auto-detecting it); ResultsDirectory removed (VS manages its own output path)
 - ReportGenerator installed globally (`dotnet-reportgenerator-globaltool`)
 - Merged report in `PokemonBattleJournal/docs/coverage-report/`
 - 57.7% line / 67.8% branch / 64.5% method on PokemonBattleJournal.dll (unit+integration only)
