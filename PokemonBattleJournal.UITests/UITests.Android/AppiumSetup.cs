@@ -165,6 +165,40 @@ if (useInstalled)
             step6Timer.Stop();
             Log($"6. WaitForActivity done ({step6Timer.ElapsedMilliseconds}ms)");
             PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] AndroidWaitForActivity completed ({step6Timer.ElapsedMilliseconds}ms)");
+
+            // 7. App-ready gate: the activity being resumed does not mean the Shell is
+            // composed. On a fresh CI emulator the first launch runs DebugDataSeeder
+            // (blocking, on startup) plus a possible Limitless meta fetch before the first
+            // page renders — observed on CI as the flyout hamburger staying out of the UIA
+            // tree for 30s+ (every AboutPageTests nav retry exhausted at exactly 3×10s on
+            // one run, while the identical job passed in 1s on others). Give the cold
+            // start its runway ONCE here, so per-nav retries can stay tight.
+            Log("7. WaitForAppReady (flyout hamburger in UIA tree)");
+            var step7Timer = System.Diagnostics.Stopwatch.StartNew();
+            var readyDeadline = DateTime.UtcNow.AddSeconds(90);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+            try
+            {
+                bool ready = false;
+                while (DateTime.UtcNow < readyDeadline)
+                {
+                    if (driver.FindElements(MobileBy.AccessibilityId("Open navigation drawer")).Count > 0)
+                    {
+                        ready = true;
+                        break;
+                    }
+                }
+                step7Timer.Stop();
+                if (!ready)
+                    throw new InvalidOperationException(
+                        $"App not ready: flyout hamburger never appeared within 90s of activity start ({step7Timer.ElapsedMilliseconds}ms elapsed).");
+                Log($"7. WaitForAppReady done ({step7Timer.ElapsedMilliseconds}ms)");
+                PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] WaitForAppReady completed ({step7Timer.ElapsedMilliseconds}ms)");
+            }
+            finally
+            {
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+            }
         }
 
         [OneTimeTearDown]
