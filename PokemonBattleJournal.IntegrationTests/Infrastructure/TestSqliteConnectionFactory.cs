@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Logging;
-using PokemonBattleJournal.Scraper.Interfaces;
-using PokemonBattleJournal.Services;
 
 namespace PokemonBattleJournal.IntegrationTests.Infrastructure;
 

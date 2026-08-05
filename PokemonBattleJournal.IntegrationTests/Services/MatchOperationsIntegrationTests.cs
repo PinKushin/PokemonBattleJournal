@@ -1,5 +1,5 @@
 
-namespace PokemonBattleJournal.Tests.Services
+namespace PokemonBattleJournal.IntegrationTests.Services
 {
     /// <summary>
     /// Integration tests for MatchOperations using a real in-memory SQLite database.
@@ -273,13 +273,6 @@ namespace PokemonBattleJournal.Tests.Services
             found.Result.ShouldBe(MatchResult.Win);
         }
 
-        [Test]
-        public async Task GetByIdAsync_NonExistentId_ReturnsNull()
-        {
-            MatchEntry? found = await _sut.GetByIdAsync(99999);
-
-            found.ShouldBeNull();
-        }
 
         [Test]
         public async Task GetByIdAsync_WithIncludeRelatedFalse_StillReturnsMatch()

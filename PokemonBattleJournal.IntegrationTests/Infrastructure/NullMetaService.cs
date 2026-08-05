@@ -1,5 +1,3 @@
-using PokemonBattleJournal.Scraper.Interfaces;
-using PokemonBattleJournal.Scraper.Models;
 
 namespace PokemonBattleJournal.IntegrationTests.Infrastructure;
 

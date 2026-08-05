@@ -1,14 +1,14 @@
 using PokemonBattleJournal.Scraper.Services;
 using System.Reflection;
 
-namespace PokemonBattleJournal.Tests.Services;
+namespace PokemonBattleJournal.IntegrationTests.Services;
 
 /// <summary>
 /// Integration tests against a real HTML snapshot captured from limitlesstcg.com/decks.
 /// If these fail after a snapshot refresh, Limitless changed their page structure and
 /// LimitlessDeckParser needs updating before the live app breaks.
 /// Refresh the snapshot: fetch https://limitlesstcg.com/decks and overwrite
-/// PokemonBattleJournal.Tests/Fixtures/limitless_decks_snapshot.html
+/// PokemonBattleJournal.IntegrationTests/Fixtures/limitless_decks_snapshot.html
 /// </summary>
 public class LimitlessDeckParserIntegrationTests
 {

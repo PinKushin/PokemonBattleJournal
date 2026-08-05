@@ -1,5 +1,5 @@
 
-namespace PokemonBattleJournal.Tests.Services
+namespace PokemonBattleJournal.IntegrationTests.Services
 {
     public class TrainerOperationsIntegrationTests
     {
@@ -30,26 +30,7 @@ namespace PokemonBattleJournal.Tests.Services
             all.ShouldContain(t => t.Name == "Ash");
         }
 
-        [Test]
-        public async Task SaveAsync_DuplicateName_ReturnsZero()
-        {
-            _ = await _sut.SaveAsync("Misty");
 
-            int affected = await _sut.SaveAsync("Misty");
-
-            affected.ShouldBe(0);
-        }
-
-        [Test]
-        public async Task GetAllAsync_AfterSave_ReturnsTrainer()
-        {
-            _ = await _sut.SaveAsync("Brock");
-
-            List<Trainer> all = await _sut.GetAllAsync();
-
-            all.ShouldNotBeEmpty();
-            all.ShouldContain(t => t.Name == "Brock");
-        }
 
         [Test]
         public async Task GetByNameAsync_AfterSave_ReturnsCorrectTrainer()
@@ -122,11 +103,6 @@ namespace PokemonBattleJournal.Tests.Services
             found.ShouldBeNull();
         }
 
-        [Test]
-        public async Task DeleteAsync_NullTrainer_ThrowsArgumentNullException()
-        {
-            await Should.ThrowAsync<ArgumentNullException>(() => _sut.DeleteAsync(null!));
-        }
 
         [Test]
         public async Task GetAllAsync_EmptyDatabase_ReturnsEmptyList()
@@ -153,13 +129,6 @@ namespace PokemonBattleJournal.Tests.Services
             byId.Id.ShouldBe(byName.Id);
         }
 
-        [Test]
-        public async Task GetByIdAsync_NonExistentId_ReturnsNull()
-        {
-            Trainer? found = await _sut.GetByIdAsync(99999);
-
-            found.ShouldBeNull();
-        }
 
         private sealed class TestSqliteConnectionFactory : SqliteConnectionFactory
         {

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -26,6 +26,12 @@
         <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
         <PackageReference Include="Shouldly" Version="4.3.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Real limitlesstcg.com/decks snapshot driving LimitlessDeckParserIntegrationTests.
+             Loaded via GetManifestResourceNames, so it must be embedded in THIS assembly. -->
+        <EmbeddedResource Include="Fixtures\limitless_decks_snapshot.html" />
     </ItemGroup>
 
     <ItemGroup>

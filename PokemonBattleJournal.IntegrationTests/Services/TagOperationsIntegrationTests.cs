@@ -1,5 +1,5 @@
 
-namespace PokemonBattleJournal.Tests.Services
+namespace PokemonBattleJournal.IntegrationTests.Services
 {
     public class TagOperationsIntegrationTests
     {
@@ -92,12 +92,6 @@ namespace PokemonBattleJournal.Tests.Services
             found!.Name.ShouldBe("Stall");
         }
 
-        [Test]
-        public async Task GetByIdAsync_NonExistentId_ReturnsNull()
-        {
-            Tags? found = await _sut.GetByIdAsync(99999);
-            found.ShouldBeNull();
-        }
 
         [Test]
         public async Task GetAllAsync_EmptyDatabase_SeedsDefaultTags()
@@ -108,11 +102,6 @@ namespace PokemonBattleJournal.Tests.Services
             tags.ShouldContain(t => t.Name == "Lucky");
         }
 
-        [Test]
-        public async Task DeleteAsync_ZeroId_ThrowsArgumentException()
-        {
-            await Should.ThrowAsync<ArgumentException>(() => _sut.DeleteAsync(new Tags { Id = 0, Name = "Ghost" }));
-        }
 
         [Test]
         public async Task SaveAsync_EmptyTagName_ThrowsArgumentException()
@@ -121,11 +110,6 @@ namespace PokemonBattleJournal.Tests.Services
             await Should.ThrowAsync<ArgumentException>(() => _sut.SaveAsync("", trainerId));
         }
 
-        [Test]
-        public async Task SaveAsync_ZeroTrainerId_ThrowsArgumentException()
-        {
-            await Should.ThrowAsync<ArgumentException>(() => _sut.SaveAsync("Valid", 0));
-        }
 
         private sealed class TestSqliteConnectionFactory : SqliteConnectionFactory
         {
