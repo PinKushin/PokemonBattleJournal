@@ -251,5 +251,36 @@ namespace UITests
             WaitUntilRemoved($"DeleteTag_{tagName}")
                 .ShouldBeTrue("Tag row should be removed after delete");
         }
+
+        // ---------------------------------------------------------------------------
+        // Export
+        //
+        // Presence and accessibility only — these deliberately do NOT click. Both export
+        // commands end in FileSaver, which raises the operating system's own save dialog.
+        // That dialog is not part of the app's accessibility tree, Appium cannot dismiss it
+        // reliably, and a native modal left open owns the foreground for every test that
+        // follows. The serialization behind the buttons is covered by ExportServiceTests and
+        // ExportServiceIntegrationTests, which need no UI at all; what only a UI test can
+        // establish is that the controls exist, carry their automation ids, and are reachable
+        // on a page long enough to need scrolling.
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void OptionsPage_ExportSectionHeading_Visible()
+        {
+            FindUIElement("ExportSectionHeading").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void OptionsPage_ExportTrainerHillButton_Visible()
+        {
+            FindUIElement("ExportTrainerHillButton").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void OptionsPage_ExportBackupButton_Visible()
+        {
+            FindUIElement("ExportBackupButton").ShouldNotBeNull();
+        }
     }
 }

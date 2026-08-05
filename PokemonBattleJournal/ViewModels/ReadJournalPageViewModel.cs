@@ -169,7 +169,11 @@ namespace PokemonBattleJournal.ViewModels
                 }
 #endif
 
-                MatchHistory = matches;
+                // Newest first. GetByTrainerIdAsync issues no ORDER BY, so matches arrive in
+                // insertion order — which is not date order the moment a match is entered out of
+                // sequence, e.g. logging yesterday's game today. The journal read oldest-first
+                // for every such trainer.
+                MatchHistory = [.. matches.OrderByDescending(m => m.DatePlayed)];
                 _logger.LogInformation("Loaded {Count} matches", matches.Count);
 
             }

@@ -329,6 +329,45 @@ namespace PokemonBattleJournal.IntegrationTests.Services
         }
 
         /// <summary>
+        /// A genuine three-game match must come back with all three, ids intact.
+        /// </summary>
+        /// <remarks>
+        /// Mirrors DebugDataSeeder's BO3 shape exactly, including tags on games 1 and 3 but not
+        /// game 2, because that is the row ReadJournal's BO3 UI test opens.
+        /// </remarks>
+        [Test]
+        public async Task GetByTrainerIdAsync_BO3Match_KeepsAllThreeGamesAndTheirIds()
+        {
+            uint trainerId = await SeedTrainerAsync();
+            uint archetypeId = await SeedArchetypeAsync();
+            List<Tags> tags = await _factory.Tags.GetAllAsync();
+            MatchEntry match = new()
+            {
+                TrainerId = trainerId,
+                PlayingId = archetypeId,
+                AgainstId = archetypeId,
+                Result = MatchResult.Loss,
+            };
+            _ = await _sut.SaveAsync(match,
+            [
+                new Game { Result = MatchResult.Loss, Turn = 2, Notes = "G1", Tags = [tags[0]] },
+                new Game { Result = MatchResult.Win, Turn = 1, Notes = "G2" },
+                new Game { Result = MatchResult.Loss, Turn = 2, Notes = "G3", Tags = [tags[1]] },
+            ]);
+
+            List<MatchEntry> loaded = await _sut.GetByTrainerIdAsync(trainerId, includeRelated: true);
+
+            loaded.Count.ShouldBe(1);
+            MatchEntry entry = loaded[0];
+            entry.Game2Id.ShouldNotBeNull("the second game's foreign key must survive loading");
+            entry.Game3Id.ShouldNotBeNull("the third game's foreign key must survive loading");
+            entry.Game2.ShouldNotBeNull();
+            entry.Game3.ShouldNotBeNull();
+            entry.Game2!.Notes.ShouldBe("G2");
+            entry.Game3!.Notes.ShouldBe("G3");
+        }
+
+        /// <summary>
         /// A best-of-one match must come back with exactly one game.
         /// </summary>
         /// <remarks>
