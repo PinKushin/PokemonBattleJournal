@@ -502,7 +502,10 @@
         ApplyToDerivedTypes="True"
         TargetType="Shell">
         <Setter Property="Shell.BackgroundColor" Value="{AppThemeBinding Light={StaticResource PokeBlue}, Dark={StaticResource PokeBlue}}" />
-        <Setter Property="Shell.ForegroundColor" Value="{AppThemeBinding Light={StaticResource PokeBlue}, Dark={StaticResource SecondaryDarkText}}" />
+        <!-- ForegroundColor tints the flyout (hamburger) icon on Android. Light mode was
+             PokeBlue — identical to the nav bar background above — rendering the icon
+             invisible (still clickable/in the UIA tree). PokeYellow matches TitleColor. -->
+        <Setter Property="Shell.ForegroundColor" Value="{AppThemeBinding Light={StaticResource PokeYellow}, Dark={StaticResource SecondaryDarkText}}" />
         <Setter Property="Shell.TitleColor" Value="{AppThemeBinding Light={StaticResource PokeYellow}, Dark={StaticResource SecondaryDarkText}}" />
         <Setter Property="Shell.DisabledColor" Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray950}}" />
         <Setter Property="Shell.UnselectedColor" Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray200}}" />

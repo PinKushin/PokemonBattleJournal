@@ -8,8 +8,12 @@ on:
 
 jobs:
   ui-tests-windows:
-    name: Windows UI Tests
+    name: Windows UI Tests (${{ matrix.fixture }})
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        fixture: [AboutPageTests, MainPageTests, OptionsPageTests, ReadJournalPageTests, TrainerPageTests]
     steps:
       - uses: actions/checkout@v7
 
@@ -46,20 +50,20 @@ jobs:
         env:
           TEMP: ${{ runner.temp }}
           TMP: ${{ runner.temp }}
-        run: dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj --no-restore --logger "trx;LogFileName=windows-ui-tests.trx"
+        run: dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj --no-restore --filter "FullyQualifiedName~${{ matrix.fixture }}" --logger "trx;LogFileName=windows-ui-tests-${{ matrix.fixture }}.trx"
 
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: windows-ui-test-results
+          name: windows-ui-test-results-${{ matrix.fixture }}
           path: '**/*.trx'
 
       - name: Upload timing logs
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: windows-ui-timing-logs
+          name: windows-ui-timing-logs-${{ matrix.fixture }}
           path: |
             ${{ runner.temp }}/UITests.PerfLog.txt
             ${{ runner.temp }}/UITests.NavLog.txt

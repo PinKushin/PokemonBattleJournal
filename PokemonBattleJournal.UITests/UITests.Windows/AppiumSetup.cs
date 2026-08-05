@@ -17,16 +17,27 @@ namespace UITests
         private static readonly string UiTestSentinelPath =
             Path.Combine(Path.GetTempPath(), "PokemonBattleJournal.uitest");
 
+        // CI runners only surface artifact-uploaded log files after the job finishes (or
+        // times out) — no way to see progress mid-hang. Mirroring to the console gives live
+        // visibility in the Actions log stream while a run is in progress.
+        private static readonly bool IsCi = Environment.GetEnvironmentVariable("CI") == "true";
+
         private static void Log(string message)
         {
             string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
-            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.Windows.setup.log"), line + Environment.NewLine); } catch { }
+            if (IsCi) { Console.WriteLine($"[AppiumSetup] {line}"); Console.Out.Flush(); }
+            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.Windows.setup.log"), line + Environment.NewLine); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
         private static void PerfLog(string message)
         {
             string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
-            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.PerfLog.txt"), line + Environment.NewLine); } catch { }
+            if (IsCi) { Console.WriteLine($"[PerfLog] {line}"); Console.Out.Flush(); }
+            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.PerfLog.txt"), line + Environment.NewLine); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
         [OneTimeSetUp]

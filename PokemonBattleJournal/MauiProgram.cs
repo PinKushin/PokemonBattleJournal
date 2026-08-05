@@ -53,10 +53,15 @@ namespace PokemonBattleJournal
                     options.Debug = true;
                     options.TracesSampleRate = 1.0F;
                     options.MaxBreadcrumbs = 1000;
+                    // Debug builds (dev machines, CI emulators) tag as development so
+                    // Sentry alert rules can be scoped to production-only — keeps CI/test
+                    // error events out of email while still recording them.
+                    options.Environment = "development";
 #else
                     options.Debug = false;
                     options.TracesSampleRate = 0.1;
                     options.MaxBreadcrumbs = 300;
+                    options.Environment = "production";
 #endif
                 });
             string logsDir = Path.Combine(FileHelper.GetAppDataPath(), "Logs");
@@ -65,6 +70,18 @@ namespace PokemonBattleJournal
                 .WriteTo.Debug()
                 .WriteTo.File(Path.Combine(logsDir, "log.txt"),
                 rollingInterval: RollingInterval.Day)
+                // Sentry sink: this app's error policy catches everything and logs it
+                // (silent catch is banned; errors surface via ModalErrorHandler + ILogger),
+                // so without this sink only truly-unhandled crashes ever reached Sentry —
+                // handled-and-logged errors, i.e. nearly all of them, were invisible.
+                // InitializeSdk=false: UseSentry above owns the SDK lifecycle; the sink
+                // just forwards events to the existing hub.
+                .WriteTo.Sentry(o =>
+                {
+                    o.InitializeSdk = false;
+                    o.MinimumEventLevel = Serilog.Events.LogEventLevel.Error;
+                    o.MinimumBreadcrumbLevel = Serilog.Events.LogEventLevel.Information;
+                })
             .CreateLogger();
 #if DEBUG
             builder.Logging.AddDebug();

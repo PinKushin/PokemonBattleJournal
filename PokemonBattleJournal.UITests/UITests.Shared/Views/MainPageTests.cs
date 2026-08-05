@@ -260,7 +260,15 @@ namespace UITests
             welcomeLabel.Text.ShouldContain("UITestTrainer");
         }
 
-        [Test]
+        // [Order(1)]: on CI's software-rendered emulator, the host GL translator's
+        // ColorBuffer pool drains over the course of this popup-heavy fixture
+        // ("Failed to find ColorBuffer: NNN" in the emulator log), and whichever tests
+        // run LAST lose their elements from the UIA tree — this test and WentFirstLabel
+        // failed as the alphabetical tail three runs straight while 23 siblings passed.
+        // Ordered tests run before unordered ones in NUnit, so the two victims now run
+        // while the pool is fresh. Both are state-safe to run first: this one clears its
+        // note in finally, WentFirstLabel is display-only.
+        [Test, Order(1)]
         public void MainPage_UserNoteInput_ShowTextEntry()
         {
             // Type-verify-retry: SendKeys drops keystrokes on slow CI runners (Windows CI
@@ -277,9 +285,21 @@ namespace UITests
                     try
                     {
                         AppiumElement userEntry = FindUIElement("UserNoteInput");
-                        userEntry.Click();
+                        // Windows-only focus click. On Android, logcat proved this click
+                        // BACKGROUNDS THE APP (Window.Deactivated -> stopped 100ms after the
+                        // click command, run 31001057545): the Editor sits at the bottom of
+                        // the screen and the tap lands in the gesture-navigation home zone.
+                        // UiAutomator2's SendKeys sets text directly without needing focus.
+                        if (App is WindowsDriver)
+                            userEntry.Click();
                         userEntry.Clear();
                         userEntry.SendKeys(expected);
+                        // Android: the soft keyboard opened by SendKeys covers the lower
+                        // half of the screen; elements under it (this Editor included, and
+                        // WentFirstLabel in the next test) drop out of the visible UIA tree
+                        // until it's dismissed — the source of the stale-then-unfindable
+                        // tail-pair failures on CI. No-op on Windows.
+                        DismissKeyboard();
                         // Poll instead of a single immediate read — SendKeys can return before
                         // the bound Text property finishes propagating back to the native
                         // control, which previously raced a same-instant Text read into "".
@@ -493,7 +513,8 @@ namespace UITests
             FindUIElement("DatePlayedHeading").ShouldNotBeNull();
         }
 
-        [Test]
+        // [Order(2)]: see MainPage_UserNoteInput_ShowTextEntry — second ColorBuffer victim.
+        [Test, Order(2)]
         public void MainPage_WentFirstLabel_Displayed()
         {
             FindUIElement("WentFirstLabel").ShouldNotBeNull();

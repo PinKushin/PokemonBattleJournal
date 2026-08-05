@@ -1,15 +1,52 @@
 ---
 name: project_android_ci_gpu_flake
-description: Real root cause is a single long-lived Appium driver session shared across all ~72 tests, degrading over the run on BOTH Windows and Android — not GPU/emulator/graphics-churn. AVD mismatch was a separate, real, already-fixed bug. Not yet fixed.
+description: "RESOLVED (2026-08-05, feat/ci-matrix-per-fixture, first full-green run b5ba64b): Android CI failures were SIX stacked real bugs, each fixed with direct evidence — see final summary at top. Kept for the investigation record."
 metadata:
   type: project
 ---
 
-**Status: PARTIALLY RESOLVED 2026-08-05.** The AVD name mismatch (below) was real and is
-fixed (`c3184c2`). A run after that fix (30972824626, PerfLog pulled directly) then showed
-FindUIElement latency climbing steadily through the suite — but the ACTUAL root cause is
-below (single long-lived driver session), not GPU/graphics-churn. Keep reading before
-acting on the graphics-churn section — it was a plausible-looking dead end.
+**Status: RESOLVED 2026-08-05** — branch `feat/ci-matrix-per-fixture`, first fully-green
+run at commit `b5ba64b` (CI + Windows 5/5 + Android 5/5 + build job). The "Android CI
+flake" was SIX stacked real bugs, peeled one per run with direct evidence each time:
+
+1. **AVD name mismatch** (`c3184c2`) — workflow api-34 vs code constant api-35 →
+   EnsureEmulatorRunning launched a second emulator every CI run.
+2. **Our own `adb logcat` hang** — AppiumSetup killed the emulator in teardown, then the
+   workflow script's logcat blocked forever on "- waiting for device -". Fixed with
+   `timeout 20` + gating BOTH ends of AppiumSetup's emulator lifecycle behind `CI=true`
+   (the action owns boot AND kill on CI; local unchanged).
+3. **pkill footguns ×2** — bare `pkill crashpad_handler` can never match (kernel comm
+   truncation to 15 chars); `pkill -f` then SIGKILLed our own shell (pattern appears in
+   its own cmdline). Final form: `pkill -f 'crashpad_handle[r]'` bracket trick.
+4. **Transient adbd "device offline"** at driver creation on freshly-booted starved
+   emulators — fixed with driver-creation retry (3x, WaitForEmulatorBoot re-poll between).
+5. **Launcher ANR dialog** ("Quickstep isn't responding") owning the entire a11y tree
+   while the app rendered underneath — caught by the app-ready gate's PageSource dump.
+   Fixed with `settings put global hide_error_dialogs 1` + in-gate auto-dismiss clicking
+   `android:id/aerr_wait` (the setting only prevents FUTURE dialogs).
+6. **THE tail-pair killer**: the note-Editor focus click landed in the Pixel profile's
+   gesture-navigation home zone and BACKGROUNDED THE APP (Sentry lifecycle breadcrumbs in
+   logcat: Window.Deactivated → stopped, 100ms after the click command). ColorBuffer
+   errors were co-occurring noise, not the cause. Fixed: focus click is Windows-only
+   (UiAutomator2 SendKeys needs no focus) + `cmd overlay enable
+   com.android.internal.systemui.navbar.threebutton` — no gesture zone exists at all.
+
+Structural wins alongside: per-fixture matrix on both platforms (bounds the long-lived
+driver session, isolates failures), build-once APK artifact job (~90 runner-min → ~20;
+matrix jobs skip the maui-android workload entirely), stage-3 lookup scrolls to top first
+(UiScrollable only flings down), 90s app-ready gate with diagnostic tree dump,
+soft-keyboard dismissal after typing, nav-drawer click retry, console-mirrored logs with
+explicit per-line flush.
+
+**Investigation lesson:** every "flake" here was a real bug wearing a flake costume.
+Guessing failed repeatedly (GPU theory, keyboard theory, cold-start theory); what closed
+each one was instrumentation — per-fixture PerfLog/NavLog artifacts, live console
+mirroring, logcat capture, the gate's PageSource dump, and Sentry's lifecycle breadcrumbs.
+
+---
+
+Historical record below — theories in the order they were held, several since corrected.
+Do not act on the sections below without reading the final summary above.
 
 ## UPDATE 2026-08-05 (final): real root cause is a single long-lived driver session, NOT Android GPU
 
@@ -38,14 +75,31 @@ FlexLayout win this session (18m19s → 8m44s on Android), which came specifical
 *avoiding* per-test overhead — see [[project_readjournal_android_slow]]. Any fix here
 needs a deliberate speed-vs-reliability call, not a freelanced change.
 
-**Candidate approaches (not attempted):**
-1. Recycle the driver session once per `[TestFixture]` class instead of once per assembly
-   — bounds the degradation window to however many tests are in the largest fixture
-   (MainPageTests, ~25 tests) instead of the full ~72-test suite.
+**Candidate approaches:**
+1. ~~Recycle the driver session once per `[TestFixture]` class instead of once per
+   assembly~~ — **IMPLEMENTED 2026-08-05** via CI matrix split (branch
+   `feat/ci-matrix-per-fixture`), not an in-process driver recycle. Each of the 5 test-
+   fixture classes (`AboutPageTests`, `MainPageTests`, `OptionsPageTests`,
+   `ReadJournalPageTests`, `TrainerPageTests`) now runs as its own GitHub Actions matrix
+   job with `--filter "FullyQualifiedName~<fixture>"`, giving each a genuinely fresh
+   process/driver/emulator instead of just a fresh in-process session — simpler than
+   threading a recycle point through `TestBase`/`AppiumSetup`, at the cost of ~5x
+   build/boot compute (accepted — see [[project_ci_workflows]]). Windows matrix confirmed
+   all 5 jobs green, ~9-10min each running concurrently (wall time flat vs. before, as
+   expected — this trades cost for reliability, not speed). Android matrix result pending
+   as of this writing — that's the real test, since Android was where the degradation
+   actually caused failures.
 2. Recycle after N tests within a long fixture (MainPageTests specifically) via a counter
-   in `TestBase`.
+   in `TestBase` — not needed if the matrix split alone resolves it; keep as a fallback if
+   any single fixture class is still large enough to degrade on its own.
 3. Investigate whether the specific driver/Appium version has a known session-longevity
-   fix or a "reset session" capability that's cheaper than a full teardown/recreate.
+   fix or a "reset session" capability that's cheaper than a full teardown/recreate — not
+   needed given (1) worked.
+
+**Local dev unaffected:** this only changes CI workflow YAML. Local test runs still use one
+shared driver session per platform — that's intentional (Fast Deployment reuse, fast
+iteration matter more locally, and the degradation isn't hit in normal single-fixture local
+runs).
 
 ## Original graphics-churn dead end (documented for the record, do not act on this)
 

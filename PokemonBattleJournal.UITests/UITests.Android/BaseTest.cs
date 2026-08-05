@@ -4,12 +4,62 @@ namespace UITests
     {
         private const string PackageName = "com.PinKushin.PokemonBattleJournal";
 
+        // Click-verify-retry: Appium's .Click() on the drawer hamburger sometimes never
+        // reaches the MAUI gesture handler on Android (same flaky-tap-miss class documented
+        // for OpenArchetypePopup — see docs/memory/feedback_android_flaky_tap_retry.md).
+        // Every test's [OneTimeSetUp] depends on this one click succeeding, so an unguarded
+        // single attempt here wipes out an entire fixture (confirmed 2026-08-05: MainPageTests
+        // 25/25 and OptionsPageTests 21/21 failed in a single CI run from exactly this miss,
+        // while AboutPageTests/ReadJournalPageTests/TrainerPageTests — separate emulator
+        // processes, same code path — passed clean).
         protected override void DoNavigateTo(string pageTitle)
         {
-            PerfLog($"NAV open drawer");
-            App.FindElement(MobileBy.AccessibilityId("Open navigation drawer")).Click();
-            PerfLog($"NAV click '{pageTitle}'");
-            App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")")).Click();
+            const int attempts = 3;
+            for (int i = 0; i < attempts; i++)
+            {
+                PerfLog($"NAV open drawer (attempt {i + 1})");
+                try
+                {
+                    App.FindElement(MobileBy.AccessibilityId("Open navigation drawer")).Click();
+                }
+                catch (OpenQA.Selenium.NoSuchElementException)
+                {
+                    // Every recorded CI failure was the hamburger itself missing from the
+                    // tree (app still settling after launch), not a click that missed —
+                    // retrying only the post-click verify would let that mode escape on
+                    // attempt 1 unretried.
+                    PerfLog($"NAV hamburger not in tree on attempt {i + 1} — retrying");
+                    continue;
+                }
+
+                var deadline = DateTime.UtcNow.AddMilliseconds(2500);
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(300);
+                bool menuOpen;
+                try
+                {
+                    menuOpen = false;
+                    while (DateTime.UtcNow < deadline)
+                    {
+                        if (App.FindElements(MobileBy.AndroidUIAutomator(
+                                $"new UiSelector().text(\"{pageTitle}\")")).Count > 0)
+                        {
+                            menuOpen = true;
+                            break;
+                        }
+                    }
+                }
+                finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
+
+                if (menuOpen)
+                {
+                    PerfLog($"NAV click '{pageTitle}' (attempt {i + 1})");
+                    App.FindElement(MobileBy.AndroidUIAutomator($"new UiSelector().text(\"{pageTitle}\")")).Click();
+                    return;
+                }
+                PerfLog($"NAV drawer did not open on attempt {i + 1} — retrying");
+            }
+            throw new OpenQA.Selenium.NoSuchElementException(
+                $"Navigation drawer did not open after {attempts} clicks (target '{pageTitle}').");
         }
 
         // Three-stage lookup:
@@ -61,8 +111,24 @@ namespace UITests
             finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
             PerfLog($"FIND '{id}' STAGE2_MISS after {stage2Sw.ElapsedMilliseconds}ms → try scrollIntoView");
 
-            // Stage 3: UiScrollable — scrolls the main page to bring off-screen elements into view
+            // Stage 3: UiScrollable — scrolls the main page to bring off-screen elements into view.
+            // Scroll to the TOP first: scrollIntoView only flings forward/down, so an element
+            // ABOVE the current viewport is otherwise permanently unreachable. Observed on CI
+            // (run 30985133240, OptionsPageTests): SaveTag left the page scrolled to the bottom
+            // and every above-the-fold element in the rest of the fixture — including the
+            // top-of-page TrainerSectionHeading — STAGE3_FAILed at a uniform ~16s.
             var stage3Sw = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+                App.FindElement(MobileBy.AndroidUIAutomator(
+                    $"new UiScrollable(new UiSelector().scrollable(true).packageName(\"{PackageName}\").instance(0))" +
+                    ".scrollToBeginning(100)"));
+            }
+            catch (OpenQA.Selenium.NoSuchElementException)
+            {
+                // Page may not be scrollable at all (content fits the screen) — nothing to reset.
+            }
             try
             {
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
@@ -168,6 +234,30 @@ namespace UITests
             {
                 NavLog($"SendAndroidBack failed: {ex.GetType().Name}: {ex.Message}");
                 PerfLog($"SendAndroidBack failed: {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
+        // Evidence (CI run 30986172378, MainPageTests): UserNoteInput found in 32ms, typed
+        // into, then went stale — and a full top-to-bottom stage-3 sweep couldn't find it
+        // OR WentFirstLabel (both lower-half elements) afterward. The soft keyboard opened
+        // by SendKeys covers the bottom of the screen and everything under it drops out of
+        // the visible UIA tree until dismissed.
+        protected override void DismissKeyboard()
+        {
+            try
+            {
+                if (App is AndroidDriver android && android.IsKeyboardShown())
+                {
+                    android.HideKeyboard();
+                    PerfLog("DismissKeyboard: hid soft keyboard");
+                }
+            }
+            catch (OpenQA.Selenium.WebDriverException ex)
+            {
+                // Keyboard state queries can race the keyboard's own animation — a miss
+                // here only means the next find may still see a covered viewport, which
+                // the caller's retry loop handles. Log, never fail the test from cleanup.
+                PerfLog($"DismissKeyboard: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}");
             }
         }
 

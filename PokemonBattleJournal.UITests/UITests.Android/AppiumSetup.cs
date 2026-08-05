@@ -19,16 +19,26 @@ namespace UITests
         private static readonly string SetupLogPath = Path.Combine(
             Path.GetTempPath(), "UITests.Android.setup.log");
 
+        // CI runners only surface artifact-uploaded log files after the job finishes (or
+        // times out) — no way to see progress mid-hang. Mirroring to the console gives live
+        // visibility in the Actions log stream while a run is in progress (e.g. confirming
+        // exactly which numbered setup step a stuck job is stuck on).
+        private static readonly bool IsCi = Environment.GetEnvironmentVariable("CI") == "true";
+
         private static void Log(string message)
         {
             string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+            if (IsCi) { Console.WriteLine($"[AppiumSetup] {line}"); Console.Out.Flush(); }
             File.AppendAllText(SetupLogPath, line + Environment.NewLine);
         }
 
         private static void PerfLog(string message)
         {
             string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
-            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.PerfLog.txt"), line + Environment.NewLine); } catch { }
+            if (IsCi) { Console.WriteLine($"[PerfLog] {line}"); Console.Out.Flush(); }
+            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.PerfLog.txt"), line + Environment.NewLine); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
         [OneTimeSetUp]
@@ -47,11 +57,26 @@ namespace UITests
             step1Timer.Stop();
             Log($"1. EnsureAndroidToolsInPath done ({step1Timer.ElapsedMilliseconds}ms)");
 
-            Log("2. EnsureEmulatorRunning");
-            var step2Timer = System.Diagnostics.Stopwatch.StartNew();
-            EnsureEmulatorRunning();
-            step2Timer.Stop();
-            Log($"2. EnsureEmulatorRunning done ({step2Timer.ElapsedMilliseconds}ms)");
+            // CI: reactivecircus/android-emulator-runner boots the emulator before this
+            // process starts and tears it down after — AppiumSetup must not manage the
+            // lifecycle there. EnsureEmulatorRunning's AVD-name probe (`adb emu avd name`)
+            // can catch the freshly-booted device in a transient "offline" state, read
+            // garbage, conclude the right AVD isn't running, and launch a SECOND emulator
+            // on the same AVD/port — observed on CI as persistent "adb: device offline"
+            // at driver creation. Locally the check is what boots the AVD at all — keep it.
+            if (IsCi)
+            {
+                Log("2. EnsureEmulatorRunning skipped (CI — emulator-runner owns the lifecycle)");
+                WaitForEmulatorBoot(timeoutSeconds: 120);
+            }
+            else
+            {
+                Log("2. EnsureEmulatorRunning");
+                var step2Timer = System.Diagnostics.Stopwatch.StartNew();
+                EnsureEmulatorRunning();
+                step2Timer.Stop();
+                Log($"2. EnsureEmulatorRunning done ({step2Timer.ElapsedMilliseconds}ms)");
+            }
 
             Log("3. StartAppiumLocalServer");
             var step3Timer = System.Diagnostics.Stopwatch.StartNew();
@@ -125,10 +150,28 @@ if (useInstalled)
 
             Log("5. new AndroidDriver");
             var step5Timer = System.Diagnostics.Stopwatch.StartNew();
-            driver = new AndroidDriver(
-                new Uri("http://127.0.0.1:4723/"),
-                androidOptions,
-                TimeSpan.FromMinutes(5));
+            // Driver-creation retry: UIAutomator2's session init shells settings commands
+            // via adb, and on a freshly-booted CI emulator adbd can be starved enough to
+            // report "device offline" transiently — observed twice (runs 30984076303,
+            // 30989085956) killing an entire fixture from OneTimeSetUp. WaitForEmulatorBoot
+            // between attempts polls until adb responds sanely again.
+            const int driverAttempts = 3;
+            for (int attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    driver = new AndroidDriver(
+                        new Uri("http://127.0.0.1:4723/"),
+                        androidOptions,
+                        TimeSpan.FromMinutes(5));
+                    break;
+                }
+                catch (OpenQA.Selenium.WebDriverException ex) when (attempt < driverAttempts)
+                {
+                    Log($"5. AndroidDriver attempt {attempt} failed: {ex.GetType().Name}: {ex.Message.Split('\n')[0]} — re-checking boot, retrying");
+                    WaitForEmulatorBoot(timeoutSeconds: 60);
+                }
+            }
             step5Timer.Stop();
             Log($"5. AndroidDriver created ({step5Timer.ElapsedMilliseconds}ms)");
             PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] AndroidDriver instantiated ({step5Timer.ElapsedMilliseconds}ms)");
@@ -140,6 +183,85 @@ if (useInstalled)
             step6Timer.Stop();
             Log($"6. WaitForActivity done ({step6Timer.ElapsedMilliseconds}ms)");
             PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] AndroidWaitForActivity completed ({step6Timer.ElapsedMilliseconds}ms)");
+
+            // 7. App-ready gate: the activity being resumed does not mean the Shell is
+            // composed. On a fresh CI emulator the first launch runs DebugDataSeeder
+            // (blocking, on startup) plus a possible Limitless meta fetch before the first
+            // page renders — observed on CI as the flyout hamburger staying out of the UIA
+            // tree for 30s+ (every AboutPageTests nav retry exhausted at exactly 3×10s on
+            // one run, while the identical job passed in 1s on others). Give the cold
+            // start its runway ONCE here, so per-nav retries can stay tight.
+            Log("7. WaitForAppReady (flyout hamburger in UIA tree)");
+            var step7Timer = System.Diagnostics.Stopwatch.StartNew();
+            var readyDeadline = DateTime.UtcNow.AddSeconds(90);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+            try
+            {
+                bool ready = false;
+                while (DateTime.UtcNow < readyDeadline)
+                {
+                    if (driver.FindElements(MobileBy.AccessibilityId("Open navigation drawer")).Count > 0)
+                    {
+                        ready = true;
+                        break;
+                    }
+
+                    // A system ANR dialog (observed: launcher/"Quickstep isn't responding"
+                    // during the boot storm) owns the entire accessibility tree while our
+                    // app renders underneath — no element of ours is reachable until it's
+                    // gone. hide_error_dialogs=1 (set in the workflow) only prevents FUTURE
+                    // dialogs; one already showing must be dismissed here. AOSP's ANR
+                    // dialog exposes its Wait button as android:id/aerr_wait.
+                    var anrWait = driver.FindElements(MobileBy.AndroidUIAutomator(
+                        "new UiSelector().resourceId(\"android:id/aerr_wait\")"));
+                    if (anrWait.Count > 0)
+                    {
+                        Log("7. WaitForAppReady: ANR dialog present — clicking Wait to dismiss");
+                        try { anrWait[0].Click(); }
+                        catch (OpenQA.Selenium.WebDriverException ex)
+                        {
+                            // Dialog may vanish between find and click — keep polling either way.
+                            Log($"7. WaitForAppReady: ANR dismiss click failed: {ex.GetType().Name}");
+                        }
+                    }
+                }
+                step7Timer.Stop();
+                if (!ready)
+                {
+                    // Diagnostic dump before failing: one CI instance (run 30986172378,
+                    // ReadJournalPageTests) had the app fully rendered — MainPage composed,
+                    // Limitless fetched, trainer loaded per logcat — yet "Open navigation
+                    // drawer" returned "Found zero matches" in 4ms for 90 straight seconds,
+                    // while the identical APK exposed it instantly on 4 sibling emulators.
+                    // Capture what the toolbar/tree actually contains so the next occurrence
+                    // is diagnosable instead of guessable.
+                    try
+                    {
+                        var descs = driver.FindElements(MobileBy.AndroidUIAutomator(
+                            "new UiSelector().descriptionMatches(\".+\")"));
+                        Log($"7. GATE TIMEOUT: {descs.Count} elements with content-desc:");
+                        foreach (var el in descs.Take(25))
+                        {
+                            try { Log($"     desc='{el.GetDomAttribute("content-desc")}' class='{el.GetDomAttribute("className")}'"); }
+                            catch (OpenQA.Selenium.StaleElementReferenceException) { Log("     <stale>"); }
+                        }
+                        string src = driver.PageSource ?? "";
+                        Log($"7. GATE TIMEOUT: PageSource first 4000 chars:\n{src[..Math.Min(4000, src.Length)]}");
+                    }
+                    catch (OpenQA.Selenium.WebDriverException ex)
+                    {
+                        Log($"7. GATE TIMEOUT: diagnostic dump failed: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}");
+                    }
+                    throw new InvalidOperationException(
+                        $"App not ready: flyout hamburger never appeared within 90s of activity start ({step7Timer.ElapsedMilliseconds}ms elapsed).");
+                }
+                Log($"7. WaitForAppReady done ({step7Timer.ElapsedMilliseconds}ms)");
+                PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] WaitForAppReady completed ({step7Timer.ElapsedMilliseconds}ms)");
+            }
+            finally
+            {
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+            }
         }
 
         [OneTimeTearDown]
@@ -180,11 +302,23 @@ if (useInstalled)
             Log("Tearing down: Dispose AppiumServer");
             AppiumServerHelper.DisposeAppiumLocalServer();
             
-            Log("Tearing down: Shutdown emulator");
-            var shutdownEmulatorTimer = System.Diagnostics.Stopwatch.StartNew();
-            ShutdownEmulator();
-            shutdownEmulatorTimer.Stop();
-            Log($"Tearing down: Shutdown emulator done ({shutdownEmulatorTimer.ElapsedMilliseconds}ms)");
+            // CI: leave the emulator alive — the emulator-runner action's own Terminate
+            // Emulator step handles it. Killing it here made every adb call between our
+            // teardown and the action's (the workflow's logcat capture, the action's own
+            // `adb emu kill`) hit a dead/offline device — the source of the
+            // "- waiting for device -" job hangs.
+            if (IsCi)
+            {
+                Log("Tearing down: Shutdown emulator skipped (CI — emulator-runner owns the lifecycle)");
+            }
+            else
+            {
+                Log("Tearing down: Shutdown emulator");
+                var shutdownEmulatorTimer = System.Diagnostics.Stopwatch.StartNew();
+                ShutdownEmulator();
+                shutdownEmulatorTimer.Stop();
+                Log($"Tearing down: Shutdown emulator done ({shutdownEmulatorTimer.ElapsedMilliseconds}ms)");
+            }
             
             cleanupTimer.Stop();
             PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] Android AppiumSetup cleanup complete ({cleanupTimer.ElapsedMilliseconds}ms)");

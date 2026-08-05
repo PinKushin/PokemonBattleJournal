@@ -11,18 +11,29 @@ namespace UITests
         private static readonly string NavLogPath = Path.Combine(Path.GetTempPath(), "UITests.NavLog.txt");
         private static readonly string PerfLogPath = Path.Combine(Path.GetTempPath(), "UITests.PerfLog.txt");
 
+        // CI runners only surface artifact-uploaded log files after the job finishes (or
+        // times out) — no way to see progress mid-hang. Mirroring to the console gives live
+        // visibility in the Actions log stream while a run is in progress.
+        private static readonly bool IsCi = Environment.GetEnvironmentVariable("CI") == "true";
+
         private System.Diagnostics.Stopwatch _testTimer = new();
 
         protected static void NavLog(string message)
         {
-            try { File.AppendAllText(NavLogPath, $"[{DateTime.Now:HH:mm:ss.fff}] {message}{Environment.NewLine}"); }
-            catch { }
+            string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+            if (IsCi) { Console.WriteLine($"[NavLog] {line}"); Console.Out.Flush(); }
+            try { File.AppendAllText(NavLogPath, line + Environment.NewLine); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
         protected static void PerfLog(string message)
         {
-            try { File.AppendAllText(PerfLogPath, $"[{DateTime.Now:HH:mm:ss.fff}] {message}{Environment.NewLine}"); }
-            catch { }
+            string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+            if (IsCi) { Console.WriteLine($"[PerfLog] {line}"); Console.Out.Flush(); }
+            try { File.AppendAllText(PerfLogPath, line + Environment.NewLine); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
         [SetUp]
@@ -108,6 +119,14 @@ namespace UITests
         /// a popup/dialog when the in-app Cancel button is unreachable. No-op on Windows.
         /// </summary>
         protected virtual void SendAndroidBack() { }
+
+        /// <summary>
+        /// Dismisses the soft keyboard if present. Android-only concern: after SendKeys the
+        /// keyboard covers the lower half of the screen, and elements under it never enter
+        /// the visible UIA tree — no amount of ScrollView scrolling brings them back while
+        /// it's up. No-op on Windows.
+        /// </summary>
+        protected virtual void DismissKeyboard() { }
 
         /// <summary>
         /// Diagnostic: dumps every visible element's resource-id / content-desc / className / text
