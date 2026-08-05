@@ -7,7 +7,7 @@ metadata:
 
 Two separate coverage tools give different numbers — both are correct for different scopes:
 
-**VS built-in coverage (~80%):** instruments the running process; captures code exercised by ALL test types including Appium UI tests driving the live app. Run via Test Explorer "Run All Tests with Code Coverage". Exports as `.coverage` binary (VS format) or XML via "Export Results".
+**VS built-in coverage:** instruments the running process; captures code exercised by ALL test types including Appium UI tests driving the live app. Run via Test Explorer "Run All Tests with Code Coverage", **or entirely from the CLI with `--collect "Code Coverage"`** — no VS needed, see the section below. Exports as `.coverage` binary (VS format) or XML.
 
 **Coverlet / XPlat (57.7% line):** only instruments assemblies the test process loads directly. UI tests run the app as a separate process — coverlet cannot see inside it. Only unit + integration tests contribute to app coverage via coverlet.
 
@@ -21,6 +21,96 @@ reportgenerator "-reports:$unit;$integ" "-targetdir:PokemonBattleJournal/docs/co
 ```
 
 **ReportGenerator:** installed globally as `dotnet-reportgenerator-globaltool`. Merged report lives in `PokemonBattleJournal/docs/coverage-report/`.
+
+## Getting the VS-style report (block coverage) — verified 2026-08-05
+
+The user prefers VS's report because it reports **block coverage**, which cobertura cannot
+carry: cobertura has line and branch only. Block % lives in the binary `.coverage` file and
+survives conversion to VS's own XML, nowhere else.
+
+**Why VS started showing coverlet numbers instead.** `coverage.runsettings` sits in the repo
+root and pins the collector to `XPlat Code Coverage`, which *is* coverlet — the friendly name
+for the built-in collector is plain `"Code Coverage"`. VS auto-detects any `*.runsettings` in
+the solution root (Tools ▸ Options ▸ Test ▸ "Auto detect runsettings files"), so "Analyze Code
+Coverage for All Tests" silently routed through coverlet. Nothing about the VS install is
+broken. Turn that option off (or Test ▸ Configure Run Settings ▸ deselect) to get the native
+collector back. Note the CI workflows never reference this file — they pass
+`--collect "XPlat Code Coverage"` directly — so the file only ever affects local runs.
+
+**The whole thing works from the CLI, no VS needed.** Do NOT pass `--settings
+coverage.runsettings` here or it routes to coverlet again:
+
+```bash
+dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --collect "Code Coverage" --results-directory TestResults/vscov
+```
+
+```bash
+dotnet-coverage merge -o TestResults/vscov/merged.xml -f xml <each .coverage path>
+```
+
+Gotchas, all hit and confirmed:
+
+- `dotnet-coverage` is a separate global tool (`dotnet tool install --global dotnet-coverage`).
+  A community Q&A claims it cannot convert `.coverage`; that is wrong — `merge -f xml` is the
+  documented conversion path and works.
+- Pass the `.coverage` paths explicitly. A `**` glob gets eaten by bash before the tool sees
+  it and you silently merge only one file.
+- ReportGenerator **cannot read binary `.coverage`** — it says so and emits an empty report.
+  Convert first; it then parses the XML as `DynamicCodeCoverage`.
+- In that parser the assembly filters need the **`.dll` suffix**
+  (`-assemblyfilters:+PokemonBattleJournal.dll`). The bare name used for cobertura matches
+  nothing and yields "Assemblies: 0" with no error.
+- **Double-clicking the `.coverage` file opens it straight in VS's Code Coverage Results
+  window** — the familiar report, without needing Test Explorer to run the coverage itself.
+
+**CI can run it.** Both `ci.yml` jobs are `runs-on: windows-latest`, and the built-in
+collector needs only `Microsoft.NET.Test.Sdk` ≥ 15.8 (the repo is on 18.8.1) plus
+`Microsoft.CodeCoverage` (18.8.1, already referenced). `--collect "Code Coverage;Format=Cobertura"`
+emits cobertura directly for the existing ReportGenerator step, but that throws block coverage
+away — to keep it, publish the `.coverage` or converted XML as an artifact. Not wired up; see
+[[feedback_dont_churn_stable_ci]] before changing the workflows.
+
+## The UI tests ARE captured from the CLI — verified 2026-08-05
+
+This is the capability worth protecting, and it is the whole reason to prefer the built-in
+collector: **it instruments the app process the Appium tests drive.** Coverlet structurally
+cannot, because it only sees assemblies the *test* process loads, and the app runs under
+WinAppDriver as a separate process.
+
+Proven by running the Windows UI suite alone under the collector:
+
+```
+PokemonBattleJournal.dll   block 49.77%   line 40.88%   3598 blocks covered
+```
+
+3598 blocks from UI tests alone, with unit and integration tests excluded entirely — only the
+live app process can produce that. `skipped_module` was empty, so nothing was left
+uninstrumented. No Visual Studio involved; plain `dotnet test --collect "Code Coverage"` on
+`UITests.Windows.csproj`.
+
+## Measured 2026-08-05 — unit + integration + Windows UI merged
+
+| module | block % | line % | blocks covered | blocks uncovered |
+|---|---|---|---|---|
+| `PokemonBattleJournal.dll` | **72.89** | 60.73 | 5269 | 1960 |
+| `PokemonBattleJournal.Scraper.dll` | **98.32** | 97.50 | 117 | 2 |
+
+Unit + integration alone were 65.63% block / 61.72% line, so the Windows UI suite is worth
+roughly **+7 points of block coverage**.
+
+**Line % goes slightly DOWN when the UI tests are merged in (61.72 → 60.73) — this is not a
+regression.** The UI run loads Views, Controls, `App` and `MauiProgram`, which unit tests
+never touch, so the *coverable* denominator grows faster than the covered numerator. Block
+coverage rises (65.63 → 72.89) because it is measured against reachable blocks. Read block %
+for the trend; that is the number VS reports and the one the user tracks.
+
+Android UI tests are **not** included — they execute on the emulator, out of the collector's
+reach. Any comparison against the historical ~80% should account for that plus the fact that
+the figure was recorded before this session's changes.
+
+ReportGenerator over the merged file: 62.4% line, 55.3% method (231 of 417). Note RG reports
+line/branch only — **block coverage exists solely in the `.coverage` binary and the converted
+VS XML**, so read it from those, or open `.coverage` in VS.
 
 **coverage.runsettings:** at repo root; no ResultsDirectory set (VS manages its own output; custom path creates GUID subfolders per run).
 
