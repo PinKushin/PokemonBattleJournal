@@ -19,16 +19,26 @@ namespace UITests
         private static readonly string SetupLogPath = Path.Combine(
             Path.GetTempPath(), "UITests.Android.setup.log");
 
+        // CI runners only surface artifact-uploaded log files after the job finishes (or
+        // times out) — no way to see progress mid-hang. Mirroring to the console gives live
+        // visibility in the Actions log stream while a run is in progress (e.g. confirming
+        // exactly which numbered setup step a stuck job is stuck on).
+        private static readonly bool IsCi = Environment.GetEnvironmentVariable("CI") == "true";
+
         private static void Log(string message)
         {
             string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+            if (IsCi) Console.WriteLine($"[AppiumSetup] {line}");
             File.AppendAllText(SetupLogPath, line + Environment.NewLine);
         }
 
         private static void PerfLog(string message)
         {
             string line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
-            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.PerfLog.txt"), line + Environment.NewLine); } catch { }
+            if (IsCi) Console.WriteLine($"[PerfLog] {line}");
+            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "UITests.PerfLog.txt"), line + Environment.NewLine); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
         [OneTimeSetUp]
