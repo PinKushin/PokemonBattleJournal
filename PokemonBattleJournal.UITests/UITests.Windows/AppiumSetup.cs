@@ -96,10 +96,22 @@ namespace UITests
                 windowsOptions.App = exePath;
             }
 
+            // Escalating backoff. This is one of the few legitimate uses of a delay in the
+            // test suite (see the no-sleeps rule): there is no element to sync on — the
+            // WinAppDriver process is up but has not bound its listener yet, so the only
+            // signal available is another connection attempt.
+            //
+            // The previous fixed 5s gap was too short. CI run 31032240413
+            // (ReadJournalPageTests) burned all three attempts against
+            // "connect ECONNREFUSED 127.0.0.1:4725" inside ~20s and failed the job before
+            // a single test ran. These listener stalls typically clear in 15-30s, so the
+            // gaps now widen instead of giving up early.
+            int[] retryDelaysMs = [5_000, 15_000, 30_000];
+
             Log("5. new WindowsDriver");
             var driverTimer = System.Diagnostics.Stopwatch.StartNew();
             Exception? lastEx = null;
-            for (int attempt = 0; attempt < 3; attempt++)
+            for (int attempt = 0; attempt <= retryDelaysMs.Length; attempt++)
             {
                 try
                 {
@@ -107,14 +119,24 @@ namespace UITests
                     lastEx = null;
                     break;
                 }
-                catch (Exception ex) when (attempt < 2)
+                catch (Exception ex)
                 {
+                    // Caught on every attempt, including the last — the previous filter
+                    // (`when (attempt < 2)`) let the final failure escape unwrapped, which
+                    // made the throw below dead code and cost the attempt-count context.
                     lastEx = ex;
-                    Log($"4. WindowsDriver attempt {attempt + 1} failed: {ex.Message} — retrying in 5s...");
-                    Task.Delay(5_000).Wait();
+                    if (attempt == retryDelaysMs.Length) break;
+
+                    int delayMs = retryDelaysMs[attempt];
+                    Log($"5. WindowsDriver attempt {attempt + 1}/{retryDelaysMs.Length + 1} failed: {ex.Message} — retrying in {delayMs / 1000}s...");
+                    Task.Delay(delayMs).Wait();
                 }
             }
-            if (lastEx != null) throw new InvalidOperationException("Failed to create WindowsDriver after 3 attempts", lastEx);
+            if (lastEx != null)
+                throw new InvalidOperationException(
+                    $"Failed to create WindowsDriver after {retryDelaysMs.Length + 1} attempts over " +
+                    $"{driverTimer.ElapsedMilliseconds / 1000}s. WinAppDriver was reachable but never " +
+                    "accepted a session — see UITests.Windows.setup.log for each attempt.", lastEx);
             driverTimer.Stop();
             Log($"5. WindowsDriver created ({driverTimer.ElapsedMilliseconds}ms)");
             PerfLog($"{logPrefix} WindowsDriver instantiated ({driverTimer.ElapsedMilliseconds}ms)");
