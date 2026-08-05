@@ -79,14 +79,54 @@ namespace UITests
 
         protected void InvalidateCurrentPage() => _currentPage = null;
 
-        // Timed so a slow Click round-trip is attributable: on Windows the driver charges the
-        // UIA tree walk to the click itself, which can dwarf the element lookup that preceded it.
-        protected static void ClickTab(AppiumElement tabElement)
+        /// <summary>
+        /// Clicks a tab and verifies the switch actually happened, retrying if it did not.
+        /// </summary>
+        /// <param name="tabAutomationId">AutomationId of the tab to click.</param>
+        /// <param name="expectedPanelElementId">
+        /// An element that exists ONLY when the target panel is selected. Must be inside the
+        /// viewport — UiAutomator exposes only on-screen elements, so verifying against
+        /// something below the fold loops forever even when the click worked
+        /// (see feedback_android_flaky_tap_retry).
+        /// </param>
+        /// <remarks>
+        /// Was a bare Click() that assumed success. On CI run 31037214916 the Game2Tab click
+        /// round-trip took 1231ms and 1790ms (locally it is always under 750ms) and the Game 2
+        /// panel never appeared — FlaUI confirmed the absence directly in ~20ms, so the element
+        /// genuinely was not in the tree rather than merely being slow to find. The test then
+        /// carried on against a page that had not switched, failing 38s later and leaving state
+        /// dirty enough to cascade into four more failures.
+        ///
+        /// This is the same click-verify-retry pattern that took Android MainPage from 7-10
+        /// failures to 25/25; Windows never got it because it never visibly needed it.
+        /// </remarks>
+        protected void ClickTab(string tabAutomationId, string expectedPanelElementId, int attempts = 3)
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            tabElement.Click();
-            if (sw.ElapsedMilliseconds > 750)
-                PerfLog($"ClickTab: click took {sw.ElapsedMilliseconds}ms");
+            for (int attempt = 1; attempt <= attempts; attempt++)
+            {
+                // Re-find each attempt: a partial state change can re-render the tab and stale
+                // the previous handle.
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                FindUIElement(tabAutomationId).Click();
+                long clickMs = sw.ElapsedMilliseconds;
+
+                var deadline = DateTime.UtcNow.AddMilliseconds(3000);
+                while (DateTime.UtcNow < deadline)
+                {
+                    if (IsElementPresent(expectedPanelElementId))
+                    {
+                        if (clickMs > 750 || attempt > 1)
+                            PerfLog($"ClickTab('{tabAutomationId}'): panel '{expectedPanelElementId}' shown on attempt {attempt} (click {clickMs}ms)");
+                        return;
+                    }
+                }
+
+                PerfLog($"ClickTab('{tabAutomationId}'): attempt {attempt} — click took {clickMs}ms but '{expectedPanelElementId}' never appeared, retrying");
+            }
+
+            throw new OpenQA.Selenium.NoSuchElementException(
+                $"ClickTab: '{expectedPanelElementId}' never appeared after {attempts} clicks on '{tabAutomationId}'. " +
+                "The tab click is not reaching the handler — see PerfLog for per-attempt click timings.");
         }
 
         // Template method: handles page-tracking and logging; platform provides navigation steps.

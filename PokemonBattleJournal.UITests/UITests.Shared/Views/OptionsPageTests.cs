@@ -14,14 +14,33 @@ namespace UITests
         // Cleanup helpers — only called by tests that create data
         // ---------------------------------------------------------------------------
 
-        private void DeleteCreatedArchetype(string name)
-        {
-            TryClickIfPresent($"DeleteArchetype_{name}");
-        }
+        // Both use the SCROLLING click. TryClickIfPresent does a plain lookup, and UiAutomator
+        // only exposes on-screen elements — so once the list grew past a screenful the newly
+        // created row sat below the fold, the lookup missed, TryClickIfPresent returned false,
+        // and the row was never deleted. Self-worsening: every failed cleanup made the list
+        // longer and the next cleanup more likely to fail. It stayed invisible because the
+        // Android DB wipe was also broken (see project_android_seeder_persistent_db), so the
+        // leftovers looked like ordinary persistence rather than failed cleanup.
+        // OptionsPage_DeleteArchetype_RemovesFromList always used ScrollIntoViewAndClick and
+        // always worked — that contrast is what identified this.
+        private void DeleteCreatedArchetype(string name) => DeleteCreatedRow($"DeleteArchetype_{name}");
 
-        private void DeleteCreatedTag(string name)
+        private void DeleteCreatedTag(string name) => DeleteCreatedRow($"DeleteTag_{name}");
+
+        private void DeleteCreatedRow(string automationId)
         {
-            TryClickIfPresent($"DeleteTag_{name}");
+            try
+            {
+                ScrollIntoViewAndClick(automationId);
+                if (!WaitUntilRemoved(automationId))
+                    PerfLog($"Cleanup: '{automationId}' still present after delete click — next run starts with stale data");
+            }
+            catch (OpenQA.Selenium.NoSuchElementException)
+            {
+                // Genuinely absent: the test failed before creating the row. Not an error, but
+                // say so — a silent miss here is indistinguishable from a failed delete.
+                PerfLog($"Cleanup: '{automationId}' not found — nothing to delete");
+            }
         }
 
         // ---------------------------------------------------------------------------
