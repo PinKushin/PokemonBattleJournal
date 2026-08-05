@@ -416,7 +416,7 @@ Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 2. **Read `docs/memory/`** — persistent memory files for user preferences, feedback, and project decisions.
 3. **Update [Session log](#session-log)** when: user states a new goal, you discover a bug/blocker, you finish significant work, before a long multi-file refactor.
 4. **Keep facts accurate:** prefer reading code over trusting stale sections.
-5. **Do not commit** unless the user asks.
+5. **Commit freely** — no need to ask first. Every commit must build (optimally zero warnings) before it lands. **Push sparingly** — only when testing something against CI, or once work is stable; don't push on every commit (hits CI + user's bandwidth).
 6. **Minimize scope** — match existing patterns; don't reintroduce Syncfusion or heavy dependencies without explicit approval.
 7. **TrainerOperations.SaveAsync** always creates `IsActive=false` — always call `SetActiveAsync` after programmatic trainer creation.
 8. **Sentinel file** (`%TEMP%\PokemonBattleJournal.uitest`) suppresses first-boot prompt under test — never use `#if DEBUG` for this guard.
