@@ -403,7 +403,9 @@ dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows
 # Build everything (all projects, all their own TFMs — no -f)
 dotnet build PokemonBattleJournal.slnx
 
-# Unit tests only
+# Fast test project. Mostly unit tests, but ALSO contains six *IntegrationTests.cs
+# files under Services/ that hit real SQLite with a temp .db3 per test — not
+# "unit tests only" despite the project name.
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
 
 # Windows UI tests

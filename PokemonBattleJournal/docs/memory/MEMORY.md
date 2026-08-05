@@ -78,3 +78,4 @@
 - [Never actions/cache in a matrix job](feedback_no_actions_cache_in_matrix.md) — post-save lands on every job and they contend for one key; use cache/restore in all + one explicit cache/save guarded on cache-hit != true. Invisible until the key rotates, then hits every job at once.
 - [Fix stale docs immediately](feedback_fix_stale_docs_immediately.md) — never queue a known-wrong doc; correct it in the same turn, in every copy (file + MEMORY.md index + auto-memory + CLAUDE/AGENTS/AI-CONTEXT).
 - [Do not churn stable CI](feedback_dont_churn_stable_ci.md) — UI suites are reliable and hard-won; change CI/test infra only for a measured problem, fix at the source rather than adding retry layers, verify on CI before merging.
+- [No silent guards](feedback_no_silent_guards.md) — a guard that declines a user action must log WHY at Warning, with compound guards split so the message names the missing input. Test with RecordingLogger<T>, not an NSubstitute ILogger mock.

@@ -87,7 +87,10 @@
         public async Task ImportFromTrainerHillAsync()
         {
             if (_trainer is null)
+            {
+                _logger.LogWarning("Import not started: no active trainer");
                 return;
+            }
 
             try
             {
@@ -257,6 +260,7 @@
         {
             if (NameInput is null)
             {
+                _logger.LogWarning("Trainer not saved: name is empty");
                 return;
             }
 
@@ -301,8 +305,18 @@
         [RelayCommand]
         public async Task SaveTagAsync()
         {
-            if (TagInput is null || _trainer is null)
+            // Named separately so a log reader can tell which input was missing. An empty
+            // TagInput after a UI interaction means the text never reached the field; a null
+            // trainer means the page was used before AppearingAsync resolved one.
+            if (TagInput is null)
             {
+                _logger.LogWarning("Tag not saved: tag name is empty");
+                return;
+            }
+
+            if (_trainer is null)
+            {
+                _logger.LogWarning("Tag not saved: no active trainer (tag was {TagInput})", TagInput);
                 return;
             }
 
@@ -336,8 +350,21 @@
         [RelayCommand]
         public async Task SaveArchetypeAsync()
         {
-            if (NewDeckName is null || NewDeckIcon is null || _trainer is null)
+            if (NewDeckName is null)
             {
+                _logger.LogWarning("Archetype not saved: deck name is empty");
+                return;
+            }
+
+            if (NewDeckIcon is null)
+            {
+                _logger.LogWarning("Archetype not saved: no deck icon selected (deck was {NewDeckName})", NewDeckName);
+                return;
+            }
+
+            if (_trainer is null)
+            {
+                _logger.LogWarning("Archetype not saved: no active trainer (deck was {NewDeckName})", NewDeckName);
                 return;
             }
 
@@ -448,7 +475,11 @@
         [RelayCommand]
         public async Task DeleteTrainerFileAsync()
         {
-            if (_trainer is null) return;
+            if (_trainer is null)
+            {
+                _logger.LogWarning("Trainer file not deleted: no active trainer");
+                return;
+            }
 
             IsBusyMutating = true;
             try

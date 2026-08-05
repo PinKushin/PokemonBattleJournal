@@ -352,3 +352,46 @@ Planned, in rough priority order:
    obviously faster than more native AVDs.
 
 Full constraint list in `docs/memory/project_android_test_execution_strategy.md`.
+
+---
+
+## Inline validation feedback (added 2026-08-05, not started)
+
+Guards that decline a save now log a warning naming the missing input
+([[feedback_no_silent_guards]]), which fixes *diagnosis*. It does not fix the user
+experience: someone who leaves a field empty still sees nothing happen at all.
+
+**User's decision (2026-08-05):** a **text label with red text** explaining which step failed
+validation. **Not a modal** — and this is a hard constraint with reasons behind it, not a
+style preference: *"modals can cause bad mojo in automation especially on ci thats why i want
+to stay away from them."*
+
+This repo has been bitten by modal/dialog behavior repeatedly:
+
+- [[project_winui_xamlroot_crash]] — `DisplayPromptAsync` before the window was composed
+  crashed WinUI with "no XamlRoot".
+- [[project_optionspage_crash_fresh_db]] — `ModalErrorHandler` firing during
+  `AppearingAsync` on a fresh DB crashed with `0xc000027b`; fixed by making it log-only.
+- [[project_android_ci_gpu_flake]] — a system ANR dialog owned the **entire accessibility
+  tree**, so no element of ours was reachable until it was dismissed.
+- [[feedback_combobox_popup_platforms]] — popup Cancel buttons frequently are not in
+  Android's UIA tree, which is why `DismissPopupPlatform` exists.
+
+A modal is a separate window: it steals focus, may be absent from the UIA tree, and can
+appear when no test is waiting for it. An inline label is a bound property on a page the
+tests already hold a handle to. **Do not introduce a modal for validation feedback.**
+
+Design notes for whoever picks this up:
+
+- Inline label near the offending input, not a page-level banner — the point is to say
+  *which* field is wrong, matching the split guards already in `OptionsPageViewModel`.
+- Bind to an observable `…ValidationMessage` string per form (empty = hidden). Use an
+  explicit `bool` VM property for `IsVisible`, never a null-check converter
+  ([[feedback_no_isnot_null_converter_in_xaml]]).
+- Red must come from a theme resource, not a literal, so the theming pass can retint it
+  ([[project_theme_switcher]]). Check contrast in light mode.
+- Accessibility: the label needs `AutomationId` + `SemanticProperties.Description`, and
+  should ideally be announced when it appears.
+- The warning log and the label should share one source of truth so they cannot disagree.
+- MainPage's `SaveMatchAsync` already builds a multi-line validation message string via
+  `ValidateEntryAsync` — reuse that shape rather than inventing a second mechanism.
