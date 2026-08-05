@@ -2,11 +2,11 @@ namespace PokemonBattleJournal.Services
 {
     public class TrainerOperations : ITrainerOperations
     {
-        private readonly SqliteConnectionFactory _factory;
+        private readonly ISqliteConnectionFactory _factory;
         private readonly ILogger _logger;
         private readonly IErrorHandler _errorHandler;
 
-        internal TrainerOperations(SqliteConnectionFactory factory, ILogger logger, IErrorHandler errorHandler)
+        internal TrainerOperations(ISqliteConnectionFactory factory, ILogger logger, IErrorHandler errorHandler)
         {
             _factory = factory;
             _logger = logger;
@@ -19,11 +19,10 @@ namespace PokemonBattleJournal.Services
         public virtual async Task<List<Trainer>> GetAllAsync()
         {
             _logger.LogDebug("GetAllAsync: fetching all trainers");
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
-                List<Trainer> trainers = await db.Table<Trainer>().ToListAsync();
+                using DbSession session = await _factory.BeginAsync();
+                List<Trainer> trainers = await session.Connection.Table<Trainer>().ToListAsync();
                 _logger.LogDebug("GetAllAsync: returned {Count} trainers", trainers.Count);
                 return trainers;
             }
@@ -33,21 +32,16 @@ namespace PokemonBattleJournal.Services
                 _errorHandler.HandleError(ex);
                 return [];
             }
-            finally
-            {
-                _ = _factory.GetLock().Release();
-            }
         }
 
         /// <inheritdoc/>
         public virtual async Task<Trainer?> GetActiveAsync()
         {
             _logger.LogDebug("GetActiveAsync: querying active trainer");
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
-                Trainer? active = await db.Table<Trainer>().Where(t => t.IsActive).FirstOrDefaultAsync();
+                using DbSession session = await _factory.BeginAsync();
+                Trainer? active = await session.Connection.Table<Trainer>().Where(t => t.IsActive).FirstOrDefaultAsync();
                 _logger.LogDebug("GetActiveAsync: active trainer = {Name} ({Id})", active?.Name, active?.Id);
                 return active;
             }
@@ -56,21 +50,16 @@ namespace PokemonBattleJournal.Services
                 _logger.LogError(ex, "Error retrieving active trainer");
                 return null;
             }
-            finally
-            {
-                _ = _factory.GetLock().Release();
-            }
         }
 
         /// <inheritdoc/>
         public virtual async Task SetActiveAsync(Trainer trainer)
         {
             _logger.LogDebug("SetActiveAsync: setting trainer {Name} ({Id}) as active", trainer.Name, trainer.Id);
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
-                await db.RunInTransactionAsync(tran =>
+                using DbSession session = await _factory.BeginAsync();
+                await session.Connection.RunInTransactionAsync(tran =>
                 {
                     tran.Execute("UPDATE Trainer SET IsActive = 0");
                     tran.Execute("UPDATE Trainer SET IsActive = 1 WHERE Id = ?", trainer.Id);
@@ -80,10 +69,6 @@ namespace PokemonBattleJournal.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error setting active trainer {Id}", trainer.Id);
-            }
-            finally
-            {
-                _ = _factory.GetLock().Release();
             }
         }
 
@@ -97,11 +82,10 @@ namespace PokemonBattleJournal.Services
                 throw new ArgumentException("Trainer name is required", nameof(name));
             }
 
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
-                return await db.Table<Trainer>()
+                using DbSession session = await _factory.BeginAsync();
+                return await session.Connection.Table<Trainer>()
                     .Where(i => i.Name == name)
                     .FirstOrDefaultAsync();
             }
@@ -123,10 +107,6 @@ namespace PokemonBattleJournal.Services
                 _errorHandler.HandleError(ex);
                 return null;
             }
-            finally
-            {
-                _ = _factory.GetLock().Release();
-            }
         }
 
         /// <summary>
@@ -134,11 +114,10 @@ namespace PokemonBattleJournal.Services
         /// </summary>
         public virtual async Task<Trainer?> GetByIdAsync(uint id)
         {
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
-                return await db.Table<Trainer>()
+                using DbSession session = await _factory.BeginAsync();
+                return await session.Connection.Table<Trainer>()
                     .Where(i => i.Id == id)
                     .FirstOrDefaultAsync();
             }
@@ -147,10 +126,6 @@ namespace PokemonBattleJournal.Services
                 _logger.LogError(ex, "Error retrieving trainer by id {Id}: {Message}", id, ex.Message);
                 _errorHandler.HandleError(ex);
                 return null;
-            }
-            finally
-            {
-                _ = _factory.GetLock().Release();
             }
         }
 
@@ -169,11 +144,11 @@ namespace PokemonBattleJournal.Services
                 throw new ArgumentException("Trainer ID is required", nameof(trainer));
             }
 
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
+                using DbSession session = await _factory.BeginAsync();
+                SQLiteAsyncConnection db = session.Connection;
                 int affected = 0;
-                await _factory.GetLock().WaitAsync();
 
                 // Verify the trainer exists
                 Trainer existingTrainer = await db.Table<Trainer>()
@@ -266,10 +241,6 @@ namespace PokemonBattleJournal.Services
                 _errorHandler.HandleError(ex);
                 return 0;
             }
-            finally
-            {
-                _ = _factory.GetLock().Release();
-            }
         }
         /// <summary>
         /// Saves a trainer to the database. If the trainer has an ID, it updates the existing record; otherwise, it inserts a new record.
@@ -286,13 +257,12 @@ namespace PokemonBattleJournal.Services
             _logger.LogDebug("SaveAsync: saving trainer {Name}", trainerName);
             // Create the trainer instance
             Trainer trainer = new() { Name = trainerName };
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
 
             try
             {
+                using DbSession session = await _factory.BeginAsync();
                 int affected = 0;
-                await _factory.GetLock().WaitAsync();
-                await db.RunInTransactionAsync(tran =>
+                await session.Connection.RunInTransactionAsync(tran =>
                 {
                     Trainer existingTrainer = tran.Table<Trainer>()
                         .Where(t => t.Name == trainerName && t.Id != trainer.Id)
@@ -331,10 +301,6 @@ namespace PokemonBattleJournal.Services
                 _logger.LogError(ex, "Unexpected error saving trainer: {Message}", ex.Message);
                 _errorHandler.HandleError(ex);
                 return 0;
-            }
-            finally
-            {
-                _ = _factory.GetLock().Release();
             }
         }
 

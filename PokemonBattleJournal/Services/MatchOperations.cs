@@ -3,11 +3,11 @@ namespace PokemonBattleJournal.Services
 {
     public class MatchOperations : IMatchOperations
     {
-        private readonly SqliteConnectionFactory _factory;
+        private readonly ISqliteConnectionFactory _factory;
         private readonly ILogger _logger;
         private readonly IErrorHandler _errorHandler;
 
-        public MatchOperations(SqliteConnectionFactory factory, ILogger logger, IErrorHandler errorHandler)
+        public MatchOperations(ISqliteConnectionFactory factory, ILogger logger, IErrorHandler errorHandler)
         {
             _factory = factory;
             _logger = logger;
@@ -21,21 +21,16 @@ namespace PokemonBattleJournal.Services
         public async Task<List<MatchEntry>> GetAllAsync()
         {
             _logger.LogDebug("GetAllAsync: fetching all match entries");
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
-                return await db.Table<MatchEntry>().ToListAsync();
+                using DbSession session = await _factory.BeginAsync();
+                return await session.Connection.Table<MatchEntry>().ToListAsync();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting all match entries");
                 _errorHandler.HandleError(ex);
                 return [];
-            }
-            finally
-            {
-                _ = _factory.GetLock().Release();
             }
         }
 
@@ -70,9 +65,9 @@ namespace PokemonBattleJournal.Services
                 matchEntry.TrainerId, matchEntry.PlayingId, matchEntry.AgainstId, games.Count);
             try
             {
-                SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+                using DbSession session = await _factory.BeginAsync();
+                SQLiteAsyncConnection db = session.Connection;
                 int affected = 0;
-                await _factory.GetLock().WaitAsync();
 
                 // Pre-validate tags to ensure they exist in the database
                 await PreValidateTagsAsync(db, games);
@@ -138,10 +133,6 @@ namespace PokemonBattleJournal.Services
                 _errorHandler.HandleError(ex);
                 return 0;
             }
-            finally
-            {
-                _ = _factory.GetLock().Release();
-            }
         }
 
         /// <summary>
@@ -149,10 +140,10 @@ namespace PokemonBattleJournal.Services
         /// </summary>
         public virtual async Task<MatchEntry?> GetByIdAsync(uint id, bool includeRelated = true)
         {
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
+                using DbSession session = await _factory.BeginAsync();
+                SQLiteAsyncConnection db = session.Connection;
                 MatchEntry? matchEntry = await db.GetWithChildrenAsync<MatchEntry>(id, true);
 
                 if (matchEntry != null && includeRelated)
@@ -168,10 +159,6 @@ namespace PokemonBattleJournal.Services
                 _errorHandler.HandleError(ex);
                 return null;
             }
-            finally
-            {
-                _ = _factory.GetLock().Release();
-            }
         }
 
         /// <summary>
@@ -180,10 +167,10 @@ namespace PokemonBattleJournal.Services
         public virtual async Task<List<MatchEntry>> GetByTrainerIdAsync(uint trainerId, bool includeRelated = true)
         {
             _logger.LogDebug("GetByTrainerIdAsync: trainer {TrainerId}, includeRelated={IncludeRelated}", trainerId, includeRelated);
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
+                using DbSession session = await _factory.BeginAsync();
+                SQLiteAsyncConnection db = session.Connection;
                 List<MatchEntry> entries = await db.GetAllWithChildrenAsync<MatchEntry>(
                     e => e.TrainerId == trainerId, true);
                 if (entries == null || entries.Count == 0)
@@ -208,10 +195,6 @@ namespace PokemonBattleJournal.Services
                 _errorHandler.HandleError(ex);
                 return [];
             }
-            finally
-            {
-                _ = _factory.GetLock().Release();
-            }
         }
 
         /// <summary>
@@ -229,11 +212,11 @@ namespace PokemonBattleJournal.Services
                 throw new ArgumentException("Match entry ID is required", nameof(matchEntry));
             }
 
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
+                using DbSession session = await _factory.BeginAsync();
+                SQLiteAsyncConnection db = session.Connection;
                 int affected = 0;
-                await _factory.GetLock().WaitAsync();
 
                 // Get all related records to ensure complete deletion
                 List<uint> gamesIds = [];
@@ -296,10 +279,6 @@ namespace PokemonBattleJournal.Services
                 _logger.LogError(ex, "Error deleting match entry: {Message}", ex.Message);
                 _errorHandler.HandleError(ex);
                 return 0;
-            }
-            finally
-            {
-                _ = _factory.GetLock().Release();
             }
         }
 

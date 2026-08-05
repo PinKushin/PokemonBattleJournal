@@ -2,11 +2,11 @@ namespace PokemonBattleJournal.Services
 {
     public class TagOperations : ITagOperations
     {
-        private readonly SqliteConnectionFactory _factory;
+        private readonly ISqliteConnectionFactory _factory;
         private readonly ILogger _logger;
         private readonly IErrorHandler _errorHandler;
 
-        internal TagOperations(SqliteConnectionFactory factory, ILogger logger, IErrorHandler errorHandler)
+        internal TagOperations(ISqliteConnectionFactory factory, ILogger logger, IErrorHandler errorHandler)
         {
             _factory = factory;
             _logger = logger;
@@ -18,10 +18,10 @@ namespace PokemonBattleJournal.Services
         /// </summary>
         public async Task<List<Tags>> GetAllAsync()
         {
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
+                using DbSession session = await _factory.BeginAsync();
+                SQLiteAsyncConnection db = session.Connection;
                 if (await db.Table<Tags>().CountAsync() == 0)
                 {
                     _ = await db.InsertAllAsync(new List<Tags>
@@ -44,10 +44,6 @@ namespace PokemonBattleJournal.Services
                 _logger.LogError(ex, "Error getting tags");
                 return [];
             }
-            finally
-            {
-                _ = _factory.GetLock().Release();
-            }
         }
 
         /// <summary>
@@ -55,11 +51,10 @@ namespace PokemonBattleJournal.Services
         /// </summary>
         public async Task<Tags?> GetByIdAsync(uint id)
         {
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
-                return await db.Table<Tags>()
+                using DbSession session = await _factory.BeginAsync();
+                return await session.Connection.Table<Tags>()
                     .Where(i => i.Id == id)
                     .FirstOrDefaultAsync();
             }
@@ -68,10 +63,6 @@ namespace PokemonBattleJournal.Services
                 _logger.LogError(ex, "Error getting tag by ID: {Id}", id);
                 _errorHandler.HandleError(ex);
                 return null;
-            }
-            finally
-            {
-                _ = _factory.GetLock().Release();
             }
         }
 
@@ -91,15 +82,14 @@ namespace PokemonBattleJournal.Services
             }
 
             _logger.LogDebug("SaveAsync: saving tag {Name} for trainer {TrainerId}", tagTxt, trainerId);
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             Tags tag = new()
             { Name = tagTxt, TrainerId = trainerId };
 
             try
             {
-                await _factory.GetLock().WaitAsync();
+                using DbSession session = await _factory.BeginAsync();
                 int affected = 0;
-                await db.RunInTransactionAsync(tran =>
+                await session.Connection.RunInTransactionAsync(tran =>
                 {
                     affected = tran.Insert(tag);
                 });
@@ -123,10 +113,6 @@ namespace PokemonBattleJournal.Services
                 _errorHandler.HandleError(ex);
                 return 0;
             }
-            finally
-            {
-                _ = _factory.GetLock().Release();
-            }
         }
 
         /// <summary>
@@ -140,10 +126,10 @@ namespace PokemonBattleJournal.Services
             }
 
             _logger.LogDebug("DeleteAsync: deleting tag {Name} ({Id})", tag.Name, tag.Id);
-            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             try
             {
-                await _factory.GetLock().WaitAsync();
+                using DbSession session = await _factory.BeginAsync();
+                SQLiteAsyncConnection db = session.Connection;
 
                 // First check if this tag is used in any games
                 int tagGameCount = await db.ExecuteScalarAsync<int>(
@@ -208,10 +194,6 @@ namespace PokemonBattleJournal.Services
                 _logger.LogError(ex, "Error deleting tag: {TagName} - {Message}", tag.Name ?? "Unknown", ex.Message);
                 _errorHandler.HandleError(ex);
                 return 0;
-            }
-            finally
-            {
-                _ = _factory.GetLock().Release();
             }
         }
     }

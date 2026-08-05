@@ -1,14 +1,19 @@
 ---
 name: project_error_handler_di
-description: "IN PROGRESS (branch refactor/inject-error-handler) — ModalErrorHandler is new()'d at 54 sites and IErrorHandler is never DI-registered. Injecting it fixes a DI violation, 54 untestable catch paths, and modals firing during CI automation."
+description: "DONE — IErrorHandler injected at 54 sites; both follow-ups it exposed (connection failures unhandled, services bound to the concrete factory) fixed via DbSession. Only the coverage report remains."
 metadata:
   type: project
 ---
 
-**Status: in progress, branch `refactor/inject-error-handler`, started 2026-08-05.**
-First of three agreed follow-ups (order confirmed by user): **(1) inject IErrorHandler →
-(2) consolidate test projects ([[project_test_project_consolidation]]) → (3) fresh coverage
-report**.
+**Status: complete, 2026-08-05.** All three agreed follow-ups landed in order:
+**(1) inject IErrorHandler → (2) consolidate test projects
+([[project_test_project_consolidation]]) → (3) fresh coverage report** — (3) is the only
+piece still outstanding.
+
+Both defects this refactor exposed (see the two numbered sections at the bottom) were fixed
+together on `fix/db-connection-error-handling`; the resolution is recorded in
+[[project_db_session_lock_pairing]], which is the file to read before touching any operations
+service.
 
 ## The finding
 
@@ -89,10 +94,13 @@ that would replace most of these modals.
 
 ---
 
-## What the refactor exposed — two follow-ups (found 2026-08-05)
+## What the refactor exposed — two follow-ups (found 2026-08-05, BOTH FIXED same day)
 
-Injecting the seam immediately revealed that the seam **cannot currently be tested**, for two
-independent reasons. Both were invisible while the handler was `new`'d inline.
+Injecting the seam immediately revealed that the seam **could not be tested**, for two
+independent reasons. Both were invisible while the handler was `new`'d inline. Both are now
+resolved — see [[project_db_session_lock_pairing]] for how, including the third defect the
+fix uncovered. The original analysis is kept below because it is still the clearest statement
+of *why* the seam mattered.
 
 ### 1. `GetDatabaseAsync()` sits OUTSIDE the try block — 20 call sites
 
@@ -139,5 +147,8 @@ integration test in the unit project, i.e. exactly the mistake
 [[project_test_project_consolidation]] exists to clean up. User flagged it: *"should that be
 in unit tests or integration since its calling the real path."*
 
-**Do not re-add error-path tests until #1 is fixed.** Until `GetDatabaseAsync` is inside the
-try, there is no reachable failure mode on the read paths to assert against.
+~~**Do not re-add error-path tests until #1 is fixed.**~~ **Resolved 2026-08-05.** #1 and #2
+were fixed together, and the tests now live in
+`PokemonBattleJournal.Tests/Services/DatabaseConnectionFailureTests.cs` — correctly unit
+tests, because the failure is injected at the `ISqliteConnectionFactory` seam with no SQLite
+file involved. 20 cases, one per operation. See [[project_db_session_lock_pairing]].
