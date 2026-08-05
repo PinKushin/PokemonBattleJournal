@@ -57,11 +57,26 @@ namespace UITests
             step1Timer.Stop();
             Log($"1. EnsureAndroidToolsInPath done ({step1Timer.ElapsedMilliseconds}ms)");
 
-            Log("2. EnsureEmulatorRunning");
-            var step2Timer = System.Diagnostics.Stopwatch.StartNew();
-            EnsureEmulatorRunning();
-            step2Timer.Stop();
-            Log($"2. EnsureEmulatorRunning done ({step2Timer.ElapsedMilliseconds}ms)");
+            // CI: reactivecircus/android-emulator-runner boots the emulator before this
+            // process starts and tears it down after — AppiumSetup must not manage the
+            // lifecycle there. EnsureEmulatorRunning's AVD-name probe (`adb emu avd name`)
+            // can catch the freshly-booted device in a transient "offline" state, read
+            // garbage, conclude the right AVD isn't running, and launch a SECOND emulator
+            // on the same AVD/port — observed on CI as persistent "adb: device offline"
+            // at driver creation. Locally the check is what boots the AVD at all — keep it.
+            if (IsCi)
+            {
+                Log("2. EnsureEmulatorRunning skipped (CI — emulator-runner owns the lifecycle)");
+                WaitForEmulatorBoot(timeoutSeconds: 120);
+            }
+            else
+            {
+                Log("2. EnsureEmulatorRunning");
+                var step2Timer = System.Diagnostics.Stopwatch.StartNew();
+                EnsureEmulatorRunning();
+                step2Timer.Stop();
+                Log($"2. EnsureEmulatorRunning done ({step2Timer.ElapsedMilliseconds}ms)");
+            }
 
             Log("3. StartAppiumLocalServer");
             var step3Timer = System.Diagnostics.Stopwatch.StartNew();
@@ -190,11 +205,23 @@ if (useInstalled)
             Log("Tearing down: Dispose AppiumServer");
             AppiumServerHelper.DisposeAppiumLocalServer();
             
-            Log("Tearing down: Shutdown emulator");
-            var shutdownEmulatorTimer = System.Diagnostics.Stopwatch.StartNew();
-            ShutdownEmulator();
-            shutdownEmulatorTimer.Stop();
-            Log($"Tearing down: Shutdown emulator done ({shutdownEmulatorTimer.ElapsedMilliseconds}ms)");
+            // CI: leave the emulator alive — the emulator-runner action's own Terminate
+            // Emulator step handles it. Killing it here made every adb call between our
+            // teardown and the action's (the workflow's logcat capture, the action's own
+            // `adb emu kill`) hit a dead/offline device — the source of the
+            // "- waiting for device -" job hangs.
+            if (IsCi)
+            {
+                Log("Tearing down: Shutdown emulator skipped (CI — emulator-runner owns the lifecycle)");
+            }
+            else
+            {
+                Log("Tearing down: Shutdown emulator");
+                var shutdownEmulatorTimer = System.Diagnostics.Stopwatch.StartNew();
+                ShutdownEmulator();
+                shutdownEmulatorTimer.Stop();
+                Log($"Tearing down: Shutdown emulator done ({shutdownEmulatorTimer.ElapsedMilliseconds}ms)");
+            }
             
             cleanupTimer.Stop();
             PerfLog($"[{DateTime.Now:HH:mm:ss.fff}] Android AppiumSetup cleanup complete ({cleanupTimer.ElapsedMilliseconds}ms)");

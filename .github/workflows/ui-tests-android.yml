@@ -136,10 +136,15 @@ jobs:
       #   "- waiting for device -" and blocks forever. That was the real cause of the
       #   teardown hangs (the job cancellation debug line showed the hang inside THIS
       #   script step, not the action's Terminate Emulator step). timeout caps it.
-      # - pkill -f crashpad_handler: secondary guard for the upstream action teardown
+      # - pkill -f crashpad_handle[r]: secondary guard for the upstream action teardown
       #   hang (https://github.com/ReactiveCircus/android-emulator-runner/issues/385).
       #   -f is required: bare pkill matches /proc/pid/comm which the kernel truncates
       #   to 15 chars — "crashpad_handler" is 16, so it can never match without -f.
+      #   The [r] bracket is required WITH -f: this script's own sh -c command line
+      #   contains the pattern text, so an unbracketed -f match SIGKILLs our own shell
+      #   before `exit $code` runs (observed: "exit code null" job failures on runs
+      #   where every test passed). The regex crashpad_handle[r] matches the real
+      #   process but not the literal "crashpad_handle[r]" text in our own cmdline.
       - name: Run Android UI Tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -151,7 +156,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 3072
           disable-animations: true
-          script: dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --filter "FullyQualifiedName~${{ matrix.fixture }}" --logger "trx;LogFileName=android-ui-tests-${{ matrix.fixture }}.trx" ; code=$? ; timeout 20 adb logcat -d > /tmp/UITests.Android.logcat.txt 2>/dev/null || true ; for i in 1 2 3 4 5 6 7 8 9 10 ; do pkill -f -SIGKILL crashpad_handler 2>/dev/null && break ; sleep 2 ; done ; exit $code
+          script: dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --filter "FullyQualifiedName~${{ matrix.fixture }}" --logger "trx;LogFileName=android-ui-tests-${{ matrix.fixture }}.trx" ; code=$? ; timeout 20 adb logcat -d > /tmp/UITests.Android.logcat.txt 2>/dev/null || true ; pkill -f -SIGKILL 'crashpad_handle[r]' 2>/dev/null || true ; exit $code
         env:
           CI: true
           ANDROID_USE_INSTALLED: "0"
