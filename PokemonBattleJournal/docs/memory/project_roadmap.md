@@ -48,6 +48,43 @@ Implementation plan (TDD):
 4. OptionsPage: "Import" button (`FilePicker.PickAsync` → JSON file) + "Export" button (`FileSaver.SaveAsync`)
 5. Both services injected via DI; no SQL in the services directly
 
+### Import hardening — size / depth / count limits (added 2026-08-05, NOT started)
+
+**The import currently has no limits of any kind.** `TrainerHillImportService.ImportAsync`
+calls `JsonSerializer.DeserializeAsync<List<TrainerHillEntry>>` straight onto a user-picked
+stream — no byte cap, no `MaxDepth`, no entry-count cap, no string-length cap. Found during a
+security pass 2026-08-05.
+
+The threat model is mild (the user picks their own file), but the realistic case is someone
+sharing a "TrainerHill export" that is hostile or simply enormous: the whole file is
+materialised into a `List<TrainerHillEntry>` before a single entry is validated, so a large
+or deeply nested document can OOM the app or wedge it mid-import. It also contradicts the
+project's own standard in `CLAUDE.md`: *"Validate and constrain all imported data (JSON, XML)
+before it touches the DB. Reject unknown fields; coerce types explicitly."*
+
+What to add, cheapest first:
+
+1. **Byte cap before parsing** — reject the stream above some ceiling (a few MB is generous;
+   the reference export of a full battle log is tiny). Check `Stream.Length` when seekable,
+   otherwise read through a counting wrapper.
+2. **`JsonSerializerOptions.MaxDepth`** — the shape is 3 levels deep (array ▸ entry ▸ game),
+   so a small limit costs nothing and kills nesting attacks outright.
+3. **Entry-count cap**, surfaced through the existing per-entry `errors` list rather than an
+   exception, so partial imports still report usefully.
+4. **String-length guards** on `notes`, `playing`, `against` and tag names before they reach
+   `ResolveArchetypeAsync` / `ResolveTagAsync` — these create DB rows, so an unbounded name
+   is a persistent junk row, not just a transient parse cost.
+5. Consider `JsonSerializer.DeserializeAsyncEnumerable` to stream entries instead of
+   materialising the whole array — this makes the byte cap much less load-bearing and is the
+   real fix if imports are ever expected to be large.
+
+TDD: the failing tests are easy to write first here — an oversized stream, a deeply nested
+document, and an over-long note each get a test asserting the import is refused (or truncated
+with a collected error) and that **nothing was written to the DB**.
+
+Do this with, or before, the export work — the two share the format and it is the natural
+moment to pin down what the parser will and will not accept.
+
 ### Export — two modes
 
 **TrainerHill export (per-trainer):**
