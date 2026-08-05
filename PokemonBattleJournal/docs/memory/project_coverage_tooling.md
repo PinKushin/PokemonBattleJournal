@@ -34,17 +34,34 @@ User's instinct: *"i feel like my actual code coverage is actually shit even wit
 Investigated rather than assumed. The suite is healthier than it feels, but three real things
 explain the gap:
 
-**1. Almost nothing is a fake test.** Scanned all 617 `[Test]` methods across both test
-projects for ones containing no `Should`/`Received`/`Assert`/`Throw` at all. Result: **4**.
+**1. Almost nothing is a fake test.** Scanned every `[Test]` method across both test projects
+for ones containing no `Should`/`Received`/`Assert`/`Throw` at all. Result: **4** — and
+**all four were fixed 2026-08-05**. A re-scan of all 499 test methods now reports zero.
 
-```
-OptionsPageViewModelTests: SaveTagAsync_NullTrainer_DoesNotSave   (comment only, no assert)
-TrainerPageViewModelTests: AppearingAsync_WithMatches_CalculatesStats
-MatchOperationsTests:      SaveAsync_BO3Match_SavesAllThreeGames
-MatchOperationsTests:      SaveAsync_TwoGameBO3_SetsGame1AndGame2ButNotGame3
-```
+The original list of four was *wrong in both directions*, which is worth knowing before
+trusting a scan like this again:
 
-Those four should get real assertions — they currently cannot fail.
+- The two `MatchOperationsTests` BO3 entries already asserted by the time they were revisited
+  — the test-project consolidation had replaced them with the better of two duplicate copies
+  ([[project_test_project_consolidation]]).
+- Two others that genuinely asserted nothing were never on the list, because the first scan's
+  regex (`\bShould\w*\(`) missed generic assertions like `ShouldBeOfType<T>()` — the `<`
+  breaks the match. Use `\bShould\w*\s*[<(]` instead.
+
+The two real ones, and why each was fixed rather than deleted:
+
+- `TrainerPageViewModelTests.AppearingAsync_WithMatches_CalculatesStats` ended in a bare
+  `_mockAnalysisService.CalculateWinRate(matches, out …);` — no `Received()`, so it just
+  called the substitute again. Its gap was real: `Wins`/`Losses`/`Ties`/`WinAverage` were
+  asserted only for the *empty*-match case. Now sets the out params through a `Returns`
+  callback and asserts all four.
+- `OptionsPageViewModelTests.SaveTagAsync_NullTrainer_DoesNotSave` had a comment where the
+  assertion belonged. The guard-logging suite pins that the path *warns*
+  ([[feedback_no_silent_guards]]); this now pins that it also declines the write.
+
+Two `TaskUtilitiesTests` "DoesNotThrow" tests were also converted to explicit
+`Should.NotThrowAsync`. They were never broken — NUnit fails a test whose exception escapes —
+but the bodies read as if the assertion had been forgotten.
 
 **2. ~21% of unit tests assert existence, not behaviour.** 106 of 494 are reflection-based
 contract tests (`MainPageViewModelContractTests` 40, `TrainerPageViewModelContractTests` 27,
@@ -54,11 +71,20 @@ but they pin XAML binding names to VM members, so they inflate the test count wi
 behavioural coverage. A high test count that includes them will always feel better than the
 coverage number looks.
 
-**3. 54 catch paths are structurally untestable.** Every `ModalErrorHandler error = new();`
-cannot be substituted, so no test can verify error handling anywhere in the app. This is the
-single biggest genuine hole and it is being fixed first — see [[project_error_handler_di]].
+**3. 54 catch paths were structurally untestable — FIXED 2026-08-05.** Every
+`ModalErrorHandler error = new();` could not be substituted, so no test could verify error
+handling anywhere in the app. This was the single biggest genuine hole. `IErrorHandler` is
+now injected ([[project_error_handler_di]]), and fixing it exposed a second hole underneath:
+connection failures were unhandled at 20 of 22 database operations, now covered by 20 new
+tests ([[project_db_session_lock_pairing]]).
 
 **Also: the 57.7% coverlet figure understates reality.** It counts MAUI startup, XAML
 codebehind and platform code that unit tests can never reach, and it does not credit anything
-the 145 UI tests exercise. VS's tool reports ~80% on the same code. Re-measure only AFTER the
-error-handler injection lands, since unlocking 54 paths changes the picture.
+the 145 UI tests exercise. VS's tool reports ~80% on the same code.
+
+**The re-measure is now unblocked and still outstanding.** The precondition was "only after
+the error-handler injection lands, since unlocking 54 paths changes the picture" — that has
+landed, along with the 20 connection-failure tests and the four assertion fixes above. Both
+numbers in this file (57.7% coverlet, ~80% VS) and the counts in the checked-in report under
+`PokemonBattleJournal/docs/coverage-report/` therefore predate all of it and should be
+treated as stale until regenerated with the commands above.
