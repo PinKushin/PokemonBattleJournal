@@ -45,17 +45,13 @@ namespace PokemonBattleJournal.DevSeed
 
                 Archetype charizard  = Find(allArchetypes, "Charizard")  ?? other;
                 Archetype regidrago  = Find(allArchetypes, "Regidrago")  ?? other;
-                Archetype miraidon   = Find(allArchetypes, "Miraidon")   ?? other;
                 Archetype ragingBolt = Find(allArchetypes, "Raging Bolt") ?? other;
                 Archetype gardevoir  = Find(allArchetypes, "Gardevoir")  ?? other;
-                Archetype klawf      = Find(allArchetypes, "Klawf")      ?? other;
 
                 List<Tags> allTags = await factory.Tags.GetAllAsync();
                 Tags? lucky       = allTags.FirstOrDefault(t => t.Name == "Lucky");
                 Tags? unlucky     = allTags.FirstOrDefault(t => t.Name == "Unlucky");
-                Tags? earlyStart  = allTags.FirstOrDefault(t => t.Name == "Early Start");
                 Tags? behindEarly = allTags.FirstOrDefault(t => t.Name == "Behind Early");
-                Tags? neverPunish = allTags.FirstOrDefault(t => t.Name == "Never Punished");
                 Tags? punished    = allTags.FirstOrDefault(t => t.Name == "Punished");
 
                 DateTime baseDate = DateTime.UtcNow.AddDays(-14);

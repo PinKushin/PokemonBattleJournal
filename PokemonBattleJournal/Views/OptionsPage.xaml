@@ -35,6 +35,16 @@
                 IsVisible="{Binding IsBusyArchetypeList}"
                 WidthRequest="1" />
 
+            <!--  Loading-gate sentinel: visible while a Save/Delete Archetype or Tag command
+                  is mutating the DB and rebinding the list. UI tests WaitUntilBusyGone
+                  ("Busy_Mutating") after Save/Delete clicks before checking list state —
+                  otherwise the CollectionView rebind races the test's presence check.  -->
+            <Label
+                AutomationId="Busy_Mutating"
+                HeightRequest="1"
+                IsVisible="{Binding IsBusyMutating}"
+                WidthRequest="1" />
+
             <!--  Trainer section  -->
             <Label AutomationId="TrainerSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Trainer" />
 

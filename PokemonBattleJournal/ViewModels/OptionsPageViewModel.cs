@@ -263,6 +263,16 @@
             }
         }
 
+        /// <summary>
+        /// Loading gate: true while a Save/Delete Archetype or Tag command is mutating
+        /// the DB and rebinding the corresponding list. Bound to the hidden
+        /// Busy_Mutating sentinel Label. Without this, UI tests race the CollectionView
+        /// rebind that follows a delete — WinAppDriver can return a phantom element whose
+        /// ID is null/empty mid-rebind, surfacing as InvalidOperationException.
+        /// </summary>
+        [ObservableProperty]
+        public partial bool IsBusyMutating { get; set; }
+
         [RelayCommand]
         public async Task SaveTagAsync()
         {
@@ -271,6 +281,7 @@
                 return;
             }
 
+            IsBusyMutating = true;
             try
             {
                 await _semaphore.WaitAsync();
@@ -293,6 +304,7 @@
             {
                 _ = _semaphore.Release();
                 TagInput = null;
+                IsBusyMutating = false;
             }
         }
 
@@ -304,6 +316,7 @@
                 return;
             }
 
+            IsBusyMutating = true;
             try
             {
                 await _semaphore.WaitAsync();
@@ -327,12 +340,14 @@
                 NewDeckName = null;
                 NewDeckIcon = SelectedIcon; // reset to current icon selection (default: ball_icon.png)
                 _ = _semaphore.Release();
+                IsBusyMutating = false;
             }
         }
 
         [RelayCommand]
         public async Task DeleteArchetypeAsync(Archetype archetype)
         {
+            IsBusyMutating = true;
             try
             {
                 await _semaphore.WaitAsync();
@@ -354,12 +369,14 @@
             finally
             {
                 _ = _semaphore.Release();
+                IsBusyMutating = false;
             }
         }
 
         [RelayCommand]
         public async Task DeleteTagAsync(Tags tag)
         {
+            IsBusyMutating = true;
             try
             {
                 await _semaphore.WaitAsync();
@@ -381,6 +398,7 @@
             finally
             {
                 _ = _semaphore.Release();
+                IsBusyMutating = false;
             }
         }
 
