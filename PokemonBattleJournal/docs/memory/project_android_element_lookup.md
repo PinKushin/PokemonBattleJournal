@@ -8,6 +8,14 @@ metadata:
   modified: 2026-07-30T07:43:41.397Z
 ---
 
+> **Updated 2026-08-05 — the code samples below show `ImplicitWait` being restored to
+> `TimeSpan.FromSeconds(10)`. That is no longer correct.** All restores now use
+> `TestBase.AmbientImplicitWait` (5s, both platforms). The only surviving 10s value is the
+> named `Stage3ScrollWait` constant used for the `scrollIntoView` fling itself, which now
+> restores the ambient in a `finally` — previously it leaked 10s into the rest of the
+> session. See [[feedback_uitest_timeouts]]. The lookup *strategy* described below is
+> unchanged and still accurate.
+
 `FindUIElement` on Android uses a two-stage lookup:
 
 1. **Direct resourceId** (3s timeout) — instant when element is already on screen

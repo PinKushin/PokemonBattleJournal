@@ -27,3 +27,18 @@ private void ResetGame1Tab()
 **Why:** `0ms` is only safe when the element's absence is expected and harmless. For state-restoring clicks, the element must be found reliably.
 
 **How to apply:** Review every cleanup helper. If missing the click corrupts test state → use `FindUIElement`. If element is genuinely optional (may or may not exist) → keep `0ms + catch NoSuchElementException`.
+
+## The other half of the rule is expensive to skip (measured 2026-08-05)
+
+This note's warning is about the danger of 0ms on required elements. The converse failure —
+leaving an OPTIONAL lookup at the ambient wait — is not dangerous but is very slow, and it
+went unnoticed for months. An absent element costs **~6.8s** on Windows (5s ambient + ~1.8s
+UIA tree walk) versus **~215ms** when present.
+
+`CloseWindowsPickers`, `ScrollPageToTop`, `ClearUserNoteInput`, and Windows
+`TryClickIfPresent` all violated it; the Game3Tab tests spent 13.5s of 20.3s in cleanup for
+pickers that were deliberately not in the tree. Fixed by routing them through
+`TestBase.WithImplicitWait(TimeSpan.Zero, ...)`.
+
+So: required element → `FindUIElement`. Optional element → zero wait, **always**, never the
+ambient. See [[feedback_uitest_timeouts]] and [[project_game3tab_ci_flake_recurring]].

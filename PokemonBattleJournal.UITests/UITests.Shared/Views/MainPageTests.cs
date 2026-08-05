@@ -68,50 +68,81 @@ namespace UITests
         // UiScrollable scrollForward() moves toward the end of the list; scrollToBeginning()
         // moves back to the top/left edge. On Windows we use keyboard navigation to return
         // the ScrollView to the top because the page itself does not expose a scroll helper.
+        // Both branches target elements that may legitimately not exist (a page that fits the
+        // screen has no scrollable; MainPageScrollView is absent on any non-MainPage state),
+        // so both run at zero wait — waiting cannot make a missing scroll container appear.
         private void ScrollPageToTop()
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             if (App is AndroidDriver)
             {
-                try
+                WithImplicitWait(TimeSpan.Zero, () =>
                 {
-                    App.FindElement(MobileBy.AndroidUIAutomator(
-                        "new UiScrollable(new UiSelector().scrollable(true).instance(0)).scrollToBeginning(100)"));
-                }
-                catch { }
+                    try
+                    {
+                        App.FindElement(MobileBy.AndroidUIAutomator(
+                            "new UiScrollable(new UiSelector().scrollable(true).instance(0)).scrollToBeginning(100)"));
+                    }
+                    catch (OpenQA.Selenium.WebDriverException) { }
+                });
+                if (sw.ElapsedMilliseconds > 750) PerfLog($"ScrollPageToTop (Android): {sw.ElapsedMilliseconds}ms");
                 return;
             }
 
             if (App is not WindowsDriver) return;
 
-            try
-            {
-                App.FindElement(MobileBy.AccessibilityId("MainPageScrollView")).SendKeys(OpenQA.Selenium.Keys.Home);
-            }
-            catch { }
-        }
-
-        private void CloseWindowsPickers(params string[] ids)
-        {
-            if (App is not WindowsDriver) return;
-            foreach (string id in ids)
+            WithImplicitWait(TimeSpan.Zero, () =>
             {
                 try
                 {
-                    App.FindElement(MobileBy.AccessibilityId(id)).SendKeys(OpenQA.Selenium.Keys.Escape);
+                    App.FindElement(MobileBy.AccessibilityId("MainPageScrollView")).SendKeys(OpenQA.Selenium.Keys.Home);
                 }
                 catch (OpenQA.Selenium.NoSuchElementException) { }
-            }
+            });
+            if (sw.ElapsedMilliseconds > 750) PerfLog($"ScrollPageToTop (Windows): {sw.ElapsedMilliseconds}ms");
         }
 
+        // Both pickers are optional here by design: once Game 3 is the selected tab, Game 1's
+        // and Game 2's pickers are IsVisible=false and legitimately out of the tree. At the
+        // ambient wait each of those guaranteed misses cost ~6.8s (5s wait + UIA tree walk),
+        // making cleanup 13.5s of a 20.3s test while the test's real work took 1.3s. Zero
+        // wait: a picker that is present is still found (~215ms), one that is absent returns
+        // immediately instead of being waited for.
+        private void CloseWindowsPickers(params string[] ids)
+        {
+            if (App is not WindowsDriver) return;
+            WithImplicitWait(TimeSpan.Zero, () =>
+            {
+                foreach (string id in ids)
+                {
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    try
+                    {
+                        App.FindElement(MobileBy.AccessibilityId(id)).SendKeys(OpenQA.Selenium.Keys.Escape);
+                        PerfLog($"CloseWindowsPickers('{id}'): escaped in {sw.ElapsedMilliseconds}ms");
+                    }
+                    catch (OpenQA.Selenium.NoSuchElementException)
+                    {
+                        PerfLog($"CloseWindowsPickers('{id}'): absent, cost {sw.ElapsedMilliseconds}ms");
+                    }
+                }
+            });
+        }
+
+        // Optional cleanup: UserNoteInput is only in the tree while Game 1 is the selected
+        // tab, so a miss is an expected state, not a slow render — zero wait.
         private void ClearUserNoteInput()
         {
-            try
+            WithImplicitWait(TimeSpan.Zero, () =>
             {
-                if (App is AndroidDriver androidDriver)
-                    androidDriver.HideKeyboard();
-                App.FindElement(MobileBy.AccessibilityId("UserNoteInput")).Clear();
-            }
-            catch (OpenQA.Selenium.NoSuchElementException) { }
+                try
+                {
+                    if (App is AndroidDriver androidDriver)
+                        androidDriver.HideKeyboard();
+                    App.FindElement(MobileBy.AccessibilityId("UserNoteInput")).Clear();
+                }
+                catch (OpenQA.Selenium.NoSuchElementException) { }
+            });
         }
 
         // Ensures BO3 is ON regardless of current state (safe to call when BO3 may already be on).
@@ -190,7 +221,7 @@ namespace UITests
                 }
                 PerfLog($"DismissArchetypePopup: searchBar STILL PRESENT after Cancel + {pollSw.ElapsedMilliseconds}ms poll → try BACK");
             }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+            finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
 
             // Cancel didn't dismiss (or the search bar's content-desc is stale). Use BACK.
             SendAndroidBack();
@@ -211,7 +242,7 @@ namespace UITests
                 PerfLog($"DismissArchetypePopup: FAIL — searchBar STILL PRESENT after BACK + {backPollSw.ElapsedMilliseconds}ms poll");
                 DumpVisibleElements("DismissArchetypePopup FAIL");
             }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+            finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
         }
 
         // MAUI Picker on Android opens a native AlertDialog. The option list items are
@@ -240,7 +271,7 @@ namespace UITests
                 {
                     PerfLog($"SelectAndroidPickerItem('{itemText}'): attempt {i + 1} — dialog item not found, retrying picker click");
                 }
-                finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10); }
+                finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
             }
             PerfLog($"SelectAndroidPickerItem('{itemText}'): FAIL after {attempts} attempts ({sw.ElapsedMilliseconds}ms)");
             DumpVisibleElements($"SelectAndroidPickerItem('{itemText}') FAIL");
@@ -608,7 +639,7 @@ namespace UITests
             }
             finally
             {
-                App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+                App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait;
                 // Reset PlayerArchetype back to Other so match-save tests stay clean
                 ScrollPageToTop();
                 OpenArchetypePopup("PlayerArchetype");
@@ -700,7 +731,7 @@ namespace UITests
                     bool found = App.FindElements(MobileBy.AccessibilityId("ArchetypeItem_Other")).Count > 0;
                     found.ShouldBeFalse("ArchetypeItem_Other should be filtered out by 'zzznomatch' query");
                 }
-                finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+                finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
             }
             finally
             {

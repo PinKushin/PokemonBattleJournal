@@ -1,81 +1,131 @@
 ---
 name: project_game3tab_ci_flake_recurring
-description: MainPage_Game3Tab_ShowsGamePanel / ShowsWhenGame1IsTie fail on Windows CI polling for UserNoteInput2 for 36s+, 3 occurrences this session, always fixed by rerun — not yet root-caused
+description: Game3Tab slowness/flake RESOLVED 2026-08-05 — optional-element lookups inherited the 5s ambient ImplicitWait, so every absent element cost ~6.8s. Fixed with TimeSpan.Zero + a single ambient constant.
 metadata:
   type: project
 ---
 
-**Status: open, not root-caused.** Observed 3 separate times in the 2026-08-05 session on
-Windows CI (`ui-tests-windows.yml`), always the same test pair, always the same shape,
-always resolved by a plain `gh run rerun` with no code change:
+**Status: RESOLVED 2026-08-05.** Root-caused by measurement, fixed, and verified green on
+both platforms.
 
-- `MainPage_Game3Tab_ShowsGamePanel`
-- `MainPage_Game3Tab_ShowsWhenGame1IsTie`
+## Result after the fix
 
-## Symptom
+| Test | Before | After |
+|------|--------|-------|
+| `Game3Tab_ShowsGamePanel` | 20438ms | **7498ms** |
+| `Game3Tab_ShowsWhenGame1IsTie` | 12734ms | **6249ms** |
+| `DualIconDeck_ShowsBothIcons` | 19795ms | **11331ms** |
+| `CloseWindowsPickers` (absent) | 6798ms | **186ms** |
 
-After `EnsureBO3On` reports the Game2 tab appeared, something (a helper polling loop, not
-yet traced to its exact call site) checks for `UserNoteInput2` — a Game 2 panel element —
-every ~2.8s for 30-40 straight seconds, always "not found," before the test finally times
-out and fails with `NoSuchElementException` at the actual assertion target (line ~451,
-inside the test body itself, not the polling helper). `ResetGame1Tab` cleanup still runs
-and reports panels gone successfully afterward.
+Full Windows UI suite (73 tests, all 5 fixtures) now runs in **1m28s** — previously
+`MainPageTests` alone took 1m20s. Verified: unit 488/488, integration 115/115, Windows UI
+73/73, Android UI 72/72 in 8m55s (matching its 8m44s pre-change baseline, so the 10s→5s
+ambient change caused no flakiness).
 
-Confirmed via the new console-mirroring (`PerfLog`/`NavLog` now echo to `Console.WriteLine`
-when `CI=true` — see [[project_ci_workflows]]) on run `30980236625`, job
-`Windows UI Tests (MainPageTests)`, 2026-08-05 06:13-06:15 UTC:
+**The fix:** optional-element lookups run at `TimeSpan.Zero` via the new
+`TestBase.WithImplicitWait` helper (`CloseWindowsPickers`, `ScrollPageToTop`,
+`ClearUserNoteInput`); Windows `TryClickIfPresent` pins its own `timeoutMs` as the implicit
+wait as Android's override always did; the ambient is now the single
+`TestBase.AmbientImplicitWait` constant (5s, both platforms). See [[feedback_uitest_timeouts]].
+
+## Still open, same family — Android-side lookup cost
+
+Not addressed by this fix (`CloseWindowsPickers` early-returns on non-Windows, so Android's
+Game3 timings are unchanged at ~20-24s). From the pre-change CI log, several *single-assert*
+Android tests land at a uniform ~10.0-10.3s — `WentFirstLabel_Displayed`,
+`ResultPicker_Displayed`, `FirstCheck_Displayed`. That is the three-stage lookup shape:
+stage 1 exhausting its 5s deadline, stage 2 ~0.5s, then stage 3 scrolling. These are
+below-the-fold elements that should cost ~200ms. Biggest remaining Android win; wants a
+scroll-first strategy or a cheaper stage 1.
+
+Also open (Windows, small): `DismissArchetypePopup` retries a Cancel click that already
+succeeded — 5.6s of `DualIconDeck`'s remaining 11.3s. A zero-wait presence check before the
+click would recover most of it, but it changes dismissal behavior, so it wants its own pass.
+
+---
+
+## Original diagnosis (kept — this is the evidence trail)
+
+Diagnosis below is from local instrumented runs, not inference.
+
+## The measurement
+
+Every lookup for an element that is **absent** costs ~6.8 seconds:
+**5000ms ambient `ImplicitWait` + ~1.8s UIA descendant walk.** The same call against an
+element that **exists** costs ~215ms. 32x, same line of code.
+
+Proof (local Windows run, both tests PASSED — this is latency, not failure):
 
 ```
-[PerfLog] START MainPage_Game3Tab_ShowsGamePanel
-[PerfLog] EnsureBO3On: Game2Tab appeared in 410ms (attempt 1)
-[NavLog] UIA check 'UserNoteInput2': not found   (repeated ~10x, ~2.8s apart)
-[PerfLog] ResetGame1Tab: Game 2/3 panels gone on attempt 1
-[PerfLog] END MainPage_Game3Tab_ShowsGamePanel [Failed] 44932ms
+CloseWindowsPickers('PossibleResultsPicker'):  absent, cost 6798ms
+CloseWindowsPickers('PossibleResultsPicker2'): absent, cost 6775ms
+END MainPage_Game3Tab_ShowsGamePanel [Passed] 20260ms
+
+CloseWindowsPickers('PossibleResultsPicker'):  absent, cost 6806ms
+CloseWindowsPickers('PossibleResultsPicker2'): escaped in 215ms
+END MainPage_Game3Tab_ShowsWhenGame1IsTie [Passed] 12905ms
 ```
 
-This is genuinely useful live visibility we didn't have before — this is the first time
-we've seen the EXACT polling behavior during the hang rather than just the final timeout
-error. Previous occurrences of this same flake this session were diagnosed only from the
-post-hoc trx error message, without this detail.
+13.57s of ShowsGamePanel's 20.26s — 67% — is two lookups for pickers that are deliberately
+not in the tree. The actual work (ClickTab Game3 + all five Game-3 panel asserts) took 1.3s.
 
-## Why this looks like a real, specific gap — not generic flakiness
+Cost is stable across machines: 6745/6766ms local DualIcon, 6798/6775/6806ms local Game3,
+7207ms on GitHub CI. **Reproduces locally — this was never CI-specific.**
 
-`EnsureBO3On` (see [[feedback_bo3_state_idempotent]]) already confirms `Game2Tab` appeared
-before returning. But `UserNoteInput2` — a sibling element inside the same Game 2 panel —
-is not found for 30-40 seconds afterward. That gap between "the tab exists" and "the panel
-contents are queryable" suggests the Game 2 panel's own child controls render/bind on a
-separate, slower timeline than the tab switch itself — a real timing gap in the app or in
-how MAUI/WinAppDriver expose it, not pure CI noise. The consistent recurrence (3/3 this
-session, same test pair, same element) supports a real gap over random flakiness, even
-though a rerun clears it every time.
+## Why ShowsGamePanel is slower than ShowsWhenGame1IsTie
 
-## Cascade confirmed (run 30980236625, MainPageTests job)
+Purely the number of doomed lookups in the `finally` block. ShowsGamePanel ends with Game 3
+selected, so BOTH `PossibleResultsPicker` and `PossibleResultsPicker2` are `IsVisible=false`
+(two misses). ShowsWhenGame1IsTie ends with Game 2 selected, so picker2 is still present
+(one miss, one 215ms hit). 20.3s vs 12.9s.
 
-Not an isolated 2-test flake — 6 of 25 `MainPageTests` failed in this run:
-`Game3Tab_ShowsGamePanel`, `Game3Tab_ShowsWhenGame1IsTie` (the 44s hangs described above),
-then `PlayerArchetype_Cancel_DismissesPopup`, `PlayerArchetype_DualIconDeck_ShowsBothIcons`,
-`RivalArchetype_Cancel_DismissesPopup`, `SaveMatch_WithArchetypes_ShowsSavedText` all failed
-at a uniform ~10s each with `OpenArchetypePopup` timing out after 3 clicks. `ResetGame1Tab`
-reports "Game 2/3 panels gone" after the Game3Tab failures, but the app state is evidently
-NOT actually clean — every popup interaction afterward can't open. This is the same
-"single-failure-corrupts-navigation-state" cascade shape documented elsewhere this session
-(see [[project_android_ci_gpu_flake]]) — one root cause (the Game2-panel timing gap above),
-not six independent bugs. Fixing the root `UserNoteInput2`/Game2-panel wait gap should clear
-the whole cascade, not just the two directly-affected tests.
+## Where the pattern lives (all the historically flaky spots)
 
-## Not yet done
+- `CloseWindowsPickers` (`MainPageTests.cs`) — raw `App.FindElement` per id at ambient 5s.
+  The Game3 tests guarantee both misses on every single run. Biggest offender.
+- `TryClickIfPresent` (Windows `BaseTest.cs`) — sets no wait of its own, inherits 5s. Note
+  `DismissArchetypePopup` sets `ImplicitWait = Zero` on the line *after* it calls this, so
+  the protection misses the expensive call. ~6.7s each time Cancel is already gone.
+- `ScrollPageToTop`, `ClearUserNoteInput`, `ResetBOSwitch` — same shape; cheap today only
+  because their targets usually exist.
+- `WaitUntilText` — sets 200ms per iteration, but `EnsureBO3On` calls it with a 3000ms
+  budget; one ambient-rate miss would blow the whole budget. Latent, not currently firing.
 
-- Trace the exact call site of the `UserNoteInput2` polling loop (likely inside the test
-  body's own Game 2 panel wait, not `EnsureBO3On` itself — `EnsureBO3On` only confirms the
-  tab, not panel contents).
-- Consider extending the click-verify-retry / gate pattern already used for `EnsureBO3On`
-  to whatever waits for Game 2 panel contents to be queryable, rather than relying on reruns.
-- Held per user instruction (2026-08-05) — Android CI work (crashpad_handler teardown hang,
-  see [[project_android_ci_gpu_flake]]) is the active priority; this is parked for later.
+**The connection to flakiness:** a doomed lookup is charged full retry time. When a runner
+is slow enough that 6.8s becomes 12s+, some *other* deadline (Windows `FindUIElement`'s hard
+30s) trips and the test fails. Same root cause as the "recurring Windows CI flake" this file
+originally documented — the flake and the slowness are one bug, not two.
+
+## Theories ruled out by measurement
+
+- NOT WinAppDriver element-tree caching (the original a475e33 assumption).
+- NOT the picker interaction — `SelectWindowsPickerItem` is ~330ms total
+  (`click 225ms, letter 33ms, tab 58ms, re-anchor 19ms`).
+- NOT `ClickTab` or the panel asserts — none exceeded a 750ms log threshold.
+- NOT `FindUIElement`'s poll loop — zero `UIA check` lines appear during the stall windows,
+  meaning fewer than 4 iterations ran. Corollary: **the FlaUI fallback from a475e33 is
+  near-dead code**, since it only fires on iteration 4.
+
+## The fix (designed, not applied)
+
+Optional-element lookups must run at `ImplicitWait = Zero` — the rule already written in
+[[feedback_cleanup_helper_timeout]], just not followed by these helpers. Applies to
+`CloseWindowsPickers`, Windows `TryClickIfPresent`, `ScrollPageToTop`, `ClearUserNoteInput`.
+Expected saving: ~13.5s on ShowsGamePanel, ~6.8s on ShowsWhenGame1IsTie, ~13.5s on
+DualIconDeck, per fixture run, on both platforms.
+
+## Separate latent bug found while reading
+
+Shared `TestBase` hardcodes its `ImplicitWait` restore to **5s** (the Windows value) in
+`WaitUntilText`, `IsElementPresent`, `WaitUntilRemoved`, `WaitUntilGone`. Android's
+`AppiumSetup` sets 10s and Android's own `BaseTest` helpers restore 10s — so on Android the
+ambient silently flips between 5s and 10s depending on which helper ran last. Makes Android
+faster, so it has never bitten, but the documented "10s Android ambient"
+([[feedback_uitest_timeouts]]) is not reliably in effect.
 
 ## Related
 
-- [[feedback_bo3_state_idempotent]] — the existing EnsureBO3On idempotent-wait pattern
-- [[project_game3tab_test_bug]] — a DIFFERENT, already-RESOLVED Game3Tab issue (content-desc
-  reset on Android) — do not confuse the two, this one is Windows-only and unresolved
-- [[project_ci_workflows]] — the console-mirroring change that surfaced this detail
+- [[feedback_cleanup_helper_timeout]] — the 0ms-for-optional-elements rule these helpers break
+- [[feedback_bo3_state_idempotent]] — EnsureBO3On, confirmed fast (350-490ms), not implicated
+- [[project_game3tab_test_bug]] — DIFFERENT, already-resolved Android content-desc issue
+- [[project_ci_workflows]] — console mirroring that first surfaced the polling detail

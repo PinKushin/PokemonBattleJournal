@@ -51,11 +51,43 @@ namespace UITests
             PerfLog($"END   {TestContext.CurrentContext.Test.FullName} [{result}] {_testTimer.ElapsedMilliseconds}ms");
         }
 
+        /// <summary>
+        /// The ambient ImplicitWait every helper restores when it finishes. Single source of
+        /// truth for both platforms: shared TestBase helpers used to hardcode the Windows 5s
+        /// while Android's own helpers restored 10s, so the effective ambient on Android
+        /// silently flipped depending on which helper ran last. 5s is deliberate — a desktop
+        /// or emulator page renders effectively instantly, so a lookup still pending after
+        /// 5s is a genuine failure, not a slow render, and every second beyond that is paid
+        /// in full by every element that is legitimately absent.
+        /// </summary>
+        protected static readonly TimeSpan AmbientImplicitWait = TimeSpan.FromSeconds(5);
+
+        /// <summary>
+        /// Runs <paramref name="action"/> with ImplicitWait pinned to <paramref name="wait"/>,
+        /// then restores the ambient value. Use with TimeSpan.Zero for optional-element
+        /// lookups — an absent element otherwise costs the full ambient wait plus the
+        /// platform's tree walk (~6.8s on Windows), which is charged on every single run.
+        /// </summary>
+        protected void WithImplicitWait(TimeSpan wait, Action action)
+        {
+            App.Manage().Timeouts().ImplicitWait = wait;
+            try { action(); }
+            finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
+        }
+
         protected AppiumDriver App => AppiumSetup.App;
 
         protected void InvalidateCurrentPage() => _currentPage = null;
 
-        protected static void ClickTab(AppiumElement tabElement) => tabElement.Click();
+        // Timed so a slow Click round-trip is attributable: on Windows the driver charges the
+        // UIA tree walk to the click itself, which can dwarf the element lookup that preceded it.
+        protected static void ClickTab(AppiumElement tabElement)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            tabElement.Click();
+            if (sw.ElapsedMilliseconds > 750)
+                PerfLog($"ClickTab: click took {sw.ElapsedMilliseconds}ms");
+        }
 
         // Template method: handles page-tracking and logging; platform provides navigation steps.
         protected void NavigateTo(string pageTitle)
@@ -159,7 +191,7 @@ namespace UITests
                     catch (OpenQA.Selenium.NoSuchElementException) { }
                 }
             }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+            finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
         }
 
         /// <summary>
@@ -177,7 +209,7 @@ namespace UITests
         {
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
             try { return IsElementPresentCore(id); }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+            finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
         }
 
         /// <summary>
@@ -243,7 +275,7 @@ namespace UITests
                 }
                 return false;
             }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+            finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
         }
 
         /// <summary>
@@ -263,7 +295,7 @@ namespace UITests
                     if (!App.FindElements(MobileBy.AccessibilityId(automationId)).Any())
                         return;
             }
-            finally { App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); }
+            finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
         }
     }
 }
