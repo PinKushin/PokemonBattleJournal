@@ -2,7 +2,7 @@ name: Windows UI Tests
 
 on:
   push:
-    branches: [master, main, 'feature/**']
+    branches: ['**']
   pull_request:
     branches: [master, main]
 
