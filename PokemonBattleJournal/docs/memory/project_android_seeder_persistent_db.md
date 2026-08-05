@@ -10,6 +10,40 @@ metadata:
 
 Android SQLite DB is not wiped between test runs (unlike Windows which uses WipeAppData). A failed seed run (e.g. Limitless name mismatch causing archetype lookup to fail) can leave UITestTrainer in the DB with 0 matches. On the next run the seeder sees the trainer exists and returns early — all ReadJournal and TrainerPage tests then fail with no data.
 
+## CORRECTION 2026-08-05 — the DB survives because the wipe is BROKEN, not by design
+
+This note originally read as though DB persistence was an accepted property of the Android
+local path. It is not. `AppiumSetup` step 4d intends to wipe it:
+
+```csharp
+RunAdb($"shell rm -f /data/data/{AppPackage}/files/*.db3", timeoutMs: 5_000);
+```
+
+That command **always fails**. The adb shell user cannot enter another app's data directory
+on a non-rooted emulator, and `rm -f` suppresses the error:
+
+```
+$ adb shell ls /data/data/com.PinKushin.PokemonBattleJournal/files/
+ls: …: Permission denied            EXIT=1
+
+$ adb shell run-as com.PinKushin.PokemonBattleJournal ls -la files/
+-rw------- … 90112 2026-08-05 15:41 PokemonBattleJournal.db3     ← survived every run
+```
+
+Three swallowed signals let it hide: `RunAdb` ignores the `WaitForExit(int)` return value,
+never checks `ExitCode`, and redirects stderr without ever reading it — so
+`rm: Permission denied` went nowhere.
+
+**Use `run-as` for a debuggable (Debug) app:**
+`adb shell run-as <pkg> rm -f files/PokemonBattleJournal.db3`
+
+**CI is unaffected** — it sets `ANDROID_USE_INSTALLED=0` and takes the `pm clear` path, which
+genuinely works. This is a local-only defect, which is exactly why local runs accumulate state
+while CI stays clean.
+
+The seeder's count-check (below) is still correct and worth keeping — it defends against a
+half-seeded DB regardless of why one exists.
+
 **Why:** `GetByTrainerIdAsync` count check was added in commit 55aeee9. Before that, any reason the seeder aborted mid-seed would silently leave a broken state that persisted forever.
 
 **How to apply:** The seeder checks `GetByTrainerIdAsync(existing.Id, includeRelated: false).Count > 0` before early-returning. If 0 matches, falls through and re-seeds. Always check count, not just existence, when early-returning from a seeder that targets a persistent store.

@@ -16,6 +16,9 @@ namespace UITests
         private const string AvdName = "pixel_7_-_api_35";
         private const string AppPackage = "com.PinKushin.PokemonBattleJournal";
 
+        // Must match Constants.DatabaseFilename in the app.
+        private const string DbFileName = "PokemonBattleJournal.db3";
+
         private static readonly string SetupLogPath = Path.Combine(
             Path.GetTempPath(), "UITests.Android.setup.log");
 
@@ -136,7 +139,22 @@ if (useInstalled)
                 // Instead: force-stop then delete only the SQLite DB for a clean seed state.
                 Log("4d. force-stop + wipe DB (VS fast-deploy safe)");
                 RunAdb($"shell am force-stop {AppPackage}", timeoutMs: 5_000);
-                RunAdb($"shell rm -f /data/data/{AppPackage}/files/*.db3", timeoutMs: 5_000);
+
+                // MUST go through run-as. The adb shell user has no access to another app's
+                // /data/data directory on a non-rooted emulator, so the previous
+                // `shell rm -f /data/data/<pkg>/files/*.db3` was denied on every run and, with
+                // -f plus RunAdb's discarded exit code, failed silently — the local DB was
+                // never actually wiped and archetypes/tags accumulated run over run. run-as
+                // works because Debug builds are debuggable. Paths are relative to the app's
+                // data dir under run-as.
+                RunAdb($"shell run-as {AppPackage} rm -f files/{DbFileName}", timeoutMs: 5_000);
+
+                // Verify rather than assume: this is the exact failure that hid for weeks.
+                string remaining = RunAdb($"shell run-as {AppPackage} ls files/", timeoutMs: 5_000);
+                if (remaining.Contains(DbFileName, StringComparison.OrdinalIgnoreCase))
+                    Log($"4d. WARNING: {DbFileName} still present after wipe — tests will run against stale data");
+                else
+                    Log("4d. DB wipe confirmed");
                 Log("4d. wipe DB done");
             }
             else
@@ -426,7 +444,26 @@ if (useInstalled)
                 using var proc = System.Diagnostics.Process.Start(psi)!;
                 // Read concurrently — WaitForExit deadlocks if output buffer fills (e.g. dumpsys output)
                 var stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
-                proc.WaitForExit(timeoutMs);
+                var stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
+
+                // The WaitForExit(int) return value and the exit code were both discarded here,
+                // and stderr was redirected but never read. That combination hid a permanent
+                // failure for weeks: `rm -f /data/data/<pkg>/files/*.db3` is denied to the adb
+                // shell user on a non-rooted device, so the local DB wipe never once worked and
+                // test data accumulated across runs. Surface all three now.
+                if (!proc.WaitForExit(timeoutMs))
+                {
+                    Log($"4x. adb '{arguments}' TIMED OUT after {timeoutMs}ms");
+                    try { proc.Kill(entireProcessTree: true); } catch (InvalidOperationException) { /* already exited */ }
+                    return string.Empty;
+                }
+
+                string stderr = stderrTask.Result;
+                if (proc.ExitCode != 0)
+                    Log($"4x. adb '{arguments}' exited {proc.ExitCode}: {stderr.Trim()}");
+                else if (stderr.Trim().Length > 0)
+                    Log($"4x. adb '{arguments}' stderr: {stderr.Trim()}");
+
                 return stdoutTask.Result;
             }
             catch (Exception ex)
