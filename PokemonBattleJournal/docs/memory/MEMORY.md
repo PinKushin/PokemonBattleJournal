@@ -28,6 +28,7 @@
 - [Android element lookup strategy](project_android_element_lookup.md) — Direct resourceId (3s) first, UiScrollable fallback (10s); empty Entry returns placeholder not null.
 - [UI test nav diagnostic log](project_uitest_nav_log.md) — %TEMP%\UITests.NavLog.txt; read after VS runs to debug cascades; reset each run by AppiumSetup.
 - [CI workflow structure](project_ci_workflows.md) — 3 separate workflows: ci.yml (unit+integration+coverage), ui-tests-windows.yml, ui-tests-android.yml; Android CI uses API 35 default image (must match AppiumSetup.cs AvdName constant).
+- [CI single-retry-on-flake plan](project_ci_retry_on_flake.md) — proposed, not implemented: nick-fields/retry for Windows step, shell-loop retry inside Android's script line; targets one-off bad-runner noise only, not real flaky tests.
 - [Android CI build fixes](project_ci_android_build_fixes.md) — AppIcon path case (Appicon vs AppIcon) breaks Linux; iOS/macOS TFMs must be conditioned out on Linux; EmbedAssembliesIntoApk passed at build time only.
 - [Windows picker child window on CI](project_windows_picker_ci.md) — MAUI Picker may open as owned child window on Windows Server CI; SelectWindowsPickerItem helper iterates all App.WindowHandles.
 - [SQLite integration test isolation](project_integration_test_isolation.md) — Unique GUID temp file per test (not :memory:); must close connection before file delete; ArchetypeOperations needs metaService mock returning empty list.
