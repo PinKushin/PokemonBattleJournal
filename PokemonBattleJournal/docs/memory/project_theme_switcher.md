@@ -20,8 +20,11 @@ In-app theme switcher is a planned long-term feature.
 - On the Android emulator (light theme by default), the hamburger/flyout button is
   invisible but fully functional — clickable at its expected position, present in the UIA
   tree with content-desc "Open navigation drawer" (Appium and screen readers unaffected).
-- On Windows and/or dark mode, the flyout button shows as the Pokéball (`ball_icon.png`,
-  set as `Shell.FlyoutIcon` in Styles.xaml:510).
+- On Windows, the flyout button shows as the true-color Pokéball sitting in the title-bar
+  area — the user initially read this as "Windows uses the window/title-bar icon as the
+  hamburger," but it's the app's own `Shell.FlyoutIcon = ball_icon.png` setter
+  (Styles.xaml ~:513) doing it; MAUI Shell on Windows just renders the flyout button in
+  the title-bar region, so it looks like a window icon. Same setter drives all platforms.
 - `Shell.ForegroundColor` in light mode was `PokeBlue` — the same StaticResource as the
   Shell nav bar background. Changed to `PokeYellow` on `feat/ci-matrix-per-fixture` as the
   probable fix; **not yet visually confirmed on the emulator**.
