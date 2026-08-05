@@ -1,31 +1,19 @@
 ###############################################################################
-# Set default behavior to automatically normalize line endings.
-# CRLF on checkout (Windows), LF in repo.
+# Line endings: LF everywhere.
+#
+# LF is git's native storage format, matches the Ubuntu runners the Android CI
+# uses, and matches what essentially every file-writing tool emits by default —
+# so there is nothing to convert and git never prints a normalization warning.
+# Visual Studio, MSBuild and PowerShell all read LF without complaint.
+#
+# Only add an eol=crlf entry below for files that genuinely BREAK with LF.
 ###############################################################################
-* text=auto eol=crlf
+* text=auto eol=lf
 
-# Explicit text rules
-*.cs       text eol=crlf
-*.xaml     text eol=crlf
-*.csproj   text eol=crlf
-*.slnx     text eol=crlf
-*.yml      text eol=crlf
-*.yaml     text eol=crlf
-*.json     text eol=crlf
-*.jsonc    text eol=crlf
-*.md       text eol=crlf
-*.xml      text eol=crlf
-*.props    text eol=crlf
-*.targets  text eol=crlf
-*.ps1      text eol=crlf
-*.css      text eol=crlf
-*.js       text eol=crlf
-*.ts       text eol=crlf
-*.svg      text eol=crlf
-*.txt      text eol=crlf
-
-# Shell scripts need LF to run on Linux CI
-*.sh       text eol=lf
+# Correctness overrides — not style. Batch files require CRLF to execute; the
+# repo has none today, but the guard keeps a future one from silently breaking.
+*.bat      text eol=crlf
+*.cmd      text eol=crlf
 
 # Binary — never normalize
 *.png      binary
@@ -36,24 +24,5 @@
 *.db3      binary
 *.ttf      binary
 *.otf      binary
-
-###############################################################################
-# Set default behavior for command prompt diff.
-###############################################################################
-#*.cs     diff=csharp
-
-###############################################################################
-# Merge driver for project and solution files
-###############################################################################
-#*.sln       merge=binary
-#*.csproj    merge=binary
-#*.vbproj    merge=binary
-#*.vcxproj   merge=binary
-#*.vcproj    merge=binary
-#*.dbproj    merge=binary
-#*.fsproj    merge=binary
-#*.lsproj    merge=binary
-#*.wixproj   merge=binary
-#*.modelproj merge=binary
-#*.sqlproj   merge=binary
-#*.wwaproj   merge=binary
+*.apk      binary
+*.snk      binary
