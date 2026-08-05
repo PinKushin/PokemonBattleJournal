@@ -260,7 +260,15 @@ namespace UITests
             welcomeLabel.Text.ShouldContain("UITestTrainer");
         }
 
-        [Test]
+        // [Order(1)]: on CI's software-rendered emulator, the host GL translator's
+        // ColorBuffer pool drains over the course of this popup-heavy fixture
+        // ("Failed to find ColorBuffer: NNN" in the emulator log), and whichever tests
+        // run LAST lose their elements from the UIA tree — this test and WentFirstLabel
+        // failed as the alphabetical tail three runs straight while 23 siblings passed.
+        // Ordered tests run before unordered ones in NUnit, so the two victims now run
+        // while the pool is fresh. Both are state-safe to run first: this one clears its
+        // note in finally, WentFirstLabel is display-only.
+        [Test, Order(1)]
         public void MainPage_UserNoteInput_ShowTextEntry()
         {
             // Type-verify-retry: SendKeys drops keystrokes on slow CI runners (Windows CI
@@ -499,7 +507,8 @@ namespace UITests
             FindUIElement("DatePlayedHeading").ShouldNotBeNull();
         }
 
-        [Test]
+        // [Order(2)]: see MainPage_UserNoteInput_ShowTextEntry — second ColorBuffer victim.
+        [Test, Order(2)]
         public void MainPage_WentFirstLabel_Displayed()
         {
             FindUIElement("WentFirstLabel").ShouldNotBeNull();
