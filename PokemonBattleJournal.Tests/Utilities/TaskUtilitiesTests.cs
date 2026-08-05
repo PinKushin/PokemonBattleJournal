@@ -11,7 +11,7 @@ namespace PokemonBattleJournal.Tests.Utilities
             // Act & Assert — the observer task completes without throwing.
             // FireAndForgetSafeAsync returns the observing Task (no async void),
             // so tests can await it directly instead of sleeping.
-            await successfulTask.FireAndForgetSafeAsync();
+            await Should.NotThrowAsync(() => successfulTask.FireAndForgetSafeAsync());
         }
 
         [Test]
@@ -34,8 +34,9 @@ namespace PokemonBattleJournal.Tests.Utilities
             // Arrange
             Task failingTask = Task.FromException(new Exception("Test error"));
 
-            // Act & Assert — should not throw even with null handler
-            await TaskUtilities.FireAndForgetSafeAsync(failingTask, null);
+            // Act & Assert — a faulted task with no handler must still be observed rather than
+            // resurfacing; without this the exception would escape the fire-and-forget wrapper.
+            await Should.NotThrowAsync(() => TaskUtilities.FireAndForgetSafeAsync(failingTask, null));
         }
 
         [Test]

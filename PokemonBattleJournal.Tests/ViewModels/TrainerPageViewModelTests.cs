@@ -111,8 +111,17 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _mockConnectionFactory.Matches.GetByTrainerIdAsync(1, true)
                 .Returns(Task.FromResult(matches));
 
-            _mockAnalysisService.CalculateWinRate(matches, out _, out _, out _)
-                .Returns(66.66666666666667);
+            // The out params carry wins/losses/ties, so they must be set through a callback —
+            // the VM copies all four values onto its own properties and that copy is the
+            // behaviour under test.
+            _mockAnalysisService.CalculateWinRate(matches, out Arg.Any<uint>(), out Arg.Any<uint>(), out Arg.Any<uint>())
+                .Returns(call =>
+                {
+                    call[1] = 2u;
+                    call[2] = 1u;
+                    call[3] = 0u;
+                    return 66.66666666666667;
+                });
             _mockAnalysisService.CalculateMatchupMatrix(matches)
                 .Returns((Array.Empty<string>(), Array.Empty<string>(), Array.Empty<(int, int, double)>()));
             _mockAnalysisService.GetMostPlayedArchetypes(matches)
@@ -137,8 +146,12 @@ namespace PokemonBattleJournal.Tests.ViewModels
             // Act
             await _viewModel.AppearingAsync();
 
-            // Assert
-            _mockAnalysisService.CalculateWinRate(matches, out Arg.Any<uint>(), out Arg.Any<uint>(), out Arg.Any<uint>());
+            // Assert — the empty-match case is covered by AppearingAsync_NoMatches_*; this pins
+            // that a populated result actually reaches the bound properties.
+            _viewModel.WinAverage.ShouldBe(66.66666666666667);
+            _viewModel.Wins.ShouldBe(2u);
+            _viewModel.Losses.ShouldBe(1u);
+            _viewModel.Ties.ShouldBe(0u);
         }
 
         // ---------------------------------------------------------------------------
