@@ -1,12 +1,52 @@
 ---
 name: project_game3tab_ci_flake_recurring
-description: Game3Tab slowness/flake ROOT-CAUSED 2026-08-05 — optional-element lookups inherit the 5s ambient ImplicitWait, so every absent element costs ~6.8s. Fix not yet applied.
+description: Game3Tab slowness/flake RESOLVED 2026-08-05 — optional-element lookups inherited the 5s ambient ImplicitWait, so every absent element cost ~6.8s. Fixed with TimeSpan.Zero + a single ambient constant.
 metadata:
   type: project
 ---
 
-**Status: root-caused and measured (2026-08-05). Fix NOT yet applied** — user asked for
-complete understanding first. Diagnosis below is from local instrumented runs, not inference.
+**Status: RESOLVED 2026-08-05.** Root-caused by measurement, fixed, and verified green on
+both platforms.
+
+## Result after the fix
+
+| Test | Before | After |
+|------|--------|-------|
+| `Game3Tab_ShowsGamePanel` | 20438ms | **7498ms** |
+| `Game3Tab_ShowsWhenGame1IsTie` | 12734ms | **6249ms** |
+| `DualIconDeck_ShowsBothIcons` | 19795ms | **11331ms** |
+| `CloseWindowsPickers` (absent) | 6798ms | **186ms** |
+
+Full Windows UI suite (73 tests, all 5 fixtures) now runs in **1m28s** — previously
+`MainPageTests` alone took 1m20s. Verified: unit 488/488, integration 115/115, Windows UI
+73/73, Android UI 72/72 in 8m55s (matching its 8m44s pre-change baseline, so the 10s→5s
+ambient change caused no flakiness).
+
+**The fix:** optional-element lookups run at `TimeSpan.Zero` via the new
+`TestBase.WithImplicitWait` helper (`CloseWindowsPickers`, `ScrollPageToTop`,
+`ClearUserNoteInput`); Windows `TryClickIfPresent` pins its own `timeoutMs` as the implicit
+wait as Android's override always did; the ambient is now the single
+`TestBase.AmbientImplicitWait` constant (5s, both platforms). See [[feedback_uitest_timeouts]].
+
+## Still open, same family — Android-side lookup cost
+
+Not addressed by this fix (`CloseWindowsPickers` early-returns on non-Windows, so Android's
+Game3 timings are unchanged at ~20-24s). From the pre-change CI log, several *single-assert*
+Android tests land at a uniform ~10.0-10.3s — `WentFirstLabel_Displayed`,
+`ResultPicker_Displayed`, `FirstCheck_Displayed`. That is the three-stage lookup shape:
+stage 1 exhausting its 5s deadline, stage 2 ~0.5s, then stage 3 scrolling. These are
+below-the-fold elements that should cost ~200ms. Biggest remaining Android win; wants a
+scroll-first strategy or a cheaper stage 1.
+
+Also open (Windows, small): `DismissArchetypePopup` retries a Cancel click that already
+succeeded — 5.6s of `DualIconDeck`'s remaining 11.3s. A zero-wait presence check before the
+click would recover most of it, but it changes dismissal behavior, so it wants its own pass.
+
+---
+
+## Original diagnosis (kept — this is the evidence trail)
+
+Diagnosis below is from local instrumented runs, not inference.
 
 ## The measurement
 
