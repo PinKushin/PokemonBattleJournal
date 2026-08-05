@@ -182,8 +182,15 @@ namespace UITests
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             while (DateTime.UtcNow < deadline)
             {
-                if (!IsElementPresent(sentinelId))
-                    return true;
+                try
+                {
+                    if (!IsElementPresent(sentinelId))
+                        return true;
+                }
+                catch (InvalidOperationException)
+                {
+                    // WinAppDriver phantom-element race mid-rebind — treat as still present, keep polling.
+                }
             }
             NavLog($"WaitUntilBusyGone('{sentinelId}') timed out after {timeoutMs}ms");
             return false;
