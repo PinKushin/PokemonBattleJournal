@@ -174,8 +174,14 @@ report the count ("12 entries already present, skipped") and offer an "import an
 the user decides and a genuine identical pair stays recoverable. This keeps the common case
 (re-importing an overlapping log) quiet without ever destroying data the app cannot tell apart.
 
-Recording an opponent name or ID on `MatchEntry` would resolve the ambiguity properly, but
-that is a model change and its own feature.
+**Recording an opponent name would NOT reliably fix this** — considered and rejected (user,
+2026-08-05). Online you do not pay attention to screen names, so the field would usually be
+blank or wrong; it might have some value for in-person play, but it cannot be relied on, and
+it is not even clear the username appears in PTCG Live battle logs. A dedupe rule resting on a
+field that is usually empty is worse than no rule, because it looks authoritative.
+
+So the ambiguity is inherent: **accept it and let the user decide**, per the reporting rule
+above. Do not add a field to chase it.
 
 So: a soft, inline warning when a new match overlaps an existing one — a natural first consumer
 of the **Inline validation feedback** item below, and specifically not a modal
@@ -215,6 +221,31 @@ run before any DB write; the envelope path goes through the same parser, so it i
 - OptionsPage: "Export backup" with a picker or radio for "All trainers" vs "Active trainer only"
 - Filename suggestion: `pbj-backup-{date}.json` or `pbj-backup-{TrainerName}-{date}.json`
 - Backup format should be importable back in as a restore (import service reads both flat array and backup envelope)
+
+## PTCG Live battle log parsing (wanted, user 2026-08-05, not started)
+
+Parse Pokémon TCG Live's own battle logs so matches from Live upload trivially, instead of
+being typed in by hand. Stated as a want rather than a scheduled item.
+
+Why it fits well: the app already has an import pipeline with the hard parts solved —
+size/depth/count/length limits enforced before any DB write, get-or-create for archetypes and
+tags, per-entry error collection. A Live parser is another front end onto
+`MatchOperations.SaveAsync`, most likely alongside `TrainerHillImportService` under
+`Services/Import/`.
+
+Unknowns to settle first, before designing anything:
+
+- **Where the logs live and what format they are in.** Live shows a log in-client; whether it
+  can be exported to a file, and whether that file is structured or prose, decides everything
+  about the parser.
+- **Whether a match timestamp is present, and at what precision.** This directly drives
+  duplicate detection — see the restore section above, where sub-second timestamps are what
+  make a dedupe key trustworthy.
+- **Whether the opponent's username appears at all.** The user doubts it. Do not design around
+  it either way; see the note above on why opponent identity is not a dependable field.
+- **Whether deck archetype is inferable.** Live logs list cards played, not a deck name, so
+  archetype would have to be derived — which overlaps the existing slug/meta-deck resolution
+  and could reuse `ILimitlessMetaService`.
 
 ## Deck Maker
 
