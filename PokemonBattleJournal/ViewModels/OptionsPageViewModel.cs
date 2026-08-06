@@ -123,13 +123,23 @@ namespace PokemonBattleJournal.ViewModels
                 try
                 {
                     await using Stream stream = await file.OpenReadAsync();
-                    (int imported, List<string> errors) = await _importService.ImportAsync(stream, _trainer.Id);
+                    (int imported, int skippedDuplicates, List<string> errors) =
+                        await _importService.ImportAsync(stream, _trainer.Id);
 
-                    ImportStatusMessage = errors.Count > 0
-                        ? $"Imported {imported}, {errors.Count} skipped"
-                        : $"Imported {imported} matches";
+                    // Duplicates and errors are reported separately. The old message called
+                    // errors "skipped", which read as "these entries were already here" when it
+                    // actually meant "these entries failed" — opposite meanings, and the
+                    // reassuring one was shown for the alarming case.
+                    List<string> parts = [$"Imported {imported} matches"];
+                    if (skippedDuplicates > 0)
+                        parts.Add($"{skippedDuplicates} already present");
+                    if (errors.Count > 0)
+                        parts.Add($"{errors.Count} failed");
+                    ImportStatusMessage = string.Join(", ", parts);
 
-                    _logger.LogInformation("TrainerHill import: {Imported} imported, {Errors} errors", imported, errors.Count);
+                    _logger.LogInformation(
+                        "TrainerHill import: {Imported} imported, {Skipped} already present, {Errors} errors",
+                        imported, skippedDuplicates, errors.Count);
 
                     if (errors.Count > 0)
                         _logger.LogWarning("TrainerHill import errors: {Errors}", string.Join("; ", errors));

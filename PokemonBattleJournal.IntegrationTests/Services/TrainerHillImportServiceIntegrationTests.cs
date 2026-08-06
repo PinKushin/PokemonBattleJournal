@@ -39,6 +39,43 @@ namespace PokemonBattleJournal.IntegrationTests.Services
         // Happy paths
         // ---------------------------------------------------------------------------
 
+        /// <summary>
+        /// Importing the same log twice must not double the history.
+        /// </summary>
+        /// <remarks>
+        /// TrainerHill's site has no notion of "everything since last time", so re-exporting
+        /// overlaps whatever was exported before — re-importing is the normal case, not an
+        /// edge one. Until this existed every entry was inserted again on every import, and
+        /// nothing reported it.
+        ///
+        /// Skipped entries are counted rather than passed over silently. The app cannot tell a
+        /// re-import from two genuinely identical matches: the key includes the opposing
+        /// archetype, which identifies a *deck*, not a person, and the model stores no opponent
+        /// identity at all. So the user is told what was skipped and keeps the final say.
+        /// </remarks>
+        [Test]
+        public async Task ImportAsync_SameLogTwice_SkipsTheSecondPassAndSaysSo()
+        {
+            const string json = """
+                [{"playing":"other","against":"other","time":"2026-07-18 19:08:53","result":"Win",
+                  "game1":{"result":"Win","turn":1,"tags":[],"notes":null}}]
+                """;
+
+            (int firstImported, int firstSkipped, _) = await _sut.ImportAsync(ToStream(json), _trainerId);
+            firstImported.ShouldBe(1);
+            firstSkipped.ShouldBe(0, "nothing was present before the first import");
+
+            (int secondImported, int secondSkipped, List<string> errors) =
+                await _sut.ImportAsync(ToStream(json), _trainerId);
+
+            secondImported.ShouldBe(0, "the entry is already present");
+            secondSkipped.ShouldBe(1, "a skipped duplicate must be counted, not silently passed over");
+            errors.ShouldBeEmpty("an already-present entry is not an error");
+
+            (await _factory.Matches.GetByTrainerIdAsync(_trainerId)).Count
+                .ShouldBe(1, "re-importing the same log must not double the history");
+        }
+
         [Test]
         public async Task ImportAsync_BO1Entry_ImportsOneMatch()
         {
@@ -47,7 +84,7 @@ namespace PokemonBattleJournal.IntegrationTests.Services
                   "game1":{"result":"Win","turn":1,"tags":[],"notes":null}}]
                 """;
 
-            (int imported, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
 
             imported.ShouldBe(1);
             errors.ShouldBeEmpty();
@@ -65,7 +102,7 @@ namespace PokemonBattleJournal.IntegrationTests.Services
                   "game3":{"result":"Tie","turn":1,"tags":[],"notes":null}}]
                 """;
 
-            (int imported, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
 
             imported.ShouldBe(1);
             errors.ShouldBeEmpty();
@@ -149,7 +186,7 @@ namespace PokemonBattleJournal.IntegrationTests.Services
                 ]
                 """;
 
-            (int imported, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
 
             imported.ShouldBe(2);
             errors.ShouldBeEmpty();
@@ -162,7 +199,7 @@ namespace PokemonBattleJournal.IntegrationTests.Services
         [Test]
         public async Task ImportAsync_InvalidJson_ReturnsError()
         {
-            (int imported, List<string> errors) = await _sut.ImportAsync(ToStream("not json at all"), _trainerId);
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(ToStream("not json at all"), _trainerId);
 
             imported.ShouldBe(0);
             errors.ShouldNotBeEmpty();
@@ -176,7 +213,7 @@ namespace PokemonBattleJournal.IntegrationTests.Services
                   "game1":{"result":"Win","turn":1,"tags":[],"notes":null}}]
                 """;
 
-            (int imported, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
 
             imported.ShouldBe(0);
             errors.Count.ShouldBeGreaterThan(0);
@@ -189,7 +226,7 @@ namespace PokemonBattleJournal.IntegrationTests.Services
                 [{"playing":"other","against":"other","time":"2026-07-18 19:08:53","result":"Win"}]
                 """;
 
-            (int imported, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
 
             imported.ShouldBe(0);
             errors.ShouldNotBeEmpty();
@@ -207,7 +244,7 @@ namespace PokemonBattleJournal.IntegrationTests.Services
                 ]
                 """;
 
-            (int imported, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
 
             imported.ShouldBe(1);
             errors.ShouldNotBeEmpty();
