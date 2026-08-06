@@ -10,20 +10,11 @@ jobs:
   # ── Unit tests ────────────────────────────────────────────────────────────
   unit-tests:
     name: Unit Tests
-    runs-on: [self-hosted, Windows, X64]
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v6
-        # Step level, not job level. `runner` is not among the contexts allowed in
-        # jobs.<id>.env, and using it there is a startup failure: the whole run dies
-        # with zero jobs created and no readable log. Verified 2026-08-06 - three
-        # workflows, all three dead on arrival.
-        # Needed at all because setup-dotnet otherwise writes under Program Files,
-        # which a non-admin self-hosted runner cannot do.
-        env:
-          DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
-          DOTNET_ROOT: ${{ runner.temp }}/.dotnet
         with:
           dotnet-version: '10.x'
 
@@ -54,20 +45,11 @@ jobs:
   # ── Integration tests ─────────────────────────────────────────────────────
   integration-tests:
     name: Integration Tests
-    runs-on: [self-hosted, Windows, X64]
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v6
-        # Step level, not job level. `runner` is not among the contexts allowed in
-        # jobs.<id>.env, and using it there is a startup failure: the whole run dies
-        # with zero jobs created and no readable log. Verified 2026-08-06 - three
-        # workflows, all three dead on arrival.
-        # Needed at all because setup-dotnet otherwise writes under Program Files,
-        # which a non-admin self-hosted runner cannot do.
-        env:
-          DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
-          DOTNET_ROOT: ${{ runner.temp }}/.dotnet
         with:
           dotnet-version: '10.x'
 

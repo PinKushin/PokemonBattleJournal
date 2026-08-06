@@ -14,29 +14,17 @@ jobs:
   # write the sentinel, and go straight to adb install.
   build-apk:
     name: Build Android APK
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v6
-        # Step level, not job level. `runner` is not among the contexts allowed in
-        # jobs.<id>.env, and using it there is a startup failure: the whole run dies
-        # with zero jobs created and no readable log. Verified 2026-08-06 - three
-        # workflows, all three dead on arrival.
-        # Needed at all because setup-dotnet otherwise writes under Program Files,
-        # which a non-admin self-hosted runner cannot do.
-        env:
-          DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
-          DOTNET_ROOT: ${{ runner.temp }}/.dotnet
         with:
           dotnet-version: '10.x'
 
-      # Restore-only while self-hosted: ~/.nuget/packages is the real cache on that
-      # box and persists between runs, so the save half would upload gigabytes for
-      # nothing. Switch back to actions/cache@v6 with runs-on: ubuntu-latest.
-      - name: Restore NuGet cache
-        uses: actions/cache/restore@v6
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: nuget-android-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
@@ -73,13 +61,7 @@ jobs:
   ui-tests-android:
     name: Android UI Tests (${{ matrix.fixture }})
     needs: build-apk
-    # UbuntuBox is WSL. Two things here are likely to bite before any test runs: the
-    # Enable KVM step calls sudo and udevadm (udev does not normally run under WSL2,
-    # and sudo must be passwordless or the job hangs waiting on a prompt nobody can
-    # see), and the emulator needs nested virtualisation enabled for the WSL VM.
-    # If Android never reaches the emulator, there is no Windows/Android overlap to
-    # observe — check this job got past "Enable KVM" before drawing conclusions.
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
       fail-fast: false
@@ -89,15 +71,6 @@ jobs:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v6
-        # Step level, not job level. `runner` is not among the contexts allowed in
-        # jobs.<id>.env, and using it there is a startup failure: the whole run dies
-        # with zero jobs created and no readable log. Verified 2026-08-06 - three
-        # workflows, all three dead on arrival.
-        # Needed at all because setup-dotnet otherwise writes under Program Files,
-        # which a non-admin self-hosted runner cannot do.
-        env:
-          DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
-          DOTNET_ROOT: ${{ runner.temp }}/.dotnet
         with:
           dotnet-version: '10.x'
 
@@ -144,9 +117,8 @@ jobs:
       # is no race, so which one does not matter. Placed right after the install that
       # populates ~/.npm rather than at job end, so a test failure or a cancelled
       # emulator step still leaves a usable cache for the next run.
-      # Disabled while self-hosted — same reasoning as the NuGet save above.
       - name: Save npm / Appium cache
-        if: false && always() && matrix.fixture == 'AboutPageTests' && steps.appium-cache.outputs.cache-hit != 'true'
+        if: always() && matrix.fixture == 'AboutPageTests' && steps.appium-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
         with:
           path: ~/.npm
