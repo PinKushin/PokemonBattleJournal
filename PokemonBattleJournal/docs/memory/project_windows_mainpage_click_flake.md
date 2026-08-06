@@ -156,21 +156,28 @@ handler does not run.
 
 ## Foreground and pointer state: a real mechanism, but not this bug
 
-Windows Appium clicks depend on the app window being frontmost, and two separate incidents on
-2026-08-06 showed how easily that breaks:
+Windows Appium clicks depend on the app window being frontmost, and this is **confirmed by
+direct observation**, not theory: on 2026-08-06 a local full-suite run failed an About-page
+click because the user moved the mouse as the driver clicked, and clicking the page by hand
+let the run continue.
 
-- A local full-suite run failed on an About-page click because the user happened to move the
-  mouse as the driver clicked. Clicking the page manually let the run continue.
-- The retired self-hosted runners failed for the same class of reason at a larger scale: the
-  Windows and Android runners shared one desktop and ran concurrently, and the Android side
-  took the foreground. Android does not care about focus; Windows does. See
-  [[project_self_hosted_runners]].
+Two qualifiers, both of which matter:
+
+- The user notes stray input "wasn't always the case" — the suite appears to have become more
+  sensitive to it at some point. Nobody has investigated when or why. **Open thread**, and
+  possibly the more interesting one, since a suite that grew input-sensitive may have grown
+  other timing sensitivities.
+- A related idea — that the retired self-hosted runners' parallel Windows/Android runs stole
+  focus the same way — is a recollection the user leans towards but does not stand behind. Not
+  evidence; the setup is gone and was never instrumented. What is certain is that those
+  runners made the machine hard to leave alone while a run was live, which produces the same
+  symptom by the confirmed route above. See [[project_self_hosted_runners]].
 
 So "focus stolen" is a demonstrated way for a dispatched Windows click to do nothing, which is
 exactly this bug's symptom — but it **does not explain the CI failures**. Each hosted matrix
 job is its own VM with no human at the mouse and no emulator sharing the desktop. Keep it as a
-mechanism to recognise in local runs, and as the reason a local run interleaved with anything
-else is not evidence of anything.
+mechanism to recognise in local runs, and as the reason a local run that anyone touched is not
+evidence either way.
 
 ## Related
 

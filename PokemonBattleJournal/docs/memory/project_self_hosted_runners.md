@@ -32,22 +32,37 @@ They were never meant to be the permanent CI substrate. They were a way to **rep
 failures semi-locally** — run the workflows on hardware that could be inspected and iterated
 on, instead of pushing a commit per hypothesis.
 
-**It did not work, for a structural reason that will recur if anyone tries it again.** One
-physical machine hosted both runners — the Windows runner natively, the Linux runner in WSL —
-so the Windows UI matrix and the Android UI matrix ran **in parallel on the same desktop**.
-Windows Appium tests require the app window to be in the foreground; the Android side does
-not care about focus at all, but the emulator and its tooling take the foreground anyway.
-The interference is therefore one-directional: Android runs break Windows runs, not the
-reverse. Clicks on Windows never disturbed the emulator.
+**It did not achieve that**, and it was retired. One physical machine hosted both runners —
+the Windows runner natively, the Linux runner in WSL — so unlike a local test-runner session
+the Windows UI matrix and the Android UI matrix could run **genuinely in parallel on one
+desktop**.
 
-The result was Windows failures that looked like product bugs and were scheduling artifacts,
-which is worse than the CI failures the setup was built to diagnose. GitHub-hosted runners
-give each matrix job its own VM, so the two suites cannot see each other.
+**How confident to be about the interference: low, but not zero.** The user recalls a focus
+issue and leans towards it having been real, while saying outright they may be wrong. The
+mechanism would be one-directional — Windows Appium needs the app window frontmost, Android
+does not care about focus but takes the foreground anyway, so Android runs would break
+Windows runs and never the reverse. Treat that as an unmeasured hypothesis; the setup is gone
+and nobody instrumented it.
 
-**Consequence for local work:** never run the Windows UI suite and the Android UI suite
-concurrently on this machine. Same reason a mouse movement during a Windows run can divert a
-click — see [[project_windows_mainpage_click_flake]], where foreground and pointer state are
-a demonstrated mechanism for Windows clicks missing, though not the CI cause there.
+The plainer problem is not in doubt: **a CI run on the machine you are sitting at is a run you
+have to leave alone**, and these runners made that hard to sustain. That alone undercuts the
+"reproduce CI locally" premise regardless of whether the focus theory holds.
+
+What is **not** in doubt is the narrower fact underneath it: manual mouse or keyboard input
+during a local Windows run can divert a click. Observed directly on 2026-08-06, when a mouse
+movement made an About-page click miss and clicking the page by hand let the run continue.
+The user also notes this "wasn't always the case" — something made the suite more sensitive
+to stray input than it used to be, and nobody has looked into what. That is an open thread,
+not a known cause.
+
+**Why the parallel case does not arise locally anyway:** the VS test runner serialises. It
+starts the Android emulator at the beginning of a session, waits for it to be ready, and runs
+the Android fixtures only after everything else has finished — so the Windows suite is always
+done before Android begins. Two separate CI runners had no such coordination.
+
+See [[project_windows_mainpage_click_flake]] for where foreground and pointer state sit in
+that investigation — a real mechanism for a dispatched click doing nothing, and still not the
+CI cause.
 
 ## History — how it was configured
 
