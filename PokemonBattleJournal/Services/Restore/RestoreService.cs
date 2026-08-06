@@ -105,11 +105,7 @@ namespace PokemonBattleJournal.Services.Restore
                 // Loaded once per trainer rather than queried per entry: a restore of a long
                 // history would otherwise be N queries deep for no benefit.
                 List<MatchEntry> existing = await _factory.Matches.GetByTrainerIdAsync(trainerId, includeRelated: true);
-                Dictionary<MatchKey, MatchEntry> existingByKey = [];
-                foreach (MatchEntry match in existing)
-                {
-                    existingByKey[MatchKey.From(match)] = match;
-                }
+                Dictionary<MatchDuplicateKey, MatchEntry> existingByKey = MatchDuplicateKey.Index(existing);
 
                 foreach (ExportEntry entry in exported.Matches)
                 {
@@ -220,7 +216,7 @@ namespace PokemonBattleJournal.Services.Restore
             ExportEntry entry,
             uint trainerId,
             string trainerName,
-            Dictionary<MatchKey, MatchEntry> existingByKey,
+            Dictionary<MatchDuplicateKey, MatchEntry> existingByKey,
             List<string> errors)
         {
             if (!Enum.TryParse(entry.Result, ignoreCase: true, out MatchResult result))
@@ -245,7 +241,7 @@ namespace PokemonBattleJournal.Services.Restore
             DateTime endTime = ParseTime(entry.EndTime) ?? startTime;
             DateTime datePlayed = ParseTime(entry.Time) ?? startTime;
 
-            MatchKey key = new(startTime, playingId, againstId, result);
+            MatchDuplicateKey key = new(startTime, playingId, againstId, result);
             if (existingByKey.TryGetValue(key, out MatchEntry? already))
             {
                 return ClassifyAgainstExisting(entry, already, trainerName);
@@ -425,25 +421,5 @@ namespace PokemonBattleJournal.Services.Restore
                 .FirstOrDefaultAsync();
         }
 
-        /// <summary>
-        /// The duplicate-detection key: <c>(StartTime, PlayingId, AgainstId, Result)</c> within
-        /// one trainer.
-        /// </summary>
-        /// <remarks>
-        /// <c>StartTime</c>, not <c>DatePlayed</c>. DatePlayed comes from a date picker and sits
-        /// at midnight, so it collides constantly; StartTime carries a real time of day from
-        /// every source — sub-second for TrainerHill entries, minute precision from the app's
-        /// own time picker.
-        ///
-        /// It cannot be perfect and is not treated as such. <c>AgainstId</c> identifies a deck
-        /// rather than a person — the model stores no opponent identity — so two different
-        /// opponents on the same deck in the same minute produce the same key. That is why a
-        /// key hit is never a licence to delete or overwrite.
-        /// </remarks>
-        private readonly record struct MatchKey(DateTime StartTime, uint PlayingId, uint AgainstId, MatchResult Result)
-        {
-            public static MatchKey From(MatchEntry match) =>
-                new(match.StartTime, match.PlayingId, match.AgainstId, match.Result ?? MatchResult.Win);
-        }
     }
 }

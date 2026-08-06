@@ -25,6 +25,9 @@ namespace PokemonBattleJournal.Tests.Services
             _matches = Substitute.For<IMatchOperations>();
             _factory = Substitute.For<ISqliteConnectionFactory>();
             _factory.Matches.Returns(_matches);
+            // The importer now indexes existing matches to skip duplicates. An unstubbed
+            // NSubstitute call returns null, which the real ops layer never does.
+            _matches.GetByTrainerIdAsync(Arg.Any<uint>(), Arg.Any<bool>()).Returns([]);
 
             // Any DB access at all is a failure in these tests — every limit must be enforced
             // before the first query. Making the connection throw proves that rather than
@@ -53,7 +56,7 @@ namespace PokemonBattleJournal.Tests.Services
 
         private async Task AssertRejectedAsync(Stream stream, string expectedErrorFragment)
         {
-            (int imported, List<string> errors) = await _sut.ImportAsync(stream, trainerId: 1);
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(stream, trainerId: 1);
 
             imported.ShouldBe(0);
             errors.ShouldContain(
@@ -126,7 +129,7 @@ namespace PokemonBattleJournal.Tests.Services
         [Test]
         public async Task ImportAsync_EmptyArray_ImportsNothingWithoutError()
         {
-            (int imported, List<string> errors) = await _sut.ImportAsync(Json("[]"), trainerId: 1);
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(Json("[]"), trainerId: 1);
 
             imported.ShouldBe(0);
             errors.ShouldBeEmpty();

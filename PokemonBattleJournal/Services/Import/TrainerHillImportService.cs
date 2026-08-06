@@ -49,16 +49,17 @@ namespace PokemonBattleJournal.Services.Import
             _limitlessService = limitlessService;
         }
 
-        public async Task<(int Imported, List<string> Errors)> ImportAsync(Stream jsonStream, uint trainerId)
+        public async Task<(int Imported, int SkippedDuplicates, List<string> Errors)> ImportAsync(Stream jsonStream, uint trainerId)
         {
             if (trainerId == 0) throw new ArgumentException("TrainerId required", nameof(trainerId));
 
             List<string> errors = [];
             int imported = 0;
+            int skippedDuplicates = 0;
 
             Stream? bounded = await TryBoundStreamAsync(jsonStream, errors);
             if (bounded is null)
-                return (0, errors);
+                return (0, 0, errors);
 
             List<TrainerHillEntry>? entries;
             try
@@ -69,7 +70,7 @@ namespace PokemonBattleJournal.Services.Import
             {
                 _logger.LogError(ex, "Failed to deserialize TrainerHill JSON");
                 errors.Add($"Invalid JSON: {ex.Message}");
-                return (0, errors);
+                return (0, 0, errors);
             }
             finally
             {
@@ -79,7 +80,7 @@ namespace PokemonBattleJournal.Services.Import
             }
 
             if (entries is null || entries.Count == 0)
-                return (imported, errors);
+                return (imported, skippedDuplicates, errors);
 
             if (entries.Count > MaxEntries)
             {
@@ -88,12 +89,17 @@ namespace PokemonBattleJournal.Services.Import
                 // and re-importing to "fill the gap" would duplicate everything that did land.
                 _logger.LogWarning("Import refused: {Count} entries exceeds the limit of {Max}", entries.Count, MaxEntries);
                 errors.Add($"Import refused: too many entries ({entries.Count}); the limit is {MaxEntries}.");
-                return (0, errors);
+                return (0, 0, errors);
             }
 
             List<MetaDeck> metaDecks = await _limitlessService.GetTopDecksAsync(int.MaxValue);
             Dictionary<string, string> slugLookup = BuildSlugLookup(metaDecks);
             Dictionary<string, MetaDeck> deckByName = metaDecks.ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
+
+            // Loaded once rather than queried per entry: a long history would otherwise be
+            // N queries deep for no benefit.
+            Dictionary<MatchDuplicateKey, MatchEntry> existingByKey = MatchDuplicateKey.Index(
+                await _factory.Matches.GetByTrainerIdAsync(trainerId, includeRelated: false));
 
             foreach (TrainerHillEntry entry in entries)
             {
@@ -144,6 +150,20 @@ namespace PokemonBattleJournal.Services.Import
                         EndTime = datePlayed,
                     };
 
+                    // Skip what is already stored. TrainerHill has no "since last time"
+                    // export, so a re-export overlaps the previous one and re-importing is the
+                    // normal case — every entry used to be inserted again, silently.
+                    //
+                    // Counted rather than passed over: the key cannot distinguish a re-import
+                    // from two genuinely identical matches, because AgainstId identifies a deck
+                    // and the model stores no opponent identity. See MatchDuplicateKey.
+                    MatchDuplicateKey key = MatchDuplicateKey.From(match);
+                    if (existingByKey.ContainsKey(key))
+                    {
+                        skippedDuplicates++;
+                        continue;
+                    }
+
                     List<Game> games = [];
                     await AddGameAsync(games, entry.Game1, trainerId, errors);
                     if (entry.Game2 is not null)
@@ -153,7 +173,11 @@ namespace PokemonBattleJournal.Services.Import
 
                     int affected = await _factory.Matches.SaveAsync(match, games);
                     if (affected > 0)
+                    {
                         imported++;
+                        // The file is not guaranteed free of duplicates itself.
+                        existingByKey[key] = match;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -162,7 +186,7 @@ namespace PokemonBattleJournal.Services.Import
                 }
             }
 
-            return (imported, errors);
+            return (imported, skippedDuplicates, errors);
         }
 
         /// <summary>

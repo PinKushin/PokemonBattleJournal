@@ -302,7 +302,7 @@ public class ExportServiceIntegrationTests
         TrainerHillImportService importer = new(
             _factory, NullLogger<TrainerHillImportService>.Instance, meta);
 
-        (int imported, List<string> errors) = await importer.ImportAsync(
+        (int imported, _, List<string> errors) = await importer.ImportAsync(
             new MemoryStream(Encoding.UTF8.GetBytes(json)), restored.Id);
 
         errors.ShouldBeEmpty($"round trip reported errors: {string.Join(" | ", errors)}");

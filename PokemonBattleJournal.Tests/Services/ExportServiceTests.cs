@@ -206,6 +206,9 @@ namespace PokemonBattleJournal.Tests.Services
             importTarget.SaveAsync(Arg.Any<MatchEntry>(), Arg.Any<List<Game>>()).Returns(Task.FromResult(1));
             ISqliteConnectionFactory importFactory = Substitute.For<ISqliteConnectionFactory>();
             importFactory.Matches.Returns(importTarget);
+            // The importer now indexes existing matches to skip duplicates. An unstubbed
+            // NSubstitute call returns null, which the real ops layer never does.
+            importTarget.GetByTrainerIdAsync(Arg.Any<uint>(), Arg.Any<bool>()).Returns([]);
             importFactory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
             importFactory.GetLock().Returns(new SemaphoreSlim(1, 1));
             importFactory.GetDatabaseAsync().Returns(Task.FromException<SQLiteAsyncConnection>(
@@ -218,7 +221,7 @@ namespace PokemonBattleJournal.Tests.Services
             TrainerHillImportService importer = new(
                 importFactory, Substitute.For<ILogger<TrainerHillImportService>>(), meta);
 
-            (int _, List<string> errors) = await importer.ImportAsync(
+            (int _, _, List<string> errors) = await importer.ImportAsync(
                 new MemoryStream(Encoding.UTF8.GetBytes(json)), trainerId: 7);
 
             // Archetype resolution needs the database, which is unavailable here, so the entry
