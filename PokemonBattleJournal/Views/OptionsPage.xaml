@@ -61,7 +61,7 @@
                     AutomationId="PageLoadingIndicator"
                     ArcColor="{StaticResource BostonRed}"
                     HeightRequest="96"
-                    IsBusy="{Binding IsBusyMutating}"
+                    IsBusy="{Binding IsAnyBusy}"
                     WidthRequest="96" />
                 <Label
                     AutomationId="LoadingIndicatorLabel"

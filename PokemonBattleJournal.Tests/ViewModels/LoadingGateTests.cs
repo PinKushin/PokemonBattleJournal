@@ -452,5 +452,76 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             vm.IsBusyMutating.ShouldBeFalse("busy flag must clear when the delete settles");
         }
+
+        // ---------------------------------------------------------------------------
+        // IsAnyBusy — what the loading indicator binds to on pages with more than one gate
+        //
+        // MainPage and OptionsPage each have a load gate and a mutate gate. Binding the spinner
+        // to one of them would leave the other operation with no feedback, so they expose a
+        // combined signal. It must also RAISE a change notification when either input flips,
+        // otherwise the binding never updates and the spinner silently never appears — a
+        // failure that no amount of correct XAML would reveal.
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void Main_IsAnyBusy_TrueWhenEitherGateIsUp()
+        {
+            MainPageViewModel vm = CreateMainVm(out _);
+            vm.IsAnyBusy.ShouldBeFalse();
+
+            vm.IsBusyArchetypeList = true;
+            vm.IsAnyBusy.ShouldBeTrue("the archetype load must show the indicator");
+
+            vm.IsBusyArchetypeList = false;
+            vm.IsBusyMutating = true;
+            vm.IsAnyBusy.ShouldBeTrue("saving a match must show the indicator");
+
+            vm.IsBusyMutating = false;
+            vm.IsAnyBusy.ShouldBeFalse();
+        }
+
+        [Test]
+        public void Main_IsAnyBusy_RaisesChangeNotificationForEachGate()
+        {
+            MainPageViewModel vm = CreateMainVm(out _);
+            List<string?> changed = [];
+            vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+            vm.IsBusyArchetypeList = true;
+            changed.ShouldContain(nameof(vm.IsAnyBusy), "without this the binding never updates");
+
+            changed.Clear();
+            vm.IsBusyMutating = true;
+            changed.ShouldContain(nameof(vm.IsAnyBusy));
+        }
+
+        [Test]
+        public void Options_IsAnyBusy_TrueWhenEitherGateIsUp()
+        {
+            OptionsPageViewModel vm = CreateOptionsVm(out _);
+            vm.IsAnyBusy.ShouldBeFalse();
+
+            vm.IsBusyArchetypeList = true;
+            vm.IsAnyBusy.ShouldBeTrue();
+
+            vm.IsBusyArchetypeList = false;
+            vm.IsBusyMutating = true;
+            vm.IsAnyBusy.ShouldBeTrue();
+        }
+
+        [Test]
+        public void Options_IsAnyBusy_RaisesChangeNotificationForEachGate()
+        {
+            OptionsPageViewModel vm = CreateOptionsVm(out _);
+            List<string?> changed = [];
+            vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+            vm.IsBusyArchetypeList = true;
+            changed.ShouldContain(nameof(vm.IsAnyBusy));
+
+            changed.Clear();
+            vm.IsBusyMutating = true;
+            changed.ShouldContain(nameof(vm.IsAnyBusy));
+        }
     }
 }

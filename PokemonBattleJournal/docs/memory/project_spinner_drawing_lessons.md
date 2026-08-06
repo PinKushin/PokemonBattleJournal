@@ -62,8 +62,15 @@ measure **counter-clockwise from 3 o'clock**, while the control's own `PointOnOr
 ## Residual flicker is accepted, not solved
 
 Some shimmer remains. User's call, 2026-08-05: *"its a maui problem, wed have to build
-something in dx from primitives to probably fix it then thats not cross platform."* Do not
-spend more time on it, and do not introduce a platform-specific renderer for it.
+something in dx from primitives to probably fix it."* Do not spend more time on it.
+
+**The reason matters, and it is narrower than "platform-specific is off limits."** A proper fix
+means drawing the trail with DX primitives, and wiring DX into MAUI is essentially impractical
+— MAUI is not built to host it (user, clarified 2026-08-05). That is a different and much
+harder problem than using a platform's *built-in* native renderer, such as `AcrylicBrush` on
+WinUI or `RenderEffect` on Android 12+ for a blurred scrim. Those go through handlers or
+platform views and are ordinary MAUI customisation. Do not cite the spinner as precedent for
+avoiding them.
 
 One untried cheap option if it ever matters: the redraw runs at 30fps
 (`LoadingIndicator.FrameInterval = 33ms`), and a rotating object at 30fps judders against a

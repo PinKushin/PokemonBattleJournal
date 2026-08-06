@@ -390,6 +390,65 @@ Fluent-style ring spinner, NOT a full solid ring and NOT a simple spinning Poké
   `Microsoft.Maui.Animations` ticker or simple `Dispatcher.StartTimer` angle increment. Lottie
   is an alternative if a matching animation is easier to source/build externally.
 
+### Scrim + region-scoped indicators — NEXT CHANGE (design from the user, 2026-08-05)
+
+The indicator is wired **inline** per page first. The scrim is deliberately a separate change,
+and it should not be a blanket page-covering overlay.
+
+The model the user wants:
+
+1. **Page load** — indicator covers the page while the page itself is loading, then goes away.
+2. **Then region-scoped** — if a particular CollectionView (or any one section) is still
+   loading, the animation renders only in *that* region, taking up the minimum space that
+   region wants, and clears when that region finishes.
+
+So the scrim is scoped to whatever is actually busy, not to the window. The existing gates
+already line up with this: `IsBusyMatchHistory` is the ReadJournal list, `IsBusyChartData` is
+the TrainerPage charts, `IsBusyArchetypeList` is the archetype collection. Each is a region,
+not a page.
+
+**Implementation shape.** MAUI Grid children in the same cell stack, and the last sibling
+renders on top, so a region overlay is the region's own container plus an overlay child:
+
+```xml
+<Grid>
+    <CollectionView ... />
+    <Grid IsVisible="{Binding Source={x:Reference RegionSpinner}, Path=IsShowing}"
+          InputTransparent="True"
+          BackgroundColor="{AppThemeBinding Light=#B0FFFFFF, Dark=#B0000000}">
+        <loading:LoadingIndicator x:Name="RegionSpinner" IsBusy="{Binding IsBusyMatchHistory}" />
+    </Grid>
+</Grid>
+```
+
+Three things carry the weight:
+
+- **`InputTransparent="True"`** — non-negotiable. The indicator stays up for
+  `MinimumVisibleDuration` (500ms) *after* the gate clears, but `WaitUntilBusyGone` waits on
+  the raw gate, so a UI test resumes while the overlay is still on screen. Without input
+  transparency those clicks land on the scrim and produce exactly the intermittent
+  tap failures that took this session to eliminate ([[feedback_android_flaky_tap_retry]]).
+  The alternative is a sentinel bound to the indicator's `IsShowing` for tests to wait on —
+  more machinery for no extra benefit.
+- **`AppThemeBinding` on the scrim colour** — a dark scrim over light content reads as a bug.
+- **Ordering, not z-index** — last child wins.
+
+**Start with a dim, not a blur** — but a real blur is not off the table, and it is NOT the same
+problem as the spinner's flicker.
+
+MAUI has no *cross-platform* blur primitive. Getting one means reaching for each platform's
+built-in native renderer — `AcrylicBrush` on WinUI, `RenderEffect` on Android 12+ — through a
+handler or platform view. That is ordinary platform-specific customisation, which MAUI is
+designed to accommodate.
+
+Do not confuse this with the spinner's residual flicker, which was abandoned for a different
+and much harder reason: fixing that properly would mean custom DX drawing, and wiring DX into
+MAUI is essentially impractical because MAUI is not built for it (user, 2026-08-05). Native
+built-in effects are a tractable per-platform job; bypassing MAUI's renderer is not.
+
+So: ship the dim first because it is one line of XAML and works everywhere, and treat acrylic /
+RenderEffect as a per-platform enhancement if the dim proves too flat.
+
 ### TDD
 
 - Write a failing test that opens TrainerPage, asserts `Busy_ChartData` is visible, then waits for it to disappear within 5 s and asserts chart elements are present. Then wire the gate to make it pass.

@@ -279,6 +279,7 @@ namespace PokemonBattleJournal.ViewModels
         /// hidden Busy_ArchetypeList sentinel Label for UI test sync.
         /// </summary>
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsAnyBusy))]
         public partial bool IsBusyArchetypeList { get; set; }
 
         /// <summary>
@@ -292,7 +293,19 @@ namespace PokemonBattleJournal.ViewModels
         /// DeleteArchetypeAsync, ImportFromTrainerHillAsync.
         /// </summary>
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsAnyBusy))]
         public partial bool IsBusyMutating { get; set; }
+
+        /// <summary>
+        /// True while EITHER gate is up. This is what the loading indicator binds to.
+        /// </summary>
+        /// <remarks>
+        /// The page has a load gate and a mutate gate, and binding the spinner to one would
+        /// leave the other operation with no feedback. The [NotifyPropertyChangedFor] on both
+        /// inputs is load-bearing: without it the binding never updates and the spinner simply
+        /// never appears, which no amount of correct XAML would reveal.
+        /// </remarks>
+        public bool IsAnyBusy => IsBusyArchetypeList || IsBusyMutating;
 
         [RelayCommand]
         public async Task AppearingAsync()

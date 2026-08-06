@@ -48,7 +48,7 @@ namespace PokemonBattleJournal.Controls.Loading
         /// than a trail still travelling, and it fights the near-closed sweep — the tail has to
         /// still look like part of the same ring when it comes back round to the ball.
         /// </remarks>
-        private const float TailWidthRatio = 0.45f;
+        private const float TailWidthRatio = 0.52f;
 
         /// <summary>
         /// How much of the circle the trail covers. Close to a closed ring on purpose — the tail
