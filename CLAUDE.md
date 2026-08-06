@@ -49,6 +49,13 @@ dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
 # Default assumes the app is already deployed (VS Fast Deployment) — safe path:
 # force-stop + delete .db3 only. Set ANDROID_USE_INSTALLED=0 (CI does) to force
 # full EmbedAssembliesIntoApk build + adb install + pm clear.
+#
+# IF APP CODE CHANGED, DEPLOY FIRST — otherwise you test the previous build. That
+# is wrong in both directions: an existing test passes against stale code (silent,
+# ships regressions), and a NEW test fails on an element the old APK lacks (looks
+# like an Android binding bug). Android alone failing a test you just wrote is
+# usually a stale APK, not a platform quirk. ~40s, needs a booted emulator:
+#   dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-android -t:Install
 dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
 
 # All the CI suites locally, in CI's shape — the stand-in when GitHub Actions is

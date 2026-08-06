@@ -109,6 +109,16 @@ function Invoke-Suite {
         $output = & dotnet @arguments 2>&1 | Tee-Object -Variable captured
         $null = $output
         $exitCode = $LASTEXITCODE
+
+        # Persist every suite's full output. The console copy is easily lost — piping this
+        # script through Select-Object, or running it in a background shell, keeps only the
+        # tail, and the tail is the summary rather than the failure. A UI suite takes fifteen
+        # minutes; having to re-run it to find out WHICH test failed is the whole cost of the
+        # run paid twice.
+        $logDir = Join-Path $repoRoot 'TestResults/ci-local'
+        $null = New-Item -ItemType Directory -Path $logDir -Force
+        $safeName = ($Name -replace '[^\w\-]', '_')
+        $captured | Out-File -FilePath (Join-Path $logDir "$safeName.log") -Encoding utf8
     }
     finally {
         $timer.Stop()

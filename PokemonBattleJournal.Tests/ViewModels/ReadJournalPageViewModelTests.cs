@@ -187,6 +187,94 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel.Game3TagsInfo.ShouldBe("Game 3: 1 tags");
         }
 
+        /// <summary>
+        /// Game 2 and 3 notes have been computed since the page was written and never displayed —
+        /// <c>SelectedNote2</c> and <c>SelectedNote3</c> were set by LoadMatch and bound by
+        /// nothing. These pin the visibility flags the new editors bind to.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately separate bool properties rather than
+        /// <c>IsVisible="{Binding SelectedMatch.Game2, Converter={StaticResource IsNotNullConverter}}"</c>,
+        /// which is how the tag rows next to them do it. That converter crashed OptionsPage —
+        /// see feedback_no_isnot_null_converter_in_xaml. The existing usages predate the rule;
+        /// nothing new should extend it.
+        /// </remarks>
+        [Test]
+        public void LoadMatch_BO3AllThreeGames_MarksGame2And3Present()
+        {
+            _viewModel.SelectedMatch = new MatchEntry
+            {
+                Result = MatchResult.Win,
+                Playing = new Archetype { Name = "Fire" },
+                Against = new Archetype { Name = "Water" },
+                Game1 = new Game { Result = MatchResult.Win, Notes = "opened well", Tags = [] },
+                Game2 = new Game { Result = MatchResult.Loss, Notes = "misplayed the prize trade", Tags = [] },
+                Game3 = new Game { Result = MatchResult.Win, Notes = "topdecked it", Tags = [] },
+            };
+
+            _viewModel.LoadMatch();
+
+            _viewModel.HasGame2.ShouldBeTrue();
+            _viewModel.HasGame3.ShouldBeTrue();
+            _viewModel.SelectedNote2.ShouldBe("misplayed the prize trade");
+            _viewModel.SelectedNote3.ShouldBe("topdecked it");
+        }
+
+        /// <summary>
+        /// A BO1 match must not show empty game 2 and 3 note boxes.
+        /// </summary>
+        [Test]
+        public void LoadMatch_BO1_LeavesGame2And3Hidden()
+        {
+            _viewModel.SelectedMatch = new MatchEntry
+            {
+                Result = MatchResult.Win,
+                Playing = new Archetype { Name = "Fire" },
+                Against = new Archetype { Name = "Water" },
+                Game1 = new Game { Result = MatchResult.Win, Notes = "quick one", Tags = [] },
+            };
+
+            _viewModel.LoadMatch();
+
+            _viewModel.HasGame2.ShouldBeFalse();
+            _viewModel.HasGame3.ShouldBeFalse();
+        }
+
+        /// <summary>
+        /// Selecting a BO3 and then a BO1 must not leave the BO3's boxes on screen.
+        /// </summary>
+        /// <remarks>
+        /// The flags are set in a method that runs per selection, so a flag only ever set to
+        /// true would survive into the next match — the same shape as the phantom-games bug
+        /// that made every BO1 render three tag sections.
+        /// </remarks>
+        [Test]
+        public void LoadMatch_BO3ThenBO1_ClearsGame2And3()
+        {
+            _viewModel.SelectedMatch = new MatchEntry
+            {
+                Result = MatchResult.Win,
+                Playing = new Archetype { Name = "Fire" },
+                Against = new Archetype { Name = "Water" },
+                Game1 = new Game { Result = MatchResult.Win, Tags = [] },
+                Game2 = new Game { Result = MatchResult.Loss, Tags = [] },
+                Game3 = new Game { Result = MatchResult.Win, Tags = [] },
+            };
+            _viewModel.LoadMatch();
+
+            _viewModel.SelectedMatch = new MatchEntry
+            {
+                Result = MatchResult.Win,
+                Playing = new Archetype { Name = "Fire" },
+                Against = new Archetype { Name = "Water" },
+                Game1 = new Game { Result = MatchResult.Win, Tags = [] },
+            };
+            _viewModel.LoadMatch();
+
+            _viewModel.HasGame2.ShouldBeFalse("a BO1 selected after a BO3 must not keep its game 2 box");
+            _viewModel.HasGame3.ShouldBeFalse();
+        }
+
         [Test]
         public void LoadMatch_Game1WithTags_PopulatesTagsSelectedGame1()
         {

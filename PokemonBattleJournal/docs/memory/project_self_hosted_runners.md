@@ -8,6 +8,22 @@ metadata:
   modified: 2026-08-06T00:00:00.000Z
 ---
 
+## Do not reinstate these. The reason is security, not flakiness.
+
+**This repository is public, and both UI workflows trigger on `pull_request`.** A self-hosted
+runner therefore executes workflow code proposed by anyone who opens a pull request, on the
+developer's own Windows machine, under their own user account — with their SSH keys, tokens,
+browser profiles and source tree all reachable. This is a documented attack path against
+self-hosted runners on public repos, not a hypothetical.
+
+The Windows runner is the dangerous one: it ran natively as the logged-in user. The WSL runner
+at least sits behind a VM boundary.
+
+Everything below about flakiness and outage-resistance is secondary. Even if the runners were
+fast and reliable, this alone rules them out for a public repo. Any future "let's just run CI
+locally" idea should be a script that the developer runs deliberately — `build/ci-local.ps1` —
+never a daemon that executes whatever arrives from the internet.
+
 **Status 2026-08-06: no longer self-hosted.** Every workflow runs on GitHub-hosted
 runners — `windows-latest` for CI, the Windows UI matrix and the scraper monitor,
 `ubuntu-latest` for Android UI and Pages. Verify with `grep -rn "runs-on" .github/workflows/`
@@ -25,6 +41,14 @@ resolved and downloaded, before any project code runs. During the 2026-08-06 Act
 incident it took out three of five Windows UI matrix jobs and the whole Android build while
 the jobs that did start passed. A run whose only failures are `Set up job` proves nothing
 about the commit.
+
+**No runs created at all** is a third state, distinct from both "failed" and "queued". During
+the same incident GitHub throttled webhook delivery to ~15%, so pushes simply did not trigger
+workflows — a commit sat on the remote with `total_count: 0` runs against its SHA. Check
+`gh api "repos/OWNER/REPO/actions/runs?head_sha=<sha>"` before concluding anything about a
+workflow file; an absent run is not a failing one. githubstatus.com settles it in seconds, and
+subscribing to Actions incidents there turns this from an hour of debugging into a
+notification.
 
 ## Why they existed, and why the approach failed
 

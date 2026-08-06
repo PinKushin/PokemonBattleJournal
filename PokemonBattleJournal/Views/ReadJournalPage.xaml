@@ -108,14 +108,64 @@
                                 WidthRequest="48" />
                         </HorizontalStackLayout>
 
-                        <!--  Notes  -->
+                        <!--  Notes — one editor per game.
+                              Game 2 and 3 were computed by the ViewModel from the beginning and
+                              bound by nothing, so their notes round-tripped through export and
+                              restore while being unreadable anywhere in the app (B-08). The
+                              restore's conflict detection reports "Game 2 notes differ", which
+                              was a difference in data the user had no way to see.
+
+                              Visibility uses plain bool properties, not the IsNotNullConverter
+                              the tag rows below use — that converter crashed OptionsPage. See
+                              docs/memory/feedback_no_isnot_null_converter_in_xaml.md.  -->
+                        <Label
+                            AutomationId="Game1NotesHeading"
+                            SemanticProperties.HeadingLevel="Level2"
+                            FontFamily="SairaRegular"
+                            FontSize="12"
+                            Text="Game 1 notes"
+                            TextColor="{StaticResource PokeYellow}" />
                         <Editor
                             AutomationId="SelectedMatchNotes"
-                            SemanticProperties.Description="Notes for the selected match"
+                            SemanticProperties.Description="Notes for game 1 of the selected match"
                             HeightRequest="120"
                             IsReadOnly="True"
                             MaximumWidthRequest="700"
                             Text="{Binding SelectedNote}" />
+
+                        <Label
+                            AutomationId="Game2NotesHeading"
+                            SemanticProperties.HeadingLevel="Level2"
+                            FontFamily="SairaRegular"
+                            FontSize="12"
+                            IsVisible="{Binding HasGame2}"
+                            Text="Game 2 notes"
+                            TextColor="{StaticResource PokeYellow}" />
+                        <Editor
+                            AutomationId="SelectedMatchNotes2"
+                            SemanticProperties.Description="Notes for game 2 of the selected match"
+                            HeightRequest="120"
+                            IsReadOnly="True"
+                            IsVisible="{Binding HasGame2}"
+                            MaximumWidthRequest="700"
+                            Text="{Binding SelectedNote2}" />
+
+                        <Label
+                            AutomationId="Game3NotesHeading"
+                            SemanticProperties.HeadingLevel="Level2"
+                            FontFamily="SairaRegular"
+                            FontSize="12"
+                            IsVisible="{Binding HasGame3}"
+                            Text="Game 3 notes"
+                            TextColor="{StaticResource PokeYellow}" />
+                        <Editor
+                            AutomationId="SelectedMatchNotes3"
+                            SemanticProperties.Description="Notes for game 3 of the selected match"
+                            HeightRequest="120"
+                            IsReadOnly="True"
+                            IsVisible="{Binding HasGame3}"
+                            MaximumWidthRequest="700"
+                            Text="{Binding SelectedNote3}" />
 
                         <!--  Tags — FlexLayout + BindableLayout, NOT CollectionView.
                               Three CollectionViews here (plus MatchHistoryList) kept the Android

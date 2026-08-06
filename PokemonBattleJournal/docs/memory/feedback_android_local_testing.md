@@ -51,3 +51,22 @@ files/` must still list `.__override__/`. If that directory is gone, something r
 
 **Decision rule:** app code touched since the last deploy → deploy, then test. Only test
 code touched → `ANDROID_USE_INSTALLED=1` straight away.
+
+## It fails in both directions, and the loud one is the lucky one (added 2026-08-06)
+
+A stale APK produces two different wrong answers depending on what changed, and they look
+nothing alike:
+
+- **New feature, new test → the test FAILS** with `NoSuchElementException` on an element that
+  is genuinely absent from the running app. Alarming, obvious, and harmless: it sends you
+  looking at code that is actually correct.
+- **Changed behaviour, existing test → the test PASSES** against the old build. Silent, and
+  the dangerous one — this is how a regression ships.
+
+Hit the first kind on 2026-08-06 adding `SelectedMatchNotes2` to ReadJournalPage: Windows
+passed 12/12, Android failed only the new test, and the instinct was to suspect an
+Android-specific binding problem. The APK simply predated the XAML.
+
+**Heuristic when Android alone fails a NEW test that Windows passes: redeploy before
+debugging.** The reverse asymmetry is a decent tell too — a failure confined to tests you just
+wrote is more likely a stale build than a platform quirk.
