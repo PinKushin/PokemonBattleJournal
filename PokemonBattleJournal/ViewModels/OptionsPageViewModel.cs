@@ -147,6 +147,36 @@ namespace PokemonBattleJournal.ViewModels
             }
         }
 
+        /// <summary>
+        /// True in Debug builds only. Bound to the visibility of the loading-indicator toggle
+        /// so the affordance simply is not there in Release.
+        /// </summary>
+        public static bool IsDebugBuild =>
+#if DEBUG
+            true;
+#else
+            false;
+#endif
+
+        /// <summary>
+        /// Holds <see cref="IsBusyMutating"/> open so the loading indicator can be seen.
+        /// </summary>
+        /// <remarks>
+        /// A toggle rather than a timed "simulate a slow operation", deliberately. A timed
+        /// version would need a <c>Task.Delay</c>, which this project bans outside of tests, and
+        /// it would give UI tests a window to race. Toggling holds the gate open until it is
+        /// switched off, so the test is deterministic and the animation can be watched for as
+        /// long as it takes to judge it.
+        ///
+        /// Debug-only in effect: the button that invokes it is bound to <see cref="IsDebugBuild"/>.
+        /// </remarks>
+        [RelayCommand]
+        public void ToggleSimulatedLoading()
+        {
+            IsBusyMutating = !IsBusyMutating;
+            _logger.LogInformation("Simulated loading toggled {State}", IsBusyMutating ? "on" : "off");
+        }
+
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(HasExportStatus))]
         public partial string ExportStatusMessage { get; set; } = string.Empty;
@@ -249,6 +279,7 @@ namespace PokemonBattleJournal.ViewModels
         /// hidden Busy_ArchetypeList sentinel Label for UI test sync.
         /// </summary>
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsAnyBusy))]
         public partial bool IsBusyArchetypeList { get; set; }
 
         /// <summary>
@@ -262,7 +293,19 @@ namespace PokemonBattleJournal.ViewModels
         /// DeleteArchetypeAsync, ImportFromTrainerHillAsync.
         /// </summary>
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsAnyBusy))]
         public partial bool IsBusyMutating { get; set; }
+
+        /// <summary>
+        /// True while EITHER gate is up. This is what the loading indicator binds to.
+        /// </summary>
+        /// <remarks>
+        /// The page has a load gate and a mutate gate, and binding the spinner to one would
+        /// leave the other operation with no feedback. The [NotifyPropertyChangedFor] on both
+        /// inputs is load-bearing: without it the binding never updates and the spinner simply
+        /// never appears, which no amount of correct XAML would reveal.
+        /// </remarks>
+        public bool IsAnyBusy => IsBusyArchetypeList || IsBusyMutating;
 
         [RelayCommand]
         public async Task AppearingAsync()

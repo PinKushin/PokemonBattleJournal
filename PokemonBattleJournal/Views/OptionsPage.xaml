@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:controls="clr-namespace:PokemonBattleJournal.Controls"
+    xmlns:loading="clr-namespace:PokemonBattleJournal.Controls.Loading"
     xmlns:models="clr-namespace:PokemonBattleJournal.Models"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
@@ -44,6 +45,45 @@
                 HeightRequest="1"
                 IsVisible="{Binding IsBusyMutating}"
                 WidthRequest="1" />
+
+            <!--  Loading indicator. IsVisible follows the control's own IsShowing, not the raw
+                  busy flag, so the minimum-visible-duration inside LoadingIndicator is what
+                  decides when the host disappears — otherwise fast work would flash.  -->
+            <VerticalStackLayout
+                x:Name="LoadingIndicatorHost"
+                AutomationId="LoadingIndicatorHost"
+                SemanticProperties.Description="Loading"
+                HorizontalOptions="Center"
+                IsVisible="{Binding Source={x:Reference PageLoadingIndicator}, Path=IsShowing, x:DataType=loading:LoadingIndicator}"
+                Spacing="4">
+                <loading:LoadingIndicator
+                    x:Name="PageLoadingIndicator"
+                    AutomationId="PageLoadingIndicator"
+                    ArcColor="{StaticResource BostonRed}"
+                    HeightRequest="96"
+                    IsBusy="{Binding IsAnyBusy}"
+                    WidthRequest="96" />
+                <Label
+                    AutomationId="LoadingIndicatorLabel"
+                    FontFamily="SairaRegular"
+                    FontSize="12"
+                    HorizontalOptions="Center"
+                    Text="Working…"
+                    TextColor="{StaticResource PokeYellow}" />
+            </VerticalStackLayout>
+
+            <!--  DEBUG only: holds the busy gate open so the spinner can be seen and tested.
+                  Bound to IsDebugBuild so it is absent from Release builds.  -->
+            <Button
+                x:Name="SimulateLoadingButton"
+                AutomationId="SimulateLoadingButton"
+                SemanticProperties.Description="Toggle simulated loading"
+                SemanticProperties.Hint="Debug only. Holds the loading indicator on screen until pressed again"
+                Command="{Binding ToggleSimulatedLoadingCommand}"
+                HorizontalOptions="Center"
+                IsVisible="{Binding IsDebugBuild, x:DataType=viewmodel:OptionsPageViewModel}"
+                Text="Toggle loading indicator"
+                WidthRequest="220" />
 
             <!--  Trainer section  -->
             <Label AutomationId="TrainerSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Trainer" />

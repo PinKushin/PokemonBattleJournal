@@ -10,6 +10,70 @@ namespace UITests
             WaitUntilBusyGone("Busy_ArchetypeList");
         }
 
+        /// <summary>
+        /// Safety net for a stuck loading indicator, which poisons every later test in the
+        /// fixture rather than failing one.
+        /// </summary>
+        /// <remarks>
+        /// This is a deliberate exception to "no blanket TearDown" (see
+        /// docs/memory/feedback_uitest_cleanup_pattern.md). The usual objection is cost, and it
+        /// does not apply: <c>IsElementPresent</c> runs with a zero implicit wait, so when
+        /// nothing is stuck — the normal case — this is a single near-instant query.
+        ///
+        /// The failure it guards is severe and non-local. If the simulated-loading toggle is
+        /// left on, the spinner animates at 60fps, the Android UI thread never goes idle, and
+        /// every following UiAutomator call burns its full ~20s waitForIdle budget. On CI run
+        /// 31063011084 that turned one stuck toggle into eight failed tests, none of which had
+        /// anything to do with loading.
+        /// </remarks>
+        [TearDown]
+        public void ClearStuckLoadingIndicator()
+        {
+            // Key on the RAW GATE, never on the indicator.
+            //
+            // The indicator deliberately lingers for MinimumVisibleDuration (500ms) after the
+            // gate clears, so straight after any mutating test it is legitimately still on
+            // screen. An earlier version of this teardown checked the indicator, read that
+            // perfectly normal state as "stuck", and clicked the toggle — which turns
+            // IsBusyMutating ON. With retries it could leave it on, and CI run on e8edb16 duly
+            // failed nearly the whole fixture. The safety net caused the exact failure it was
+            // added to prevent.
+            //
+            // Busy_Mutating is bound to IsBusyMutating, which is precisely what the toggle
+            // flips, so it identifies a stuck toggle without false positives. Page loading
+            // raises IsBusyArchetypeList and a different sentinel, so it cannot be confused
+            // with one.
+            bool stuck;
+            try
+            {
+                stuck = IsElementPresent("Busy_Mutating");
+            }
+            catch (InvalidOperationException)
+            {
+                // WinAppDriver phantom-element race: an element caught mid-removal comes back
+                // with an empty id and IsElementPresent throws rather than reporting false.
+                // WaitUntilRemoved already swallows this exact case. Mid-removal means it is
+                // on its way out, which is precisely the state we do not need to fix.
+                return;
+            }
+
+            if (!stuck)
+            {
+                return;
+            }
+
+            PerfLog("TearDown: loading indicator still showing — clearing it so it cannot starve the UI thread");
+            try
+            {
+                ClickSimulateLoadingUntil("LoadingIndicatorHost", shouldBePresent: false);
+            }
+            catch (OpenQA.Selenium.NoSuchElementException ex)
+            {
+                // Say so loudly rather than letting the next test fail on an unrelated lookup.
+                PerfLog($"TearDown: FAILED to clear the loading indicator — later tests in this fixture will likely fail. {ex.Message}");
+            }
+        }
+
         // ---------------------------------------------------------------------------
         // Cleanup helpers — only called by tests that create data
         // ---------------------------------------------------------------------------
@@ -269,6 +333,78 @@ namespace UITests
         public void OptionsPage_ExportSectionHeading_Visible()
         {
             FindUIElement("ExportSectionHeading").ShouldNotBeNull();
+        }
+
+        // ---------------------------------------------------------------------------
+        // Loading indicator
+        //
+        // Real operations here finish in tens of milliseconds, so a test that clicked Save and
+        // looked for the spinner would be racing the database and would usually lose. The
+        // DEBUG-only toggle holds the busy gate open indefinitely instead, which makes this
+        // deterministic and doubles as the way to eyeball the animation while developing.
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void OptionsPage_LoadingIndicator_ShownWhileBusyAndHiddenAfter()
+        {
+            ClickSimulateLoadingUntil("LoadingIndicatorHost", shouldBePresent: true);
+            try
+            {
+                IsElementPresent("LoadingIndicatorHost")
+                    .ShouldBeTrue("the spinner must appear while a busy gate is held open");
+            }
+            finally
+            {
+                ClickSimulateLoadingUntil("LoadingIndicatorHost", shouldBePresent: false);
+            }
+
+            IsElementPresent("LoadingIndicatorHost")
+                .ShouldBeFalse("the spinner must disappear once the work is done");
+        }
+
+        /// <summary>
+        /// Clicks the simulated-loading toggle until the indicator reaches the wanted state.
+        /// </summary>
+        /// <remarks>
+        /// A plain click is not safe here, and getting it wrong poisons the whole fixture rather
+        /// than failing one test.
+        ///
+        /// Android clicks silently miss MAUI gesture handlers (see
+        /// docs/memory/feedback_android_flaky_tap_retry.md). If the click that turns the toggle
+        /// OFF misses, the busy gate stays open, the spinner keeps animating at 60fps, and the
+        /// UI thread never goes idle again — so every following UiAutomator call burns its full
+        /// ~20s waitForIdle budget and every later test in the fixture fails on lookup. That is
+        /// exactly what happened on CI (run 31063011084): this test passed, then all eight tests
+        /// alphabetically after it failed with STAGE3_FAIL after ~22s, the signature from
+        /// docs/memory/project_readjournal_android_slow.md.
+        ///
+        /// So the toggle is verified against the indicator's actual visibility and retried,
+        /// rather than assumed to have landed.
+        /// </remarks>
+        private void ClickSimulateLoadingUntil(string indicatorId, bool shouldBePresent, int attempts = 3)
+        {
+            for (int attempt = 1; attempt <= attempts; attempt++)
+            {
+                FindUIElement("SimulateLoadingButton").Click();
+
+                bool reached = shouldBePresent
+                    ? IsElementPresent(indicatorId)
+                    : WaitUntilRemoved(indicatorId);
+
+                if (reached)
+                {
+                    if (attempt > 1)
+                        PerfLog($"SimulateLoading toggle to present={shouldBePresent} took {attempt} clicks");
+                    return;
+                }
+
+                PerfLog($"SimulateLoading toggle attempt {attempt} did not reach present={shouldBePresent}, retrying");
+            }
+
+            throw new OpenQA.Selenium.NoSuchElementException(
+                $"SimulateLoadingButton never drove '{indicatorId}' to present={shouldBePresent} " +
+                $"after {attempts} clicks. Leaving the gate open starves the Android UI thread " +
+                "and fails every later test in this fixture.");
         }
 
         [Test]

@@ -85,6 +85,128 @@ with a collected error) and that **nothing was written to the DB**.
 Do this with, or before, the export work — the two share the format and it is the natural
 moment to pin down what the parser will and will not accept.
 
+### Backup restore + duplicate handling (design agreed with the user 2026-08-05, NOT started)
+
+**Trainer targeting**
+
+- **Full backup restore:** trainers come from the file. **Merge into an existing trainer of the
+  same name** rather than creating a second one.
+- **TrainerHill import:** entries go to whoever is importing. Verified 2026-08-05 — already the
+  behaviour, `ImportFromTrainerHillAsync` passes `_trainer.Id` (the active trainer).
+
+**There is no duplicate detection today, at all.** Verified: importing the same log twice
+inserts every match twice. So this is not only a restore problem — it already affects
+TrainerHill import, and fixing it once fixes both.
+
+**Key on `StartTime`, not `DatePlayed`.** Corrected 2026-08-05 — an earlier version of this
+note claimed app-created matches only carry date precision, which is wrong. `MainPageViewModel`
+records both a start and an end time and stores them as full timestamps:
+
+```csharp
+StartTime = DatePlayed.Date + StartTime,   // date + time-of-day from the picker
+EndTime   = DatePlayed.Date + EndTime,
+```
+
+So every match has a time of day regardless of source:
+
+- **TrainerHill entries** — sub-second (`"2026-07-27 19:45:24.403684"`), and the importer sets
+  `StartTime`/`EndTime` from it. Collisions between genuinely different matches are effectively
+  impossible.
+- **App-created** — minute precision from the time picker, defaulting to the current time, so
+  consecutive entries naturally differ. Two matches colliding needs the same matchup, the same
+  day *and* the same start minute.
+
+`DatePlayed` is the weak field (a date picker leaves it at midnight), so it is the wrong thing
+to key on. Use:
+
+`(TrainerId, StartTime, PlayingId, AgainstId, Result)`
+
+with `EndTime` available as a further discriminator, since duration differs between matches
+that somehow share a start minute. That is strong enough to act on for both sources, rather
+than only for imported rows.
+
+**Fix the export first — the backup format is not as lossless as claimed.** Found 2026-08-05
+while designing this, in the export shipped the same day:
+
+- `ExportEntry` has a single `time` field and **no `startTime`/`endTime`**, so a restore loses
+  `EndTime` outright. Not cosmetic: `EndTime` feeds `CalculateAverageMatchDuration` and
+  `CalculateWinRateByMatchLength`, so restoring a backup would silently corrupt two stats.
+- `ExportService` writes `Time = match.DatePlayed` — the *weak* field, midnight whenever the
+  date came from a picker — instead of `StartTime`, which carries the actual time of day.
+
+TrainerHill's schema genuinely only has one `time` field, so that export stays single-valued;
+write `StartTime` into it rather than `DatePlayed`, since it holds the same date plus real
+precision. **The backup envelope has no such constraint and should carry `startTime` and
+`endTime` explicitly** — being lossless is its entire reason for existing
+([[project_db_session_lock_pairing]] is unrelated; see the export section above).
+
+Do this before the restore, not after: a restore built against the current format would bake
+in the data loss and every backup taken meanwhile would already be missing durations.
+
+**Overlapping matches: warn, do not block** (discussed 2026-08-05, no code yet)
+
+The question raised was whether two matches should be allowed to overlap in time, since a
+player cannot legally play two tournament games at once. Two reasons not to make it a hard
+rule, one of them checked:
+
+- **Overlap is legitimately possible.** Locals, or PTCG Live on a phone and a PC at once, or
+  in-person plus phone. A hard rule means someone with a real overlap cannot log a match at
+  all, and the only workaround is falsifying the time. Refusing real data is the worse failure.
+- **Overlap does not currently harm the stats page** — verified against
+  `MatchAnalysisService`. Nothing plots individual matches on a time axis; every chart groups
+  by `DatePlayed.Date` or uses per-match duration (`EndTime - StartTime`). Two matches at the
+  same instant simply both count toward that day. This would only become a problem if a future
+  chart laid matches out on a timeline.
+
+**But it DOES threaten duplicate detection, and the key cannot fully solve it.** An earlier
+version of this note claimed simultaneous matches would be against different opponents and so
+could not collide. That is wrong (user, 2026-08-05): **`AgainstId` identifies a deck, not a
+person.** The model records no opponent identity at all. Two different people both playing
+Dragapult produce an identical key, and mirror matches make it likelier still.
+
+So `(TrainerId, StartTime, PlayingId, AgainstId, Result)` can match two legitimately distinct
+matches. And if two real matches also share notes and tags, **nothing in the stored data
+distinguishes them from a duplicate** — the model simply does not capture enough. Any silent
+auto-merge would delete a real match.
+
+Resolution: **never silently drop an exact-identical candidate.** Skip it by default, but
+report the count ("12 entries already present, skipped") and offer an "import anyway" path, so
+the user decides and a genuine identical pair stays recoverable. This keeps the common case
+(re-importing an overlapping log) quiet without ever destroying data the app cannot tell apart.
+
+**Recording an opponent name would NOT reliably fix this** — considered and rejected (user,
+2026-08-05). Online you do not pay attention to screen names, so the field would usually be
+blank or wrong; it might have some value for in-person play, but it cannot be relied on, and
+it is not even clear the username appears in PTCG Live battle logs. A dedupe rule resting on a
+field that is usually empty is worse than no rule, because it looks authoritative.
+
+So the ambiguity is inherent: **accept it and let the user decide**, per the reporting rule
+above. Do not add a field to chase it.
+
+So: a soft, inline warning when a new match overlaps an existing one — a natural first consumer
+of the **Inline validation feedback** item below, and specifically not a modal
+([[feedback_no_silent_guards]] for the logging rule, and the standing objection to dialogs in
+automation).
+
+**What to do with a candidate (user's preference, best first)**
+
+1. **Identical in every compared field** — skip, but **count and report it**, and offer an
+   "import anyway" path. Not silent: the app cannot tell a re-import from two genuinely
+   identical matches (see the opponent-identity gap above), so the user gets the final say
+   rather than losing a real match to a guess.
+2. **One side strictly richer** — one has tags and the other does not, one has a note and the
+   other does not. **Merge**: union the tags, take the non-empty note. Strictly better than
+   asking, and the user explicitly preferred merging where possible.
+3. **Genuine conflict** — both sides have different non-empty values for the same field. **Ask
+   which to keep.** Do not silently pick.
+
+Note the modal constraint: the user has a standing objection to modals in automation
+([[project_error_handler_di]]). A conflict prompt during a bulk restore would also be
+miserable — batch the conflicts and resolve them in one pass rather than one dialog per match.
+
+**Reuses the existing import hardening.** Size, depth, entry-count and name-length caps already
+run before any DB write; the envelope path goes through the same parser, so it inherits them.
+
 ### Export — two modes
 
 **TrainerHill export (per-trainer):**
@@ -99,6 +221,215 @@ moment to pin down what the parser will and will not accept.
 - OptionsPage: "Export backup" with a picker or radio for "All trainers" vs "Active trainer only"
 - Filename suggestion: `pbj-backup-{date}.json` or `pbj-backup-{TrainerName}-{date}.json`
 - Backup format should be importable back in as a restore (import service reads both flat array and backup envelope)
+
+## PTCG Live battle log parsing (wanted, user 2026-08-05, not started)
+
+Parse Pokémon TCG Live's own battle logs so matches from Live upload trivially, instead of
+being typed in by hand. Stated as a want rather than a scheduled item.
+
+Why it fits well: the app already has an import pipeline with the hard parts solved —
+size/depth/count/length limits enforced before any DB write, get-or-create for archetypes and
+tags, per-entry error collection. A Live parser is another front end onto
+`MatchOperations.SaveAsync`, most likely alongside `TrainerHillImportService` under
+`Services/Import/`.
+
+### CURRENT format, captured from a live match 2026-08-06
+
+**Real log from the current client saved at
+`PokemonBattleJournal/docs/samples/ptcgl-battle-log-2026-08-06.txt`.** Card IDs enabled. This
+is the authority; everything in the older section below is superseded where they disagree.
+
+**The format HAS changed since the 2025 samples — exactly as the user warned.**
+
+| | 2025 samples | 2026-08-06 capture |
+|---|---|---|
+| Turn header | `Turn # 1 - Shinwrld's Turn` | `AradJohn's Turn` — **no turn number at all** |
+| Cards | `Dreepy` | `(sv6_128) Dreepy` — id prefixed, with card IDs enabled |
+| End line | `All Prize cards taken. gklinsing wins.` | `Opponent conceded. AradJohn wins.` |
+
+So a parser must **count turn headers** rather than read a number from them, and the end-of-game
+prefix varies by win condition. The stable marker is the `<name> wins.` suffix; the sentence
+before it gives the reason (prizes taken, concession, presumably deck-out).
+
+**Card ID shape:** `(setcode_number)`, where the set code may contain digits and hyphens and the
+number may carry a variant suffix — observed `(sv6_128)`, `(mee_5)`, `(svbsp_129)`,
+`(me2-5_34_ph)`, `(sv8-5_80_mph)`, `(sv5_156_ph)`. A regex must not assume `[a-z]+_[0-9]+`.
+
+**The log owner is identifiable from the log itself — no username setting needed.** This
+removes a requirement recorded earlier. The logging player's information is revealed and the
+opponent's is not:
+
+- Opening hand: the owner's is itemised in a bullet list; the opponent gets only
+  `- 7 drawn cards.`
+- Draws: the owner's are named (`AradJohn drew (me3_71) Crushing Hammer.`); the opponent's are
+  anonymous (`KiokiYuudoku drew a card.`).
+
+The named-draw test is the more robust of the two, since it recurs throughout the match rather
+than appearing once at setup.
+
+**Archetype inference looks tractable from this sample.** The owner's deck resolves from cards
+played — `(sv6_130) Dragapult ex` with Drakloak, Dreepy and Munkidori — and the opponent's from
+what they revealed, here Salazzle ex, Pecharunt and Meowth ex. Note the asymmetry: the
+opponent's archetype is only as good as what they happened to play, so a concession on turn one
+may leave it unidentifiable. Plan for "unknown" as a legitimate outcome rather than forcing a
+guess.
+
+**Still no timestamp**, confirmed on the current format.
+
+**A "Pokémon Checkup" block appears between turns** for between-turn effects (poison damage,
+knockouts from status). It is not a player turn and must not be counted as one.
+
+### The 2025 samples — SUPERSEDED, kept for contrast
+
+**Do not treat what follows as a specification.** Live's log format has been changed before,
+sometimes silently (user, 2026-08-05), and the samples below come from a repository last
+pushed **2025-04-15** — well over a year old. They are a starting point for shape, not a
+contract.
+
+**First task of this feature is to play a couple of matches on the current client and capture
+fresh logs**, then diff them against this. Anything below that no longer matches is wrong, and
+building the parser against stale samples wastes the work twice: once writing it, once
+debugging why real logs do not parse.
+
+Two things already known to differ from the old samples, from
+[replay.ptcgtools.com](https://replay.ptcgtools.com/en), a live tool tracking the current
+format:
+
+- **The modern client has a "HIDE CARD IDS FROM EXPORT" setting**, which that tool requires you
+  to disable. So current logs can carry **card IDs**, which the 2025 samples do not show at
+  all. That matters a lot: matching card IDs is far more reliable than matching printed card
+  names for inferring an archetype, and it may turn the "confirm the deck" step below into
+  something closer to a lookup.
+- **English logs only.** That tool supports no other language, which implies the sentence
+  patterns are localised. Whatever we build inherits the same constraint — worth stating in the
+  UI rather than failing mysteriously on a non-English log.
+
+Logs are copyable straight from the client on **both PC and mobile**, so no file export path is
+needed — paste is enough, which suits a MAUI app on either target.
+
+With those caveats, the shape observed in the (old) samples from
+[kagd/pokemon-tcg-battle-replay](https://github.com/kagd/pokemon-tcg-battle-replay):
+
+**It is plain prose text with rigidly consistent sentences**, not JSON:
+
+```
+Setup
+Shinwrld chose heads for the opening coin flip.
+Shinwrld won the coin toss.
+Shinwrld decided to go first.
+gklinsing drew 7 cards for the opening hand.
+   • Raikou V, Ultra Ball, Prime Catcher, Basic Lightning Energy, ...
+
+Turn # 1 - Shinwrld's Turn
+Shinwrld attached Basic Psychic Energy to Drifloon in the Active Spot.
+Shinwrld ended their turn.
+...
+All Prize cards taken. gklinsing wins.
+```
+
+What that gives us, mapped to `MatchEntry`:
+
+| Field | Available? | From |
+|---|---|---|
+| Result | **yes** | `"All Prize cards taken. <name> wins."` |
+| Turn (went first) | **yes** | `"<name> decided to go first."` |
+| Playing / Against | derivable | cards played — deck NAMES are never stated |
+| Notes / Tags | no | nothing corresponds |
+| DatePlayed / StartTime / EndTime | **NO** | not in the log at all |
+
+**Two of the earlier assumptions were wrong:**
+
+- **Usernames ARE present**, both players', on nearly every line. The doubt about this was
+  unfounded. But it creates a requirement: the app must know **your own Live username** to tell
+  which side is you, otherwise Playing and Against cannot be assigned. That is a new setting.
+- **No timestamps in the log CONTENT** — grepped the full sample for dates, clock times and
+  meridiems, nothing. **But the log FILE name carries one**, which changes the conclusion
+  entirely; see the next section.
+
+**Archetype has to be inferred from cards played**, since deck names never appear. Overlaps the
+existing meta-deck resolution and could reuse `ILimitlessMetaService`, but mapping a card list
+to an archetype is real work and probably wants a "confirm the deck" step rather than silent
+guessing.
+
+**Do not copy the existing parsers.** [kagd/pokemon-tcg-battle-replay](https://github.com/kagd/pokemon-tcg-battle-replay)
+is TypeScript with **no licence file at all** — that means all rights reserved, not free to
+reuse, regardless of the language mismatch.
+[AugustDailey/Ptcgo-Log-Parser](https://github.com/AugustDailey/Ptcgo-Log-Parser) targets PTCG
+*Online*, the predecessor, so the format is likely stale. Their value is confirming the format
+is stable and parseable, which the sample above already does. The parser itself is a
+line-matching exercise well within reach in C#, and it belongs beside
+`TrainerHillImportService` under `Services/Import/`.
+
+Prior art worth a look for scope, not code:
+[jlgrimes/training-court](https://github.com/jlgrimes/training-court) is a battle-log and
+tournament tracker for the same audience.
+
+**Live tools tracking the CURRENT format** — the useful reference, since they must keep working
+as Live changes:
+
+- [replay.ptcgtools.com](https://replay.ptcgtools.com/en) — the informative one. Where the
+  card-ID export setting and English-only constraint above came from.
+- [deaddraw.app](https://deaddraw.app/) — the most useful source found. Read with a
+  JS-executing browser; a plain `WebFetch` returns only the title because the page is
+  client-rendered, which is a tooling limit, not a property of the site.
+
+Two things from Dead Draw that change how this feature should be planned:
+
+**The card-ID setting, exactly:** *"In TCG Live, go to **Settings > Battle Log** and disable
+'Hide card IDs from export'. **Per-device setting.**"* Per-device is the trap — it must be set
+on every device the user plays on, and forgetting it silently produces a degraded log rather
+than an error. Whatever we build should detect a log with no card IDs and say so plainly,
+pointing at that exact path, rather than failing to identify decks and looking broken.
+
+**Live's own logs are unreliable:** *"Battle logs from TCG Live contain inaccuracies — we
+compensate where we can and are always improving."* That is a tool specialising in current logs
+saying the source data is imperfect. Plan for it: a Live import should be treated as a draft the
+user confirms, not as authoritative data written straight to the database. It also sets the
+expectation for this feature — "trivial upload" should mean less typing, not zero review.
+
+Their stated flow also confirms the mechanics for the manual path: play a game, open the battle
+log, copy the full text, paste.
+
+### There is NO battle log file — clipboard only. VERIFIED on this machine 2026-08-05
+
+I briefly recorded the opposite, from [replay.ptcgtools.com](https://replay.ptcgtools.com/en)
+whose Tracker setup says *"Enable Windowed Mode — the Tracker needs this to access log files"*,
+plus a public replay named `ptcgl_log_20260805_073547.txt`. I inferred Live persists battle
+logs to disk with timestamped filenames. **That was wrong** — inferred from a third party's
+marketing copy instead of checking. The user said from the start it was clipboard-only.
+
+Checked the actual install at `%LOCALAPPDATA%Low\pokemon\Pokemon TCG Live\`:
+
+- `Game<yyyy.MM.dd_HH.mm.ss>.log` — timestamped filenames, tempting, but **Unity exception
+  traces only**. Grepped every one of 21 files for battle phrases (`drew N cards`, `Turn # `,
+  `ended their turn`, `Prize cards taken`): **zero matches**. Sampled contents are stack traces
+  from `EventBuyInButton`.
+- `Player.log` / `Player-prev.log` — Unity's standard player logs, also zero battle matches.
+  `Player.log` was 0 bytes.
+- Nothing anywhere named `ptcgl_log_*`.
+
+So `ptcgl_log_20260805_073547.txt` is **the Tracker's own naming on upload**, not Live's. And
+"needs windowed mode" is almost certainly about driving or watching the game window — a
+plausible way to auto-upload is to click Live's own copy button and take the clipboard — not
+about reading a battle log file that does not exist.
+
+**Consequences, now settled:**
+
+- **The clipboard is the only source, on every platform.** MAUI's
+  `Clipboard.Default.GetTextAsync()` covers Windows and Android alike, so a single
+  "Paste from clipboard" button removes the notepad step the user complained about, with no
+  platform split needed.
+- **No timestamp is available from anywhere.** Not the log text, not a filename. `DatePlayed`,
+  `StartTime` and `EndTime` must come from the user or from import time, and Live-imported
+  matches therefore need a different duplicate story than TrainerHill ones — as originally
+  flagged.
+- **Genuine auto-import is out of scope.** It would mean automating the Live client, which is
+  what the Tracker does and why it demands windowed mode. Fragile, and far more than this
+  feature is worth.
+
+**Their required settings are still useful and confirmed:** Windowed Mode, English only, and
+disable HIDE CARD IDS FROM EXPORT. They also do "automatic archetype detection", so inferring a
+deck from card IDs is demonstrably achievable rather than speculative.
 
 ## Deck Maker
 
@@ -389,6 +720,87 @@ Fluent-style ring spinner, NOT a full solid ring and NOT a simple spinning Poké
   dependency via LiveCharts2) drawing an arc + rotating Pokéball sprite, animated via a
   `Microsoft.Maui.Animations` ticker or simple `Dispatcher.StartTimer` angle increment. Lottie
   is an alternative if a matching animation is easier to source/build externally.
+
+### Overlay + region-scoped indicators — NEXT CHANGE, and it is REQUIRED not polish
+
+**Inline placement was tried on all four pages 2026-08-05 and it looks bad. Do not leave it
+that way.**
+
+The indicator currently sits in the layout flow (a `VerticalStackLayout` child next to the
+busy sentinel). That means it *displaces page content* when it appears and lets it snap back
+when it clears. The user's verdict on seeing it: *"the visuals actually suck because the
+spinners are not showing up above the page content they are showing up in the layout and
+disappearing after like half a second."*
+
+`MinimumVisibleDuration` makes inline worse rather than better — content jumps down, sits
+displaced for the full 500ms, then jumps back. More distracting than showing nothing.
+
+Moving to an overlay inverts both problems: same Grid cell as the content means **zero layout
+impact**, and the minimum duration stops being a liability and becomes what it was meant to be
+— long enough to register. So the overlay is what makes the minimum-duration design pay off.
+
+**Priority: required before release, not blocking the next feature** (user, 2026-08-05 —
+*"its not optional, but its not priority either"*). The mechanism works and is tested; what is
+wrong is where it is drawn. Slot it in after the higher-value feature work rather than ahead of
+it, but do not ship a release with the inline version.
+
+The scrim should not be a blanket page-covering overlay either — see the region scoping below.
+
+The model the user wants:
+
+1. **Page load** — indicator covers the page while the page itself is loading, then goes away.
+2. **Then region-scoped** — if a particular CollectionView (or any one section) is still
+   loading, the animation renders only in *that* region, taking up the minimum space that
+   region wants, and clears when that region finishes.
+
+So the scrim is scoped to whatever is actually busy, not to the window. The existing gates
+already line up with this: `IsBusyMatchHistory` is the ReadJournal list, `IsBusyChartData` is
+the TrainerPage charts, `IsBusyArchetypeList` is the archetype collection. Each is a region,
+not a page.
+
+**Implementation shape.** MAUI Grid children in the same cell stack, and the last sibling
+renders on top, so a region overlay is the region's own container plus an overlay child:
+
+```xml
+<Grid>
+    <CollectionView ... />
+    <Grid IsVisible="{Binding Source={x:Reference RegionSpinner}, Path=IsShowing}"
+          InputTransparent="True"
+          BackgroundColor="{AppThemeBinding Light=#B0FFFFFF, Dark=#B0000000}">
+        <loading:LoadingIndicator x:Name="RegionSpinner" IsBusy="{Binding IsBusyMatchHistory}" />
+    </Grid>
+</Grid>
+```
+
+Three things carry the weight:
+
+- **`InputTransparent="True"`** — non-negotiable. The indicator stays up for
+  `MinimumVisibleDuration` (500ms) *after* the gate clears, but `WaitUntilBusyGone` waits on
+  the raw gate, so a UI test resumes while the overlay is still on screen. Without input
+  transparency those clicks land on the scrim and produce exactly the intermittent
+  tap failures that took this session to eliminate ([[feedback_android_flaky_tap_retry]]).
+  The alternative is a sentinel bound to the indicator's `IsShowing` for tests to wait on —
+  more machinery for no extra benefit.
+- **`AppThemeBinding` on the scrim colour** — a dark scrim over light content reads as a bug.
+- **Ordering, not z-index** — last child wins.
+
+**Start with a dim, not a blur** — but a real blur is not off the table, and it is NOT the same
+problem as the spinner's flicker.
+
+MAUI has no *cross-platform* blur primitive. Getting one means reaching for each platform's
+built-in native renderer — `AcrylicBrush` on WinUI, `RenderEffect` on Android 12+ — through a
+handler or platform view. That is ordinary platform-specific customisation, which MAUI is
+designed to accommodate.
+
+Do not cite the spinner's residual flicker as precedent against this. That was left alone as a
+priority call, and the DX reasoning first recorded for it did not survive checking: MAUI's
+Windows backend already renders through DirectX via Win2D, and the real escape hatch would be
+SkiaSharp — already a dependency, cross-platform, with `SKShader.CreateSweepGradient` as the
+exact primitive `ICanvas` lacks. See [[project_spinner_drawing_lessons]] and
+[[feedback_fact_check_the_user]].
+
+So: ship the dim first because it is one line of XAML and works everywhere, and treat acrylic /
+RenderEffect as a per-platform enhancement if the dim proves too flat.
 
 ### TDD
 

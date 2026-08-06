@@ -1,5 +1,7 @@
 # Memory Index
 
+- [SESSION HANDOFF 2026-08-06](project_session_handoff_2026_08_06.md) — **READ FIRST.** feat/loading-indicator is one Android test from green; the failure is layout shift from the inline indicator and the planned overlay fixes it structurally.
+
 - [TrainerHill import feature](project_trainerhill_import.md) — JSON import from trainerhill.com; mixed-type turn field (int/string JsonElement), slug-to-name conversion, get-or-create archetype/tag, per-entry error collection.
 
 - [In-app DEBUG seeding](project_in_app_seeding.md) — App.xaml.cs seeds UITestTrainer on startup in #if DEBUG; must call SetActiveAsync after create/find; bypasses MAUI's GUID DB path problem.
@@ -72,6 +74,9 @@
 - [Android composite widget accessibility](feedback_android_composite_widget_accessibility.md) — MAUI SearchBar/Picker don't propagate AutomationId to resource-id on Android; set SemanticProperties.Description for content-desc fallback; Android FindUIElement now has three-stage lookup (resource-id → AccessibilityId → UiScrollable).
 - [ReadJournal Android slowdown — RESOLVED](project_readjournal_android_slow.md) — root cause: 3 tag CollectionViews kept UI thread busy → every UiAutomator call burned ~20s waitForIdle; FlexLayout+BindableLayout swap dropped SelectMatch 50-111s → 92-368ms; suite 18m → 8m44s.
 - [Android flaky tap retry pattern](feedback_android_flaky_tap_retry.md) — Appium clicks silently miss MAUI gesture handlers; click-verify-retry against a state change, verify with viewport-visible elements only, throw on final failure. Made MainPage Android 25/25.
+- [Fact-check the user](feedback_fact_check_the_user.md) — verify confident technical claims before building on them; the user asks for it. A right conclusion with wrong reasoning is the dangerous case, because nothing looks broken.
+- [Platform-specific is fine](feedback_platform_specific_is_fine.md) — "not cross-platform" is not an automatic no. Handlers, platform views and built-in native renderers (AcrylicBrush, RenderEffect) are ordinary MAUI work. Only exotic interop like hosting DX is ruled out.
+- [Spinner drawing lessons](project_spinner_drawing_lessons.md) — translucent strokes that overlap ADD, so a gradient built from short segments shows moving lumps; stack whole arcs instead. ClipRectangle silently drops fills on WinUI — use FillArc. Residual flicker accepted, do not chase it.
 - [Loading gates](project_loading_gates.md) — named IsBusy* props on all 4 data-page VMs + hidden Busy_* sentinel Labels + WaitUntilBusyGone test sync; TCS-gated unit test technique; CollectionView-count discipline on Android.
 - [Android CI investigation — RESOLVED](project_android_ci_gpu_flake.md) — six stacked real bugs (AVD mismatch, self-inflicted logcat hang, pkill comm-truncation + self-match, adbd offline race, launcher ANR dialog stealing the a11y tree, Editor click landing in the gesture-nav home zone backgrounding the app). First full-green matrix at b5ba64b. Read the final summary before touching Android CI.
 - [Android test execution strategy](project_android_test_execution_strategy.md) — planned: default Android UI tests to CI (now faster than Windows there), auto-target a real phone when attached else emulator, investigate local parallelism + WSL2. Not started.
