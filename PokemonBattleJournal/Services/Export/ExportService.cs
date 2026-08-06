@@ -61,13 +61,44 @@ namespace PokemonBattleJournal.Services.Export
                 });
             }
 
-            _logger.LogInformation("Exported backup covering {TrainerCount} trainer(s), {MatchCount} match(es)",
-                trainers.Count, trainers.Sum(t => t.Matches.Count));
+            // EVERY archetype — custom, seeded and Limitless-scraped alike (user, 2026-08-06).
+            //
+            // Custom ones are irreplaceable user data: OptionsPage lets a trainer pick the icon,
+            // and ImagePath2 carries a dual-icon deck's second, so a name alone cannot recover a
+            // deliberate choice. Those carry a real TrainerId.
+            //
+            // The scraped ones are kept too, for two reasons. Resolving a Limitless deck to a
+            // local sprite is real work — SpriteResolver's alias table and fuzzy matching — and
+            // there is no reason to redo it. More importantly the meta shifts: an archetype that
+            // was top-10 when a match was played may be absent from the next scrape entirely, and
+            // since a restore recreates archetypes from the names its matches reference, an
+            // omitted one would come back as substitute.png and stay that way forever.
+            //
+            // It also avoids a distinction the schema cannot make: seeded and scraped rows both
+            // go in through raw INSERT OR IGNORE without a TrainerId, so both sit at 0 and are
+            // indistinguishable from each other.
+            List<Archetype> archetypes = await _factory.Archetypes.GetAllAsync();
+
+            // Ownership travels as a name: row ids are not stable across databases, and a
+            // restore into a fresh install renumbers everything.
+            Dictionary<uint, string> trainerNameById = all
+                .Where(t => !string.IsNullOrEmpty(t.Name))
+                .ToDictionary(t => t.Id, t => t.Name!);
+
+            _logger.LogInformation("Exported backup covering {TrainerCount} trainer(s), {MatchCount} match(es), {ArchetypeCount} archetype(s)",
+                trainers.Count, trainers.Sum(t => t.Matches.Count), archetypes.Count);
 
             return JsonSerializer.Serialize(
                 new ExportBackup
                 {
                     ExportedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                    Archetypes = [.. archetypes.Select(a => new ExportArchetype
+                    {
+                        Name = a.Name ?? string.Empty,
+                        ImagePath = a.ImagePath ?? string.Empty,
+                        ImagePath2 = a.ImagePath2,
+                        TrainerName = trainerNameById.GetValueOrDefault(a.TrainerId),
+                    })],
                     Trainers = trainers,
                 },
                 ExportJsonOptions);

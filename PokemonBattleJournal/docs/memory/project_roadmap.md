@@ -493,8 +493,10 @@ ones to be deleted, also not a feature yet written."*
   `CalculateWinRateByMatchLength`.
 
 **Delete a single match**
-- Today the only delete paths are for trainers, archetypes and tags.
-- Must cascade to the match's `Game` rows or they are orphaned.
+- **CORRECTED 2026-08-06:** `IMatchOperations.DeleteAsync(MatchEntry)` already exists and is
+  documented as deleting "all related records". So this is a **UI-only** gap, not a service
+  one — do not write a second delete. Check what it actually cascades before trusting the
+  summary, but start from it.
 - Per [[project_error_handler_di]] the confirmation must not be a modal — the user has a
   standing objection to dialogs, especially under automation.
 

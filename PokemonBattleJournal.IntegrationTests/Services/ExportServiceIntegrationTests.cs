@@ -28,7 +28,13 @@ public class ExportServiceIntegrationTests
     [SetUp]
     public async Task SetUp()
     {
-        _factory = new TestSqliteConnectionFactory(Substitute.For<ILimitlessMetaService>());
+        // The meta service must return an empty list, not an unstubbed null: ArchetypeOperations
+        // .GetAllAsync faults on a null deck list and returns [] from its catch, which shows up
+        // as an archetype simply missing from the export rather than as an error. See
+        // docs/memory/project_integration_test_isolation.md.
+        ILimitlessMetaService meta = Substitute.For<ILimitlessMetaService>();
+        meta.GetTopDecksAsync(Arg.Any<int>()).Returns([]);
+        _factory = new TestSqliteConnectionFactory(meta);
         _sut = new ExportService(_factory, NullLogger<ExportService>.Instance);
 
         SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
@@ -187,6 +193,76 @@ public class ExportServiceIntegrationTests
         entry.TryGetProperty("startTime", out _).ShouldBeFalse("TrainerHill's format has no startTime");
         entry.TryGetProperty("endTime", out _).ShouldBeFalse("TrainerHill's format has no endTime");
         entry.TryGetProperty("time", out _).ShouldBeTrue("TrainerHill's format keys the match on time");
+    }
+
+    /// <summary>
+    /// A backup must carry each archetype's icon, including a user-chosen one.
+    /// </summary>
+    /// <remarks>
+    /// Archetype icons are user data: OptionsPage lets you pick one when creating a custom
+    /// archetype, and <c>ImagePath2</c> exists for dual-icon decks. The envelope recorded only
+    /// archetype *names*, so a restore would have had to guess the icon — and guessing from a
+    /// name cannot recover a deliberate choice.
+    ///
+    /// Carried once at the top level rather than repeated on every entry because the
+    /// <c>Archetype</c> table is global, not per-trainer, so per-entry copies would be
+    /// duplication with no extra information.
+    ///
+    /// All archetypes are exported, not only those a match references, so a custom archetype
+    /// created but not yet played still survives a restore.
+    ///
+    /// The TrainerHill export deliberately has no equivalent — its schema has no icon field and
+    /// its value is being indistinguishable from a file of theirs (user, 2026-08-06: *"i know
+    /// that icons will be lost for the trainer hill export, thats fine"*).
+    /// </remarks>
+    [Test]
+    public async Task ExportBackupAsync_RealDatabase_WritesArchetypeIcons()
+    {
+        SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+        Archetype custom = new()
+        {
+            Name = "Pinku's Brew",
+            ImagePath = "pikachu.png",
+            ImagePath2 = "mimikyu.png",
+            TrainerId = _trainerId,
+        };
+        _ = await db.InsertAsync(custom);
+
+        using JsonDocument doc = JsonDocument.Parse(await _sut.ExportBackupAsync());
+
+        doc.RootElement.TryGetProperty("archetypes", out JsonElement archetypes)
+            .ShouldBeTrue("a backup without archetype icons cannot restore a user's chosen icon");
+
+        JsonElement entry = archetypes.EnumerateArray()
+            .Single(a => a.GetProperty("name").GetString() == "Pinku's Brew");
+        entry.GetProperty("imagePath").GetString().ShouldBe("pikachu.png");
+        entry.GetProperty("imagePath2").GetString().ShouldBe("mimikyu.png");
+
+        // Ownership by name, not id: ids are renumbered when restoring into a fresh install.
+        entry.GetProperty("trainerName").GetString().ShouldBe("Ash",
+            "a custom archetype belongs to the trainer who made it, and a restore must not reassign it");
+
+        // Seeded and scraped rows have no owner, and null there is meaningful rather than missing.
+        archetypes.EnumerateArray()
+            .Single(a => a.GetProperty("name").GetString() == "Other")
+            .TryGetProperty("trainerName", out _)
+            .ShouldBeFalse("an unowned archetype writes no trainerName at all");
+
+        // Present despite having no matches — an unplayed custom archetype is still user data.
+        archetypes.EnumerateArray().Select(a => a.GetProperty("name").GetString())
+            .ShouldContain("Dragapult ex / Dusknoir");
+    }
+
+    [Test]
+    public async Task ExportTrainerHillAsync_RealMatch_HasNoArchetypeIcons()
+    {
+        await SaveMatchAsync(MatchResult.Win, new Game { Result = MatchResult.Win, Turn = 1 });
+
+        using JsonDocument doc = JsonDocument.Parse(await _sut.ExportTrainerHillAsync(_trainerId));
+
+        // A bare array, exactly as TrainerHill emits — no envelope to hang icons off.
+        doc.RootElement.ValueKind.ShouldBe(JsonValueKind.Array);
+        doc.RootElement[0].TryGetProperty("imagePath", out _).ShouldBeFalse();
     }
 
     [Test]

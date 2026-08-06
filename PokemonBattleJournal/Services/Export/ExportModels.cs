@@ -58,6 +58,44 @@ namespace PokemonBattleJournal.Services.Export
         [JsonPropertyName("game3")] public ExportGame? Game3 { get; init; }
     }
 
+    /// <summary>
+    /// An archetype and its icons. Backup envelope only.
+    /// </summary>
+    /// <remarks>
+    /// Icons are user data — OptionsPage lets a custom archetype be given a chosen icon, and
+    /// <c>ImagePath2</c> carries the second icon of a dual-icon deck. A name alone cannot
+    /// recover a deliberate choice, so a backup that stored only names was not lossless.
+    ///
+    /// Recorded once at the envelope level rather than on every entry, because
+    /// <c>Archetype.Name</c> is <c>[Unique]</c> across the whole table — two trainers cannot
+    /// hold the same archetype name, so per-entry copies would repeat themselves without
+    /// adding information.
+    ///
+    /// It is still not a global table, though. Each row carries a <c>TrainerId</c>: the
+    /// Limitless scrape and the offline seed are shared, but a custom archetype belongs to the
+    /// trainer who created it (user, 2026-08-06). So ownership has to be exported or a restore
+    /// would hand every custom archetype to whoever happened to run it.
+    ///
+    /// Ownership travels as a trainer *name*, not an id. Row ids are not stable across
+    /// databases — restoring into a fresh install renumbers everything — and the envelope
+    /// already keys trainers by name everywhere else.
+    ///
+    /// TrainerHill's format has no equivalent and is not given one — icons are knowingly lost
+    /// there, because that file's value is being indistinguishable from one of theirs.
+    /// </remarks>
+    internal sealed record ExportArchetype
+    {
+        [JsonPropertyName("name")] public string Name { get; init; } = string.Empty;
+        [JsonPropertyName("imagePath")] public string ImagePath { get; init; } = string.Empty;
+        [JsonPropertyName("imagePath2")] public string? ImagePath2 { get; init; }
+
+        /// <summary>
+        /// Creating trainer's name, or null for archetypes with no owner — the seeded and
+        /// scraped ones. Null is meaningful, not missing data.
+        /// </summary>
+        [JsonPropertyName("trainerName")] public string? TrainerName { get; init; }
+    }
+
     internal sealed record ExportTrainer
     {
         [JsonPropertyName("name")] public string Name { get; init; } = string.Empty;
@@ -73,6 +111,15 @@ namespace PokemonBattleJournal.Services.Export
         /// <summary>Bumped only on a breaking shape change, so a restore can refuse what it cannot read.</summary>
         [JsonPropertyName("version")] public int Version { get; init; } = 1;
         [JsonPropertyName("exportedUtc")] public string ExportedUtc { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Every archetype in the database, not only those a match references — a custom
+        /// archetype created but never played is still user data and must survive a restore.
+        /// Absent in backups written before icons were carried; a restore must tolerate that
+        /// and fall back to resolving an icon from the name.
+        /// </summary>
+        [JsonPropertyName("archetypes")] public List<ExportArchetype> Archetypes { get; init; } = [];
+
         [JsonPropertyName("trainers")] public List<ExportTrainer> Trainers { get; init; } = [];
     }
 }
