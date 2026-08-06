@@ -72,6 +72,36 @@ faster display, which reads as flicker independently of any compositing artefact
 Android UI automation crawl before ([[project_readjournal_android_slow]]), so it needs an
 Android measurement, not just a Windows glance.
 
+## Tuned values, and why (settled with the user 2026-08-05, on screenshots of both platforms)
+
+| Constant | Value | Reason |
+|---|---|---|
+| `TrailLayers` | 44 | 18 gave 17° steps and visible banding along the tail; 44 gives 7° and reads continuous |
+| `LayerAlpha` | 0.075 | paired with the layer count to hold head opacity at ~0.97; raising layers without lowering this saturates the trail solid |
+| `TailWidthRatio` | **0.45** | 0.60 was tried and rejected — the taper stopped registering and it read as a solid donut with a gradient rather than a trail with a leading edge |
+| `TrailSweepDegrees` | 310 | near-closed loop, "almost an ouroboros" |
+| head thickness | = ball diameter | derived, not an independent ratio, so the proportion cannot drift if the ball size changes |
+| `FrameInterval` | 16ms | 33ms visibly stepped on the user's 244Hz monitor; the angle maths was already time-based, so only the frame count needed changing |
+
+Perceived taper is stronger than `TailWidthRatio` suggests, because width and alpha fall off
+together — the eye sees the product. That is why 0.45 looks like a definite taper and 0.60
+looks like almost none.
+
+## The tail's fade depends on the background
+
+The faint end holds up on dark and washes out on white — visible comparing the Windows app
+(dark) against the Android emulator (light). Any alpha floor tuned on one will be wrong on the
+other. Check both when theming lands ([[project_theme_switcher]]); do not re-tune on a single
+background.
+
+## Comparing themes side by side (idea from the user, 2026-08-05)
+
+The Windows app is unpackaged, so two instances can run at once — but both follow the OS
+theme, giving two identical windows. `Application.Current.UserAppTheme` overrides the theme
+per process, so **once the in-app theme switcher exists, two instances set differently give
+genuine side-by-side light/dark on one screen**, with no emulator needed. Worth building into
+the switcher work: it is also the tooling for reviewing that work.
+
 ## Sizing
 
 The ball is a **fixed 28px**, not a fraction of the control, matching the Pokéball icons

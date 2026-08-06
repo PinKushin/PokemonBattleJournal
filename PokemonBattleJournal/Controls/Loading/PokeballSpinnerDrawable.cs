@@ -18,17 +18,27 @@ namespace PokemonBattleJournal.Controls.Loading
     internal sealed class PokeballSpinnerDrawable : IDrawable
     {
         /// <summary>
-        /// Translucent arcs stacked to build the trail. More layers give a finer gradient and a
-        /// smoother taper; each one is a single stroked arc, so the cost is modest.
+        /// Translucent arcs stacked to build the trail.
         /// </summary>
-        private const int TrailLayers = 18;
+        /// <remarks>
+        /// The layer count is the gradient's resolution: every layer ends somewhere, and each
+        /// ending is a step in both alpha and width plus a round cap bump. At 18 the steps were
+        /// 17° apart and visibly banded along the tail. At 44 they are 7° apart, which reads as
+        /// continuous.
+        ///
+        /// This is the cost knob. Each layer is one stroked arc per frame, so at 60fps this is
+        /// ~2,600 arcs a second — fine for Win2D on a small view, and the first thing to reduce
+        /// if Android struggles.
+        /// </remarks>
+        private const int TrailLayers = 44;
 
         /// <summary>
         /// Alpha of a single layer. The head sits under every layer, so opacity there is
-        /// 1-(1-a)^n — at 18 layers this reaches effectively solid while the lone tail layer
-        /// stays faint.
+        /// 1-(1-a)^n; this is tuned with <see cref="TrailLayers"/> to keep the head at ~0.97
+        /// while the lone tail layer stays faint. Raising the layer count without lowering this
+        /// saturates the whole trail solid.
         /// </summary>
-        private const float LayerAlpha = 0.16f;
+        private const float LayerAlpha = 0.075f;
 
         /// <summary>
         /// Width at the tail as a fraction of the head's, so the trail thins as it recedes.
@@ -46,7 +56,16 @@ namespace PokemonBattleJournal.Controls.Loading
         /// </summary>
         private const float TrailSweepDegrees = 310f;
 
-        private const float StrokeThicknessRatio = 0.17f;
+        /// <summary>
+        /// Ceiling on the trail's head thickness relative to the control, for small sizes.
+        /// </summary>
+        /// <remarks>
+        /// Normally the head is exactly the ball's diameter rather than a fraction of the
+        /// control — see <see cref="BallDiameter"/>. Tying the two together is what makes the
+        /// ball sit astride a trail as wide as itself instead of on top of a thinner ribbon, and
+        /// it keeps the taper proportional to something meaningful rather than to the canvas.
+        /// </remarks>
+        private const float MaxStrokeRatio = 0.30f;
 
         /// <summary>
         /// Ball diameter in device-independent pixels — a fixed size, not a fraction of the
@@ -80,8 +99,10 @@ namespace PokemonBattleJournal.Controls.Loading
             }
 
             PointF centre = new(dirtyRect.Center.X, dirtyRect.Center.Y);
-            float stroke = size * StrokeThicknessRatio;
             float ballRadius = Math.Min(BallDiameter / 2f, size * MaxBallRadiusRatio);
+            // Head thickness matches the ball's diameter, so the ball rides the trail rather
+            // than sitting on top of a thinner one.
+            float stroke = Math.Min(ballRadius * 2f, size * MaxStrokeRatio);
             // Keep the whole ball inside the bounds — it straddles the arc's path, so the radius
             // has to come off the orbit, not just the stroke.
             float orbitRadius = (size / 2f) - Math.Max(stroke / 2f, ballRadius);

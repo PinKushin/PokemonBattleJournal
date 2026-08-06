@@ -43,3 +43,19 @@ tinted custom icon; a yellow standard hamburger glyph means FlyoutIcon isn't app
 Android at all (different bug). Update this note once seen.
 
 [[project_roadmap]]
+
+## Two instances side by side — build this into the switcher (user, 2026-08-05)
+
+The Windows app is unpackaged (`WindowsPackageType=None`), so two instances already run at
+once. Today that is useless for comparing themes because both follow the OS setting and you
+get two identical windows.
+
+`Application.Current.UserAppTheme` overrides the theme **per process**. So once the switcher
+exists, launching two instances and setting each differently gives real side-by-side light and
+dark on one screen — no emulator, no OS-level toggling back and forth.
+
+Worth treating as part of the switcher's own value rather than a side effect: it is the tooling
+for reviewing the theming work itself. Raised while comparing the loading spinner across the
+dark Windows app and the light Android emulator, where the faint end of the spinner's tail held
+up on dark and washed out on white ([[project_spinner_drawing_lessons]]) — exactly the class of
+problem that needs both themes visible at once to judge.

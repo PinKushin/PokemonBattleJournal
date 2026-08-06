@@ -17,8 +17,24 @@ namespace PokemonBattleJournal.Controls.Loading
     /// </remarks>
     public class LoadingIndicator : GraphicsView
     {
-        /// <summary>Redraw interval. ~30fps is smooth for a spinner and half the work of 60.</summary>
-        private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(33);
+        /// <summary>
+        /// Redraw interval, ~60fps.
+        /// </summary>
+        /// <remarks>
+        /// Was 33ms (~30fps) on the reasoning that a spinner does not need more. That is wrong
+        /// on a high-refresh display: at 30fps each frame persists for about eight refreshes of
+        /// a 244Hz panel, and the stepping is plainly visible even though the angle maths is
+        /// time-based and the position is correct. Raising the frame count is the whole fix —
+        /// <see cref="SpinnerAnimation"/> already advances by elapsed time, so speed is
+        /// unchanged.
+        ///
+        /// The cost is UI-thread work, which is not free on Android: a busy UI thread is exactly
+        /// what made UI automation crawl before (project_readjournal_android_slow). This is one
+        /// small GraphicsView rather than three CollectionViews, and it only ticks while
+        /// something is actually loading, but if Android UI tests slow down this constant is the
+        /// first thing to look at.
+        /// </remarks>
+        private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(16);
 
         private static readonly TimeSpan DefaultMinimumVisible = TimeSpan.FromMilliseconds(500);
 
