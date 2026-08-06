@@ -64,13 +64,28 @@ measure **counter-clockwise from 3 o'clock**, while the control's own `PointOnOr
 Some shimmer remains. User's call, 2026-08-05: *"its a maui problem, wed have to build
 something in dx from primitives to probably fix it."* Do not spend more time on it.
 
-**The reason matters, and it is narrower than "platform-specific is off limits."** A proper fix
-means drawing the trail with DX primitives, and wiring DX into MAUI is essentially impractical
-— MAUI is not built to host it (user, clarified 2026-08-05). That is a different and much
-harder problem than using a platform's *built-in* native renderer, such as `AcrylicBrush` on
-WinUI or `RenderEffect` on Android 12+ for a blurred scrim. Those go through handlers or
-platform views and are ordinary MAUI customisation. Do not cite the spinner as precedent for
-avoiding them.
+**Do not record DX as the reason — that was fact-checked and is wrong in an important way.**
+
+The original note said a fix would need DX primitives and that MAUI cannot host DX. The
+conclusion (leave it) is right; the reasoning does not hold:
+
+- DX is Windows-only and MAUI is cross-platform-first, so a DX fix would be a **Windows-only
+  fix plus a parallel implementation per platform**. That alone is a good reason to decline.
+- But "MAUI is not made for it" is too strong. MAUI's Windows backend *is* WinUI 3, which
+  renders on DirectX, and `GraphicsView` draws there through Win2D — a DX wrapper. **The
+  spinner already runs on that stack.** A DX rewrite would probably not fix the flicker,
+  because we are not missing DX.
+
+**If this is ever revisited, the route is SkiaSharp, not DX.** Verified 2026-08-05: SkiaSharp
+is already a dependency (via `LiveChartsCore.SkiaSharpView.Maui`) and `.UseSkiaSharp()` is
+already called in `MauiProgram`. `SKCanvasView` is cross-platform and GPU-accelerated, and
+`SKShader.CreateSweepGradient` is an angular gradient about a centre point — exactly the
+primitive `ICanvas` lacks and precisely what the layered-arc stack is imitating. It would very
+likely remove the banding and the compositing artefacts together, everywhere, with no
+per-platform code.
+
+Not tested, and not worth doing for a spinner that already looks good. Recorded so nobody
+concludes "impossible" from a reason that does not survive checking.
 
 One untried cheap option if it ever matters: the redraw runs at 30fps
 (`LoadingIndicator.FrameInterval = 33ms`), and a rotating object at 30fps judders against a
