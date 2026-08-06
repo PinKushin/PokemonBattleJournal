@@ -19,16 +19,54 @@ namespace UITests
         // in a finally block. TryClickIfPresent is used for best-effort cleanup.
         // ---------------------------------------------------------------------------
 
+        /// <summary>
+        /// Turns BO3 back off, and confirms it actually went off.
+        /// </summary>
+        /// <remarks>
+        /// Reading the label before clicking is required, not defensive: a blind click toggles
+        /// BO3 *on* when it is already off ([[feedback_bo3_state_idempotent]]).
+        ///
+        /// Verifying afterwards is the part that was missing. `TryClickIfPresent` reports that
+        /// it dispatched a click, not that anything happened, so a click that never reached the
+        /// handler left BO3 on and leaked that state into the next test with no trace in the
+        /// log — which made the Windows CI timeline unreadable: every "clicked" line was
+        /// ambiguous between "worked" and "went nowhere". See
+        /// docs/memory/project_windows_mainpage_click_flake.md.
+        ///
+        /// This is cleanup, so it must not throw and mask the real failure of a test that has
+        /// already failed. It logs loudly instead — a silent catch here is what made the state
+        /// leak invisible in the first place (docs/memory/feedback_no_silent_guards.md).
+        /// </remarks>
         private void ResetBOSwitch()
         {
             ScrollPageToTop();
             try
             {
                 AppiumElement label = FindUIElement("BO3StatusLabel");
-                if (label.Text == "Best of 3")
-                    TryClickIfPresent("BOSwitch");
+                if (label.Text != "Best of 3")
+                {
+                    return;
+                }
+
+                if (!TryClickIfPresent("BOSwitch"))
+                {
+                    PerfLog("ResetBOSwitch: BOSwitch not found — BO3 is still ON and will leak into the next test");
+                    return;
+                }
+
+                if (WaitUntilText("BO3StatusLabel", "Best of 1", timeoutMs: 3000))
+                {
+                    return;
+                }
+
+                PerfLog($"ResetBOSwitch: clicked BOSwitch but BO3StatusLabel is still '{GetBO3LabelTextSafe()}'. " +
+                    "The click was dispatched and did not reach the handler, so BO3 stays ON for the next test.");
+                LogInputBlockers("ResetBOSwitch", "BOSwitch");
             }
-            catch (OpenQA.Selenium.NoSuchElementException) { }
+            catch (OpenQA.Selenium.NoSuchElementException ex)
+            {
+                PerfLog($"ResetBOSwitch: could not reach BO3StatusLabel ({ex.GetType().Name}) — BO3 state is unknown for the next test");
+            }
         }
 
         private void ResetGame1Tab()
@@ -730,7 +768,7 @@ namespace UITests
             // Clicks are being dispatched and going nowhere. See
             // docs/memory/project_windows_mainpage_click_flake.md — on Windows CI this is the
             // point where the whole fixture stops responding to input while staying findable.
-            LogInputBlockers($"OpenArchetypePopup({comboBoxId})");
+            LogInputBlockers($"OpenArchetypePopup({comboBoxId})", comboBoxId);
 
             throw new OpenQA.Selenium.NoSuchElementException(
                 $"Archetype popup did not open after {attempts} clicks on '{comboBoxId}'.");

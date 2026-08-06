@@ -80,18 +80,50 @@ Worth knowing anyway: `DismissArchetypePopup` **logs but does not throw** when t
 survives, and its fallback `SendAndroidBack()` is a no-op on Windows. So on Windows a failed
 dismiss is silent. That is a real latent hole even though it did not fire here.
 
+## Falsified hypotheses — do not re-run these
+
+Three, each killed by evidence rather than opinion. Re-testing them is wasted time.
+
+1. **Leftover archetype popup swallowing clicks.** Disproven above — the popup closed cleanly
+   and clicks kept working for eleven seconds after.
+2. **Global input death after some point.** Disproven: `EnsureBO3On` logged
+   `Game2Tab appeared in 450ms (attempt 1)` at 04:46:46.877, *after* the supposed cut-off. It
+   is element-specific, not a dead session.
+3. **Window geometry / below-the-fold clicks.** This was the strongest remaining theory: CI's
+   desktop is 1024x768, `MainColumnsGrid` collapses to one column at narrow widths, and BO3
+   adds a panel. Tested directly with the new `UITEST_WINDOW_SIZE` override — **MainPageTests
+   is 25/25 at both 1024x768 and 800x600**, with the setup log confirming the resize applied.
+   Geometry alone does not reproduce it.
+
+What that leaves is CI-specific *timing* (the runner is far slower, and every click in the
+failing run took ~1000ms versus ~200ms locally), or something not yet imagined. The point of
+this branch is that the next occurrence arrives with the answer attached rather than needing
+another round of theories.
+
 ## Where the failure actually starts
 
 Last successful click: `MainPage_BOSwitch_ShowsBO3Fields`, ending 04:46:44.275 — it toggles
 BO3 **on**. First failed click: 04:46:52.392. In between only `MainPage_FirstCheck_Displayed`
 (a find) and the start of `Game3Tab_ShowsGamePanel`.
 
-**`EnsureBO3On` does not click here.** It is idempotent by design
-([[feedback_bo3_state_idempotent]]): it reads `BO3StatusLabel` first and only clicks when the
-state is wrong, and BO3 was already on from the previous test. So there is no successful click
-between the BO3 toggle and the first failure — every click after that toggle fails, including
-`Game2Tab`, `PlayerArchetype` and `RivalArchetype`. Global input death is back on the table,
-and **toggling BO3 on is the last thing that happened before it**.
+**CORRECTED:** I first wrote that no click happened in between. Wrong — `MainPage_BOSwitch_
+ShowsBO3Fields` ends with `finally { ResetBOSwitch(); }`, and `EnsureBO3On` then logged
+`Game2Tab appeared in 450ms (attempt 1)` at 04:46:46.877.
+
+The honest summary is that **the PerfLog cannot tell you which clicks landed**, because the two
+things it logs are both ambiguous:
+
+- `TryClickIfPresent('BOSwitch'): clicked after 973ms` reports *dispatch*, not effect.
+- `EnsureBO3On: Game2Tab appeared` can be reached without clicking at all, when the label
+  already reads "Best of 3".
+
+So "the last successful click" was not actually determinable from the artifacts. That gap is
+now closed: `ResetBOSwitch` verifies the label flips and says so when it does not, and
+`WaitUntilText` returns bool instead of void so a timeout stops looking like success.
+
+What *is* solid: `Game2Tab` was present and clicked three times, and `UserNoteInput2` never
+appeared; the same for the archetype pickers. The element exists, the click is dispatched, the
+handler does not run.
 
 ## Next steps when picking this up
 

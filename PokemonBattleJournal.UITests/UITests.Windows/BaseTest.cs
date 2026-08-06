@@ -233,8 +233,52 @@ namespace UITests
         /// Best-effort throughout: this runs while something is already wrong, and the
         /// original failure is the one worth reporting.
         /// </remarks>
-        protected override void LogInputBlockers(string context)
+        protected override void LogInputBlockers(string context, string? targetAutomationId = null)
         {
+            // Off-screen target is the leading hypothesis, so check it first and loudest.
+            //
+            // WinAppDriver's Click on an element outside the visible viewport does not reliably
+            // reach the handler (docs/memory/feedback_flaui_scroll_into_view.md is the same
+            // lesson for CollectionView items). The element is still in the UIA tree with
+            // sensible bounds, so it is found, clicked, reported as clicked — and nothing
+            // happens. That is exactly the observed shape.
+            //
+            // It also explains why this only ever fails on CI: the runner's desktop is smaller
+            // than a dev monitor, MainPage's MainColumnsGrid collapses to one column, and
+            // turning BO3 on adds a whole panel — so the tab row can sit below the fold there
+            // and never here.
+            if (targetAutomationId is not null)
+            {
+                try
+                {
+                    AppiumElement target = FindUIElement(targetAutomationId);
+                    System.Drawing.Point origin = target.Location;
+                    System.Drawing.Size size = target.Size;
+                    System.Drawing.Point windowOrigin = App.Manage().Window.Position;
+                    System.Drawing.Size windowSize = App.Manage().Window.Size;
+
+                    bool insideViewport =
+                        origin.Y >= windowOrigin.Y &&
+                        origin.Y + size.Height <= windowOrigin.Y + windowSize.Height &&
+                        origin.X >= windowOrigin.X &&
+                        origin.X + size.Width <= windowOrigin.X + windowSize.Width;
+
+                    PerfLog($"BLOCKERS [{context}] target '{targetAutomationId}' at ({origin.X},{origin.Y}) {size.Width}x{size.Height}; " +
+                        $"window at ({windowOrigin.X},{windowOrigin.Y}) {windowSize.Width}x{windowSize.Height}; insideViewport={insideViewport}");
+
+                    if (!insideViewport)
+                    {
+                        PerfLog($"BLOCKERS [{context}] '{targetAutomationId}' IS OUTSIDE THE VISIBLE WINDOW. " +
+                            "It is in the UIA tree so it is found and 'clicked', but the click cannot land. " +
+                            "Scroll it into view before clicking rather than retrying the click.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    PerfLog($"BLOCKERS [{context}] could not measure '{targetAutomationId}': {ex.GetType().Name}");
+                }
+            }
+
             try
             {
                 System.Collections.ObjectModel.ReadOnlyCollection<string> handles = App.WindowHandles;

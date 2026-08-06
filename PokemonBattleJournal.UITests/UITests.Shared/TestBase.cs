@@ -127,7 +127,7 @@ namespace UITests
             // Clicks are being dispatched and going nowhere. See
             // docs/memory/project_windows_mainpage_click_flake.md — on Windows CI this is where
             // the fixture stops responding to input while every element stays findable.
-            LogInputBlockers($"ClickTab({tabAutomationId})");
+            LogInputBlockers($"ClickTab({tabAutomationId})", tabAutomationId);
 
             throw new OpenQA.Selenium.NoSuchElementException(
                 $"ClickTab: '{expectedPanelElementId}' never appeared after {attempts} clicks on '{tabAutomationId}'. " +
@@ -231,7 +231,7 @@ namespace UITests
         /// second top-level window. Neither shows up in an element dump, which is why
         /// DumpVisibleElements has never explained this one.
         /// </remarks>
-        protected virtual void LogInputBlockers(string context) { }
+        protected virtual void LogInputBlockers(string context, string? targetAutomationId = null) { }
 
         /// <summary>
         /// Polls via platform-aware single-shot lookup until the element shows <paramref name="expected"/> text
@@ -239,7 +239,13 @@ namespace UITests
         /// Safer than WebDriverWait + MobileBy.AccessibilityId, which maps to content-desc on Android
         /// (not AutomationId/resource-id) and silently never finds elements that only have AutomationId set.
         /// </summary>
-        protected void WaitUntilText(string automationId, string expected, int timeoutMs = 5000)
+        /// <returns>
+        /// True if the text was observed before the deadline. Callers that treat a timeout as
+        /// benign may ignore it, but a caller deciding whether an interaction actually landed
+        /// must check it — this used to return void, so a timeout was indistinguishable from
+        /// success and a click that never reached its handler looked like a click that worked.
+        /// </returns>
+        protected bool WaitUntilText(string automationId, string expected, int timeoutMs = 5000)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(200);
@@ -250,12 +256,14 @@ namespace UITests
                     try
                     {
                         if (GetElementText(automationId) == expected)
-                            return;
+                            return true;
                     }
                     catch (OpenQA.Selenium.NoSuchElementException) { }
                 }
             }
             finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
+
+            return false;
         }
 
         /// <summary>
