@@ -10,7 +10,13 @@ jobs:
   # ── Unit tests ────────────────────────────────────────────────────────────
   unit-tests:
     name: Unit Tests
-    runs-on: windows-latest
+    runs-on: [self-hosted, Windows, X64]
+    env:
+      # setup-dotnet writes to C:\Program Files\dotnet on a self-hosted runner and
+      # fails without admin. Must be job-level: runner.temp does not resolve in a
+      # workflow-level env: block, which is a parse error rather than a warning.
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
+      DOTNET_ROOT: ${{ runner.temp }}/.dotnet
     steps:
       - uses: actions/checkout@v7
 
@@ -45,7 +51,10 @@ jobs:
   # ── Integration tests ─────────────────────────────────────────────────────
   integration-tests:
     name: Integration Tests
-    runs-on: windows-latest
+    runs-on: [self-hosted, Windows, X64]
+    env:
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
+      DOTNET_ROOT: ${{ runner.temp }}/.dotnet
     steps:
       - uses: actions/checkout@v7
 

@@ -9,7 +9,14 @@ on:
 jobs:
   ui-tests-windows:
     name: Windows UI Tests (${{ matrix.fixture }})
-    runs-on: windows-latest
+    # One self-hosted runner takes one job at a time, so this five-way matrix runs
+    # SEQUENTIALLY here — roughly five times the wall clock of the hosted version,
+    # where the five fixtures get five VMs. The Android workflow is on a different
+    # runner, so that one does overlap with this.
+    runs-on: [self-hosted, Windows, X64]
+    env:
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
+      DOTNET_ROOT: ${{ runner.temp }}/.dotnet
     strategy:
       fail-fast: false
       matrix:
@@ -63,8 +70,12 @@ jobs:
       # one works. always() means a test failure still saves; the only run that skips
       # the save is one where this specific job is cancelled, costing one cold restore
       # next time.
+      # Disabled while this runs on a self-hosted runner: ~/.nuget/packages there is
+      # the developer's real package cache, which persists between runs anyway. Saving
+      # it would upload gigabytes of the local machine's packages to GitHub for no
+      # benefit. Re-enable together with runs-on: windows-latest.
       - name: Save NuGet cache
-        if: always() && matrix.fixture == 'AboutPageTests' && steps.nuget-cache.outputs.cache-hit != 'true'
+        if: false && always() && matrix.fixture == 'AboutPageTests' && steps.nuget-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
         with:
           path: ~/.nuget/packages
