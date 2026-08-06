@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using PokemonBattleJournal.IntegrationTests.Infrastructure;
@@ -27,7 +28,13 @@ public class ExportServiceIntegrationTests
     [SetUp]
     public async Task SetUp()
     {
-        _factory = new TestSqliteConnectionFactory(Substitute.For<ILimitlessMetaService>());
+        // The meta service must return an empty list, not an unstubbed null: ArchetypeOperations
+        // .GetAllAsync faults on a null deck list and returns [] from its catch, which shows up
+        // as an archetype simply missing from the export rather than as an error. See
+        // docs/memory/project_integration_test_isolation.md.
+        ILimitlessMetaService meta = Substitute.For<ILimitlessMetaService>();
+        meta.GetTopDecksAsync(Arg.Any<int>()).Returns([]);
+        _factory = new TestSqliteConnectionFactory(meta);
         _sut = new ExportService(_factory, NullLogger<ExportService>.Instance);
 
         SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
@@ -94,6 +101,168 @@ public class ExportServiceIntegrationTests
         JsonElement entry = doc.RootElement[0];
         entry.GetProperty("game2").GetProperty("result").GetString().ShouldBe("Loss");
         entry.GetProperty("game3").GetProperty("result").GetString().ShouldBe("Win");
+    }
+
+    /// <summary>
+    /// A backup must carry the match timings, because nothing else can reconstruct them.
+    /// </summary>
+    /// <remarks>
+    /// <c>MatchEntry</c> stores <c>StartTime</c>, <c>EndTime</c> and <c>DatePlayed</c>
+    /// separately, and two statistics are computed from the first two —
+    /// <c>CalculateAverageMatchDuration</c> and <c>CalculateWinRateByMatchLength</c>. The
+    /// backup wrote only <c>DatePlayed</c>, so restoring one would silently produce
+    /// zero-length matches and corrupt both, with no error anywhere to explain it.
+    ///
+    /// This is a backup, not an interchange format: losing data it could have kept is the one
+    /// thing it must not do.
+    /// </remarks>
+    [Test]
+    public async Task ExportBackupAsync_RealMatch_PreservesStartAndEndTime()
+    {
+        await SaveMatchAsync(MatchResult.Win, new Game { Result = MatchResult.Win, Turn = 1 });
+
+        using JsonDocument doc = JsonDocument.Parse(await _sut.ExportBackupAsync());
+
+        JsonElement match = doc.RootElement.GetProperty("trainers")
+            .EnumerateArray().Single(t => t.GetProperty("name").GetString() == "Ash")
+            .GetProperty("matches")[0];
+
+        match.TryGetProperty("startTime", out JsonElement start)
+            .ShouldBeTrue("a backup that drops startTime cannot restore match duration");
+        match.TryGetProperty("endTime", out JsonElement end)
+            .ShouldBeTrue("a backup that drops endTime cannot restore match duration");
+
+        DateTime.Parse(start.GetString()!, CultureInfo.InvariantCulture)
+            .ShouldBe(new DateTime(2026, 7, 27, 19, 45, 24, DateTimeKind.Utc));
+        DateTime.Parse(end.GetString()!, CultureInfo.InvariantCulture)
+            .ShouldBe(new DateTime(2026, 7, 27, 20, 5, 0, DateTimeKind.Utc));
+    }
+
+    /// <summary>
+    /// The TrainerHill export must stay exactly what TrainerHill emits.
+    /// </summary>
+    /// <remarks>
+    /// The two formats share <c>ExportEntry</c>, so the timing fields added for backups would
+    /// otherwise leak into the interchange format. That file is meant to be handed to
+    /// TrainerHill, and its value is being indistinguishable from one of theirs.
+    /// </remarks>
+    /// <summary>
+    /// <c>time</c> must carry <c>StartTime</c>, not <c>DatePlayed</c>.
+    /// </summary>
+    /// <remarks>
+    /// TrainerHill's schema has a single time field, so this export cannot be lossless — but it
+    /// can pick the better of the two. <c>DatePlayed</c> is the weak one: it comes from a date
+    /// picker and sits at midnight, so exporting it throws away the time of day for no reason.
+    /// <c>StartTime</c> carries the same date plus real precision.
+    ///
+    /// It also matters for duplicate detection, which keys on <c>StartTime</c> — a re-imported
+    /// file whose time field was midnight would never match the row it came from.
+    /// </remarks>
+    [Test]
+    public async Task ExportTrainerHillAsync_RealMatch_WritesStartTimeNotDatePlayed()
+    {
+        MatchEntry match = new()
+        {
+            TrainerId = _trainerId,
+            PlayingId = _dragapultId,
+            AgainstId = _otherId,
+            Result = MatchResult.Win,
+            // What a date picker leaves behind: midnight, no time of day.
+            DatePlayed = new DateTime(2026, 7, 27, 0, 0, 0, DateTimeKind.Utc),
+            StartTime = new DateTime(2026, 7, 27, 19, 45, 24, DateTimeKind.Utc),
+            EndTime = new DateTime(2026, 7, 27, 20, 5, 0, DateTimeKind.Utc),
+        };
+        (await _factory.Matches.SaveAsync(match, [new Game { Result = MatchResult.Win, Turn = 1 }]))
+            .ShouldBeGreaterThan(0, "seeding a match must succeed or the test proves nothing");
+
+        using JsonDocument doc = JsonDocument.Parse(await _sut.ExportTrainerHillAsync(_trainerId));
+
+        DateTime written = DateTime.Parse(doc.RootElement[0].GetProperty("time").GetString()!, CultureInfo.InvariantCulture);
+        written.TimeOfDay.ShouldNotBe(TimeSpan.Zero, "exporting DatePlayed throws away the time of day");
+        written.ShouldBe(new DateTime(2026, 7, 27, 19, 45, 24, DateTimeKind.Utc));
+    }
+
+    [Test]
+    public async Task ExportTrainerHillAsync_RealMatch_OmitsBackupOnlyTimings()
+    {
+        await SaveMatchAsync(MatchResult.Win, new Game { Result = MatchResult.Win, Turn = 1 });
+
+        using JsonDocument doc = JsonDocument.Parse(await _sut.ExportTrainerHillAsync(_trainerId));
+
+        JsonElement entry = doc.RootElement[0];
+        entry.TryGetProperty("startTime", out _).ShouldBeFalse("TrainerHill's format has no startTime");
+        entry.TryGetProperty("endTime", out _).ShouldBeFalse("TrainerHill's format has no endTime");
+        entry.TryGetProperty("time", out _).ShouldBeTrue("TrainerHill's format keys the match on time");
+    }
+
+    /// <summary>
+    /// A backup must carry each archetype's icon, including a user-chosen one.
+    /// </summary>
+    /// <remarks>
+    /// Archetype icons are user data: OptionsPage lets you pick one when creating a custom
+    /// archetype, and <c>ImagePath2</c> exists for dual-icon decks. The envelope recorded only
+    /// archetype *names*, so a restore would have had to guess the icon — and guessing from a
+    /// name cannot recover a deliberate choice.
+    ///
+    /// Carried once at the top level rather than repeated on every entry because the
+    /// <c>Archetype</c> table is global, not per-trainer, so per-entry copies would be
+    /// duplication with no extra information.
+    ///
+    /// All archetypes are exported, not only those a match references, so a custom archetype
+    /// created but not yet played still survives a restore.
+    ///
+    /// The TrainerHill export deliberately has no equivalent — its schema has no icon field and
+    /// its value is being indistinguishable from a file of theirs (user, 2026-08-06: *"i know
+    /// that icons will be lost for the trainer hill export, thats fine"*).
+    /// </remarks>
+    [Test]
+    public async Task ExportBackupAsync_RealDatabase_WritesArchetypeIcons()
+    {
+        SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+        Archetype custom = new()
+        {
+            Name = "Pinku's Brew",
+            ImagePath = "pikachu.png",
+            ImagePath2 = "mimikyu.png",
+            TrainerId = _trainerId,
+        };
+        _ = await db.InsertAsync(custom);
+
+        using JsonDocument doc = JsonDocument.Parse(await _sut.ExportBackupAsync());
+
+        doc.RootElement.TryGetProperty("archetypes", out JsonElement archetypes)
+            .ShouldBeTrue("a backup without archetype icons cannot restore a user's chosen icon");
+
+        JsonElement entry = archetypes.EnumerateArray()
+            .Single(a => a.GetProperty("name").GetString() == "Pinku's Brew");
+        entry.GetProperty("imagePath").GetString().ShouldBe("pikachu.png");
+        entry.GetProperty("imagePath2").GetString().ShouldBe("mimikyu.png");
+
+        // Ownership by name, not id: ids are renumbered when restoring into a fresh install.
+        entry.GetProperty("trainerName").GetString().ShouldBe("Ash",
+            "a custom archetype belongs to the trainer who made it, and a restore must not reassign it");
+
+        // Seeded and scraped rows have no owner, and null there is meaningful rather than missing.
+        archetypes.EnumerateArray()
+            .Single(a => a.GetProperty("name").GetString() == "Other")
+            .TryGetProperty("trainerName", out _)
+            .ShouldBeFalse("an unowned archetype writes no trainerName at all");
+
+        // Present despite having no matches — an unplayed custom archetype is still user data.
+        archetypes.EnumerateArray().Select(a => a.GetProperty("name").GetString())
+            .ShouldContain("Dragapult ex / Dusknoir");
+    }
+
+    [Test]
+    public async Task ExportTrainerHillAsync_RealMatch_HasNoArchetypeIcons()
+    {
+        await SaveMatchAsync(MatchResult.Win, new Game { Result = MatchResult.Win, Turn = 1 });
+
+        using JsonDocument doc = JsonDocument.Parse(await _sut.ExportTrainerHillAsync(_trainerId));
+
+        // A bare array, exactly as TrainerHill emits — no envelope to hang icons off.
+        doc.RootElement.ValueKind.ShouldBe(JsonValueKind.Array);
+        doc.RootElement[0].TryGetProperty("imagePath", out _).ShouldBeFalse();
     }
 
     [Test]

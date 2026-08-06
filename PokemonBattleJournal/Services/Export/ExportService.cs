@@ -35,7 +35,7 @@ namespace PokemonBattleJournal.Services.Export
             if (trainerId == 0)
                 throw new ArgumentException("TrainerId required", nameof(trainerId));
 
-            List<ExportEntry> entries = await BuildEntriesAsync(trainerId, TrainerHillImportService.NameToSlug);
+            List<ExportEntry> entries = await BuildEntriesAsync(trainerId, TrainerHillImportService.NameToSlug, includeTimings: false);
             _logger.LogInformation("Exported {Count} matches for trainer {TrainerId} in TrainerHill format",
                 entries.Count, trainerId);
             return JsonSerializer.Serialize(entries, ExportJsonOptions);
@@ -57,38 +57,78 @@ namespace PokemonBattleJournal.Services.Export
                 trainers.Add(new ExportTrainer
                 {
                     Name = trainer.Name ?? string.Empty,
-                    Matches = await BuildEntriesAsync(trainer.Id, static name => name),
+                    Matches = await BuildEntriesAsync(trainer.Id, static name => name, includeTimings: true),
                 });
             }
 
-            _logger.LogInformation("Exported backup covering {TrainerCount} trainer(s), {MatchCount} match(es)",
-                trainers.Count, trainers.Sum(t => t.Matches.Count));
+            // EVERY archetype — custom, seeded and Limitless-scraped alike (user, 2026-08-06).
+            //
+            // Custom ones are irreplaceable user data: OptionsPage lets a trainer pick the icon,
+            // and ImagePath2 carries a dual-icon deck's second, so a name alone cannot recover a
+            // deliberate choice. Those carry a real TrainerId.
+            //
+            // The scraped ones are kept too, for two reasons. Resolving a Limitless deck to a
+            // local sprite is real work — SpriteResolver's alias table and fuzzy matching — and
+            // there is no reason to redo it. More importantly the meta shifts: an archetype that
+            // was top-10 when a match was played may be absent from the next scrape entirely, and
+            // since a restore recreates archetypes from the names its matches reference, an
+            // omitted one would come back as substitute.png and stay that way forever.
+            //
+            // It also avoids a distinction the schema cannot make: seeded and scraped rows both
+            // go in through raw INSERT OR IGNORE without a TrainerId, so both sit at 0 and are
+            // indistinguishable from each other.
+            List<Archetype> archetypes = await _factory.Archetypes.GetAllAsync();
+
+            // Ownership travels as a name: row ids are not stable across databases, and a
+            // restore into a fresh install renumbers everything.
+            Dictionary<uint, string> trainerNameById = all
+                .Where(t => !string.IsNullOrEmpty(t.Name))
+                .ToDictionary(t => t.Id, t => t.Name!);
+
+            _logger.LogInformation("Exported backup covering {TrainerCount} trainer(s), {MatchCount} match(es), {ArchetypeCount} archetype(s)",
+                trainers.Count, trainers.Sum(t => t.Matches.Count), archetypes.Count);
 
             return JsonSerializer.Serialize(
                 new ExportBackup
                 {
                     ExportedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                    Archetypes = [.. archetypes.Select(a => new ExportArchetype
+                    {
+                        Name = a.Name ?? string.Empty,
+                        ImagePath = a.ImagePath ?? string.Empty,
+                        ImagePath2 = a.ImagePath2,
+                        TrainerName = trainerNameById.GetValueOrDefault(a.TrainerId),
+                    })],
                     Trainers = trainers,
                 },
                 ExportJsonOptions);
         }
 
         /// <param name="nameStyle">
-        /// How an archetype name is written: slugged for TrainerHill, verbatim for backups. The
-        /// only difference between the two formats at entry level, so it is a parameter rather
-        /// than a duplicated builder.
+        /// How an archetype name is written: slugged for TrainerHill, verbatim for backups.
         /// </param>
-        private async Task<List<ExportEntry>> BuildEntriesAsync(uint trainerId, Func<string, string> nameStyle)
+        /// <param name="includeTimings">
+        /// Whether to write <c>startTime</c>/<c>endTime</c>. True for backups, which must be
+        /// lossless; false for TrainerHill, whose format has no such keys and whose value is
+        /// being indistinguishable from a file of theirs.
+        /// </param>
+        private async Task<List<ExportEntry>> BuildEntriesAsync(uint trainerId, Func<string, string> nameStyle, bool includeTimings)
         {
             List<MatchEntry> matches = await _factory.Matches.GetByTrainerIdAsync(trainerId, includeRelated: true);
-            return [.. matches.Select(m => ToEntry(m, nameStyle))];
+            return [.. matches.Select(m => ToEntry(m, nameStyle, includeTimings))];
         }
 
-        private static ExportEntry ToEntry(MatchEntry match, Func<string, string> nameStyle) => new()
+        private static ExportEntry ToEntry(MatchEntry match, Func<string, string> nameStyle, bool includeTimings) => new()
         {
             Playing = nameStyle(match.Playing?.Name ?? string.Empty),
             Against = nameStyle(match.Against?.Name ?? string.Empty),
-            Time = match.DatePlayed.ToString(TimeFormat, CultureInfo.InvariantCulture),
+            // StartTime, not DatePlayed. TrainerHill has one time field so this export cannot
+            // be lossless, but DatePlayed is the weak choice — a date picker leaves it at
+            // midnight, throwing away the time of day for nothing. StartTime carries the same
+            // date plus real precision, and duplicate detection keys on it.
+            Time = match.StartTime.ToString(TimeFormat, CultureInfo.InvariantCulture),
+            StartTime = includeTimings ? match.StartTime.ToString(TimeFormat, CultureInfo.InvariantCulture) : null,
+            EndTime = includeTimings ? match.EndTime.ToString(TimeFormat, CultureInfo.InvariantCulture) : null,
             Result = match.Result?.ToString() ?? string.Empty,
             Game1 = ToGame(match.Game1),
             Game2 = ToGame(match.Game2),

@@ -474,6 +474,45 @@ When the archetype ComboBox is tapped, animate the pokeball icon as if it's open
 
 6. **Accessibility:** Check `AccessibilitySettings.IsReduceMotionEnabled` — skip animation and open immediately if true.
 
+## Edit and delete a saved match (user, 2026-08-06, NOT started)
+
+Neither exists today. **Verified 2026-08-06:** `MatchOperations` exposes only `SaveAsync` —
+there is no update path at all — and no ViewModel has an edit or delete-match command. Matches
+are insert-only once submitted.
+
+The user wants both: *"currently there is not way of editing after you submit the match,
+actually you are right there probably should be though, just like i should allow individual
+ones to be deleted, also not a feature yet written."*
+
+**Edit a match**
+- Needs `MatchOperations.UpdateAsync`. Note the `[OneToOne(CascadeOperations = CascadeOperation.All)]`
+  game relationships: updating a match has to update or replace its `Game` rows, and the
+  existing `SaveAsync` inserts them, so this is not a one-line addition.
+- Natural entry point is ReadJournalPage, which already selects and displays a match.
+- Do NOT forget `EndTime`/`StartTime`: they feed `CalculateAverageMatchDuration` and
+  `CalculateWinRateByMatchLength`.
+
+**Delete a single match**
+- **CORRECTED 2026-08-06:** `IMatchOperations.DeleteAsync(MatchEntry)` already exists and is
+  documented as deleting "all related records". So this is a **UI-only** gap, not a service
+  one — do not write a second delete. Check what it actually cascades before trusting the
+  summary, but start from it.
+- Per [[project_error_handler_di]] the confirmation must not be a modal — the user has a
+  standing objection to dialogs, especially under automation.
+
+### This changes the restore's duplicate handling — read before implementing conflicts
+
+The restore design ([[project_roadmap]] backup section) says merging is only really needed for
+TrainerHill imports, and **that is correct only while matches are insert-only**. Reasoning
+confirmed 2026-08-06: with no edit path, a backup restore can only ever meet a match that is
+byte-identical to the file, or one that does not exist yet. Cases 2 (one side richer) and 3
+(genuine conflict) are structurally impossible for backups today.
+
+**Adding edit changes that.** Once a match can be modified after a backup is taken, restoring
+that backup can legitimately produce both cases — an entry whose note was added later (case 2),
+or whose note was changed (case 3). Whoever builds edit should revisit the restore's assumption
+rather than trusting this note's "TrainerHill only" framing.
+
 ## ReadJournal: games 2 and 3 are only half-displayed (found 2026-08-05, NOT started)
 
 **Game 2 and game 3 notes have never been shown.** `ReadJournalPageViewModel` computes

@@ -18,6 +18,7 @@ namespace PokemonBattleJournal.Tests.Services
     public class ExportServiceTests
     {
         private ISqliteConnectionFactory _factory = null!;
+        private IArchetypeOperations _archetypes = null!;
         private IMatchOperations _matches = null!;
         private ITrainerOperations _trainers = null!;
         private ExportService _sut = null!;
@@ -33,6 +34,14 @@ namespace PokemonBattleJournal.Tests.Services
             _factory = Substitute.For<ISqliteConnectionFactory>();
             _factory.Matches.Returns(_matches);
             _factory.Trainers.Returns(_trainers);
+
+            // The backup envelope carries every archetype so a restore can recover chosen
+            // icons. Stubbed to empty by default because these tests are about entries and
+            // trainers; an unstubbed NSubstitute call returns null, and the service would
+            // rightly fault on it rather than pretend the ops layer can return null.
+            _archetypes = Substitute.For<IArchetypeOperations>();
+            _archetypes.GetAllAsync().Returns([]);
+            _factory.Archetypes.Returns(_archetypes);
 
             _sut = new ExportService(_factory, Substitute.For<ILogger<ExportService>>());
         }
