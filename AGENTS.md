@@ -58,6 +58,15 @@ dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
 # UI suite, which is the only way to cover Views/Controls/App/MauiProgram.
 ./build/coverage.ps1 -IncludeUI
 
+# All the CI suites locally, in CI's shape — the stand-in when GitHub Actions is
+# down (self-hosted runners do NOT help there; the runner polls GitHub for work).
+# UI suites run one fixture per invocation to match the per-fixture matrix; the
+# script is sequential on purpose and refuses to start Android while the Windows
+# suite is alive. See docs/memory/project_android_session_poisoning.md.
+./build/ci-local.ps1              # unit + integration, seconds
+./build/ci-local.ps1 -All         # everything; leave the machine alone
+./build/ci-local.ps1 -Suites WindowsUI -Combined   # one fast pass, less faithful
+
 # Kill orphaned app after failed Appium run
 Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 ```

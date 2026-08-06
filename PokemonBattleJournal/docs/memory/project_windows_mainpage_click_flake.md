@@ -167,11 +167,16 @@ Two qualifiers, both of which matter:
   sensitive to it at some point. Nobody has investigated when or why. **Open thread**, and
   possibly the more interesting one, since a suite that grew input-sensitive may have grown
   other timing sensitivities.
-- A related idea — that the retired self-hosted runners' parallel Windows/Android runs stole
-  focus the same way — is a recollection the user leans towards but does not stand behind. Not
-  evidence; the setup is gone and was never instrumented. What is certain is that those
-  runners made the machine hard to leave alone while a run was live, which produces the same
-  symptom by the confirmed route above. See [[project_self_hosted_runners]].
+- The related idea — that parallel Windows/Android runs stole focus from the Windows suite —
+  is now **measured and false in that direction**. Running both concurrently on 2026-08-06,
+  Windows passed 80/80 while Android failed 79/79. Windows is the aggressor, not the victim.
+  See [[project_android_session_poisoning]].
+
+**Load is not a way to reproduce this bug.** The concurrent run was an attempt to slow this
+machine to CI speed. It failed completely: under full contention Windows still posted
+`Shell ready` at **244ms** against CI's **8,798ms** — about 36x faster while loaded. The
+timing theory may still be right, but testing it needs real throttling (CPU affinity, a
+constrained VM), not a busy machine.
 
 So "focus stolen" is a demonstrated way for a dispatched Windows click to do nothing, which is
 exactly this bug's symptom — but it **does not explain the CI failures**. Each hosted matrix
