@@ -158,10 +158,24 @@ rule, one of them checked:
   same instant simply both count toward that day. This would only become a problem if a future
   chart laid matches out on a timeline.
 
-**It also does not threaten duplicate detection**, which was the underlying worry. Two
-genuinely simultaneous matches are against *different* opponents, so
-`(TrainerId, StartTime, PlayingId, AgainstId, Result)` already tells them apart from a real
-duplicate. The key handles the legitimate case without needing a constraint.
+**But it DOES threaten duplicate detection, and the key cannot fully solve it.** An earlier
+version of this note claimed simultaneous matches would be against different opponents and so
+could not collide. That is wrong (user, 2026-08-05): **`AgainstId` identifies a deck, not a
+person.** The model records no opponent identity at all. Two different people both playing
+Dragapult produce an identical key, and mirror matches make it likelier still.
+
+So `(TrainerId, StartTime, PlayingId, AgainstId, Result)` can match two legitimately distinct
+matches. And if two real matches also share notes and tags, **nothing in the stored data
+distinguishes them from a duplicate** — the model simply does not capture enough. Any silent
+auto-merge would delete a real match.
+
+Resolution: **never silently drop an exact-identical candidate.** Skip it by default, but
+report the count ("12 entries already present, skipped") and offer an "import anyway" path, so
+the user decides and a genuine identical pair stays recoverable. This keeps the common case
+(re-importing an overlapping log) quiet without ever destroying data the app cannot tell apart.
+
+Recording an opponent name or ID on `MatchEntry` would resolve the ambiguity properly, but
+that is a model change and its own feature.
 
 So: a soft, inline warning when a new match overlaps an existing one — a natural first consumer
 of the **Inline validation feedback** item below, and specifically not a modal
@@ -170,7 +184,10 @@ automation).
 
 **What to do with a candidate (user's preference, best first)**
 
-1. **Identical in every compared field** — skip silently. Nothing to decide.
+1. **Identical in every compared field** — skip, but **count and report it**, and offer an
+   "import anyway" path. Not silent: the app cannot tell a re-import from two genuinely
+   identical matches (see the opponent-identity gap above), so the user gets the final say
+   rather than losing a real match to a guess.
 2. **One side strictly richer** — one has tags and the other does not, one has a note and the
    other does not. **Merge**: union the tags, take the non-empty note. Strictly better than
    asking, and the user explicitly preferred merging where possible.
