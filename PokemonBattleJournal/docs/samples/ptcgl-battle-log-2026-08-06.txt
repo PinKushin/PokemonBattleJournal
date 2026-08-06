@@ -1,0 +1,197 @@
+Setup
+KiokiYuudoku chose heads for the opening coin flip.
+KiokiYuudoku won the coin toss.
+KiokiYuudoku decided to go first.
+KiokiYuudoku drew 7 cards for the opening hand.
+- 7 drawn cards.
+AradJohn drew 7 cards for the opening hand.
+- 7 drawn cards.
+   • (sv6_128) Dreepy, (me1_119) Lillie's Determination, (sv5_144) Buddy-Buddy Poffin, (mee_5) Basic Psychic Energy, (me1_114) Boss's Orders, (sv7_133) Crispin, (mee_5) Basic Psychic Energy
+KiokiYuudoku played (me3_121) Meowth ex to the Active Spot.
+AradJohn played (sv6_128) Dreepy to the Active Spot.
+
+KiokiYuudoku's Turn
+KiokiYuudoku drew a card.
+KiokiYuudoku played (me1_167) Buddy-Buddy Poffin.
+- KiokiYuudoku drew 2 cards and played them to the Bench.
+   • (me2-5_34_ph) Salandit, (sv5_128) Dunsparce
+- KiokiYuudoku shuffled their deck.
+KiokiYuudoku attached (mee_2) Basic Fire Energy to (me2-5_34_ph) Salandit on the Bench.
+KiokiYuudoku ended their turn.
+
+AradJohn's Turn
+AradJohn drew (mee_2) Basic Fire Energy.
+AradJohn played (sv5_144) Buddy-Buddy Poffin.
+- AradJohn drew 2 cards and played them to the Bench.
+   • (sv6_128) Dreepy, (sv9_120) Dunsparce
+- AradJohn shuffled their deck.
+AradJohn attached (mee_5) Basic Psychic Energy to (sv6_128) Dreepy in the Active Spot.
+AradJohn played (sv7_133) Crispin.
+- AradJohn drew (mee_2) Basic Fire Energy.
+- AradJohn attached (mee_5) Basic Psychic Energy to (sv6_128) Dreepy on the Bench.
+- AradJohn shuffled their deck.
+AradJohn's (sv6_128) Dreepy used Petty Grudge on KiokiYuudoku's (me3_121) Meowth ex for 10 damage.
+
+KiokiYuudoku's Turn
+KiokiYuudoku drew a card.
+KiokiYuudoku played (me1_167) Buddy-Buddy Poffin.
+- KiokiYuudoku drew 2 cards and played them to the Bench.
+   • (sv5_128) Dunsparce, (me2-5_34_ph) Salandit
+- KiokiYuudoku shuffled their deck.
+KiokiYuudoku played (me2-5_264) Ultra Ball.
+- KiokiYuudoku discarded 2 cards.
+   • (me2-5_264) Ultra Ball, (sv2_265) Boss's Orders
+- KiokiYuudoku drew (sv8-5_80_mph) Dudunsparce.
+- KiokiYuudoku shuffled their deck.
+KiokiYuudoku evolved (sv5_128) Dunsparce to (sv8-5_80_mph) Dudunsparce on the Bench.
+KiokiYuudoku played (sv8-5_80_mph) Dudunsparce.
+- KiokiYuudoku drew 3 cards.
+- KiokiYuudoku shuffled 2 cards into their deck.
+   • (sv8-5_80_mph) Dudunsparce, (sv5_128) Dunsparce
+KiokiYuudoku attached (me1_166) Air Balloon to (me3_121) Meowth ex in the Active Spot.
+KiokiYuudoku played (svbsp_129) Pecharunt to the Bench.
+KiokiYuudoku played (me1_184) Lillie's Determination.
+- KiokiYuudoku shuffled 2 cards into their deck.
+- KiokiYuudoku drew 8 cards.
+KiokiYuudoku played (me2-5_264) Ultra Ball.
+- KiokiYuudoku discarded 2 cards.
+   • (me2-5_34_ph) Salandit, (mee_7) Basic Darkness Energy
+- KiokiYuudoku drew (me3_101) Salazzle ex.
+- KiokiYuudoku shuffled their deck.
+KiokiYuudoku evolved (me2-5_34_ph) Salandit to (me3_101) Salazzle ex on the Bench.
+KiokiYuudoku retreated (me3_121) Meowth ex to the Bench.
+KiokiYuudoku's (me3_101) Salazzle ex is now in the Active Spot.
+KiokiYuudoku's (me3_101) Salazzle ex used Nasty Plot.
+- KiokiYuudoku drew 2 cards.
+- KiokiYuudoku shuffled their deck.
+
+AradJohn's Turn
+AradJohn drew (me3_71) Crushing Hammer.
+AradJohn played (me3_71) Crushing Hammer.
+- AradJohn flipped a coin and it landed on heads.
+- (mee_2) Basic Fire Energy was discarded from AradJohn's (me3_101) Salazzle ex.
+AradJohn attached (mee_2) Basic Fire Energy to (sv6_128) Dreepy in the Active Spot.
+AradJohn played (me1_114) Boss's Orders.
+- KiokiYuudoku's (svbsp_129) Pecharunt was switched with KiokiYuudoku's (me3_101) Salazzle ex to become the Active Pokémon.
+KiokiYuudoku's (svbsp_129) Pecharunt is now in the Active Spot.
+AradJohn's (sv6_128) Dreepy used Bite on KiokiYuudoku's (svbsp_129) Pecharunt for 40 damage.
+
+KiokiYuudoku's Turn
+KiokiYuudoku drew a card.
+KiokiYuudoku played (sv8-5_171) Crispin.
+- KiokiYuudoku drew (mee_6) Basic Fighting Energy.
+- KiokiYuudoku attached (mee_2) Basic Fire Energy to (svbsp_129) Pecharunt in the Active Spot.
+- KiokiYuudoku shuffled their deck.
+KiokiYuudoku attached (mee_7) Basic Darkness Energy to (svbsp_129) Pecharunt in the Active Spot.
+KiokiYuudoku played (sv5_156_ph) Perilous Jungle to the Stadium spot.
+KiokiYuudoku played (me3_113) Poké Pad.
+- KiokiYuudoku drew (sv8-5_80_mph) Dudunsparce.
+- KiokiYuudoku shuffled their deck.
+KiokiYuudoku evolved (sv5_128) Dunsparce to (sv8-5_80_mph) Dudunsparce on the Bench.
+KiokiYuudoku played (svbsp_129) Pecharunt to the Bench.
+KiokiYuudoku played (sv8-5_80_mph) Dudunsparce.
+- KiokiYuudoku drew 3 cards.
+- KiokiYuudoku shuffled 2 cards into their deck.
+   • (sv8-5_80_mph) Dudunsparce, (sv5_128) Dunsparce
+KiokiYuudoku's (svbsp_129) Pecharunt used Poison Chain on AradJohn's (sv6_128) Dreepy for 10 damage.
+- AradJohn's (sv6_128) Dreepy is now Poisoned.
+
+Pokémon Checkup
+8 damage counters were placed on AradJohn's (sv6_128) Dreepy for the Special Condition Poisoned.
+AradJohn's (sv6_128) Dreepy was Knocked Out!
+- 2 cards were discarded from AradJohn's (sv6_128) Dreepy.
+   • (mee_5) Basic Psychic Energy, (mee_2) Basic Fire Energy
+KiokiYuudoku took a Prize card.
+A card was added to KiokiYuudoku's hand.
+AradJohn's (sv6_128) Dreepy is now in the Active Spot.
+
+AradJohn's Turn
+AradJohn drew (me3_71) Crushing Hammer.
+AradJohn played (me3_71) Crushing Hammer.
+- AradJohn flipped a coin and it landed on heads.
+- (mee_7) Basic Darkness Energy was discarded from AradJohn's (svbsp_129) Pecharunt.
+AradJohn attached (mee_2) Basic Fire Energy to (sv6_128) Dreepy in the Active Spot.
+AradJohn played (me1_119) Lillie's Determination.
+- AradJohn shuffled (mee_5) Basic Psychic Energy into their deck.
+- AradJohn drew 8 cards.
+   • (sv6_129) Drakloak, (sv5_144) Buddy-Buddy Poffin, (sv6_129) Drakloak, (me1_127) Risky Ruins, (sv6_130) Dragapult ex, (sv6_95) Munkidori, (me1_127) Risky Ruins, (sv6_129) Drakloak
+AradJohn evolved (sv6_128) Dreepy to (sv6_129) Drakloak in the Active Spot.
+AradJohn played (me1_127) Risky Ruins to the Stadium spot.
+- AradJohn discarded (sv5_156_ph) Perilous Jungle.
+AradJohn played (sv6_95) Munkidori to the Bench.
+Risky Ruins was activated.
+- AradJohn put 2 damage counters on AradJohn's (sv6_95) Munkidori.
+AradJohn played (sv5_144) Buddy-Buddy Poffin.
+- AradJohn drew 2 cards and played them to the Bench.
+   • (sv6_128) Dreepy, (sv6_128) Dreepy
+- AradJohn shuffled their deck.
+Risky Ruins was activated.
+- AradJohn put 2 damage counters on AradJohn's (sv6_128) Dreepy.
+- AradJohn put 2 damage counters on AradJohn's (sv6_128) Dreepy.
+AradJohn's (sv6_129) Drakloak used Recon Directive.
+- AradJohn drew (mee_7) Basic Darkness Energy.
+AradJohn's (sv6_129) Drakloak used Dragon Headbutt on KiokiYuudoku's (svbsp_129) Pecharunt for 70 damage.
+KiokiYuudoku's (svbsp_129) Pecharunt was Knocked Out!
+(mee_2) Basic Fire Energy was discarded from KiokiYuudoku's (svbsp_129) Pecharunt.
+AradJohn took a Prize card.
+(sv6_129) Drakloak was added to AradJohn's hand.
+KiokiYuudoku's (me3_121) Meowth ex is now in the Active Spot.
+
+KiokiYuudoku's Turn
+KiokiYuudoku drew a card.
+KiokiYuudoku attached (mee_2) Basic Fire Energy to (me3_101) Salazzle ex on the Bench.
+KiokiYuudoku played (sv5_156_ph) Perilous Jungle to the Stadium spot.
+- KiokiYuudoku discarded (me1_127) Risky Ruins.
+KiokiYuudoku played (me1_167) Buddy-Buddy Poffin.
+- KiokiYuudoku drew 2 cards and played them to the Bench.
+   • (sv5_128) Dunsparce, (sv5_128) Dunsparce
+- KiokiYuudoku shuffled their deck.
+KiokiYuudoku played (me1_184) Lillie's Determination.
+- KiokiYuudoku shuffled 5 cards into their deck.
+- KiokiYuudoku drew 6 cards.
+KiokiYuudoku played (sv6_165) Unfair Stamp.
+- KiokiYuudoku shuffled 5 cards into their deck.
+- KiokiYuudoku shuffled 6 cards into their deck.
+   • (sv6_129) Drakloak, (me1_127) Risky Ruins, (sv6_130) Dragapult ex, (sv6_129) Drakloak, (mee_7) Basic Darkness Energy, (sv6_129) Drakloak
+- KiokiYuudoku drew 5 cards.
+- KiokiYuudoku drew 2 cards.
+   • (me1_114) Boss's Orders, (me3_76) Judge
+KiokiYuudoku retreated (me3_121) Meowth ex to the Bench.
+KiokiYuudoku's (me3_101) Salazzle ex is now in the Active Spot.
+KiokiYuudoku's (me3_101) Salazzle ex used Nasty Plot.
+- KiokiYuudoku drew 2 cards.
+- KiokiYuudoku shuffled their deck.
+
+AradJohn's Turn
+AradJohn drew (me3_81) Poké Pad.
+AradJohn played (me3_81) Poké Pad.
+- AradJohn drew (sv5_129) Dudunsparce.
+- AradJohn shuffled their deck.
+AradJohn evolved (sv9_120) Dunsparce to (sv5_129) Dudunsparce on the Bench.
+AradJohn played (me3_76) Judge.
+- AradJohn shuffled (me1_114) Boss's Orders into their deck.
+- AradJohn shuffled 7 cards into their deck.
+- AradJohn drew 4 cards.
+   • (me3_71) Crushing Hammer, (sv6_130) Dragapult ex, (mee_7) Basic Darkness Energy, (me3_71) Crushing Hammer
+- AradJohn drew 4 cards.
+AradJohn played (sv5_129) Dudunsparce.
+- AradJohn drew 3 cards.
+   • (me1_131) Ultra Ball, (mee_7) Basic Darkness Energy, (sv6_129) Drakloak
+- AradJohn shuffled 2 cards into their deck.
+   • (sv5_129) Dudunsparce, (sv9_120) Dunsparce
+AradJohn evolved (sv6_128) Dreepy to (sv6_129) Drakloak on the Bench.
+AradJohn's (sv6_129) Drakloak used Recon Directive.
+- AradJohn drew (sv5_144) Buddy-Buddy Poffin.
+AradJohn played (sv5_144) Buddy-Buddy Poffin.
+- AradJohn drew (sv9_120) Dunsparce and played it to the Bench.
+- AradJohn shuffled their deck.
+AradJohn attached (mee_7) Basic Darkness Energy to (sv6_95) Munkidori on the Bench.
+AradJohn's (sv6_129) Drakloak used Recon Directive.
+- AradJohn drew (me1_119) Lillie's Determination.
+AradJohn's (sv6_95) Munkidori used Adrena-Brain.
+- AradJohn moved 2 damage counters from AradJohn's (sv6_95) Munkidori to AradJohn's (svbsp_129) Pecharunt.
+AradJohn played (me3_71) Crushing Hammer.
+- AradJohn flipped a coin and it landed on heads.
+- (mee_2) Basic Fire Energy was discarded from AradJohn's (me3_101) Salazzle ex.
+AradJohn evolved (sv6_129) Drakloak to (sv6_130) Dragapult ex in the Active Spot.
+Opponent conceded. AradJohn wins.

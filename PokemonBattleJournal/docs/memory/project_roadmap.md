@@ -233,7 +233,53 @@ tags, per-entry error collection. A Live parser is another front end onto
 `MatchOperations.SaveAsync`, most likely alongside `TrainerHillImportService` under
 `Services/Import/`.
 
-### The log format — sampled 2026-08-05, but VERIFY AGAINST A CURRENT CLIENT FIRST
+### CURRENT format, captured from a live match 2026-08-06
+
+**Real log from the current client saved at
+`PokemonBattleJournal/docs/samples/ptcgl-battle-log-2026-08-06.txt`.** Card IDs enabled. This
+is the authority; everything in the older section below is superseded where they disagree.
+
+**The format HAS changed since the 2025 samples — exactly as the user warned.**
+
+| | 2025 samples | 2026-08-06 capture |
+|---|---|---|
+| Turn header | `Turn # 1 - Shinwrld's Turn` | `AradJohn's Turn` — **no turn number at all** |
+| Cards | `Dreepy` | `(sv6_128) Dreepy` — id prefixed, with card IDs enabled |
+| End line | `All Prize cards taken. gklinsing wins.` | `Opponent conceded. AradJohn wins.` |
+
+So a parser must **count turn headers** rather than read a number from them, and the end-of-game
+prefix varies by win condition. The stable marker is the `<name> wins.` suffix; the sentence
+before it gives the reason (prizes taken, concession, presumably deck-out).
+
+**Card ID shape:** `(setcode_number)`, where the set code may contain digits and hyphens and the
+number may carry a variant suffix — observed `(sv6_128)`, `(mee_5)`, `(svbsp_129)`,
+`(me2-5_34_ph)`, `(sv8-5_80_mph)`, `(sv5_156_ph)`. A regex must not assume `[a-z]+_[0-9]+`.
+
+**The log owner is identifiable from the log itself — no username setting needed.** This
+removes a requirement recorded earlier. The logging player's information is revealed and the
+opponent's is not:
+
+- Opening hand: the owner's is itemised in a bullet list; the opponent gets only
+  `- 7 drawn cards.`
+- Draws: the owner's are named (`AradJohn drew (me3_71) Crushing Hammer.`); the opponent's are
+  anonymous (`KiokiYuudoku drew a card.`).
+
+The named-draw test is the more robust of the two, since it recurs throughout the match rather
+than appearing once at setup.
+
+**Archetype inference looks tractable from this sample.** The owner's deck resolves from cards
+played — `(sv6_130) Dragapult ex` with Drakloak, Dreepy and Munkidori — and the opponent's from
+what they revealed, here Salazzle ex, Pecharunt and Meowth ex. Note the asymmetry: the
+opponent's archetype is only as good as what they happened to play, so a concession on turn one
+may leave it unidentifiable. Plan for "unknown" as a legitimate outcome rather than forcing a
+guess.
+
+**Still no timestamp**, confirmed on the current format.
+
+**A "Pokémon Checkup" block appears between turns** for between-turn effects (poison damage,
+knockouts from status). It is not a player turn and must not be counted as one.
+
+### The 2025 samples — SUPERSEDED, kept for contrast
 
 **Do not treat what follows as a specification.** Live's log format has been changed before,
 sometimes silently (user, 2026-08-05), and the samples below come from a repository last
