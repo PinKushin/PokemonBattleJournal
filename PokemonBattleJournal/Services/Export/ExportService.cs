@@ -104,6 +104,10 @@ namespace PokemonBattleJournal.Services.Export
                 ExportJsonOptions);
         }
 
+        /// <summary>
+        /// Builds one trainer's matches as export entries, in whichever dialect the caller wants.
+        /// </summary>
+        /// <param name="trainerId">The trainer whose matches are exported.</param>
         /// <param name="nameStyle">
         /// How an archetype name is written: slugged for TrainerHill, verbatim for backups.
         /// </param>
