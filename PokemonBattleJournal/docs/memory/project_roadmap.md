@@ -296,11 +296,9 @@ What that gives us, mapped to `MatchEntry`:
 - **Usernames ARE present**, both players', on nearly every line. The doubt about this was
   unfounded. But it creates a requirement: the app must know **your own Live username** to tell
   which side is you, otherwise Playing and Against cannot be assigned. That is a new setting.
-- **There are NO timestamps.** Grepped the full sample for dates, clock times and meridiems —
-  nothing. This is the important one, because it collides with the duplicate-detection design
-  above: **a Live import cannot supply `StartTime`**, so the timestamp key does not work for
-  these matches. Either the user supplies the time, or import time is used — and either way
-  Live-imported matches need a different duplicate story than TrainerHill ones.
+- **No timestamps in the log CONTENT** — grepped the full sample for dates, clock times and
+  meridiems, nothing. **But the log FILE name carries one**, which changes the conclusion
+  entirely; see the next section.
 
 **Archetype has to be inferred from cards played**, since deck names never appear. Overlaps the
 existing meta-deck resolution and could reuse `ILimitlessMetaService`, but mapping a card list
@@ -343,8 +341,47 @@ saying the source data is imperfect. Plan for it: a Live import should be treate
 user confirms, not as authoritative data written straight to the database. It also sets the
 expectation for this feature — "trivial upload" should mean less typing, not zero review.
 
-Their stated flow also confirms the mechanics: play a game, open the battle log, copy the full
-text, paste. No file export involved.
+Their stated flow also confirms the mechanics for the manual path: play a game, open the battle
+log, copy the full text, paste.
+
+### Live writes log FILES — and their names carry the timestamp
+
+From [replay.ptcgtools.com](https://replay.ptcgtools.com/en), which ships a desktop "Tracker"
+that auto-uploads after every game. Its setup requirements give the game away:
+
+> **Enable Windowed Mode** — Check "WINDOWED" in VIDEO OPTIONS. *The Tracker needs this to
+> access log files.*
+
+So the client does persist logs to disk, even though its in-client button only copies to the
+clipboard. And a public replay on their site is named:
+
+```
+ptcgl_log_20260805_073547.txt
+```
+
+**That is a timestamp to the second in the filename** — 2026-08-05 07:35:47 — even though the
+log text contains none. It resolves the problem flagged above: read the *file* and a Live
+import can supply a real `StartTime`, which makes the duplicate-detection key work for these
+matches after all. Paste the *text* and it cannot.
+
+That splits the feature cleanly along platform lines, which is exactly the "easy split" case
+[[feedback_platform_specific_is_fine]] describes:
+
+- **Windows** — find the log directory and read files directly. Gives timestamps for free, and
+  makes genuine auto-import possible (watch the directory, import on change) rather than the
+  copy-open-notepad-paste dance. The user's own words: it is *"hard to remember to copy the
+  log, then open a notepad to paste it."*
+- **Android** — PTCG Live's own files are inside its app sandbox and not readable by another
+  app, so mobile stays on the clipboard path. MAUI's `Clipboard.Default.GetTextAsync()` still
+  removes the notepad step: a "Paste from clipboard" button is one tap. The timestamp then has
+  to come from the user or from import time.
+
+**Unknown to settle:** where the log directory actually is. Requires a current client to find,
+and belongs with the "capture fresh logs" task.
+
+**Also confirmed by their required settings** — Windowed Mode, English only, and disable HIDE
+CARD IDS FROM EXPORT. And they do "automatic archetype detection", so inferring the deck from
+card IDs is demonstrably achievable rather than speculative.
 
 ## Deck Maker
 
