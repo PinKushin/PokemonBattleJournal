@@ -85,7 +85,21 @@ with a collected error) and that **nothing was written to the DB**.
 Do this with, or before, the export work — the two share the format and it is the natural
 moment to pin down what the parser will and will not accept.
 
-### Backup restore + duplicate handling (design agreed with the user 2026-08-05, NOT started)
+### Backup restore + duplicate handling — SERVICE DONE 2026-08-06, UI NOT STARTED
+
+**Status lives in [[project_backup_restore]]** — read that first. Summary: the export fidelity
+fixes, `RestoreService`, and TrainerHill de-duplication are all built and merged. What remains
+is the OptionsPage wiring and, separately, the conflict-resolution UI.
+
+The design below is what was built, and is kept because the *reasoning* still governs the
+remaining work — particularly why a key hit may never delete or overwrite.
+
+**One correction to it:** the "fix the export first" section called out a single missing
+`startTime`/`endTime`. There were three fidelity defects, not one — the `time` field also
+carried the wrong source value, and archetype icons were not exported at all. See
+[[project_backup_restore]].
+
+#### Original design (agreed with the user 2026-08-05)
 
 **Trainer targeting**
 
