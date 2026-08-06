@@ -49,19 +49,88 @@ What the artifacts show (`android-ui-timing-logs-OptionsPageTests`):
 - `SaveTagButton` sat at `boundsInScreen Rect(251, 2268 - 829, 2391)` on a 1080×2400 screen,
   i.e. its bottom edge is 9px from the bottom of the display.
 
-**What is NOT established:** the exact trigger. The swipe is the obvious suspect, but
-`UiScrollable`'s default swipe dead zone is 10% (~240px here), which should already keep it
-clear of the gesture strip. So either the dead zone is not applying, the overlay is not
-applying, or something else raised HOME. Do not write a fix as though the swipe is proven.
+### CORRECTION FIRST: the gesture-nav finding below is REAL but does NOT explain the CI failure
 
-**Cheap next diagnostics, in order:**
-1. Assert the overlay actually took: `adb shell cmd overlay list | grep navbar` (the enable
-   command's success says nothing about whether SystemUI applied it).
-2. Set `UITEST_DUMP_ON_FAIL=1` in the workflow — `DumpVisibleElements` is already wired and
-   was skipped, so the one artifact that would show what owned the screen was not captured.
-3. On lookup failure, check the current package and say so loudly if it is not ours. A
-   backgrounded app currently produces 17 misleading `NoSuchElementException`s over ~8
-   minutes instead of one clear "the app is not in the foreground".
+I wrote the section below as "root cause". It is not, for CI. Verified from the first run with
+the new logging (job 31072099343, `f7661fe`):
+
+```
+4e. navbar overlays before = [ ] threebutton | [ ] twobutton | [ ] transparent | [ ] gestural
+4e. three-button navigation already active — no gesture strip to fall into
+```
+
+**The CI emulator is already `navigation_mode = 0` with no navbar overlay enabled.** Gesture
+navigation was never on there, so the fix below is a no-op on CI. It is still correct and worth
+keeping — the local `pixel_7_-_api_35` AVD *does* default to gesture (mode 2), which is a real
+hazard for local runs — but it does not explain run 31068218325.
+
+**Current best hypothesis for CI, unproven:** with three-button navigation there is a HOME
+*button* at bottom-centre, and the app draws underneath the nav bar. In the failing run
+`SaveTagButton` had `boundsInScreen Rect(251, 2268 - 829, 2391)` on a 1080×2400 screen, so its
+click centre is **(540, 2329)** — bottom-centre, which is where HOME sits. Logcat for that run
+confirms a nav bar exists (90 `NavigationBar` entries). A click meant for the button would then
+press HOME, which is exactly what the ActivityTaskManager line shows.
+
+If that holds, the fix is not about navigation mode at all — it is that
+`UiScrollable.scrollIntoView` leaves the target flush against the bottom of the screen, under
+the system bar. Candidate fixes: scroll further so the target is not in the bottom band, or
+refuse to click any element whose centre falls inside the nav-bar inset and scroll first.
+
+To confirm: read `boundsInScreen` of the element about to be clicked and compare against the
+nav-bar inset before clicking. That check is cheap and would turn this from hypothesis to fact.
+
+### The gesture-nav finding: `cmd overlay enable` is ADDITIVE, so the #6 fix never did anything
+
+Verified by hand against a booted API 35 emulator, 2026-08-06:
+
+```
+$ adb shell settings get secure navigation_mode
+2                                            # 2 = gesture. The AVD default.
+$ adb shell cmd overlay list android | grep navbar
+[ ] com.android.internal.systemui.navbar.threebutton
+[x] com.android.internal.systemui.navbar.gestural
+
+$ adb shell cmd overlay enable com.android.internal.systemui.navbar.threebutton
+$ adb shell cmd overlay list android | grep navbar
+[x] com.android.internal.systemui.navbar.gestural       # STILL ENABLED
+[x] com.android.internal.systemui.navbar.threebutton
+$ adb shell settings get secure navigation_mode
+2                                            # STILL GESTURE
+```
+
+`enable` turns the requested overlay on **without turning the conflicting one off**, and the
+device stays in gesture navigation. Exit code 0 either way. So the fix recorded against #6 has
+been a no-op in every run since it landed, and the gesture strip has been live the whole time —
+which is exactly why #6 kept coming back.
+
+The command that works is `enable-exclusive --category`, which disables the others in the
+navbar category. `navigation_mode` flips to 0 on the first poll:
+
+```
+$ adb shell cmd overlay enable-exclusive --category com.android.internal.systemui.navbar.threebutton
+$ adb shell settings get secure navigation_mode
+0
+```
+
+**Check `navigation_mode`, never the overlay's `[x]` flag.** The run above is precisely the
+case where the flag says yes and the device disagrees. 0 = three-button, 1 = two-button,
+2 = gesture.
+
+Now lives in `AppiumSetup.EnsureThreeButtonNavigation` (step 4e) rather than the workflow, so
+local runs get it too, and it polls `navigation_mode` instead of sleeping. It logs loudly but
+does **not** throw if the mode will not change: gesture nav is a necessary condition for the
+backgrounding, not a proven trigger for any single failure, and failing every fixture on that
+would trade an intermittent failure for a certain one.
+
+**Still not established:** what precisely raised HOME in run 31068218325. The swipe is the
+obvious suspect but `UiScrollable`'s default dead zone is 10% (~240px here), which should
+already clear the strip. Removing gesture nav removes the whole class, so the trigger may never
+need identifying — but do not write it up as proven.
+
+**Also added:** `LogForegroundApp` on stage-3 lookup failure. Two driver round-trips that say
+outright when another package owns the screen, so a backgrounding stops presenting as 17
+unrelated `NoSuchElementException`s. Deliberately not `DumpVisibleElements`, which stays opt-in
+because its ~30+ round-trips per call have killed sessions before.
 
 **Correction to a claim in the 2026-08-06 handoff:** it said no scroll-to-top exists. Stage 3
 of `UITests.Android/BaseTest.cs` has always called `scrollToBeginning(100)` before

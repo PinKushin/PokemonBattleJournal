@@ -1,5 +1,7 @@
 # Memory Index
 
+- [Windows MainPage click flake — OPEN](project_windows_mainpage_click_flake.md) — clicks stop reaching handlers partway through the fixture while find-only tests keep passing; same six tests every time; predates the loading indicator, so do NOT blame the overlay.
+
 - [SESSION HANDOFF 2026-08-06](project_session_handoff_2026_08_06.md) — **READ FIRST.** feat/loading-indicator is one Android test from green; the failure is layout shift from the inline indicator and the planned overlay fixes it structurally.
 
 - [TrainerHill import feature](project_trainerhill_import.md) — JSON import from trainerhill.com; mixed-type turn field (int/string JsonElement), slug-to-name conversion, get-or-create archetype/tag, per-entry error collection.

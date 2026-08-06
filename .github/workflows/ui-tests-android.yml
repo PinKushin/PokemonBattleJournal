@@ -185,12 +185,16 @@ jobs:
           # accessibility tree — the app renders underneath but none of its elements are
           # reachable (caught by the app-ready gate's PageSource dump, run 30991195983;
           # previously seen as 90s "hamburger never appeared" failures on random fixtures).
-          # threebutton nav overlay: the Pixel profile defaults to gesture navigation,
-          # whose bottom-edge home zone swallowed a tap meant for the note Editor and
-          # BACKGROUNDED THE APP mid-fixture (run 31001057545 — Window.Deactivated 100ms
-          # after the click command, every remaining test dead). 3-button nav has no
-          # gesture zone to collide with bottom-of-screen elements.
-          script: adb shell cmd overlay enable com.android.internal.systemui.navbar.threebutton ; adb shell settings put global hide_error_dialogs 1 ; dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --filter "FullyQualifiedName~${{ matrix.fixture }}" --logger "trx;LogFileName=android-ui-tests-${{ matrix.fixture }}.trx" ; code=$? ; timeout 20 adb logcat -d > /tmp/UITests.Android.logcat.txt 2>/dev/null || true ; pkill -f -SIGKILL 'crashpad_handle[r]' 2>/dev/null || true ; exit $code
+          # The threebutton nav overlay command used to live here and NEVER WORKED. Plain
+          # `cmd overlay enable` is additive — it turned threebutton on without turning
+          # gestural off, and `settings get secure navigation_mode` stayed 2 (gesture).
+          # Verified on a real API 35 emulator 2026-08-06. So the gesture strip stayed live
+          # in every run and finding #6 kept recurring after being marked fixed (run
+          # 31068218325). It now lives in AppiumSetup.EnsureThreeButtonNavigation, which
+          # uses `enable-exclusive --category` and polls navigation_mode — the authoritative
+          # signal — instead of trusting the overlay's own [x] flag. Keeping it in the test
+          # setup also means local runs get the same treatment as CI.
+          script: adb shell settings put global hide_error_dialogs 1 ; dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj --no-restore --filter "FullyQualifiedName~${{ matrix.fixture }}" --logger "trx;LogFileName=android-ui-tests-${{ matrix.fixture }}.trx" ; code=$? ; timeout 20 adb logcat -d > /tmp/UITests.Android.logcat.txt 2>/dev/null || true ; pkill -f -SIGKILL 'crashpad_handle[r]' 2>/dev/null || true ; exit $code
         env:
           CI: true
           ANDROID_USE_INSTALLED: "0"

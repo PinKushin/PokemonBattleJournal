@@ -166,6 +166,8 @@ if (useInstalled)
                 Log("4d. pm clear done");
             }
 
+            EnsureThreeButtonNavigation();
+
             Log("5. new AndroidDriver");
             var step5Timer = System.Diagnostics.Stopwatch.StartNew();
             // Driver-creation retry: UIAutomator2's session init shells settings commands
@@ -427,6 +429,97 @@ if (useInstalled)
                 Task.Delay(2000).Wait();
             }
             // Non-fatal — tests will fail naturally if app isn't up
+        }
+
+        /// <summary>
+        /// Puts the device in three-button navigation and records what it actually ended up in.
+        /// </summary>
+        /// <remarks>
+        /// Gesture navigation reserves a strip along the bottom of the screen. A UiAutomator
+        /// swipe or tap that lands in it raises HOME, the launcher takes the foreground, and
+        /// every later lookup fails with NoSuchElementException naming an innocent element —
+        /// one backgrounding turns into a whole failed fixture. That is finding #6 in
+        /// docs/memory/project_android_ci_gpu_flake.md, and it came back on master d71fb75:
+        /// logcat shows ActivityTaskManager starting QuickstepLauncher with a HOME intent in
+        /// the middle of a scrollIntoView, and the app logging Window.Deactivated / paused.
+        ///
+        /// The workflow has run `cmd overlay enable …navbar.threebutton` since that fix landed,
+        /// and **it never worked.** Verified against a real API 35 emulator on 2026-08-06:
+        ///
+        ///     $ cmd overlay list android | grep navbar        # before
+        ///     [ ] …navbar.threebutton
+        ///     [x] …navbar.gestural
+        ///     $ cmd overlay enable …navbar.threebutton
+        ///     $ cmd overlay list android | grep navbar        # after
+        ///     [x] …navbar.gestural                            &lt;-- still enabled
+        ///     [x] …navbar.threebutton
+        ///     $ settings get secure navigation_mode
+        ///     2                                               &lt;-- still gesture
+        ///
+        /// Plain `enable` is additive: it turns the requested overlay on without turning the
+        /// conflicting one off, and the device stays in gesture navigation. So the gesture strip
+        /// has been live in every CI run since, which is why finding #6 kept recurring after
+        /// being marked fixed.
+        ///
+        /// `enable-exclusive --category` is the one that works — it disables the other overlays
+        /// in the navbar category, and `navigation_mode` flips to 0 immediately.
+        ///
+        /// The check is `navigation_mode`, NOT the overlay's `[x]` flag, because the run above
+        /// is exactly the case where the flag says yes and the device disagrees. 0 = three
+        /// button, 1 = two button, 2 = gesture.
+        ///
+        /// Polling `navigation_mode` syncs on the real signal instead of sleeping
+        /// (docs/memory/feedback_no_sleeps_in_tests.md); each adb round trip paces the loop.
+        ///
+        /// It deliberately does NOT throw when the mode refuses to change. Gesture nav is a
+        /// necessary condition for the backgrounding, not a proven trigger for any individual
+        /// failure, and failing every fixture on that would trade an intermittent failure for a
+        /// certain one. The log line is what makes the next occurrence readable.
+        /// </remarks>
+        private static void EnsureThreeButtonNavigation()
+        {
+            const string ThreeButtonOverlay = "com.android.internal.systemui.navbar.threebutton";
+            const string ThreeButtonMode = "0";
+            const int maxPolls = 30;
+
+            Log("4e. Navigation mode");
+            Log($"4e. screen size = '{RunAdb("shell wm size", 5_000).Trim()}'");
+            Log($"4e. navbar overlays before = {NavbarOverlayState()}");
+
+            if (NavigationMode() == ThreeButtonMode)
+            {
+                Log("4e. three-button navigation already active — no gesture strip to fall into");
+                return;
+            }
+
+            Log($"4e. navigation_mode is '{NavigationMode()}' (2=gesture) — switching to three-button exclusively");
+            RunAdb($"shell cmd overlay enable-exclusive --category {ThreeButtonOverlay}", 10_000);
+
+            for (int poll = 1; poll <= maxPolls; poll++)
+            {
+                if (NavigationMode() == ThreeButtonMode)
+                {
+                    Log($"4e. three-button navigation active after {poll} poll(s) — gesture strip disabled");
+                    return;
+                }
+            }
+
+            // Loud, because it means the bottom of the screen is a live HOME trigger for the
+            // whole fixture and every failure after this line should be read in that light.
+            Log($"4e. WARNING navigation_mode is still '{NavigationMode()}' after {maxPolls} polls. " +
+                "The gesture strip is live: a swipe or tap near the bottom edge can raise HOME, " +
+                "background the app, and make every later lookup fail on an unrelated element. " +
+                "See docs/memory/project_android_ci_gpu_flake.md finding #6.");
+            Log($"4e. navbar overlays after = {NavbarOverlayState()}");
+
+            static string NavigationMode() =>
+                RunAdb("shell settings get secure navigation_mode", 5_000).Trim();
+
+            static string NavbarOverlayState() =>
+                string.Join(" | ", RunAdb("shell cmd overlay list android", 10_000)
+                    .Split('\n')
+                    .Select(line => line.Trim())
+                    .Where(line => line.Contains("navbar", StringComparison.OrdinalIgnoreCase)));
         }
 
         private static string RunAdb(string arguments, int timeoutMs)

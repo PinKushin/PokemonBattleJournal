@@ -147,6 +147,7 @@ namespace UITests
             catch (Exception ex)
             {
                 PerfLog($"FIND '{id}' STAGE3_FAIL after {stage3Sw.ElapsedMilliseconds}ms (total {overallSw.ElapsedMilliseconds}ms): {ex.GetType().Name}");
+                LogForegroundApp($"FIND '{id}' STAGE3_FAIL");
                 DumpVisibleElements($"FIND '{id}' STAGE3_FAIL");
                 throw;
             }
@@ -165,6 +166,56 @@ namespace UITests
         /// see if the id is wrong, on a different element, or if the whole tree is unexpected
         /// (wrong window, popup gone, etc.). Best-effort — never throws.
         /// </summary>
+        /// <summary>
+        /// Records which app owns the foreground when a lookup fails.
+        /// </summary>
+        /// <remarks>
+        /// A backgrounded app is the single most misleading failure this suite produces. When
+        /// gesture navigation raises HOME — a swipe or tap that strays into the bottom strip —
+        /// the launcher takes over and every later lookup throws NoSuchElementException naming
+        /// whatever element that test happened to want. On master d71fb75 that turned one
+        /// backgrounding during OptionsPage_DeleteTag_RemovesFromList into 17 failures across
+        /// ~8 minutes, none of which had anything to do with the elements they named, and the
+        /// only way to find the cause was pulling logcat and reading ActivityTaskManager.
+        ///
+        /// Two driver round-trips make that self-evident in the PerfLog instead. Note this is
+        /// deliberately NOT DumpVisibleElements, which is opt-in precisely because its ~30+
+        /// round-trips per call churn the emulator enough to kill sessions.
+        ///
+        /// Best-effort: a dead or backgrounded session can fail these calls too, and the
+        /// original lookup failure is the one worth reporting.
+        /// </remarks>
+        private void LogForegroundApp(string context)
+        {
+            // CurrentPackage is AndroidDriver-only; App is typed as the platform-agnostic
+            // AppiumDriver, so pattern-match rather than cast blind.
+            if (App is not AndroidDriver android)
+            {
+                PerfLog($"FOREGROUND [{context}] driver is {App.GetType().Name}, not AndroidDriver — cannot read the foreground package");
+                return;
+            }
+
+            try
+            {
+                string package = android.CurrentPackage;
+                if (string.Equals(package, PackageName, StringComparison.Ordinal))
+                {
+                    PerfLog($"FOREGROUND [{context}] app is in the foreground ({package}) — not a backgrounding");
+                    return;
+                }
+
+                PerfLog($"FOREGROUND [{context}] THE APP IS NOT IN THE FOREGROUND. '{package}' owns the screen, " +
+                    $"not '{PackageName}'. Every lookup from here fails regardless of what it asks for, so treat " +
+                    "later failures in this fixture as downstream, not as separate bugs. Usual cause: a swipe or " +
+                    "tap reached the gesture-navigation strip and raised HOME — see " +
+                    "docs/memory/project_android_ci_gpu_flake.md finding #6.");
+            }
+            catch (OpenQA.Selenium.WebDriverException ex)
+            {
+                PerfLog($"FOREGROUND [{context}] could not read the foreground package: {ex.GetType().Name}");
+            }
+        }
+
         protected override void DumpVisibleElements(string context, int maxItems = 40)
         {
             // Opt-in via env var. Iterating the tree with GetDomAttribute per element issues
