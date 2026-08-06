@@ -140,6 +140,42 @@ public class ExportServiceIntegrationTests
     /// otherwise leak into the interchange format. That file is meant to be handed to
     /// TrainerHill, and its value is being indistinguishable from one of theirs.
     /// </remarks>
+    /// <summary>
+    /// <c>time</c> must carry <c>StartTime</c>, not <c>DatePlayed</c>.
+    /// </summary>
+    /// <remarks>
+    /// TrainerHill's schema has a single time field, so this export cannot be lossless — but it
+    /// can pick the better of the two. <c>DatePlayed</c> is the weak one: it comes from a date
+    /// picker and sits at midnight, so exporting it throws away the time of day for no reason.
+    /// <c>StartTime</c> carries the same date plus real precision.
+    ///
+    /// It also matters for duplicate detection, which keys on <c>StartTime</c> — a re-imported
+    /// file whose time field was midnight would never match the row it came from.
+    /// </remarks>
+    [Test]
+    public async Task ExportTrainerHillAsync_RealMatch_WritesStartTimeNotDatePlayed()
+    {
+        MatchEntry match = new()
+        {
+            TrainerId = _trainerId,
+            PlayingId = _dragapultId,
+            AgainstId = _otherId,
+            Result = MatchResult.Win,
+            // What a date picker leaves behind: midnight, no time of day.
+            DatePlayed = new DateTime(2026, 7, 27, 0, 0, 0, DateTimeKind.Utc),
+            StartTime = new DateTime(2026, 7, 27, 19, 45, 24, DateTimeKind.Utc),
+            EndTime = new DateTime(2026, 7, 27, 20, 5, 0, DateTimeKind.Utc),
+        };
+        (await _factory.Matches.SaveAsync(match, [new Game { Result = MatchResult.Win, Turn = 1 }]))
+            .ShouldBeGreaterThan(0, "seeding a match must succeed or the test proves nothing");
+
+        using JsonDocument doc = JsonDocument.Parse(await _sut.ExportTrainerHillAsync(_trainerId));
+
+        DateTime written = DateTime.Parse(doc.RootElement[0].GetProperty("time").GetString()!, CultureInfo.InvariantCulture);
+        written.TimeOfDay.ShouldNotBe(TimeSpan.Zero, "exporting DatePlayed throws away the time of day");
+        written.ShouldBe(new DateTime(2026, 7, 27, 19, 45, 24, DateTimeKind.Utc));
+    }
+
     [Test]
     public async Task ExportTrainerHillAsync_RealMatch_OmitsBackupOnlyTimings()
     {

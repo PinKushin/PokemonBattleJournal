@@ -91,7 +91,11 @@ namespace PokemonBattleJournal.Services.Export
         {
             Playing = nameStyle(match.Playing?.Name ?? string.Empty),
             Against = nameStyle(match.Against?.Name ?? string.Empty),
-            Time = match.DatePlayed.ToString(TimeFormat, CultureInfo.InvariantCulture),
+            // StartTime, not DatePlayed. TrainerHill has one time field so this export cannot
+            // be lossless, but DatePlayed is the weak choice — a date picker leaves it at
+            // midnight, throwing away the time of day for nothing. StartTime carries the same
+            // date plus real precision, and duplicate detection keys on it.
+            Time = match.StartTime.ToString(TimeFormat, CultureInfo.InvariantCulture),
             StartTime = includeTimings ? match.StartTime.ToString(TimeFormat, CultureInfo.InvariantCulture) : null,
             EndTime = includeTimings ? match.EndTime.ToString(TimeFormat, CultureInfo.InvariantCulture) : null,
             Result = match.Result?.ToString() ?? string.Empty,
