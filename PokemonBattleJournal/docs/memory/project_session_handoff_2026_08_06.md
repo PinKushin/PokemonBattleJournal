@@ -52,8 +52,14 @@ honest reason is **shrinking the flake surface**, not fixing a known break: an o
 same Grid cell takes no layout space, so no page's element positions depend on whether the
 spinner happens to be up. Do not claim the overlay "fixed" this test — it was already green.
 
-Note there is **no `AndroidScrollToTop` / `ScrollToTop` helper** in the codebase — I checked.
-The memory that mentions calling one is describing a technique, not an existing method.
+**CORRECTED again 2026-08-06:** the real cause was found in the CI artifacts and it is neither
+layout shift nor a flake in the usual sense — **the app gets backgrounded by a HOME transition
+mid-lookup**, which is recurrence of a bug already thought fixed. Full evidence and next
+diagnostics in [[project_android_ci_gpu_flake]]; read that, not this section.
+
+Also correcting myself: I wrote here that no `AndroidScrollToTop` / `ScrollToTop` helper exists.
+No *named helper* exists, but stage 3 of `UITests.Android/BaseTest.cs` already calls
+`scrollToBeginning(100)` before `scrollIntoView`. Do not add a second one.
 
 **Resolved:** merged to master with all three workflows green on `73b2e19`. The overlay is now
 its own branch, not a merge blocker.

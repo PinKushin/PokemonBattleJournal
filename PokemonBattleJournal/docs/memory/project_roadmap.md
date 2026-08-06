@@ -721,10 +721,39 @@ Fluent-style ring spinner, NOT a full solid ring and NOT a simple spinning Poké
   `Microsoft.Maui.Animations` ticker or simple `Dispatcher.StartTimer` angle increment. Lottie
   is an alternative if a matching animation is easier to source/build externally.
 
-### Overlay + region-scoped indicators — NEXT CHANGE, and it is REQUIRED not polish
+### Overlay + region-scoped indicators — page-level overlay DONE 2026-08-06, region scoping NOT started
 
-**Inline placement was tried on all four pages 2026-08-05 and it looks bad. Do not leave it
-that way.**
+**Done (branch `feat/loading-overlay`):** each page's root `ScrollView` is wrapped in a `Grid`
+and the indicator is a sibling in the same cell, so it draws over the content with zero layout
+impact. `InputTransparent="True"` on the host, which matters because the indicator lingers
+500ms past the gate and a test resumes clicking while it is still up.
+
+Two things that were only found by measuring, and are worth not re-learning:
+
+- **The indicator was not the only layout participant.** After the overlay move a 13px shift
+  remained. It was the `Busy_*` sentinels: 1×1 `Label`s whose `IsVisible` is bound to a gate,
+  sitting in a `Spacing="12"` stack, so un-hiding one costs 1 + 12 = 13px. They are automation
+  markers, not content — they now live in the Grid layer too, pinned top-left.
+  MainPage's `PlayerArchetypeIcon2` / `RivalArchetypeIcon2` are the same pattern and moved with
+  them. **Any future 1×1 sentinel goes in the Grid layer, never in the content stack.**
+- **Do not set `InputTransparent` on the sentinels.** A 1×1 Label is not interactive so it buys
+  nothing, and it is unverified whether it perturbs the Android accessibility tree the tests
+  depend on. It stays on the indicator host only.
+
+**Loading message — deliberately left extensible, NOT implemented (user, 2026-08-06.)** The
+user liked that each page carries its own wording ("Working…", "Loading journal…", "Crunching
+stats…") and wants the option to pick randomly from a set later, but explicitly scoped that
+out: *"no dont include it in the current scope about the random labels, just keep the
+labeling/message agnostic so we can extend it later."* The shape already supports it — one
+`Label AutomationId="LoadingIndicatorLabel"` per page whose `Text` is a literal, so a random or
+per-context provider is a one-attribute swap per page (`Text="{Binding LoadingMessage}"`) with
+no restructuring. Keep it that way: do not inline the message into the control or hard-code a
+single shared string.
+
+**Still to do: region scoping.** The overlay is page-level everywhere. The section below is the
+design for scoping it to whichever region is actually busy.
+
+**Historical context — why inline was abandoned:**
 
 The indicator currently sits in the layout flow (a `VerticalStackLayout` child next to the
 busy sentinel). That means it *displaces page content* when it appears and lets it snap back

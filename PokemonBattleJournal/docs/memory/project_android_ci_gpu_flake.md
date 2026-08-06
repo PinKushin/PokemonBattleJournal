@@ -31,6 +31,43 @@ flake" was SIX stacked real bugs, peeled one per run with direct evidence each t
    (UiAutomator2 SendKeys needs no focus) + `cmd overlay enable
    com.android.internal.systemui.navbar.threebutton` — no gesture zone exists at all.
 
+## #6 HAS RECURRED — the threebutton overlay is NOT reliably preventing it (2026-08-06)
+
+Master `d71fb75`, Android job 31068218325, OptionsPageTests: 18 of 25 failed. Same
+signature, same cause, **despite the overlay fix being in the workflow and running.**
+
+What the artifacts show (`android-ui-timing-logs-OptionsPageTests`):
+
+- Seven tests passed first. `OptionsPage_DeleteTag_RemovesFromList` is the first failure;
+  everything after it cascades. **Do not read the failure list as "the whole fixture broke
+  from the start"** — grepping only `Failed` lines gives exactly that wrong impression.
+- Mid-`scrollIntoView` for `SaveTagButton`, logcat shows
+  `ActivityTaskManager: START u0 {act=MAIN cat=[HOME]} cmp=com.android.launcher3/…QuickstepLauncher`,
+  and the app's own breadcrumbs `Window.Deactivated` / `screen: MainActivity, state: paused`.
+  **The app was backgrounded.** Everything afterwards fails on lookup because the app is not
+  foreground — nothing to do with layout, scrolling, or the loading indicator.
+- `SaveTagButton` sat at `boundsInScreen Rect(251, 2268 - 829, 2391)` on a 1080×2400 screen,
+  i.e. its bottom edge is 9px from the bottom of the display.
+
+**What is NOT established:** the exact trigger. The swipe is the obvious suspect, but
+`UiScrollable`'s default swipe dead zone is 10% (~240px here), which should already keep it
+clear of the gesture strip. So either the dead zone is not applying, the overlay is not
+applying, or something else raised HOME. Do not write a fix as though the swipe is proven.
+
+**Cheap next diagnostics, in order:**
+1. Assert the overlay actually took: `adb shell cmd overlay list | grep navbar` (the enable
+   command's success says nothing about whether SystemUI applied it).
+2. Set `UITEST_DUMP_ON_FAIL=1` in the workflow — `DumpVisibleElements` is already wired and
+   was skipped, so the one artifact that would show what owned the screen was not captured.
+3. On lookup failure, check the current package and say so loudly if it is not ours. A
+   backgrounded app currently produces 17 misleading `NoSuchElementException`s over ~8
+   minutes instead of one clear "the app is not in the foreground".
+
+**Correction to a claim in the 2026-08-06 handoff:** it said no scroll-to-top exists. Stage 3
+of `UITests.Android/BaseTest.cs` has always called `scrollToBeginning(100)` before
+`scrollIntoView`. There is no *named helper*, which is what I meant, but the behaviour is
+there — do not add a second one.
+
 Structural wins alongside: per-fixture matrix on both platforms (bounds the long-lived
 driver session, isolates failures), build-once APK artifact job (~90 runner-min → ~20;
 matrix jobs skip the maui-android workload entirely), stage-3 lookup scrolls to top first

@@ -54,586 +54,618 @@
             EventName="Appearing" />
         <toolkit:EventToCommandBehavior Command="{Binding DisappearingCommand}" EventName="Disappearing" />
     </ContentPage.Behaviors>
-    <ScrollView AutomationId="MainPageScrollView">
-        <VerticalStackLayout Padding="15,15" Spacing="8">
+    <Grid>
+        <!--  1×1 automation sentinels, OUTSIDE the scrolling content on purpose.
 
-            <!--#region Page Title Bar-->
-            <HorizontalStackLayout HorizontalOptions="Center">
-                <Image
-                    Margin="10"
-                    AutomationId="ball_icon.png"
-                    SemanticProperties.Description="Poke-Ball Image"
-                    Source="ball_icon.png"
-                    WidthRequest="{OnIdiom Default=32, Phone=24}" />
-                <Label
-                    AutomationId="PageTitle"
-                    FontFamily="PokemonSolid"
-                    FontSize="Title"
-                    SemanticProperties.Description="Create a Match Entry"
-                    SemanticProperties.HeadingLevel="Level1"
-                    Text="Create a Match Entry"
-                    VerticalOptions="Center" />
-            </HorizontalStackLayout>
-            <!--#endregion-->
+              UI tests poll these to know when an operation finished (Busy_*) or whether the
+              selected archetype has a second icon (…Icon2). As children of the content stack
+              they were layout participants, so un-hiding one added its 1px plus the stack's
+              Spacing and pushed everything below it down — 13px on OptionsPage, measured. That
+              gave every element below two possible positions depending on what happened to be
+              in flight, and on Android a row displaced upward past the scroll position is
+              unreachable, because UiScrollable only scrolls down.
 
-            <Grid x:Name="MainColumnsGrid">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition x:Name="SecondColDef" Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+              As direct Grid children they overlap the content in the same cell, pinned to the
+              top-left at 1×1 with no text: invisible, no layout cost, still reachable by
+              AutomationId in the automation tree.  -->
+        <Label
+            AutomationId="Busy_ArchetypeList"
+            HeightRequest="1"
+            HorizontalOptions="Start"
+            IsVisible="{Binding IsBusyArchetypeList}"
+            VerticalOptions="Start"
+            WidthRequest="1" />
+        <Label
+            AutomationId="Busy_Mutating"
+            HeightRequest="1"
+            HorizontalOptions="Start"
+            IsVisible="{Binding IsBusyMutating}"
+            VerticalOptions="Start"
+            WidthRequest="1" />
+        <Label
+            AutomationId="PlayerArchetypeIcon2"
+            HeightRequest="1"
+            HorizontalOptions="Start"
+            IsVisible="{Binding IsPlayerArchetype2Visible}"
+            VerticalOptions="Start"
+            WidthRequest="1" />
+        <Label
+            AutomationId="RivalArchetypeIcon2"
+            HeightRequest="1"
+            HorizontalOptions="Start"
+            IsVisible="{Binding IsRivalArchetype2Visible}"
+            VerticalOptions="Start"
+            WidthRequest="1" />
 
-            <!--#region Match Archetypes, Time, BO3-->
-            <VerticalStackLayout
-                x:Name="LeftColumn"
-                Grid.Row="0"
-                Grid.Column="0"
-                Margin="8"
-                HorizontalOptions="Center"
-                MinimumWidthRequest="280"
-                Spacing="10">
+        <ScrollView AutomationId="MainPageScrollView">
+            <VerticalStackLayout Padding="15,15" Spacing="8">
 
-                <!--#region Archetype Pickers-->
-                <Label AutomationId="SelectDecksHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Select Decks" />
-                <StackLayout HorizontalOptions="Center" Orientation="{OnIdiom Default=Horizontal, Phone=Vertical}" Spacing="10">
-                    <!--#region Player Archetype-->
-                    <controls:ComboBoxControl
-                        x:Name="PlayerArchetype"
-                        Style="{StaticResource ArchetypePicker}"
-                        AutomationId="PlayerArchetype"
-                        SemanticProperties.Description="Your deck archetype"
-                        SemanticProperties.Hint="Double tap to choose the deck you played"
-                        Placeholder="Player"
-                        ItemsSource="{Binding Archetypes}"
-                        SelectedItem="{Binding PlayerSelected}" />
-                    <!--#endregion-->
-                    <!--#region Rival Archetype-->
-                    <controls:ComboBoxControl
-                        x:Name="RivalArchetype"
-                        Style="{StaticResource ArchetypePicker}"
-                        AutomationId="RivalArchetype"
-                        SemanticProperties.Description="Opponent deck archetype"
-                        SemanticProperties.Hint="Double tap to choose the deck your opponent played"
-                        Placeholder="Rival"
-                        ItemsSource="{Binding Archetypes}"
-                        SelectedItem="{Binding RivalSelected}" />
-                    <!--#endregion-->
-                </StackLayout>
-                <!--#endregion-->
-                <!-- Dual-icon sentinels: 1×1 labels visible only when the selected archetype has a second icon.
-                     Direct page-level children so they appear in the UIA tree for test automation. -->
-                <!--  Loading-gate sentinel: visible while archetypes + tags load.
-                      UI tests WaitUntilGone("Busy_ArchetypeList") before popup interactions.  -->
-                <Label
-                    AutomationId="Busy_ArchetypeList"
-                    HeightRequest="1"
-                    IsVisible="{Binding IsBusyArchetypeList}"
-                    WidthRequest="1" />
-                <!--  Loading-gate sentinel: visible while SaveMatchAsync is writing to the
-                      DB. UI tests WaitUntilBusyGone("Busy_Mutating") after clicking Save.  -->
-                <Label
-                    AutomationId="Busy_Mutating"
-                    HeightRequest="1"
-                    IsVisible="{Binding IsBusyMutating}"
-                    WidthRequest="1" />
-
-                <!--  Visible loading indicator. Bound to IsAnyBusy, not one gate: this page both
-                      loads archetypes and saves matches, and binding either alone would leave the
-                      other operation with no feedback. IsVisible follows the control's own
-                      IsShowing so the minimum-visible-duration decides when it clears.  -->
-                <VerticalStackLayout
-                    AutomationId="LoadingIndicatorHost"
-                    SemanticProperties.Description="Loading"
-                    HorizontalOptions="Center"
-                    IsVisible="{Binding Source={x:Reference PageLoadingIndicator}, Path=IsShowing, x:DataType=loading:LoadingIndicator}"
-                    Spacing="4">
-                    <loading:LoadingIndicator
-                        x:Name="PageLoadingIndicator"
-                        AutomationId="PageLoadingIndicator"
-                        ArcColor="{StaticResource BostonRed}"
-                        HeightRequest="96"
-                        IsBusy="{Binding IsAnyBusy}"
-                        WidthRequest="96" />
+                <!--#region Page Title Bar-->
+                <HorizontalStackLayout HorizontalOptions="Center">
+                    <Image
+                        Margin="10"
+                        AutomationId="ball_icon.png"
+                        SemanticProperties.Description="Poke-Ball Image"
+                        Source="ball_icon.png"
+                        WidthRequest="{OnIdiom Default=32, Phone=24}" />
                     <Label
-                        AutomationId="LoadingIndicatorLabel"
-                        FontFamily="SairaRegular"
-                        FontSize="12"
-                        HorizontalOptions="Center"
-                        Text="Working…"
-                        TextColor="{StaticResource PokeYellow}" />
-                </VerticalStackLayout>
-                <Label
-                    AutomationId="PlayerArchetypeIcon2"
-                    HeightRequest="1"
-                    IsVisible="{Binding IsPlayerArchetype2Visible}"
-                    WidthRequest="1" />
-                <Label
-                    AutomationId="RivalArchetypeIcon2"
-                    HeightRequest="1"
-                    IsVisible="{Binding IsRivalArchetype2Visible}"
-                    WidthRequest="1" />
-                <!--#region BO3 Switch & Display-->
-                <Label AutomationId="MatchFormatHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Match Format" />
-                <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
-                    <!--  Pokeball slider track  -->
-                    <Border
-                        AutomationId="BOSwitch"
-                        SemanticProperties.Description="Match format toggle"
-                        SemanticProperties.Hint="Double tap to switch between best of one and best of three"
-                        AutomationProperties.IsInAccessibleTree="True"
-                        BackgroundColor="{Binding BO3Toggle, Converter={StaticResource BO3TrackColorConverter}}"
-                        HeightRequest="32"
-                        Stroke="{StaticResource PokeYellow}"
-                        StrokeShape="RoundRectangle 16"
-                        StrokeThickness="2"
-                        WidthRequest="68"
-                        VerticalOptions="Center">
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding ToggleBO3Command}" />
-                        </Border.GestureRecognizers>
-                        <Grid ColumnDefinitions="*,*" Padding="3">
-                            <!--  Ball on left = OFF  -->
-                            <Image
-                                Grid.Column="0"
-                                Aspect="AspectFit"
-                                HeightRequest="24"
-                                HorizontalOptions="Center"
-                                IsVisible="{Binding BO3Toggle, Converter={StaticResource InvertedBoolConverter}}"
-                                SemanticProperties.Description="Best of 1 selected"
-                                Source="ball_icon.png"
-                                VerticalOptions="Center"
-                                WidthRequest="24" />
-                            <!--  Ball on right = ON  -->
-                            <Image
-                                Grid.Column="1"
-                                Aspect="AspectFit"
-                                HeightRequest="24"
-                                HorizontalOptions="Center"
-                                IsVisible="{Binding BO3Toggle}"
-                                SemanticProperties.Description="Best of 3 selected"
-                                Source="ball_icon.png"
-                                VerticalOptions="Center"
-                                WidthRequest="24" />
-                        </Grid>
-                    </Border>
-                    <Label
-                        AutomationId="BO3StatusLabel"
-                        SemanticProperties.Description="Current match format"
-                        FontAttributes="Bold"
-                        FontFamily="SairaRegular"
-                        Text="{Binding BO3Toggle, Converter={StaticResource BoolToBO3TextConverter}}"
-                        TextColor="{StaticResource PokeYellow}"
-                        VerticalTextAlignment="Center" />
+                        AutomationId="PageTitle"
+                        FontFamily="PokemonSolid"
+                        FontSize="Title"
+                        SemanticProperties.Description="Create a Match Entry"
+                        SemanticProperties.HeadingLevel="Level1"
+                        Text="Create a Match Entry"
+                        VerticalOptions="Center" />
                 </HorizontalStackLayout>
                 <!--#endregion-->
-                <!--#region Time and Date Pickers-->
-                <FlexLayout HorizontalOptions="Center" JustifyContent="Center" Wrap="Wrap">
-                    <VerticalStackLayout Margin="10,0" HorizontalOptions="Center" Spacing="4">
+
+                <Grid x:Name="MainColumnsGrid">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition x:Name="SecondColDef" Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                <!--#region Match Archetypes, Time, BO3-->
+                <VerticalStackLayout
+                    x:Name="LeftColumn"
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Margin="8"
+                    HorizontalOptions="Center"
+                    MinimumWidthRequest="280"
+                    Spacing="10">
+
+                    <!--#region Archetype Pickers-->
+                    <Label AutomationId="SelectDecksHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Select Decks" />
+                    <StackLayout HorizontalOptions="Center" Orientation="{OnIdiom Default=Horizontal, Phone=Vertical}" Spacing="10">
+                        <!--#region Player Archetype-->
+                        <controls:ComboBoxControl
+                            x:Name="PlayerArchetype"
+                            Style="{StaticResource ArchetypePicker}"
+                            AutomationId="PlayerArchetype"
+                            SemanticProperties.Description="Your deck archetype"
+                            SemanticProperties.Hint="Double tap to choose the deck you played"
+                            Placeholder="Player"
+                            ItemsSource="{Binding Archetypes}"
+                            SelectedItem="{Binding PlayerSelected}" />
+                        <!--#endregion-->
+                        <!--#region Rival Archetype-->
+                        <controls:ComboBoxControl
+                            x:Name="RivalArchetype"
+                            Style="{StaticResource ArchetypePicker}"
+                            AutomationId="RivalArchetype"
+                            SemanticProperties.Description="Opponent deck archetype"
+                            SemanticProperties.Hint="Double tap to choose the deck your opponent played"
+                            Placeholder="Rival"
+                            ItemsSource="{Binding Archetypes}"
+                            SelectedItem="{Binding RivalSelected}" />
+                        <!--#endregion-->
+                    </StackLayout>
+                    <!--#endregion-->
+                    <!--#region BO3 Switch & Display-->
+                    <Label AutomationId="MatchFormatHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Match Format" />
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                        <!--  Pokeball slider track  -->
+                        <Border
+                            AutomationId="BOSwitch"
+                            SemanticProperties.Description="Match format toggle"
+                            SemanticProperties.Hint="Double tap to switch between best of one and best of three"
+                            AutomationProperties.IsInAccessibleTree="True"
+                            BackgroundColor="{Binding BO3Toggle, Converter={StaticResource BO3TrackColorConverter}}"
+                            HeightRequest="32"
+                            Stroke="{StaticResource PokeYellow}"
+                            StrokeShape="RoundRectangle 16"
+                            StrokeThickness="2"
+                            WidthRequest="68"
+                            VerticalOptions="Center">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ToggleBO3Command}" />
+                            </Border.GestureRecognizers>
+                            <Grid ColumnDefinitions="*,*" Padding="3">
+                                <!--  Ball on left = OFF  -->
+                                <Image
+                                    Grid.Column="0"
+                                    Aspect="AspectFit"
+                                    HeightRequest="24"
+                                    HorizontalOptions="Center"
+                                    IsVisible="{Binding BO3Toggle, Converter={StaticResource InvertedBoolConverter}}"
+                                    SemanticProperties.Description="Best of 1 selected"
+                                    Source="ball_icon.png"
+                                    VerticalOptions="Center"
+                                    WidthRequest="24" />
+                                <!--  Ball on right = ON  -->
+                                <Image
+                                    Grid.Column="1"
+                                    Aspect="AspectFit"
+                                    HeightRequest="24"
+                                    HorizontalOptions="Center"
+                                    IsVisible="{Binding BO3Toggle}"
+                                    SemanticProperties.Description="Best of 3 selected"
+                                    Source="ball_icon.png"
+                                    VerticalOptions="Center"
+                                    WidthRequest="24" />
+                            </Grid>
+                        </Border>
                         <Label
-                            AutomationId="StartTimeHeading"
+                            AutomationId="BO3StatusLabel"
+                            SemanticProperties.Description="Current match format"
+                            FontAttributes="Bold"
+                            FontFamily="SairaRegular"
+                            Text="{Binding BO3Toggle, Converter={StaticResource BoolToBO3TextConverter}}"
+                            TextColor="{StaticResource PokeYellow}"
+                            VerticalTextAlignment="Center" />
+                    </HorizontalStackLayout>
+                    <!--#endregion-->
+                    <!--#region Time and Date Pickers-->
+                    <FlexLayout HorizontalOptions="Center" JustifyContent="Center" Wrap="Wrap">
+                        <VerticalStackLayout Margin="10,0" HorizontalOptions="Center" Spacing="4">
+                            <Label
+                                AutomationId="StartTimeHeading"
+                                SemanticProperties.HeadingLevel="Level2"
+                                Style="{StaticResource Headline}"
+                                Text="Start Time" />
+                            <TimePicker
+                                x:Name="StartTimePicker"
+                                AutomationId="StartTimePicker"
+                                SemanticProperties.Description="Match start time"
+                                Format="h_mm tt"
+                                HorizontalOptions="Center"
+                                Time="{Binding StartTime}" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Margin="10,0" HorizontalOptions="Center" Spacing="4">
+                            <Label
+                                AutomationId="EndTimeHeading"
+                                SemanticProperties.HeadingLevel="Level2"
+                                Style="{StaticResource Headline}"
+                                Text="End Time" />
+                            <TimePicker
+                                x:Name="EndTimePicker"
+                                AutomationId="EndTimePicker"
+                                SemanticProperties.Description="Match end time"
+                                Format="h_mm tt"
+                                HorizontalOptions="Center"
+                                Time="{Binding EndTime}" />
+                        </VerticalStackLayout>
+                    </FlexLayout>
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="4">
+                        <Label
+                            AutomationId="DatePlayedHeading"
                             SemanticProperties.HeadingLevel="Level2"
                             Style="{StaticResource Headline}"
-                            Text="Start Time" />
-                        <TimePicker
-                            x:Name="StartTimePicker"
-                            AutomationId="StartTimePicker"
-                            SemanticProperties.Description="Match start time"
-                            Format="h_mm tt"
+                            Text="Date Played" />
+                        <DatePicker
+                            x:Name="DatePlayedPicker"
+                            AutomationId="DatePlayedPicker"
+                            SemanticProperties.Description="Date the match was played"
                             HorizontalOptions="Center"
-                            Time="{Binding StartTime}" />
+                            Date="{Binding DatePlayed}" />
                     </VerticalStackLayout>
-                    <VerticalStackLayout Margin="10,0" HorizontalOptions="Center" Spacing="4">
-                        <Label
-                            AutomationId="EndTimeHeading"
-                            SemanticProperties.HeadingLevel="Level2"
-                            Style="{StaticResource Headline}"
-                            Text="End Time" />
-                        <TimePicker
-                            x:Name="EndTimePicker"
-                            AutomationId="EndTimePicker"
-                            SemanticProperties.Description="Match end time"
-                            Format="h_mm tt"
-                            HorizontalOptions="Center"
-                            Time="{Binding EndTime}" />
-                    </VerticalStackLayout>
-                </FlexLayout>
-                <VerticalStackLayout HorizontalOptions="Center" Spacing="4">
-                    <Label
-                        AutomationId="DatePlayedHeading"
-                        SemanticProperties.HeadingLevel="Level2"
-                        Style="{StaticResource Headline}"
-                        Text="Date Played" />
-                    <DatePicker
-                        x:Name="DatePlayedPicker"
-                        AutomationId="DatePlayedPicker"
-                        SemanticProperties.Description="Date the match was played"
-                        HorizontalOptions="Center"
-                        Date="{Binding DatePlayed}" />
+                    <!--#endregion-->
                 </VerticalStackLayout>
                 <!--#endregion-->
-            </VerticalStackLayout>
-            <!--#endregion-->
-            <!--#region Match Notes, Tags, Results-->
-            <VerticalStackLayout
-                x:Name="RightColumn"
-                Grid.Row="0"
-                Grid.Column="1"
-                Margin="8"
-                MinimumWidthRequest="280">
-                <!--#region Game Tabs (always visible)-->
-                <VerticalStackLayout AutomationId="BO3GamesLayout">
+                <!--#region Match Notes, Tags, Results-->
+                <VerticalStackLayout
+                    x:Name="RightColumn"
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Margin="8"
+                    MinimumWidthRequest="280">
+                    <!--#region Game Tabs (always visible)-->
+                    <VerticalStackLayout AutomationId="BO3GamesLayout">
 
-                    <!--#region Tab Bar-->
-                    <Border
-                        Margin="0,8,0,0"
-                        Padding="4"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource OffBlack}}"
-                        StrokeShape="RoundRectangle 8"
-                        StrokeThickness="0">
-                        <HorizontalStackLayout Spacing="4">
-                            <Button
-                                Padding="16,8"
-                                AutomationId="Game1Tab"
-                                SemanticProperties.Description="Game 1 tab"
-                                SemanticProperties.Hint="Double tap to edit game 1"
-                                BackgroundColor="{Binding IsGame1Selected, Converter={StaticResource TabActiveBgConverter}}"
-                                BorderWidth="0"
-                                Command="{Binding SelectGame1Command}"
-                                CornerRadius="6"
-                                FontAttributes="{Binding IsGame1Selected, Converter={StaticResource TabActiveFontConverter}}"
-                                FontFamily="SairaRegular"
-                                FontSize="14"
-                                MinimumHeightRequest="0"
-                                Text="Game 1"
-                                TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
-                            <Button
-                                Padding="16,8"
-                                AutomationId="Game2Tab"
-                                SemanticProperties.Description="Game 2 tab"
-                                SemanticProperties.Hint="Double tap to edit game 2"
-                                BackgroundColor="{Binding IsGame2Selected, Converter={StaticResource TabActiveBgConverter}}"
-                                BorderWidth="0"
-                                Command="{Binding SelectGame2Command}"
-                                CornerRadius="6"
-                                FontAttributes="{Binding IsGame2Selected, Converter={StaticResource TabActiveFontConverter}}"
-                                FontFamily="SairaRegular"
-                                FontSize="14"
-                                IsVisible="{Binding BO3Toggle}"
-                                MinimumHeightRequest="0"
-                                Text="Game 2"
-                                TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
-                            <Button
-                                Padding="16,8"
-                                AutomationId="Game3Tab"
-                                SemanticProperties.Description="Game 3 tab"
-                                SemanticProperties.Hint="Double tap to edit game 3"
-                                BackgroundColor="{Binding IsGame3Selected, Converter={StaticResource TabActiveBgConverter}}"
-                                BorderWidth="0"
-                                Command="{Binding SelectGame3Command}"
-                                CornerRadius="6"
-                                FontAttributes="{Binding IsGame3Selected, Converter={StaticResource TabActiveFontConverter}}"
-                                FontFamily="SairaRegular"
-                                FontSize="14"
-                                IsVisible="{Binding ShowGame3}"
-                                MinimumHeightRequest="0"
-                                Text="Game 3"
-                                TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
-                        </HorizontalStackLayout>
-                    </Border>
-                    <!--#endregion-->
+                        <!--#region Tab Bar-->
+                        <Border
+                            Margin="0,8,0,0"
+                            Padding="4"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource OffBlack}}"
+                            StrokeShape="RoundRectangle 8"
+                            StrokeThickness="0">
+                            <HorizontalStackLayout Spacing="4">
+                                <Button
+                                    Padding="16,8"
+                                    AutomationId="Game1Tab"
+                                    SemanticProperties.Description="Game 1 tab"
+                                    SemanticProperties.Hint="Double tap to edit game 1"
+                                    BackgroundColor="{Binding IsGame1Selected, Converter={StaticResource TabActiveBgConverter}}"
+                                    BorderWidth="0"
+                                    Command="{Binding SelectGame1Command}"
+                                    CornerRadius="6"
+                                    FontAttributes="{Binding IsGame1Selected, Converter={StaticResource TabActiveFontConverter}}"
+                                    FontFamily="SairaRegular"
+                                    FontSize="14"
+                                    MinimumHeightRequest="0"
+                                    Text="Game 1"
+                                    TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
+                                <Button
+                                    Padding="16,8"
+                                    AutomationId="Game2Tab"
+                                    SemanticProperties.Description="Game 2 tab"
+                                    SemanticProperties.Hint="Double tap to edit game 2"
+                                    BackgroundColor="{Binding IsGame2Selected, Converter={StaticResource TabActiveBgConverter}}"
+                                    BorderWidth="0"
+                                    Command="{Binding SelectGame2Command}"
+                                    CornerRadius="6"
+                                    FontAttributes="{Binding IsGame2Selected, Converter={StaticResource TabActiveFontConverter}}"
+                                    FontFamily="SairaRegular"
+                                    FontSize="14"
+                                    IsVisible="{Binding BO3Toggle}"
+                                    MinimumHeightRequest="0"
+                                    Text="Game 2"
+                                    TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
+                                <Button
+                                    Padding="16,8"
+                                    AutomationId="Game3Tab"
+                                    SemanticProperties.Description="Game 3 tab"
+                                    SemanticProperties.Hint="Double tap to edit game 3"
+                                    BackgroundColor="{Binding IsGame3Selected, Converter={StaticResource TabActiveBgConverter}}"
+                                    BorderWidth="0"
+                                    Command="{Binding SelectGame3Command}"
+                                    CornerRadius="6"
+                                    FontAttributes="{Binding IsGame3Selected, Converter={StaticResource TabActiveFontConverter}}"
+                                    FontFamily="SairaRegular"
+                                    FontSize="14"
+                                    IsVisible="{Binding ShowGame3}"
+                                    MinimumHeightRequest="0"
+                                    Text="Game 3"
+                                    TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}" />
+                            </HorizontalStackLayout>
+                        </Border>
+                        <!--#endregion-->
 
-                    <!--#region Game 1 Panel-->
-                    <VerticalStackLayout IsVisible="{Binding IsGame1Selected}">
-                        <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="44">
-                            <Label
-                                Grid.Column="0"
-                                Margin="0,0,10,0"
-                                Text="Tags:"
-                                VerticalOptions="Center" />
-                            <FlexLayout
-                                x:Name="TagsView"
-                                Grid.Column="1"
-                                AutomationId="TagsView"
-                                SemanticProperties.Description="Game 1 tags"
-                                AlignItems="Start"
-                                Direction="Row"
-                                Wrap="Wrap"
-                                BindableLayout.ItemsSource="{Binding Game1TagCollection}">
-                                <BindableLayout.ItemTemplate>
-                                    <DataTemplate x:DataType="viewmodel:TagViewModel">
-                                        <Border
-                                            MinimumWidthRequest="140"
-                                            Margin="2"
-                                            Padding="8,4"
-                                            BackgroundColor="{Binding IsSelected, Converter={StaticResource TagSelectedBgConverter}}"
-                                            SemanticProperties.Description="{Binding Name}"
-                                            SemanticProperties.Hint="Double tap to select or deselect"
-                                            Stroke="{StaticResource PokeBlue}"
-                                            StrokeShape="RoundRectangle 6"
-                                            StrokeThickness="1">
-                                            <Label
-                                                FontAutoScalingEnabled="True"
-                                                Text="{Binding Name}"
-                                                TextColor="{Binding IsSelected, Converter={StaticResource TagSelectedTextConverter}}"
-                                                VerticalOptions="Center" />
-                                            <Border.GestureRecognizers>
-                                                <TapGestureRecognizer Command="{Binding ToggleCommand}" />
-                                            </Border.GestureRecognizers>
-                                        </Border>
-                                    </DataTemplate>
-                                </BindableLayout.ItemTemplate>
-                            </FlexLayout>
-                        </Grid>
-                        <Editor
-                            AutoSize="TextChanges"
-                            AutomationId="UserNoteInput"
-                            SemanticProperties.Description="Game 1 notes"
-                            HeightRequest="200"
-                            IsSpellCheckEnabled="True"
-                            MinimumWidthRequest="350"
-                            Placeholder="Write notes here..."
-                            Text="{Binding UserNoteInput}" />
-                        <HorizontalStackLayout HorizontalOptions="Center" Margin="0,10,0,0" Spacing="12">
-                            <Border
-                                Padding="16,4"
-                                Stroke="{StaticResource PokeYellow}"
-                                StrokeThickness="1.5"
-                                StrokeShape="RoundRectangle 20">
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding ToggleFirstCheckCommand}" />
-                                </Border.GestureRecognizers>
-                                <HorizontalStackLayout Spacing="10">
-                                    <Image
-                                        AutomationId="FirstCheck"
-                                        SemanticProperties.Description="Went first in game 1"
-                                        SemanticProperties.Hint="Double tap to toggle whether you went first"
-                                        Aspect="AspectFit"
-                                        HeightRequest="32"
-                                        Opacity="{Binding FirstCheck, Converter={StaticResource PokeballOpacityConverter}}"
-                                        Source="ball_icon.png"
-                                        VerticalOptions="Center"
-                                        WidthRequest="32" />
-                                    <Label
-                                        AutomationId="WentFirstLabel"
-                                        SemanticProperties.Description="Went first in game 1"
-                                        Style="{StaticResource BO3Label}"
-                                        Text="Went first"
-                                        VerticalOptions="Center" />
-                                </HorizontalStackLayout>
-                            </Border>
-                            <Picker
-                                AutomationId="PossibleResultsPicker"
-                                SemanticProperties.Description="Game 1 result"
-                                HorizontalOptions="Center"
-                                ItemsSource="{Binding PossibleResults}"
-                                SelectedItem="{Binding Result}"
-                                VerticalOptions="Center"
-                                WidthRequest="120" />
-                        </HorizontalStackLayout>
+                        <!--#region Game 1 Panel-->
+                        <VerticalStackLayout IsVisible="{Binding IsGame1Selected}">
+                            <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="44">
+                                <Label
+                                    Grid.Column="0"
+                                    Margin="0,0,10,0"
+                                    Text="Tags:"
+                                    VerticalOptions="Center" />
+                                <FlexLayout
+                                    x:Name="TagsView"
+                                    Grid.Column="1"
+                                    AutomationId="TagsView"
+                                    SemanticProperties.Description="Game 1 tags"
+                                    AlignItems="Start"
+                                    Direction="Row"
+                                    Wrap="Wrap"
+                                    BindableLayout.ItemsSource="{Binding Game1TagCollection}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="viewmodel:TagViewModel">
+                                            <Border
+                                                MinimumWidthRequest="140"
+                                                Margin="2"
+                                                Padding="8,4"
+                                                BackgroundColor="{Binding IsSelected, Converter={StaticResource TagSelectedBgConverter}}"
+                                                SemanticProperties.Description="{Binding Name}"
+                                                SemanticProperties.Hint="Double tap to select or deselect"
+                                                Stroke="{StaticResource PokeBlue}"
+                                                StrokeShape="RoundRectangle 6"
+                                                StrokeThickness="1">
+                                                <Label
+                                                    FontAutoScalingEnabled="True"
+                                                    Text="{Binding Name}"
+                                                    TextColor="{Binding IsSelected, Converter={StaticResource TagSelectedTextConverter}}"
+                                                    VerticalOptions="Center" />
+                                                <Border.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                                </Border.GestureRecognizers>
+                                            </Border>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </FlexLayout>
+                            </Grid>
+                            <Editor
+                                AutoSize="TextChanges"
+                                AutomationId="UserNoteInput"
+                                SemanticProperties.Description="Game 1 notes"
+                                HeightRequest="200"
+                                IsSpellCheckEnabled="True"
+                                MinimumWidthRequest="350"
+                                Placeholder="Write notes here..."
+                                Text="{Binding UserNoteInput}" />
+                            <HorizontalStackLayout HorizontalOptions="Center" Margin="0,10,0,0" Spacing="12">
+                                <Border
+                                    Padding="16,4"
+                                    Stroke="{StaticResource PokeYellow}"
+                                    StrokeThickness="1.5"
+                                    StrokeShape="RoundRectangle 20">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding ToggleFirstCheckCommand}" />
+                                    </Border.GestureRecognizers>
+                                    <HorizontalStackLayout Spacing="10">
+                                        <Image
+                                            AutomationId="FirstCheck"
+                                            SemanticProperties.Description="Went first in game 1"
+                                            SemanticProperties.Hint="Double tap to toggle whether you went first"
+                                            Aspect="AspectFit"
+                                            HeightRequest="32"
+                                            Opacity="{Binding FirstCheck, Converter={StaticResource PokeballOpacityConverter}}"
+                                            Source="ball_icon.png"
+                                            VerticalOptions="Center"
+                                            WidthRequest="32" />
+                                        <Label
+                                            AutomationId="WentFirstLabel"
+                                            SemanticProperties.Description="Went first in game 1"
+                                            Style="{StaticResource BO3Label}"
+                                            Text="Went first"
+                                            VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                </Border>
+                                <Picker
+                                    AutomationId="PossibleResultsPicker"
+                                    SemanticProperties.Description="Game 1 result"
+                                    HorizontalOptions="Center"
+                                    ItemsSource="{Binding PossibleResults}"
+                                    SelectedItem="{Binding Result}"
+                                    VerticalOptions="Center"
+                                    WidthRequest="120" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                        <!--#endregion-->
+
+                        <!--#region Game 2 Panel-->
+                        <VerticalStackLayout IsVisible="{Binding IsGame2Selected}">
+                            <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="44">
+                                <Label
+                                    Grid.Column="0"
+                                    Margin="0,0,10,0"
+                                    Text="Tags:"
+                                    VerticalOptions="Center" />
+                                <FlexLayout
+                                    Grid.Column="1"
+                                    AutomationId="Match2Tags"
+                                    SemanticProperties.Description="Game 2 tags"
+                                    AlignItems="Start"
+                                    Direction="Row"
+                                    Wrap="Wrap"
+                                    BindableLayout.ItemsSource="{Binding Game2TagCollection}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="viewmodel:TagViewModel">
+                                            <Border
+                                                MinimumWidthRequest="140"
+                                                Margin="2"
+                                                Padding="8,4"
+                                                BackgroundColor="{Binding IsSelected, Converter={StaticResource TagSelectedBgConverter}}"
+                                                SemanticProperties.Description="{Binding Name}"
+                                                SemanticProperties.Hint="Double tap to select or deselect"
+                                                Stroke="{StaticResource PokeBlue}"
+                                                StrokeShape="RoundRectangle 6"
+                                                StrokeThickness="1">
+                                                <Label
+                                                    FontAutoScalingEnabled="True"
+                                                    Text="{Binding Name}"
+                                                    TextColor="{Binding IsSelected, Converter={StaticResource TagSelectedTextConverter}}"
+                                                    VerticalOptions="Center" />
+                                                <Border.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                                </Border.GestureRecognizers>
+                                            </Border>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </FlexLayout>
+                            </Grid>
+                            <Editor
+                                AutoSize="TextChanges"
+                                AutomationId="UserNoteInput2"
+                                SemanticProperties.Description="Game 2 notes"
+                                HeightRequest="200"
+                                IsSpellCheckEnabled="True"
+                                MinimumWidthRequest="350"
+                                Placeholder="Write notes here..."
+                                Text="{Binding UserNoteInput2}" />
+                            <HorizontalStackLayout HorizontalOptions="Center" Margin="0,10,0,0" Spacing="12">
+                                <Border
+                                    Padding="16,4"
+                                    Stroke="{StaticResource PokeYellow}"
+                                    StrokeThickness="1.5"
+                                    StrokeShape="RoundRectangle 20">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding ToggleFirstCheck2Command}" />
+                                    </Border.GestureRecognizers>
+                                    <HorizontalStackLayout Spacing="10">
+                                        <Image
+                                            AutomationId="FirstCheck2"
+                                            SemanticProperties.Description="Went first in game 2"
+                                            SemanticProperties.Hint="Double tap to toggle whether you went first"
+                                            Aspect="AspectFit"
+                                            HeightRequest="32"
+                                            Opacity="{Binding FirstCheck2, Converter={StaticResource PokeballOpacityConverter}}"
+                                            Source="ball_icon.png"
+                                            VerticalOptions="Center"
+                                            WidthRequest="32" />
+                                        <Label
+                                            AutomationId="WentFirstLabel2"
+                                            SemanticProperties.Description="Went first in game 2"
+                                            Style="{StaticResource BO3Label}"
+                                            Text="Went first"
+                                            VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                </Border>
+                                <Picker
+                                    AutomationId="PossibleResultsPicker2"
+                                    SemanticProperties.Description="Game 2 result"
+                                    HorizontalOptions="Center"
+                                    ItemsSource="{Binding PossibleResults}"
+                                    SelectedItem="{Binding Result2}"
+                                    VerticalOptions="Center"
+                                    WidthRequest="120" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                        <!--#endregion-->
+
+                        <!--#region Game 3 Panel-->
+                        <VerticalStackLayout IsVisible="{Binding IsGame3Selected}">
+                            <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="44">
+                                <Label
+                                    Grid.Column="0"
+                                    Margin="0,0,10,0"
+                                    Text="Tags:"
+                                    VerticalOptions="Center" />
+                                <FlexLayout
+                                    Grid.Column="1"
+                                    AutomationId="Match3Tags"
+                                    SemanticProperties.Description="Game 3 tags"
+                                    AlignItems="Start"
+                                    Direction="Row"
+                                    Wrap="Wrap"
+                                    BindableLayout.ItemsSource="{Binding Game3TagCollection}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="viewmodel:TagViewModel">
+                                            <Border
+                                                MinimumWidthRequest="140"
+                                                Margin="2"
+                                                Padding="8,4"
+                                                BackgroundColor="{Binding IsSelected, Converter={StaticResource TagSelectedBgConverter}}"
+                                                SemanticProperties.Description="{Binding Name}"
+                                                SemanticProperties.Hint="Double tap to select or deselect"
+                                                Stroke="{StaticResource PokeBlue}"
+                                                StrokeShape="RoundRectangle 6"
+                                                StrokeThickness="1">
+                                                <Label
+                                                    FontAutoScalingEnabled="True"
+                                                    Text="{Binding Name}"
+                                                    TextColor="{Binding IsSelected, Converter={StaticResource TagSelectedTextConverter}}"
+                                                    VerticalOptions="Center" />
+                                                <Border.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                                </Border.GestureRecognizers>
+                                            </Border>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </FlexLayout>
+                            </Grid>
+                            <Editor
+                                AutoSize="TextChanges"
+                                AutomationId="UserNoteInput3"
+                                SemanticProperties.Description="Game 3 notes"
+                                HeightRequest="200"
+                                IsSpellCheckEnabled="True"
+                                MinimumWidthRequest="350"
+                                Placeholder="Write notes here..."
+                                Text="{Binding UserNoteInput3}" />
+                            <HorizontalStackLayout HorizontalOptions="Center" Margin="0,10,0,0" Spacing="12">
+                                <Border
+                                    Padding="16,4"
+                                    Stroke="{StaticResource PokeYellow}"
+                                    StrokeThickness="1.5"
+                                    StrokeShape="RoundRectangle 20">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding ToggleFirstCheck3Command}" />
+                                    </Border.GestureRecognizers>
+                                    <HorizontalStackLayout Spacing="10">
+                                        <Image
+                                            AutomationId="FirstCheck3"
+                                            SemanticProperties.Description="Went first in game 3"
+                                            SemanticProperties.Hint="Double tap to toggle whether you went first"
+                                            Aspect="AspectFit"
+                                            HeightRequest="32"
+                                            Opacity="{Binding FirstCheck3, Converter={StaticResource PokeballOpacityConverter}}"
+                                            Source="ball_icon.png"
+                                            VerticalOptions="Center"
+                                            WidthRequest="32" />
+                                        <Label
+                                            AutomationId="WentFirstLabel3"
+                                            SemanticProperties.Description="Went first in game 3"
+                                            Style="{StaticResource BO3Label}"
+                                            Text="Went first"
+                                            VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                </Border>
+                                <Picker
+                                    AutomationId="PossibleResultsPicker3"
+                                    SemanticProperties.Description="Game 3 result"
+                                    HorizontalOptions="Center"
+                                    ItemsSource="{Binding PossibleResults}"
+                                    SelectedItem="{Binding Result3}"
+                                    VerticalOptions="Center"
+                                    WidthRequest="120" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                        <!--#endregion-->
+
                     </VerticalStackLayout>
                     <!--#endregion-->
-
-                    <!--#region Game 2 Panel-->
-                    <VerticalStackLayout IsVisible="{Binding IsGame2Selected}">
-                        <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="44">
-                            <Label
-                                Grid.Column="0"
-                                Margin="0,0,10,0"
-                                Text="Tags:"
-                                VerticalOptions="Center" />
-                            <FlexLayout
-                                Grid.Column="1"
-                                AutomationId="Match2Tags"
-                                SemanticProperties.Description="Game 2 tags"
-                                AlignItems="Start"
-                                Direction="Row"
-                                Wrap="Wrap"
-                                BindableLayout.ItemsSource="{Binding Game2TagCollection}">
-                                <BindableLayout.ItemTemplate>
-                                    <DataTemplate x:DataType="viewmodel:TagViewModel">
-                                        <Border
-                                            MinimumWidthRequest="140"
-                                            Margin="2"
-                                            Padding="8,4"
-                                            BackgroundColor="{Binding IsSelected, Converter={StaticResource TagSelectedBgConverter}}"
-                                            SemanticProperties.Description="{Binding Name}"
-                                            SemanticProperties.Hint="Double tap to select or deselect"
-                                            Stroke="{StaticResource PokeBlue}"
-                                            StrokeShape="RoundRectangle 6"
-                                            StrokeThickness="1">
-                                            <Label
-                                                FontAutoScalingEnabled="True"
-                                                Text="{Binding Name}"
-                                                TextColor="{Binding IsSelected, Converter={StaticResource TagSelectedTextConverter}}"
-                                                VerticalOptions="Center" />
-                                            <Border.GestureRecognizers>
-                                                <TapGestureRecognizer Command="{Binding ToggleCommand}" />
-                                            </Border.GestureRecognizers>
-                                        </Border>
-                                    </DataTemplate>
-                                </BindableLayout.ItemTemplate>
-                            </FlexLayout>
-                        </Grid>
-                        <Editor
-                            AutoSize="TextChanges"
-                            AutomationId="UserNoteInput2"
-                            SemanticProperties.Description="Game 2 notes"
-                            HeightRequest="200"
-                            IsSpellCheckEnabled="True"
-                            MinimumWidthRequest="350"
-                            Placeholder="Write notes here..."
-                            Text="{Binding UserNoteInput2}" />
-                        <HorizontalStackLayout HorizontalOptions="Center" Margin="0,10,0,0" Spacing="12">
-                            <Border
-                                Padding="16,4"
-                                Stroke="{StaticResource PokeYellow}"
-                                StrokeThickness="1.5"
-                                StrokeShape="RoundRectangle 20">
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding ToggleFirstCheck2Command}" />
-                                </Border.GestureRecognizers>
-                                <HorizontalStackLayout Spacing="10">
-                                    <Image
-                                        AutomationId="FirstCheck2"
-                                        SemanticProperties.Description="Went first in game 2"
-                                        SemanticProperties.Hint="Double tap to toggle whether you went first"
-                                        Aspect="AspectFit"
-                                        HeightRequest="32"
-                                        Opacity="{Binding FirstCheck2, Converter={StaticResource PokeballOpacityConverter}}"
-                                        Source="ball_icon.png"
-                                        VerticalOptions="Center"
-                                        WidthRequest="32" />
-                                    <Label
-                                        AutomationId="WentFirstLabel2"
-                                        SemanticProperties.Description="Went first in game 2"
-                                        Style="{StaticResource BO3Label}"
-                                        Text="Went first"
-                                        VerticalOptions="Center" />
-                                </HorizontalStackLayout>
-                            </Border>
-                            <Picker
-                                AutomationId="PossibleResultsPicker2"
-                                SemanticProperties.Description="Game 2 result"
-                                HorizontalOptions="Center"
-                                ItemsSource="{Binding PossibleResults}"
-                                SelectedItem="{Binding Result2}"
-                                VerticalOptions="Center"
-                                WidthRequest="120" />
-                        </HorizontalStackLayout>
-                    </VerticalStackLayout>
-                    <!--#endregion-->
-
-                    <!--#region Game 3 Panel-->
-                    <VerticalStackLayout IsVisible="{Binding IsGame3Selected}">
-                        <Grid ColumnDefinitions="Auto,*" MinimumHeightRequest="44">
-                            <Label
-                                Grid.Column="0"
-                                Margin="0,0,10,0"
-                                Text="Tags:"
-                                VerticalOptions="Center" />
-                            <FlexLayout
-                                Grid.Column="1"
-                                AutomationId="Match3Tags"
-                                SemanticProperties.Description="Game 3 tags"
-                                AlignItems="Start"
-                                Direction="Row"
-                                Wrap="Wrap"
-                                BindableLayout.ItemsSource="{Binding Game3TagCollection}">
-                                <BindableLayout.ItemTemplate>
-                                    <DataTemplate x:DataType="viewmodel:TagViewModel">
-                                        <Border
-                                            MinimumWidthRequest="140"
-                                            Margin="2"
-                                            Padding="8,4"
-                                            BackgroundColor="{Binding IsSelected, Converter={StaticResource TagSelectedBgConverter}}"
-                                            SemanticProperties.Description="{Binding Name}"
-                                            SemanticProperties.Hint="Double tap to select or deselect"
-                                            Stroke="{StaticResource PokeBlue}"
-                                            StrokeShape="RoundRectangle 6"
-                                            StrokeThickness="1">
-                                            <Label
-                                                FontAutoScalingEnabled="True"
-                                                Text="{Binding Name}"
-                                                TextColor="{Binding IsSelected, Converter={StaticResource TagSelectedTextConverter}}"
-                                                VerticalOptions="Center" />
-                                            <Border.GestureRecognizers>
-                                                <TapGestureRecognizer Command="{Binding ToggleCommand}" />
-                                            </Border.GestureRecognizers>
-                                        </Border>
-                                    </DataTemplate>
-                                </BindableLayout.ItemTemplate>
-                            </FlexLayout>
-                        </Grid>
-                        <Editor
-                            AutoSize="TextChanges"
-                            AutomationId="UserNoteInput3"
-                            SemanticProperties.Description="Game 3 notes"
-                            HeightRequest="200"
-                            IsSpellCheckEnabled="True"
-                            MinimumWidthRequest="350"
-                            Placeholder="Write notes here..."
-                            Text="{Binding UserNoteInput3}" />
-                        <HorizontalStackLayout HorizontalOptions="Center" Margin="0,10,0,0" Spacing="12">
-                            <Border
-                                Padding="16,4"
-                                Stroke="{StaticResource PokeYellow}"
-                                StrokeThickness="1.5"
-                                StrokeShape="RoundRectangle 20">
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding ToggleFirstCheck3Command}" />
-                                </Border.GestureRecognizers>
-                                <HorizontalStackLayout Spacing="10">
-                                    <Image
-                                        AutomationId="FirstCheck3"
-                                        SemanticProperties.Description="Went first in game 3"
-                                        SemanticProperties.Hint="Double tap to toggle whether you went first"
-                                        Aspect="AspectFit"
-                                        HeightRequest="32"
-                                        Opacity="{Binding FirstCheck3, Converter={StaticResource PokeballOpacityConverter}}"
-                                        Source="ball_icon.png"
-                                        VerticalOptions="Center"
-                                        WidthRequest="32" />
-                                    <Label
-                                        AutomationId="WentFirstLabel3"
-                                        SemanticProperties.Description="Went first in game 3"
-                                        Style="{StaticResource BO3Label}"
-                                        Text="Went first"
-                                        VerticalOptions="Center" />
-                                </HorizontalStackLayout>
-                            </Border>
-                            <Picker
-                                AutomationId="PossibleResultsPicker3"
-                                SemanticProperties.Description="Game 3 result"
-                                HorizontalOptions="Center"
-                                ItemsSource="{Binding PossibleResults}"
-                                SelectedItem="{Binding Result3}"
-                                VerticalOptions="Center"
-                                WidthRequest="120" />
-                        </HorizontalStackLayout>
-                    </VerticalStackLayout>
-                    <!--#endregion-->
-
                 </VerticalStackLayout>
                 <!--#endregion-->
+
+                </Grid>
+
+                <!--#region Save Button-->
+                <Button
+                    AutomationId="SaveMatchButton"
+                    BackgroundColor="{StaticResource PokeBlue}"
+                    Command="{Binding SaveMatchCommand}"
+                    HorizontalOptions="Fill"
+                    SemanticProperties.Hint="Save your journal entry"
+                    Text="{Binding SavedFileDisplay}"
+                    TextColor="White" />
+                <!--#endregion-->
+
             </VerticalStackLayout>
-            <!--#endregion-->
+        </ScrollView>
 
-            </Grid>
+        <!--  Loading indicator, drawn OVER the page rather than in it.
 
-            <!--#region Save Button-->
-            <Button
-                AutomationId="SaveMatchButton"
-                BackgroundColor="{StaticResource PokeBlue}"
-                Command="{Binding SaveMatchCommand}"
-                HorizontalOptions="Fill"
-                SemanticProperties.Hint="Save your journal entry"
-                Text="{Binding SavedFileDisplay}"
-                TextColor="White" />
-            <!--#endregion-->
+              It is a sibling of the ScrollView in the same Grid cell, so it occupies no
+              layout space and nothing below it moves when it appears. As an inline child it
+              pushed ~144px of content down every time it showed, which gave every element
+              below two possible positions depending on timing.
 
+              InputTransparent passes clicks through to the content underneath. Layout
+              cascades this to children by default, so the spinner and its label are
+              transparent too. It matters because the indicator deliberately lingers 500ms
+              after the busy gate clears, so a user (or a UI test) is interacting with the
+              page again while it is still on screen.
+
+              IsVisible follows the control's own IsShowing rather than the raw busy flag, so
+              that minimum-visible-duration is what decides when the host disappears —
+              otherwise fast work would flash.  -->
+        <VerticalStackLayout
+            AutomationId="LoadingIndicatorHost"
+            SemanticProperties.Description="Loading"
+            HorizontalOptions="Center"
+            InputTransparent="True"
+            IsVisible="{Binding Source={x:Reference PageLoadingIndicator}, Path=IsShowing, x:DataType=loading:LoadingIndicator}"
+            Spacing="4"
+            VerticalOptions="Center">
+            <loading:LoadingIndicator
+                x:Name="PageLoadingIndicator"
+                AutomationId="PageLoadingIndicator"
+                ArcColor="{StaticResource BostonRed}"
+                HeightRequest="96"
+                IsBusy="{Binding IsAnyBusy}"
+                WidthRequest="96" />
+            <Label
+                AutomationId="LoadingIndicatorLabel"
+                FontFamily="SairaRegular"
+                FontSize="12"
+                HorizontalOptions="Center"
+                Text="Working…"
+                TextColor="{StaticResource PokeYellow}" />
         </VerticalStackLayout>
-    </ScrollView>
+    </Grid>
 </ContentPage>

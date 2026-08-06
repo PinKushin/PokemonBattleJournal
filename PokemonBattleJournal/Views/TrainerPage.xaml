@@ -20,145 +20,171 @@
             EventName="Appearing" />
     </ContentPage.Behaviors>
 
-    <ScrollView>
-        <StackLayout Padding="16" Spacing="8">
+    <Grid>
+        <!--  Loading-gate sentinel, OUTSIDE the scrolling content on purpose. UI tests
+              WaitUntilGone("Busy_ChartData") before chart assertions.
 
-            <!--  Loading-gate sentinel: visible while match data + charts compute.
-                  UI tests WaitUntilGone("Busy_ChartData") before chart assertions.  -->
+              As a child of the content stack it was a layout participant, so un-hiding it added
+              its 1px plus the stack's Spacing and pushed everything below it down — 13px on
+              OptionsPage, measured. On Android a row displaced upward past the scroll position
+              is unreachable, because UiScrollable only scrolls down. As a direct Grid child it
+              overlaps the content, pinned top-left at 1×1 with no text: invisible, no layout
+              cost, still reachable by AutomationId.  -->
+        <Label
+            AutomationId="Busy_ChartData"
+            HeightRequest="1"
+            HorizontalOptions="Start"
+            IsVisible="{Binding IsBusyChartData}"
+            VerticalOptions="Start"
+            WidthRequest="1" />
+
+        <ScrollView>
+            <StackLayout Padding="16" Spacing="8">
+
+                <Grid ColumnDefinitions="*,*,*,*" Margin="0,8,0,4">
+                    <StackLayout Grid.Column="0" HorizontalOptions="Center">
+                        <Label AutomationId="WinRateStatName" SemanticProperties.Description="Win Rate stat label" Style="{StaticResource StatName}" Text="Win Rate" />
+                        <Label AutomationId="WinRateLabel" SemanticProperties.Description="Win rate percentage" Style="{StaticResource StatValue}" Text="{Binding WinAverage, StringFormat='{0:F1}%'}" />
+                    </StackLayout>
+                    <StackLayout Grid.Column="1" HorizontalOptions="Center">
+                        <Label AutomationId="WinsStatName" SemanticProperties.Description="Wins stat label" Style="{StaticResource StatName}" Text="Wins" />
+                        <Label AutomationId="WinsLabel" SemanticProperties.Description="Total wins" Style="{StaticResource StatValue}" Text="{Binding Wins}" />
+                    </StackLayout>
+                    <StackLayout Grid.Column="2" HorizontalOptions="Center">
+                        <Label AutomationId="LossesStatName" SemanticProperties.Description="Losses stat label" Style="{StaticResource StatName}" Text="Losses" />
+                        <Label AutomationId="LossesLabel" SemanticProperties.Description="Total losses" Style="{StaticResource StatValue}" Text="{Binding Losses}" />
+                    </StackLayout>
+                    <StackLayout Grid.Column="3" HorizontalOptions="Center">
+                        <Label AutomationId="TiesStatName" SemanticProperties.Description="Ties stat label" Style="{StaticResource StatName}" Text="Ties" />
+                        <Label AutomationId="TiesLabel" SemanticProperties.Description="Total ties" Style="{StaticResource StatValue}" Text="{Binding Ties}" />
+                    </StackLayout>
+                </Grid>
+
+                <Label AutomationId="AverageMatchDurationLabel" Text="{Binding AverageMatchDuration, StringFormat='Avg Match: {0:mm\\:ss}'}" HorizontalOptions="Center" FontSize="13" />
+                <Label AutomationId="StreakInfoLabel" Text="{Binding StreakInfo}" HorizontalOptions="Center" FontSize="13" />
+
+                <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,8,0,8" />
+                <Label AutomationId="MatchupMatrixHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Matchup Matrix" />
+                <lvc:CartesianChart
+                    AutomationId="MatchupMatrixChart"
+                    SemanticProperties.Description="Matchup matrix chart showing win rate against each opponent archetype"
+                    Series="{Binding MatchupHeatSeries}"
+                    XAxes="{Binding MatchupXAxes}"
+                    YAxes="{Binding MatchupYAxes}"
+                    HeightRequest="220"
+                    Margin="0,0,0,8" />
+
+                <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
+                <Label AutomationId="WinRateOverTimeHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Win Rate Over Time" />
+                <lvc:CartesianChart
+                    AutomationId="WinRateOverTimeChart"
+                    SemanticProperties.Description="Line chart of win rate over time"
+                    Series="{Binding WinRateOverTimeSeries}"
+                    XAxes="{Binding WinRateTimeXAxes}"
+                    HeightRequest="220"
+                    Margin="0,0,0,8" />
+
+                <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
+                <Label AutomationId="MostPlayedHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Most Played Archetypes" />
+                <lvc:CartesianChart
+                    AutomationId="MostPlayedChart"
+                    SemanticProperties.Description="Bar chart of most played archetypes"
+                    Series="{Binding MostPlayedSeries}"
+                    YAxes="{Binding MostPlayedYAxes}"
+                    HeightRequest="200"
+                    Margin="0,0,0,8" />
+
+                <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
+                <Label AutomationId="ArchetypeWinRateHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Win Rate by Archetype" />
+                <lvc:CartesianChart
+                    AutomationId="ArchetypeWinRateChart"
+                    SemanticProperties.Description="Bar chart of win rate by archetype played"
+                    Series="{Binding ArchetypeWinRateSeries}"
+                    YAxes="{Binding ArchetypeWinRateYAxes}"
+                    HeightRequest="200"
+                    Margin="0,0,0,8" />
+
+                <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
+                <Label AutomationId="OpponentPerformanceHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Performance vs Opponents" />
+                <lvc:CartesianChart
+                    AutomationId="OpponentPerformanceChart"
+                    SemanticProperties.Description="Bar chart of performance against opponent archetypes"
+                    Series="{Binding OpponentSeries}"
+                    YAxes="{Binding OpponentYAxes}"
+                    HeightRequest="200"
+                    Margin="0,0,0,8" />
+
+                <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
+                <Label AutomationId="TagUsageHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Tag Usage" />
+                <lvc:CartesianChart
+                    AutomationId="TagUsageChart"
+                    SemanticProperties.Description="Bar chart of how often each tag is used"
+                    Series="{Binding TagUsageSeries}"
+                    YAxes="{Binding TagUsageYAxes}"
+                    HeightRequest="200"
+                    Margin="0,0,0,8" />
+
+                <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
+                <Label AutomationId="MatchLengthHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Win Rate by Match Length" />
+                <lvc:CartesianChart
+                    AutomationId="MatchLengthChart"
+                    SemanticProperties.Description="Bar chart of win rate by match length"
+                    Series="{Binding MatchLengthSeries}"
+                    YAxes="{Binding MatchLengthYAxes}"
+                    HeightRequest="200"
+                    Margin="0,0,0,8" />
+
+                <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
+                <Label AutomationId="FirstTurnHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="First Turn Advantage" />
+                <lvc:CartesianChart
+                    AutomationId="FirstTurnChart"
+                    SemanticProperties.Description="Bar chart of win rate when going first versus second"
+                    Series="{Binding FirstTurnSeries}"
+                    YAxes="{Binding FirstTurnYAxes}"
+                    HeightRequest="200"
+                    Margin="0,0,0,8" />
+
+            </StackLayout>
+        </ScrollView>
+
+        <!--  Loading indicator, drawn OVER the page rather than in it.
+
+              It is a sibling of the ScrollView in the same Grid cell, so it occupies no
+              layout space and nothing below it moves when it appears. As an inline child it
+              pushed ~144px of content down every time it showed, which gave every element
+              below two possible positions depending on timing.
+
+              InputTransparent passes clicks through to the content underneath. Layout
+              cascades this to children by default, so the spinner and its label are
+              transparent too. It matters because the indicator deliberately lingers 500ms
+              after the busy gate clears, so a user (or a UI test) is interacting with the
+              page again while it is still on screen.
+
+              IsVisible follows the control's own IsShowing rather than the raw busy flag, so
+              that minimum-visible-duration is what decides when the host disappears —
+              otherwise fast work would flash.  -->
+        <VerticalStackLayout
+            AutomationId="LoadingIndicatorHost"
+            SemanticProperties.Description="Calculating stats"
+            HorizontalOptions="Center"
+            InputTransparent="True"
+            IsVisible="{Binding Source={x:Reference PageLoadingIndicator}, Path=IsShowing, x:DataType=loading:LoadingIndicator}"
+            Spacing="4"
+            VerticalOptions="Center">
+            <loading:LoadingIndicator
+                x:Name="PageLoadingIndicator"
+                AutomationId="PageLoadingIndicator"
+                ArcColor="{StaticResource BostonRed}"
+                HeightRequest="96"
+                IsBusy="{Binding IsBusyChartData}"
+                WidthRequest="96" />
             <Label
-                AutomationId="Busy_ChartData"
-                HeightRequest="1"
-                IsVisible="{Binding IsBusyChartData}"
-                WidthRequest="1" />
-
-            <!--  Visible loading indicator. IsVisible follows the control's own IsShowing rather
-                  than the gate, so the minimum-visible-duration inside LoadingIndicator decides
-                  when it clears and fast loads do not flash.  -->
-            <VerticalStackLayout
-                AutomationId="LoadingIndicatorHost"
-                SemanticProperties.Description="Calculating stats"
+                AutomationId="LoadingIndicatorLabel"
+                FontFamily="SairaRegular"
+                FontSize="12"
                 HorizontalOptions="Center"
-                IsVisible="{Binding Source={x:Reference PageLoadingIndicator}, Path=IsShowing, x:DataType=loading:LoadingIndicator}"
-                Spacing="4">
-                <loading:LoadingIndicator
-                    x:Name="PageLoadingIndicator"
-                    AutomationId="PageLoadingIndicator"
-                    ArcColor="{StaticResource BostonRed}"
-                    HeightRequest="96"
-                    IsBusy="{Binding IsBusyChartData}"
-                    WidthRequest="96" />
-                <Label
-                    AutomationId="LoadingIndicatorLabel"
-                    FontFamily="SairaRegular"
-                    FontSize="12"
-                    HorizontalOptions="Center"
-                    Text="Crunching stats…"
-                    TextColor="{StaticResource PokeYellow}" />
-            </VerticalStackLayout>
-
-            <Grid ColumnDefinitions="*,*,*,*" Margin="0,8,0,4">
-                <StackLayout Grid.Column="0" HorizontalOptions="Center">
-                    <Label AutomationId="WinRateStatName" SemanticProperties.Description="Win Rate stat label" Style="{StaticResource StatName}" Text="Win Rate" />
-                    <Label AutomationId="WinRateLabel" SemanticProperties.Description="Win rate percentage" Style="{StaticResource StatValue}" Text="{Binding WinAverage, StringFormat='{0:F1}%'}" />
-                </StackLayout>
-                <StackLayout Grid.Column="1" HorizontalOptions="Center">
-                    <Label AutomationId="WinsStatName" SemanticProperties.Description="Wins stat label" Style="{StaticResource StatName}" Text="Wins" />
-                    <Label AutomationId="WinsLabel" SemanticProperties.Description="Total wins" Style="{StaticResource StatValue}" Text="{Binding Wins}" />
-                </StackLayout>
-                <StackLayout Grid.Column="2" HorizontalOptions="Center">
-                    <Label AutomationId="LossesStatName" SemanticProperties.Description="Losses stat label" Style="{StaticResource StatName}" Text="Losses" />
-                    <Label AutomationId="LossesLabel" SemanticProperties.Description="Total losses" Style="{StaticResource StatValue}" Text="{Binding Losses}" />
-                </StackLayout>
-                <StackLayout Grid.Column="3" HorizontalOptions="Center">
-                    <Label AutomationId="TiesStatName" SemanticProperties.Description="Ties stat label" Style="{StaticResource StatName}" Text="Ties" />
-                    <Label AutomationId="TiesLabel" SemanticProperties.Description="Total ties" Style="{StaticResource StatValue}" Text="{Binding Ties}" />
-                </StackLayout>
-            </Grid>
-
-            <Label AutomationId="AverageMatchDurationLabel" Text="{Binding AverageMatchDuration, StringFormat='Avg Match: {0:mm\\:ss}'}" HorizontalOptions="Center" FontSize="13" />
-            <Label AutomationId="StreakInfoLabel" Text="{Binding StreakInfo}" HorizontalOptions="Center" FontSize="13" />
-
-            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,8,0,8" />
-            <Label AutomationId="MatchupMatrixHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Matchup Matrix" />
-            <lvc:CartesianChart
-                AutomationId="MatchupMatrixChart"
-                SemanticProperties.Description="Matchup matrix chart showing win rate against each opponent archetype"
-                Series="{Binding MatchupHeatSeries}"
-                XAxes="{Binding MatchupXAxes}"
-                YAxes="{Binding MatchupYAxes}"
-                HeightRequest="220"
-                Margin="0,0,0,8" />
-
-            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
-            <Label AutomationId="WinRateOverTimeHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Win Rate Over Time" />
-            <lvc:CartesianChart
-                AutomationId="WinRateOverTimeChart"
-                SemanticProperties.Description="Line chart of win rate over time"
-                Series="{Binding WinRateOverTimeSeries}"
-                XAxes="{Binding WinRateTimeXAxes}"
-                HeightRequest="220"
-                Margin="0,0,0,8" />
-
-            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
-            <Label AutomationId="MostPlayedHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Most Played Archetypes" />
-            <lvc:CartesianChart
-                AutomationId="MostPlayedChart"
-                SemanticProperties.Description="Bar chart of most played archetypes"
-                Series="{Binding MostPlayedSeries}"
-                YAxes="{Binding MostPlayedYAxes}"
-                HeightRequest="200"
-                Margin="0,0,0,8" />
-
-            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
-            <Label AutomationId="ArchetypeWinRateHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Win Rate by Archetype" />
-            <lvc:CartesianChart
-                AutomationId="ArchetypeWinRateChart"
-                SemanticProperties.Description="Bar chart of win rate by archetype played"
-                Series="{Binding ArchetypeWinRateSeries}"
-                YAxes="{Binding ArchetypeWinRateYAxes}"
-                HeightRequest="200"
-                Margin="0,0,0,8" />
-
-            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
-            <Label AutomationId="OpponentPerformanceHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Performance vs Opponents" />
-            <lvc:CartesianChart
-                AutomationId="OpponentPerformanceChart"
-                SemanticProperties.Description="Bar chart of performance against opponent archetypes"
-                Series="{Binding OpponentSeries}"
-                YAxes="{Binding OpponentYAxes}"
-                HeightRequest="200"
-                Margin="0,0,0,8" />
-
-            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
-            <Label AutomationId="TagUsageHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Tag Usage" />
-            <lvc:CartesianChart
-                AutomationId="TagUsageChart"
-                SemanticProperties.Description="Bar chart of how often each tag is used"
-                Series="{Binding TagUsageSeries}"
-                YAxes="{Binding TagUsageYAxes}"
-                HeightRequest="200"
-                Margin="0,0,0,8" />
-
-            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
-            <Label AutomationId="MatchLengthHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="Win Rate by Match Length" />
-            <lvc:CartesianChart
-                AutomationId="MatchLengthChart"
-                SemanticProperties.Description="Bar chart of win rate by match length"
-                Series="{Binding MatchLengthSeries}"
-                YAxes="{Binding MatchLengthYAxes}"
-                HeightRequest="200"
-                Margin="0,0,0,8" />
-
-            <BoxView HeightRequest="1" Color="{StaticResource PokeYellow}" Opacity="0.3" Margin="0,4,0,8" />
-            <Label AutomationId="FirstTurnHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource ChartSectionHeader}" Text="First Turn Advantage" />
-            <lvc:CartesianChart
-                AutomationId="FirstTurnChart"
-                SemanticProperties.Description="Bar chart of win rate when going first versus second"
-                Series="{Binding FirstTurnSeries}"
-                YAxes="{Binding FirstTurnYAxes}"
-                HeightRequest="200"
-                Margin="0,0,0,8" />
-
-        </StackLayout>
-    </ScrollView>
+                Text="Crunching stats…"
+                TextColor="{StaticResource PokeYellow}" />
+        </VerticalStackLayout>
+    </Grid>
 </ContentPage>
