@@ -233,11 +233,36 @@ tags, per-entry error collection. A Live parser is another front end onto
 `MatchOperations.SaveAsync`, most likely alongside `TrainerHillImportService` under
 `Services/Import/`.
 
-### The log format — established 2026-08-05 from real samples
+### The log format — sampled 2026-08-05, but VERIFY AGAINST A CURRENT CLIENT FIRST
 
-Checked against actual battle logs in
-[kagd/pokemon-tcg-battle-replay](https://github.com/kagd/pokemon-tcg-battle-replay), so these
-are facts rather than guesses.
+**Do not treat what follows as a specification.** Live's log format has been changed before,
+sometimes silently (user, 2026-08-05), and the samples below come from a repository last
+pushed **2025-04-15** — well over a year old. They are a starting point for shape, not a
+contract.
+
+**First task of this feature is to play a couple of matches on the current client and capture
+fresh logs**, then diff them against this. Anything below that no longer matches is wrong, and
+building the parser against stale samples wastes the work twice: once writing it, once
+debugging why real logs do not parse.
+
+Two things already known to differ from the old samples, from
+[replay.ptcgtools.com](https://replay.ptcgtools.com/en), a live tool tracking the current
+format:
+
+- **The modern client has a "HIDE CARD IDS FROM EXPORT" setting**, which that tool requires you
+  to disable. So current logs can carry **card IDs**, which the 2025 samples do not show at
+  all. That matters a lot: matching card IDs is far more reliable than matching printed card
+  names for inferring an archetype, and it may turn the "confirm the deck" step below into
+  something closer to a lookup.
+- **English logs only.** That tool supports no other language, which implies the sentence
+  patterns are localised. Whatever we build inherits the same constraint — worth stating in the
+  UI rather than failing mysteriously on a non-English log.
+
+Logs are copyable straight from the client on **both PC and mobile**, so no file export path is
+needed — paste is enough, which suits a MAUI app on either target.
+
+With those caveats, the shape observed in the (old) samples from
+[kagd/pokemon-tcg-battle-replay](https://github.com/kagd/pokemon-tcg-battle-replay):
 
 **It is plain prose text with rigidly consistent sentences**, not JSON:
 
