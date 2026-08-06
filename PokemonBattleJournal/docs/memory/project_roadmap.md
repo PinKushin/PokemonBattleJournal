@@ -390,10 +390,30 @@ Fluent-style ring spinner, NOT a full solid ring and NOT a simple spinning Poké
   `Microsoft.Maui.Animations` ticker or simple `Dispatcher.StartTimer` angle increment. Lottie
   is an alternative if a matching animation is easier to source/build externally.
 
-### Scrim + region-scoped indicators — NEXT CHANGE (design from the user, 2026-08-05)
+### Overlay + region-scoped indicators — NEXT CHANGE, and it is REQUIRED not polish
 
-The indicator is wired **inline** per page first. The scrim is deliberately a separate change,
-and it should not be a blanket page-covering overlay.
+**Inline placement was tried on all four pages 2026-08-05 and it looks bad. Do not leave it
+that way.**
+
+The indicator currently sits in the layout flow (a `VerticalStackLayout` child next to the
+busy sentinel). That means it *displaces page content* when it appears and lets it snap back
+when it clears. The user's verdict on seeing it: *"the visuals actually suck because the
+spinners are not showing up above the page content they are showing up in the layout and
+disappearing after like half a second."*
+
+`MinimumVisibleDuration` makes inline worse rather than better — content jumps down, sits
+displaced for the full 500ms, then jumps back. More distracting than showing nothing.
+
+Moving to an overlay inverts both problems: same Grid cell as the content means **zero layout
+impact**, and the minimum duration stops being a liability and becomes what it was meant to be
+— long enough to register. So the overlay is what makes the minimum-duration design pay off.
+
+**Priority: required before release, not blocking the next feature** (user, 2026-08-05 —
+*"its not optional, but its not priority either"*). The mechanism works and is tested; what is
+wrong is where it is drawn. Slot it in after the higher-value feature work rather than ahead of
+it, but do not ship a release with the inline version.
+
+The scrim should not be a blanket page-covering overlay either — see the region scoping below.
 
 The model the user wants:
 
