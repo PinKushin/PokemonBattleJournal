@@ -325,9 +325,26 @@ as Live changes:
 
 - [replay.ptcgtools.com](https://replay.ptcgtools.com/en) — the informative one. Where the
   card-ID export setting and English-only constraint above came from.
-- [deaddraw.app](https://deaddraw.app/) — also turns a pasted Live log into a replay. Its page
-  is client-rendered, so an automated fetch returns only the title; **nothing about it has been
-  verified**. Worth opening by hand when capturing fresh logs, to compare what it accepts.
+- [deaddraw.app](https://deaddraw.app/) — the most useful source found. Read with a
+  JS-executing browser; a plain `WebFetch` returns only the title because the page is
+  client-rendered, which is a tooling limit, not a property of the site.
+
+Two things from Dead Draw that change how this feature should be planned:
+
+**The card-ID setting, exactly:** *"In TCG Live, go to **Settings > Battle Log** and disable
+'Hide card IDs from export'. **Per-device setting.**"* Per-device is the trap — it must be set
+on every device the user plays on, and forgetting it silently produces a degraded log rather
+than an error. Whatever we build should detect a log with no card IDs and say so plainly,
+pointing at that exact path, rather than failing to identify decks and looking broken.
+
+**Live's own logs are unreliable:** *"Battle logs from TCG Live contain inaccuracies — we
+compensate where we can and are always improving."* That is a tool specialising in current logs
+saying the source data is imperfect. Plan for it: a Live import should be treated as a draft the
+user confirms, not as authoritative data written straight to the database. It also sets the
+expectation for this feature — "trivial upload" should mean less typing, not zero review.
+
+Their stated flow also confirms the mechanics: play a game, open the battle log, copy the full
+text, paste. No file export involved.
 
 ## Deck Maker
 
