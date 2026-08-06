@@ -17,7 +17,18 @@ merged to master.
 | Unit | 478/478 |
 | Integration | 180/180 |
 | Windows UI | 77/77 |
-| Android UI | **24/25** — one failure, see below |
+| Android UI | **75/76** — one failure, see below |
+
+**Both UI CI workflows run a five-job matrix, one fixture per job**
+(`--filter "FullyQualifiedName~${{ matrix.fixture }}"`), so a job's pass count is one
+fixture, not the suite. The failure below is 24/25 *within the OptionsPageTests job*.
+Do not read a single job's numbers as a platform total.
+
+The two platforms run nearly the same tests — 75 shared in `UITests.Shared/Views/`, plus
+platform-only partials: Windows has `MainPage_BOSwitch_DisplayedAndToggled` and
+`OptionsPage_TrainerNameInput_AcceptsText` (the latter reads the UIA-only
+`Value.Value` attribute, which is why it has no Android twin), Android has its own
+`MainPage_BOSwitch_DisplayedAndToggled`. That one test is the entire count difference.
 
 ## The one blocker, and the fix the user already identified
 
