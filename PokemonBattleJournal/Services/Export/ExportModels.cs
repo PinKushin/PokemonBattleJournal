@@ -29,6 +29,29 @@ namespace PokemonBattleJournal.Services.Export
         [JsonPropertyName("playing")] public string Playing { get; init; } = string.Empty;
         [JsonPropertyName("against")] public string Against { get; init; } = string.Empty;
         [JsonPropertyName("time")] public string Time { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Match start, backups only. Null for TrainerHill exports, and omitted when null.
+        /// </summary>
+        /// <remarks>
+        /// <c>MatchEntry</c> keeps <c>StartTime</c>, <c>EndTime</c> and <c>DatePlayed</c>
+        /// separately, and <c>time</c> above carries only <c>DatePlayed</c>. Without these a
+        /// restored match has a zero duration, which silently corrupts
+        /// <c>CalculateAverageMatchDuration</c> and <c>CalculateWinRateByMatchLength</c>.
+        ///
+        /// They are nullable rather than always-written because the two formats share this
+        /// type and TrainerHill's has no such keys — its whole value is being
+        /// indistinguishable from a file of theirs. <c>JsonIgnoreCondition.WhenWritingNull</c>
+        /// is what keeps them out of that file.
+        ///
+        /// Restores must treat them as optional: backups written before this existed have
+        /// neither, and should fall back to <c>time</c>.
+        /// </remarks>
+        [JsonPropertyName("startTime")] public string? StartTime { get; init; }
+
+        /// <inheritdoc cref="StartTime"/>
+        [JsonPropertyName("endTime")] public string? EndTime { get; init; }
+
         [JsonPropertyName("result")] public string Result { get; init; } = string.Empty;
         [JsonPropertyName("game1")] public ExportGame? Game1 { get; init; }
         [JsonPropertyName("game2")] public ExportGame? Game2 { get; init; }

@@ -35,7 +35,7 @@ namespace PokemonBattleJournal.Services.Export
             if (trainerId == 0)
                 throw new ArgumentException("TrainerId required", nameof(trainerId));
 
-            List<ExportEntry> entries = await BuildEntriesAsync(trainerId, TrainerHillImportService.NameToSlug);
+            List<ExportEntry> entries = await BuildEntriesAsync(trainerId, TrainerHillImportService.NameToSlug, includeTimings: false);
             _logger.LogInformation("Exported {Count} matches for trainer {TrainerId} in TrainerHill format",
                 entries.Count, trainerId);
             return JsonSerializer.Serialize(entries, ExportJsonOptions);
@@ -57,7 +57,7 @@ namespace PokemonBattleJournal.Services.Export
                 trainers.Add(new ExportTrainer
                 {
                     Name = trainer.Name ?? string.Empty,
-                    Matches = await BuildEntriesAsync(trainer.Id, static name => name),
+                    Matches = await BuildEntriesAsync(trainer.Id, static name => name, includeTimings: true),
                 });
             }
 
@@ -74,21 +74,26 @@ namespace PokemonBattleJournal.Services.Export
         }
 
         /// <param name="nameStyle">
-        /// How an archetype name is written: slugged for TrainerHill, verbatim for backups. The
-        /// only difference between the two formats at entry level, so it is a parameter rather
-        /// than a duplicated builder.
+        /// How an archetype name is written: slugged for TrainerHill, verbatim for backups.
         /// </param>
-        private async Task<List<ExportEntry>> BuildEntriesAsync(uint trainerId, Func<string, string> nameStyle)
+        /// <param name="includeTimings">
+        /// Whether to write <c>startTime</c>/<c>endTime</c>. True for backups, which must be
+        /// lossless; false for TrainerHill, whose format has no such keys and whose value is
+        /// being indistinguishable from a file of theirs.
+        /// </param>
+        private async Task<List<ExportEntry>> BuildEntriesAsync(uint trainerId, Func<string, string> nameStyle, bool includeTimings)
         {
             List<MatchEntry> matches = await _factory.Matches.GetByTrainerIdAsync(trainerId, includeRelated: true);
-            return [.. matches.Select(m => ToEntry(m, nameStyle))];
+            return [.. matches.Select(m => ToEntry(m, nameStyle, includeTimings))];
         }
 
-        private static ExportEntry ToEntry(MatchEntry match, Func<string, string> nameStyle) => new()
+        private static ExportEntry ToEntry(MatchEntry match, Func<string, string> nameStyle, bool includeTimings) => new()
         {
             Playing = nameStyle(match.Playing?.Name ?? string.Empty),
             Against = nameStyle(match.Against?.Name ?? string.Empty),
             Time = match.DatePlayed.ToString(TimeFormat, CultureInfo.InvariantCulture),
+            StartTime = includeTimings ? match.StartTime.ToString(TimeFormat, CultureInfo.InvariantCulture) : null,
+            EndTime = includeTimings ? match.EndTime.ToString(TimeFormat, CultureInfo.InvariantCulture) : null,
             Result = match.Result?.ToString() ?? string.Empty,
             Game1 = ToGame(match.Game1),
             Game2 = ToGame(match.Game2),

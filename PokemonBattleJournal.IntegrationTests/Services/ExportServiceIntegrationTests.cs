@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using PokemonBattleJournal.IntegrationTests.Infrastructure;
@@ -94,6 +95,62 @@ public class ExportServiceIntegrationTests
         JsonElement entry = doc.RootElement[0];
         entry.GetProperty("game2").GetProperty("result").GetString().ShouldBe("Loss");
         entry.GetProperty("game3").GetProperty("result").GetString().ShouldBe("Win");
+    }
+
+    /// <summary>
+    /// A backup must carry the match timings, because nothing else can reconstruct them.
+    /// </summary>
+    /// <remarks>
+    /// <c>MatchEntry</c> stores <c>StartTime</c>, <c>EndTime</c> and <c>DatePlayed</c>
+    /// separately, and two statistics are computed from the first two —
+    /// <c>CalculateAverageMatchDuration</c> and <c>CalculateWinRateByMatchLength</c>. The
+    /// backup wrote only <c>DatePlayed</c>, so restoring one would silently produce
+    /// zero-length matches and corrupt both, with no error anywhere to explain it.
+    ///
+    /// This is a backup, not an interchange format: losing data it could have kept is the one
+    /// thing it must not do.
+    /// </remarks>
+    [Test]
+    public async Task ExportBackupAsync_RealMatch_PreservesStartAndEndTime()
+    {
+        await SaveMatchAsync(MatchResult.Win, new Game { Result = MatchResult.Win, Turn = 1 });
+
+        using JsonDocument doc = JsonDocument.Parse(await _sut.ExportBackupAsync());
+
+        JsonElement match = doc.RootElement.GetProperty("trainers")
+            .EnumerateArray().Single(t => t.GetProperty("name").GetString() == "Ash")
+            .GetProperty("matches")[0];
+
+        match.TryGetProperty("startTime", out JsonElement start)
+            .ShouldBeTrue("a backup that drops startTime cannot restore match duration");
+        match.TryGetProperty("endTime", out JsonElement end)
+            .ShouldBeTrue("a backup that drops endTime cannot restore match duration");
+
+        DateTime.Parse(start.GetString()!, CultureInfo.InvariantCulture)
+            .ShouldBe(new DateTime(2026, 7, 27, 19, 45, 24, DateTimeKind.Utc));
+        DateTime.Parse(end.GetString()!, CultureInfo.InvariantCulture)
+            .ShouldBe(new DateTime(2026, 7, 27, 20, 5, 0, DateTimeKind.Utc));
+    }
+
+    /// <summary>
+    /// The TrainerHill export must stay exactly what TrainerHill emits.
+    /// </summary>
+    /// <remarks>
+    /// The two formats share <c>ExportEntry</c>, so the timing fields added for backups would
+    /// otherwise leak into the interchange format. That file is meant to be handed to
+    /// TrainerHill, and its value is being indistinguishable from one of theirs.
+    /// </remarks>
+    [Test]
+    public async Task ExportTrainerHillAsync_RealMatch_OmitsBackupOnlyTimings()
+    {
+        await SaveMatchAsync(MatchResult.Win, new Game { Result = MatchResult.Win, Turn = 1 });
+
+        using JsonDocument doc = JsonDocument.Parse(await _sut.ExportTrainerHillAsync(_trainerId));
+
+        JsonElement entry = doc.RootElement[0];
+        entry.TryGetProperty("startTime", out _).ShouldBeFalse("TrainerHill's format has no startTime");
+        entry.TryGetProperty("endTime", out _).ShouldBeFalse("TrainerHill's format has no endTime");
+        entry.TryGetProperty("time", out _).ShouldBeTrue("TrainerHill's format keys the match on time");
     }
 
     [Test]
