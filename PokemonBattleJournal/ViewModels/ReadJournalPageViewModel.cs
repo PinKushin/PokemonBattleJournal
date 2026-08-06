@@ -107,6 +107,27 @@ namespace PokemonBattleJournal.ViewModels
         [ObservableProperty]
         public partial List<Tags>? TagsSelectedGame3 { get; set; }
 
+        /// <summary>
+        /// True when the selected match has a game 2 / game 3 at all — i.e. it is a BO3.
+        /// Drives the visibility of those games' note editors.
+        /// </summary>
+        /// <remarks>
+        /// Explicit bool properties rather than the
+        /// <c>{Binding SelectedMatch.Game2, Converter={StaticResource IsNotNullConverter}}</c>
+        /// the tag rows use. That converter crashed OptionsPage
+        /// (feedback_no_isnot_null_converter_in_xaml); the usages here predate the rule and
+        /// nothing new should extend it.
+        ///
+        /// Separate from <see cref="HasGame2Tags"/>, which answers a different question: a game
+        /// can exist with no tags, and its notes must still show.
+        /// </remarks>
+        [ObservableProperty]
+        public partial bool HasGame2 { get; set; }
+
+        /// <inheritdoc cref="HasGame2"/>
+        [ObservableProperty]
+        public partial bool HasGame3 { get; set; }
+
         [ObservableProperty]
         public partial bool HasGame1Tags { get; set; }
 
@@ -229,6 +250,8 @@ namespace PokemonBattleJournal.ViewModels
             HasGame1Tags = false;
             HasGame2Tags = false;
             HasGame3Tags = false;
+            HasGame2 = false;
+            HasGame3 = false;
             Game1TagsInfo = "No tags";
             Game2TagsInfo = "No tags";
             Game3TagsInfo = "No tags";
@@ -260,6 +283,7 @@ namespace PokemonBattleJournal.ViewModels
             {
                 ResultGame2 = SelectedMatch.Game2.Result;
                 SelectedNote2 = SelectedMatch.Game2.Notes;
+                HasGame2 = true;
                 if (SelectedMatch.Game2.Tags?.Count > 0)
                 {
                     TagsSelectedGame2 = [.. SelectedMatch.Game2.Tags];
@@ -283,6 +307,7 @@ namespace PokemonBattleJournal.ViewModels
             {
                 ResultGame3 = SelectedMatch.Game3.Result;
                 SelectedNote3 = SelectedMatch.Game3.Notes;
+                HasGame3 = true;
                 if (SelectedMatch.Game3.Tags?.Count > 0)
                 {
                     TagsSelectedGame3 = [.. SelectedMatch.Game3.Tags];
@@ -323,6 +348,8 @@ namespace PokemonBattleJournal.ViewModels
             HasGame1Tags = false;
             HasGame2Tags = false;
             HasGame3Tags = false;
+            HasGame2 = false;
+            HasGame3 = false;
             Game1TagsInfo = "No tags";
             Game2TagsInfo = "No tags";
             Game3TagsInfo = "No tags";
