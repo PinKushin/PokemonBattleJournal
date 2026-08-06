@@ -26,14 +26,36 @@ incident it took out three of five Windows UI matrix jobs and the whole Android 
 the jobs that did start passed. A run whose only failures are `Set up job` proves nothing
 about the commit.
 
-## History — how it was configured when it was self-hosted
+## Why they existed, and why the approach failed
+
+They were never meant to be the permanent CI substrate. They were a way to **reproduce CI
+failures semi-locally** — run the workflows on hardware that could be inspected and iterated
+on, instead of pushing a commit per hypothesis.
+
+**It did not work, for a structural reason that will recur if anyone tries it again.** One
+physical machine hosted both runners — the Windows runner natively, the Linux runner in WSL —
+so the Windows UI matrix and the Android UI matrix ran **in parallel on the same desktop**.
+Windows Appium tests require the app window to be in the foreground; the Android side does
+not care about focus at all, but the emulator and its tooling take the foreground anyway.
+The interference is therefore one-directional: Android runs break Windows runs, not the
+reverse. Clicks on Windows never disturbed the emulator.
+
+The result was Windows failures that looked like product bugs and were scheduling artifacts,
+which is worse than the CI failures the setup was built to diagnose. GitHub-hosted runners
+give each matrix job its own VM, so the two suites cannot see each other.
+
+**Consequence for local work:** never run the Windows UI suite and the Android UI suite
+concurrently on this machine. Same reason a mouse movement during a Windows run can divert a
+click — see [[project_windows_mainpage_click_flake]], where foreground and pointer state are
+a demonstrated mechanism for Windows clicks missing, though not the CI cause there.
+
+## History — how it was configured
 
 Kept because the same problems return if this is ever revisited. Not current.
 
 - **PinPC** — Windows 11 dev machine; runner at `C:\Users\pinku\actions-runner`, started via
   `.\run.cmd` or as a service. **UbuntuBox** — WSL Ubuntu, registered separately.
-- Original rationale: GitHub-hosted runners were too slow for Appium UI tests and local
-  runners already had the dev environment. Both halves of that have since changed —
+- On speed: hosted runners are no longer the slower option for Android anyway —
   see [[project_android_test_execution_strategy]].
 - Registered with auto-assigned labels only, so workflows had to say
   `[self-hosted, Windows, X64]` / `[self-hosted, Linux, X64]`. Custom labels (`PinPC`) needed
