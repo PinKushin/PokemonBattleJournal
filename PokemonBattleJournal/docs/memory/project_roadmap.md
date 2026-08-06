@@ -143,6 +143,31 @@ precision. **The backup envelope has no such constraint and should carry `startT
 Do this before the restore, not after: a restore built against the current format would bake
 in the data loss and every backup taken meanwhile would already be missing durations.
 
+**Overlapping matches: warn, do not block** (discussed 2026-08-05, no code yet)
+
+The question raised was whether two matches should be allowed to overlap in time, since a
+player cannot legally play two tournament games at once. Two reasons not to make it a hard
+rule, one of them checked:
+
+- **Overlap is legitimately possible.** Locals, or PTCG Live on a phone and a PC at once, or
+  in-person plus phone. A hard rule means someone with a real overlap cannot log a match at
+  all, and the only workaround is falsifying the time. Refusing real data is the worse failure.
+- **Overlap does not currently harm the stats page** — verified against
+  `MatchAnalysisService`. Nothing plots individual matches on a time axis; every chart groups
+  by `DatePlayed.Date` or uses per-match duration (`EndTime - StartTime`). Two matches at the
+  same instant simply both count toward that day. This would only become a problem if a future
+  chart laid matches out on a timeline.
+
+**It also does not threaten duplicate detection**, which was the underlying worry. Two
+genuinely simultaneous matches are against *different* opponents, so
+`(TrainerId, StartTime, PlayingId, AgainstId, Result)` already tells them apart from a real
+duplicate. The key handles the legitimate case without needing a constraint.
+
+So: a soft, inline warning when a new match overlaps an existing one — a natural first consumer
+of the **Inline validation feedback** item below, and specifically not a modal
+([[feedback_no_silent_guards]] for the logging rule, and the standing objection to dialogs in
+automation).
+
 **What to do with a candidate (user's preference, best first)**
 
 1. **Identical in every compared field** — skip silently. Nothing to decide.
