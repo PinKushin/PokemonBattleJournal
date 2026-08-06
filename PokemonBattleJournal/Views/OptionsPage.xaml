@@ -60,9 +60,9 @@
                     x:Name="PageLoadingIndicator"
                     AutomationId="PageLoadingIndicator"
                     ArcColor="{StaticResource BostonRed}"
-                    HeightRequest="48"
+                    HeightRequest="96"
                     IsBusy="{Binding IsBusyMutating}"
-                    WidthRequest="48" />
+                    WidthRequest="96" />
                 <Label
                     AutomationId="LoadingIndicatorLabel"
                     FontFamily="SairaRegular"
