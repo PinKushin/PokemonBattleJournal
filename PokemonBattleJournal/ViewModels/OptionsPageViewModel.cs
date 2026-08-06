@@ -377,6 +377,9 @@ namespace PokemonBattleJournal.ViewModels
                     _logger.LogWarning("Restore conflicts left unapplied: {Conflicts}", string.Join("; ",
                         result.Conflicts.Select(c => $"{c.TrainerName} @ {c.StartTime:o}: {c.Description}")));
                 }
+
+                if (result.TrainersCreated + result.MatchesInserted + result.MatchesMerged > 0)
+                    await ReloadAfterRestoreAsync();
             }
             catch (Exception ex)
             {
@@ -388,6 +391,27 @@ namespace PokemonBattleJournal.ViewModels
             {
                 IsBusyMutating = false;
             }
+        }
+
+        /// <summary>
+        /// Re-reads the collections this page is displaying after a restore has written to them.
+        /// </summary>
+        /// <remarks>
+        /// A restore inserts trainers, archetypes and tags underneath a page that already loaded
+        /// them in AppearingAsync. Without this the fresh-install case — no trainer, restore a
+        /// backup — leaves the trainer picker empty on the very page the user is standing on,
+        /// which is indistinguishable from a restore that silently did nothing.
+        ///
+        /// The shell reload is what puts a restored trainer in the title bar and switcher. It is
+        /// last because it is the only part that touches another ViewModel.
+        /// </remarks>
+        private async Task ReloadAfterRestoreAsync()
+        {
+            AllTrainers = await _connection.Trainers.GetAllAsync();
+            AllArchetypes = await _connection.Archetypes.GetAllAsync();
+            AllTags = await _connection.Tags.GetAllAsync();
+            SelectedSwitchTrainer = AllTrainers.FirstOrDefault(t => t.Id == (_trainer?.Id ?? 0));
+            await _shellVm.LoadAsync();
         }
 
         /// <summary>

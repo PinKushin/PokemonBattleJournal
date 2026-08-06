@@ -130,6 +130,13 @@ public class OptionsPageRestoreIntegrationTests
         Trainer? restored = await _target.Trainers.GetByNameAsync("Ash");
         restored.ShouldNotBeNull();
         (await _target.Matches.GetByTrainerIdAsync(restored.Id)).Count.ShouldBe(1);
+
+        // The page is displaying these while the restore writes underneath it. If they are not
+        // re-read, a fresh install shows an empty trainer picker immediately after a successful
+        // restore — which looks exactly like a restore that did nothing.
+        vm.AllTrainers.ShouldContain(t => t.Name == "Ash",
+            "the trainer picker on this page must show what was just restored");
+        vm.AllArchetypes.ShouldContain(a => a.Name == "Dragapult ex / Dusknoir");
     }
 
     /// <summary>

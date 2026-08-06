@@ -23,6 +23,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         private IRestoreService _restoreService = null!;
         private IErrorHandler _errorHandler = null!;
         private RecordingLogger<OptionsPageViewModel> _logger = null!;
+        private ISqliteConnectionFactory _factory = null!;
 
         [SetUp]
         public void SetUp()
@@ -32,10 +33,18 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _errorHandler = Substitute.For<IErrorHandler>();
 
             ISqliteConnectionFactory factory = Substitute.For<ISqliteConnectionFactory>();
+            _factory = factory;
             factory.Trainers.Returns(Substitute.For<ITrainerOperations>());
             factory.Tags.Returns(Substitute.For<ITagOperations>());
             factory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
             factory.Matches.Returns(Substitute.For<IMatchOperations>());
+
+            // Unstubbed NSubstitute calls hand back null where the operations layer returns an
+            // empty list, and the reload path assigns straight into the bound collections. See
+            // feedback_mock_returns_null_not_empty.
+            factory.Trainers.GetAllAsync().Returns([]);
+            factory.Archetypes.GetAllAsync().Returns([]);
+            factory.Tags.GetAllAsync().Returns([]);
 
             ITrainerSwitchService switchService = Substitute.For<ITrainerSwitchService>();
             var mainPageVm = new MainPageViewModel(
@@ -200,6 +209,62 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
             _logger.EntriesMatching(LogLevel.Warning, "unparsable result")
                 .ShouldNotBeEmpty($"the failing entry's reason must reach the log. Logged:{Environment.NewLine}{_logger.Dump()}");
+        }
+
+        /// <summary>
+        /// A restore writes trainers, archetypes and tags straight into the database underneath
+        /// the page that is currently displaying them. Those lists have to be re-read.
+        /// </summary>
+        /// <remarks>
+        /// The case this protects is the one restore exists for: a fresh install, no trainer, the
+        /// user restores a backup — and the trainer picker on the very page they are standing on
+        /// still shows nothing, because <c>AllTrainers</c> was loaded by AppearingAsync before
+        /// the data existed. It looks exactly like a restore that silently did nothing.
+        /// </remarks>
+        [Test]
+        public async Task ApplyRestoreAsync_DataApplied_RereadsTheListsThePageIsShowing()
+        {
+            _restoreService.RestoreBackupAsync(Arg.Any<string>())
+                .Returns(new RestoreResult { TrainersCreated = 1, MatchesInserted = 4 });
+            _factory.Trainers.GetAllAsync().Returns([new Trainer { Name = "Ash" }]);
+            _factory.Archetypes.GetAllAsync().Returns([new Archetype { Name = "Dragapult ex" }]);
+            _factory.Tags.GetAllAsync().Returns([new Tags { Name = "League" }]);
+
+            await _viewModel.ApplyRestoreAsync("{}");
+
+            _viewModel.AllTrainers.ShouldHaveSingleItem().Name.ShouldBe("Ash");
+            _viewModel.AllArchetypes.ShouldHaveSingleItem().Name.ShouldBe("Dragapult ex");
+            _viewModel.AllTags.ShouldHaveSingleItem().Name.ShouldBe("League");
+        }
+
+        /// <summary>
+        /// A refused file changed nothing, so there is nothing to re-read.
+        /// </summary>
+        [Test]
+        public async Task ApplyRestoreAsync_NothingApplied_DoesNotReloadAnything()
+        {
+            _restoreService.RestoreBackupAsync(Arg.Any<string>())
+                .Returns(new RestoreResult { Errors = ["This backup was written by a newer version of the app."] });
+
+            await _viewModel.ApplyRestoreAsync("{}");
+
+            await _factory.Trainers.DidNotReceive().GetAllAsync();
+            await _factory.Archetypes.DidNotReceive().GetAllAsync();
+            await _factory.Tags.DidNotReceive().GetAllAsync();
+        }
+
+        /// <summary>
+        /// Everything already present is a no-op for the data, so it is a no-op for the lists.
+        /// </summary>
+        [Test]
+        public async Task ApplyRestoreAsync_EverythingAlreadyPresent_DoesNotReloadAnything()
+        {
+            _restoreService.RestoreBackupAsync(Arg.Any<string>())
+                .Returns(new RestoreResult { TrainersMerged = 1, MatchesSkippedIdentical = 40 });
+
+            await _viewModel.ApplyRestoreAsync("{}");
+
+            await _factory.Trainers.DidNotReceive().GetAllAsync();
         }
     }
 }
