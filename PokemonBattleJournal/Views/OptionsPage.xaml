@@ -21,363 +21,390 @@
             Command="{Binding AppearingCommand}"
             EventName="Appearing" />
     </ContentPage.Behaviors>
-    <ScrollView>
-        <VerticalStackLayout
-            Padding="20"
-            HorizontalOptions="Center"
-            MaximumWidthRequest="480"
-            Spacing="12">
+    <Grid>
+        <!--  Loading-gate sentinels, OUTSIDE the scrolling content on purpose.
 
-            <!--  Loading-gate sentinel: visible while trainers + archetypes + tags load.
-                  UI tests WaitUntilGone("Busy_ArchetypeList") before list assertions.  -->
-            <Label
-                AutomationId="Busy_ArchetypeList"
-                HeightRequest="1"
-                IsVisible="{Binding IsBusyArchetypeList}"
-                WidthRequest="1" />
+              These are 1×1 markers that UI tests poll to know when an operation has finished.
+              As children of the content stack they were layout participants, so un-hiding one
+              added its 1px plus the stack's 12px Spacing and pushed the whole page down 13px —
+              measured, not guessed. Every element below then had two possible positions
+              depending on whether an operation happened to be in flight, which on Android can
+              put a row above the scroll position where UiScrollable cannot reach it (it only
+              scrolls down).
 
-            <!--  Loading-gate sentinel: visible while a Save/Delete Archetype or Tag command
-                  is mutating the DB and rebinding the list. UI tests WaitUntilBusyGone
-                  ("Busy_Mutating") after Save/Delete clicks before checking list state —
-                  otherwise the CollectionView rebind races the test's presence check.  -->
-            <Label
-                AutomationId="Busy_Mutating"
-                HeightRequest="1"
-                IsVisible="{Binding IsBusyMutating}"
-                WidthRequest="1" />
+              As direct Grid children they overlap the content in the same cell and pin to the
+              top-left at 1×1 with no text, so they are invisible, cost no space, and still
+              appear in the automation tree by AutomationId.  -->
+        <Label
+            AutomationId="Busy_ArchetypeList"
+            HeightRequest="1"
+            HorizontalOptions="Start"
+            IsVisible="{Binding IsBusyArchetypeList}"
+            VerticalOptions="Start"
+            WidthRequest="1" />
+        <Label
+            AutomationId="Busy_Mutating"
+            HeightRequest="1"
+            HorizontalOptions="Start"
+            IsVisible="{Binding IsBusyMutating}"
+            VerticalOptions="Start"
+            WidthRequest="1" />
 
-            <!--  Loading indicator. IsVisible follows the control's own IsShowing, not the raw
-                  busy flag, so the minimum-visible-duration inside LoadingIndicator is what
-                  decides when the host disappears — otherwise fast work would flash.  -->
+        <ScrollView AutomationId="OptionsScrollView">
             <VerticalStackLayout
-                x:Name="LoadingIndicatorHost"
-                AutomationId="LoadingIndicatorHost"
-                SemanticProperties.Description="Loading"
+                Padding="20"
                 HorizontalOptions="Center"
-                IsVisible="{Binding Source={x:Reference PageLoadingIndicator}, Path=IsShowing, x:DataType=loading:LoadingIndicator}"
-                Spacing="4">
-                <loading:LoadingIndicator
-                    x:Name="PageLoadingIndicator"
-                    AutomationId="PageLoadingIndicator"
-                    ArcColor="{StaticResource BostonRed}"
-                    HeightRequest="96"
-                    IsBusy="{Binding IsAnyBusy}"
-                    WidthRequest="96" />
+                MaximumWidthRequest="480"
+                Spacing="12">
+
+                <!--  DEBUG only: holds the busy gate open so the spinner can be seen and tested.
+                      Bound to IsDebugBuild so it is absent from Release builds.  -->
+                <Button
+                    x:Name="SimulateLoadingButton"
+                    AutomationId="SimulateLoadingButton"
+                    SemanticProperties.Description="Toggle simulated loading"
+                    SemanticProperties.Hint="Debug only. Holds the loading indicator on screen until pressed again"
+                    Command="{Binding ToggleSimulatedLoadingCommand}"
+                    HorizontalOptions="Center"
+                    IsVisible="{Binding IsDebugBuild, x:DataType=viewmodel:OptionsPageViewModel}"
+                    Text="Toggle loading indicator"
+                    WidthRequest="220" />
+
+                <!--  Trainer section  -->
+                <Label AutomationId="TrainerSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Trainer" />
+
+                <Border
+                    Padding="12,8"
+                    Stroke="{StaticResource PokeYellow}"
+                    StrokeThickness="1.5">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Style="{StaticResource FieldLabel}" Text="Trainer Name" />
+                        <Entry
+                            x:Name="TrainerNameInput"
+                            AutomationId="TrainerNameInput"
+                            SemanticProperties.Description="Trainer name"
+                            SemanticProperties.Hint="Enter the trainer name to save under"
+                            FontFamily="SairaRegular"
+                            Placeholder="Enter New Trainer Name"
+                            Text="{Binding NameInput}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button
+                    x:Name="SaveTrainerNameButton"
+                    AutomationId="SaveTrainerNameButton"
+                            SemanticProperties.Description="Save trainer name"
+                    Command="{Binding SaveTrainerCommand}"
+                    HorizontalOptions="Center"
+                    Text="Create New Trainer"
+                    WidthRequest="220" />
+
+                <!--  Archetype section  -->
+                <Label AutomationId="ArchetypeSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Custom Archetype" />
+
+                <Border
+                    Padding="12,8"
+                    Stroke="{StaticResource PokeYellow}"
+                    StrokeThickness="1.5">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Style="{StaticResource FieldLabel}" Text="Archetype Icon" />
+                        <controls:ComboBoxControl
+                            x:Name="NewArchetypeIcon"
+                            AutomationId="ArchetypeIconPicker"
+                            SemanticProperties.Description="Archetype icon"
+                            SemanticProperties.Hint="Pick an icon for the new archetype"
+                            Style="{StaticResource ArchetypePicker}"
+                            DisplayMemberPath="Name"
+                            ImageMemberPath="ImagePath"
+                            ItemsSource="{Binding IconItems}"
+                            Placeholder="Select Icon"
+                            SelectedItem="{Binding SelectedIconItem}" />
+                        <Label
+                            FontFamily="SairaRegular"
+                            FontSize="10"
+                            Text="Select the icon for your custom archetype"
+                            TextColor="{StaticResource Gray400}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border
+                    Padding="12,8"
+                    Stroke="{StaticResource PokeYellow}"
+                    StrokeThickness="1.5">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Style="{StaticResource FieldLabel}" Text="Archetype Name" />
+                        <Entry
+                            x:Name="ArchetypeNameInput"
+                            AutomationId="ArchetypeNameInput"
+                            SemanticProperties.Description="Archetype name"
+                            SemanticProperties.Hint="Enter a name for the new archetype"
+                            FontFamily="SairaRegular"
+                            Placeholder="Enter New Archetype's Name"
+                            Text="{Binding NewDeckName}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button
+                    x:Name="SaveArchetypeButton"
+                    AutomationId="SaveArchetypeButton"
+                            SemanticProperties.Description="Save archetype"
+                    Command="{Binding SaveArchetypeCommand}"
+                    HorizontalOptions="Center"
+                    Text="Save Archetype"
+                    WidthRequest="220" />
+
+                <VerticalStackLayout
+                    AutomationId="ArchetypeList"
+                    SemanticProperties.Description="Saved archetypes"
+                    BindableLayout.ItemsSource="{Binding AllArchetypes}"
+                    Spacing="0">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="models:Archetype">
+                            <Grid
+                                AutomationId="{Binding Name, StringFormat='ArchetypeItem_{0}'}"
+                                Padding="4,2"
+                                ColumnDefinitions="Auto,*,Auto"
+                                ColumnSpacing="8">
+                                <Image
+                                    Grid.Column="0"
+                                    HeightRequest="24"
+                                    WidthRequest="24"
+                                    Source="{Binding ImagePath}" />
+                                <Label
+                                    Grid.Column="1"
+                                    FontFamily="SairaRegular"
+                                    FontSize="13"
+                                    Text="{Binding Name}"
+                                    VerticalOptions="Center" />
+                                <Button
+                                    Grid.Column="2"
+                                    AutomationId="{Binding Name, StringFormat='DeleteArchetype_{0}'}"
+                                    SemanticProperties.Description="{Binding Name, StringFormat='Delete {0} archetype'}"
+                                    BackgroundColor="{StaticResource BostonRed}"
+                                    Command="{Binding Source={x:Reference BasePage}, Path=BindingContext.DeleteArchetypeCommand}"
+                                    CommandParameter="{Binding .}"
+                                    FontSize="11"
+                                    HeightRequest="28"
+                                    Padding="8,0"
+                                    Text="Delete"
+                                    TextColor="{StaticResource White}" />
+                            </Grid>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+                <!--  Tags section  -->
+                <Label AutomationId="TagSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Custom Tag" />
+
+                <Border
+                    Padding="12,8"
+                    Stroke="{StaticResource PokeYellow}"
+                    StrokeThickness="1.5">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Style="{StaticResource FieldLabel}" Text="Tag Name" />
+                        <Entry
+                            x:Name="TagInput"
+                            AutomationId="TagInput"
+                            SemanticProperties.Description="Tag name"
+                            SemanticProperties.Hint="Enter a name for the new tag"
+                            FontFamily="SairaRegular"
+                            Placeholder="Enter New Tag"
+                            Text="{Binding TagInput}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button
+                    x:Name="SaveTagButton"
+                    AutomationId="SaveTagButton"
+                            SemanticProperties.Description="Save tag"
+                    Command="{Binding SaveTagCommand}"
+                    HorizontalOptions="Center"
+                    Text="Save New Tag"
+                    WidthRequest="220" />
+
+                <VerticalStackLayout
+                    AutomationId="TagList"
+                    SemanticProperties.Description="Saved tags"
+                    BindableLayout.ItemsSource="{Binding AllTags}"
+                    Spacing="0">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="models:Tags">
+                            <Grid
+                                AutomationId="{Binding Name, StringFormat='TagItem_{0}'}"
+                                Padding="4,2"
+                                ColumnDefinitions="*,Auto"
+                                ColumnSpacing="8">
+                                <Label
+                                    Grid.Column="0"
+                                    FontFamily="SairaRegular"
+                                    FontSize="13"
+                                    Text="{Binding Name}"
+                                    VerticalOptions="Center" />
+                                <Button
+                                    Grid.Column="1"
+                                    AutomationId="{Binding Name, StringFormat='DeleteTag_{0}'}"
+                                    SemanticProperties.Description="{Binding Name, StringFormat='Delete {0} tag'}"
+                                    BackgroundColor="{StaticResource BostonRed}"
+                                    Command="{Binding Source={x:Reference BasePage}, Path=BindingContext.DeleteTagCommand}"
+                                    CommandParameter="{Binding .}"
+                                    FontSize="11"
+                                    HeightRequest="28"
+                                    Padding="8,0"
+                                    Text="Delete"
+                                    TextColor="{StaticResource White}" />
+                            </Grid>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+                <!--  Import  -->
+                <Label AutomationId="ImportSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Import" />
+
+                <Button
+                    x:Name="ImportTrainerHillButton"
+                    AutomationId="ImportTrainerHillButton"
+                    SemanticProperties.Description="Import matches from TrainerHill"
+                    SemanticProperties.Hint="Opens file picker to select a TrainerHill battle log JSON file"
+                    Command="{Binding ImportFromTrainerHillCommand}"
+                    HorizontalOptions="Center"
+                    Text="Import from TrainerHill"
+                    WidthRequest="220" />
+
                 <Label
-                    AutomationId="LoadingIndicatorLabel"
+                    AutomationId="ImportStatusLabel"
+                    SemanticProperties.Description="Import status"
                     FontFamily="SairaRegular"
                     FontSize="12"
                     HorizontalOptions="Center"
-                    Text="Working…"
+                    IsVisible="{Binding HasImportStatus}"
+                    Text="{Binding ImportStatusMessage}"
                     TextColor="{StaticResource PokeYellow}" />
+
+                <!--  Export  -->
+                <Label AutomationId="ExportSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Export" />
+
+                <Button
+                    x:Name="ExportTrainerHillButton"
+                    AutomationId="ExportTrainerHillButton"
+                    SemanticProperties.Description="Export this trainer's matches in TrainerHill format"
+                    SemanticProperties.Hint="Opens a save dialog to write a TrainerHill battle log JSON file"
+                    Command="{Binding ExportTrainerHillCommand}"
+                    HorizontalOptions="Center"
+                    Text="Export to TrainerHill"
+                    WidthRequest="220" />
+
+                <Button
+                    x:Name="ExportBackupButton"
+                    AutomationId="ExportBackupButton"
+                    SemanticProperties.Description="Export a full backup of every trainer"
+                    SemanticProperties.Hint="Opens a save dialog to write a backup JSON file containing all trainers"
+                    Command="{Binding ExportBackupCommand}"
+                    HorizontalOptions="Center"
+                    Text="Export backup (all trainers)"
+                    WidthRequest="220" />
+
+                <Label
+                    AutomationId="ExportStatusLabel"
+                    SemanticProperties.Description="Export status"
+                    FontFamily="SairaRegular"
+                    FontSize="12"
+                    HorizontalOptions="Center"
+                    IsVisible="{Binding HasExportStatus}"
+                    Text="{Binding ExportStatusMessage}"
+                    TextColor="{StaticResource PokeYellow}" />
+
+                <!--  Save all / danger zone  -->
+                <BoxView
+                    Margin="0,8"
+                    BackgroundColor="{StaticResource PokeBlue}"
+                    HeightRequest="1"
+                    HorizontalOptions="Fill" />
+
+                <Button
+                    x:Name="SaveAllButton"
+                    AutomationId="SaveAllButton"
+                            SemanticProperties.Description="Save all options"
+                    Command="{Binding SaveAllCommand}"
+                    HorizontalOptions="Center"
+                    Text="Save All"
+                    WidthRequest="220" />
+
+                <Button
+                    x:Name="DeleteTrainer"
+                    AutomationId="DeleteTrainer"
+                            SemanticProperties.Description="Delete trainer"
+                            SemanticProperties.Hint="Permanently removes this trainer and their matches"
+                    BackgroundColor="{StaticResource BostonRed}"
+                    Command="{Binding DeleteTrainerFileCommand}"
+                    HorizontalOptions="Center"
+                    Text="Delete Current Trainer"
+                    TextColor="{StaticResource White}"
+                    WidthRequest="220" />
+
+                <!--#region Trainer Switcher-->
+                <Label AutomationId="SwitchTrainerHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Switch Trainer" />
+
+                <Border
+                    Padding="12,8"
+                    Stroke="{StaticResource PokeYellow}"
+                    StrokeThickness="1.5">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Style="{StaticResource FieldLabel}" Text="Active Trainer" />
+                        <Picker
+                            AutomationId="TrainerSwitchPicker"
+                            SemanticProperties.Description="Switch trainer"
+                            SemanticProperties.Hint="Choose which trainer profile is active"
+                            FontFamily="SairaRegular"
+                            ItemDisplayBinding="{Binding Name}"
+                            ItemsSource="{Binding AllTrainers}"
+                            SelectedItem="{Binding SelectedSwitchTrainer, Mode=TwoWay}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!--#endregion-->
+
             </VerticalStackLayout>
+        </ScrollView>
 
-            <!--  DEBUG only: holds the busy gate open so the spinner can be seen and tested.
-                  Bound to IsDebugBuild so it is absent from Release builds.  -->
-            <Button
-                x:Name="SimulateLoadingButton"
-                AutomationId="SimulateLoadingButton"
-                SemanticProperties.Description="Toggle simulated loading"
-                SemanticProperties.Hint="Debug only. Holds the loading indicator on screen until pressed again"
-                Command="{Binding ToggleSimulatedLoadingCommand}"
-                HorizontalOptions="Center"
-                IsVisible="{Binding IsDebugBuild, x:DataType=viewmodel:OptionsPageViewModel}"
-                Text="Toggle loading indicator"
-                WidthRequest="220" />
+        <!--  Loading indicator, drawn OVER the page rather than in it.
 
-            <!--  Trainer section  -->
-            <Label AutomationId="TrainerSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Trainer" />
+              It is a sibling of the ScrollView in the same Grid cell, so it occupies no
+              layout space and nothing below it moves when it appears. As an inline child it
+              pushed ~144px of content down every time it showed, which gave every element
+              below two possible positions depending on timing.
 
-            <Border
-                Padding="12,8"
-                Stroke="{StaticResource PokeYellow}"
-                StrokeThickness="1.5">
-                <VerticalStackLayout Spacing="4">
-                    <Label Style="{StaticResource FieldLabel}" Text="Trainer Name" />
-                    <Entry
-                        x:Name="TrainerNameInput"
-                        AutomationId="TrainerNameInput"
-                        SemanticProperties.Description="Trainer name"
-                        SemanticProperties.Hint="Enter the trainer name to save under"
-                        FontFamily="SairaRegular"
-                        Placeholder="Enter New Trainer Name"
-                        Text="{Binding NameInput}" />
-                </VerticalStackLayout>
-            </Border>
+              InputTransparent passes clicks through to the content underneath. Layout
+              cascades this to children by default, so the spinner and its label are
+              transparent too. It matters because the indicator deliberately lingers 500ms
+              after the busy gate clears, so a user (or a UI test) is interacting with the
+              page again while it is still on screen.
 
-            <Button
-                x:Name="SaveTrainerNameButton"
-                AutomationId="SaveTrainerNameButton"
-                        SemanticProperties.Description="Save trainer name"
-                Command="{Binding SaveTrainerCommand}"
-                HorizontalOptions="Center"
-                Text="Create New Trainer"
-                WidthRequest="220" />
-
-            <!--  Archetype section  -->
-            <Label AutomationId="ArchetypeSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Custom Archetype" />
-
-            <Border
-                Padding="12,8"
-                Stroke="{StaticResource PokeYellow}"
-                StrokeThickness="1.5">
-                <VerticalStackLayout Spacing="8">
-                    <Label Style="{StaticResource FieldLabel}" Text="Archetype Icon" />
-                    <controls:ComboBoxControl
-                        x:Name="NewArchetypeIcon"
-                        AutomationId="ArchetypeIconPicker"
-                        SemanticProperties.Description="Archetype icon"
-                        SemanticProperties.Hint="Pick an icon for the new archetype"
-                        Style="{StaticResource ArchetypePicker}"
-                        DisplayMemberPath="Name"
-                        ImageMemberPath="ImagePath"
-                        ItemsSource="{Binding IconItems}"
-                        Placeholder="Select Icon"
-                        SelectedItem="{Binding SelectedIconItem}" />
-                    <Label
-                        FontFamily="SairaRegular"
-                        FontSize="10"
-                        Text="Select the icon for your custom archetype"
-                        TextColor="{StaticResource Gray400}" />
-                </VerticalStackLayout>
-            </Border>
-
-            <Border
-                Padding="12,8"
-                Stroke="{StaticResource PokeYellow}"
-                StrokeThickness="1.5">
-                <VerticalStackLayout Spacing="4">
-                    <Label Style="{StaticResource FieldLabel}" Text="Archetype Name" />
-                    <Entry
-                        x:Name="ArchetypeNameInput"
-                        AutomationId="ArchetypeNameInput"
-                        SemanticProperties.Description="Archetype name"
-                        SemanticProperties.Hint="Enter a name for the new archetype"
-                        FontFamily="SairaRegular"
-                        Placeholder="Enter New Archetype's Name"
-                        Text="{Binding NewDeckName}" />
-                </VerticalStackLayout>
-            </Border>
-
-            <Button
-                x:Name="SaveArchetypeButton"
-                AutomationId="SaveArchetypeButton"
-                        SemanticProperties.Description="Save archetype"
-                Command="{Binding SaveArchetypeCommand}"
-                HorizontalOptions="Center"
-                Text="Save Archetype"
-                WidthRequest="220" />
-
-            <VerticalStackLayout
-                AutomationId="ArchetypeList"
-                SemanticProperties.Description="Saved archetypes"
-                BindableLayout.ItemsSource="{Binding AllArchetypes}"
-                Spacing="0">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="models:Archetype">
-                        <Grid
-                            AutomationId="{Binding Name, StringFormat='ArchetypeItem_{0}'}"
-                            Padding="4,2"
-                            ColumnDefinitions="Auto,*,Auto"
-                            ColumnSpacing="8">
-                            <Image
-                                Grid.Column="0"
-                                HeightRequest="24"
-                                WidthRequest="24"
-                                Source="{Binding ImagePath}" />
-                            <Label
-                                Grid.Column="1"
-                                FontFamily="SairaRegular"
-                                FontSize="13"
-                                Text="{Binding Name}"
-                                VerticalOptions="Center" />
-                            <Button
-                                Grid.Column="2"
-                                AutomationId="{Binding Name, StringFormat='DeleteArchetype_{0}'}"
-                                SemanticProperties.Description="{Binding Name, StringFormat='Delete {0} archetype'}"
-                                BackgroundColor="{StaticResource BostonRed}"
-                                Command="{Binding Source={x:Reference BasePage}, Path=BindingContext.DeleteArchetypeCommand}"
-                                CommandParameter="{Binding .}"
-                                FontSize="11"
-                                HeightRequest="28"
-                                Padding="8,0"
-                                Text="Delete"
-                                TextColor="{StaticResource White}" />
-                        </Grid>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
-
-            <!--  Tags section  -->
-            <Label AutomationId="TagSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Custom Tag" />
-
-            <Border
-                Padding="12,8"
-                Stroke="{StaticResource PokeYellow}"
-                StrokeThickness="1.5">
-                <VerticalStackLayout Spacing="4">
-                    <Label Style="{StaticResource FieldLabel}" Text="Tag Name" />
-                    <Entry
-                        x:Name="TagInput"
-                        AutomationId="TagInput"
-                        SemanticProperties.Description="Tag name"
-                        SemanticProperties.Hint="Enter a name for the new tag"
-                        FontFamily="SairaRegular"
-                        Placeholder="Enter New Tag"
-                        Text="{Binding TagInput}" />
-                </VerticalStackLayout>
-            </Border>
-
-            <Button
-                x:Name="SaveTagButton"
-                AutomationId="SaveTagButton"
-                        SemanticProperties.Description="Save tag"
-                Command="{Binding SaveTagCommand}"
-                HorizontalOptions="Center"
-                Text="Save New Tag"
-                WidthRequest="220" />
-
-            <VerticalStackLayout
-                AutomationId="TagList"
-                SemanticProperties.Description="Saved tags"
-                BindableLayout.ItemsSource="{Binding AllTags}"
-                Spacing="0">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="models:Tags">
-                        <Grid
-                            AutomationId="{Binding Name, StringFormat='TagItem_{0}'}"
-                            Padding="4,2"
-                            ColumnDefinitions="*,Auto"
-                            ColumnSpacing="8">
-                            <Label
-                                Grid.Column="0"
-                                FontFamily="SairaRegular"
-                                FontSize="13"
-                                Text="{Binding Name}"
-                                VerticalOptions="Center" />
-                            <Button
-                                Grid.Column="1"
-                                AutomationId="{Binding Name, StringFormat='DeleteTag_{0}'}"
-                                SemanticProperties.Description="{Binding Name, StringFormat='Delete {0} tag'}"
-                                BackgroundColor="{StaticResource BostonRed}"
-                                Command="{Binding Source={x:Reference BasePage}, Path=BindingContext.DeleteTagCommand}"
-                                CommandParameter="{Binding .}"
-                                FontSize="11"
-                                HeightRequest="28"
-                                Padding="8,0"
-                                Text="Delete"
-                                TextColor="{StaticResource White}" />
-                        </Grid>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
-
-            <!--  Import  -->
-            <Label AutomationId="ImportSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Import" />
-
-            <Button
-                x:Name="ImportTrainerHillButton"
-                AutomationId="ImportTrainerHillButton"
-                SemanticProperties.Description="Import matches from TrainerHill"
-                SemanticProperties.Hint="Opens file picker to select a TrainerHill battle log JSON file"
-                Command="{Binding ImportFromTrainerHillCommand}"
-                HorizontalOptions="Center"
-                Text="Import from TrainerHill"
-                WidthRequest="220" />
-
+              IsVisible follows the control's own IsShowing rather than the raw busy flag, so
+              that minimum-visible-duration is what decides when the host disappears —
+              otherwise fast work would flash.  -->
+        <VerticalStackLayout
+            x:Name="LoadingIndicatorHost"
+            AutomationId="LoadingIndicatorHost"
+            SemanticProperties.Description="Loading"
+            HorizontalOptions="Center"
+            InputTransparent="True"
+            IsVisible="{Binding Source={x:Reference PageLoadingIndicator}, Path=IsShowing, x:DataType=loading:LoadingIndicator}"
+            Spacing="4"
+            VerticalOptions="Center">
+            <loading:LoadingIndicator
+                x:Name="PageLoadingIndicator"
+                AutomationId="PageLoadingIndicator"
+                ArcColor="{StaticResource BostonRed}"
+                HeightRequest="96"
+                IsBusy="{Binding IsAnyBusy}"
+                WidthRequest="96" />
             <Label
-                AutomationId="ImportStatusLabel"
-                SemanticProperties.Description="Import status"
+                AutomationId="LoadingIndicatorLabel"
                 FontFamily="SairaRegular"
                 FontSize="12"
                 HorizontalOptions="Center"
-                IsVisible="{Binding HasImportStatus}"
-                Text="{Binding ImportStatusMessage}"
+                Text="Working…"
                 TextColor="{StaticResource PokeYellow}" />
-
-            <!--  Export  -->
-            <Label AutomationId="ExportSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Export" />
-
-            <Button
-                x:Name="ExportTrainerHillButton"
-                AutomationId="ExportTrainerHillButton"
-                SemanticProperties.Description="Export this trainer's matches in TrainerHill format"
-                SemanticProperties.Hint="Opens a save dialog to write a TrainerHill battle log JSON file"
-                Command="{Binding ExportTrainerHillCommand}"
-                HorizontalOptions="Center"
-                Text="Export to TrainerHill"
-                WidthRequest="220" />
-
-            <Button
-                x:Name="ExportBackupButton"
-                AutomationId="ExportBackupButton"
-                SemanticProperties.Description="Export a full backup of every trainer"
-                SemanticProperties.Hint="Opens a save dialog to write a backup JSON file containing all trainers"
-                Command="{Binding ExportBackupCommand}"
-                HorizontalOptions="Center"
-                Text="Export backup (all trainers)"
-                WidthRequest="220" />
-
-            <Label
-                AutomationId="ExportStatusLabel"
-                SemanticProperties.Description="Export status"
-                FontFamily="SairaRegular"
-                FontSize="12"
-                HorizontalOptions="Center"
-                IsVisible="{Binding HasExportStatus}"
-                Text="{Binding ExportStatusMessage}"
-                TextColor="{StaticResource PokeYellow}" />
-
-            <!--  Save all / danger zone  -->
-            <BoxView
-                Margin="0,8"
-                BackgroundColor="{StaticResource PokeBlue}"
-                HeightRequest="1"
-                HorizontalOptions="Fill" />
-
-            <Button
-                x:Name="SaveAllButton"
-                AutomationId="SaveAllButton"
-                        SemanticProperties.Description="Save all options"
-                Command="{Binding SaveAllCommand}"
-                HorizontalOptions="Center"
-                Text="Save All"
-                WidthRequest="220" />
-
-            <Button
-                x:Name="DeleteTrainer"
-                AutomationId="DeleteTrainer"
-                        SemanticProperties.Description="Delete trainer"
-                        SemanticProperties.Hint="Permanently removes this trainer and their matches"
-                BackgroundColor="{StaticResource BostonRed}"
-                Command="{Binding DeleteTrainerFileCommand}"
-                HorizontalOptions="Center"
-                Text="Delete Current Trainer"
-                TextColor="{StaticResource White}"
-                WidthRequest="220" />
-
-            <!--#region Trainer Switcher-->
-            <Label AutomationId="SwitchTrainerHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Margin="0,8,0,0" Text="Switch Trainer" />
-
-            <Border
-                Padding="12,8"
-                Stroke="{StaticResource PokeYellow}"
-                StrokeThickness="1.5">
-                <VerticalStackLayout Spacing="4">
-                    <Label Style="{StaticResource FieldLabel}" Text="Active Trainer" />
-                    <Picker
-                        AutomationId="TrainerSwitchPicker"
-                        SemanticProperties.Description="Switch trainer"
-                        SemanticProperties.Hint="Choose which trainer profile is active"
-                        FontFamily="SairaRegular"
-                        ItemDisplayBinding="{Binding Name}"
-                        ItemsSource="{Binding AllTrainers}"
-                        SelectedItem="{Binding SelectedSwitchTrainer, Mode=TwoWay}" />
-                </VerticalStackLayout>
-            </Border>
-
-            <!--#endregion-->
-
         </VerticalStackLayout>
-    </ScrollView>
+    </Grid>
 </ContentPage>

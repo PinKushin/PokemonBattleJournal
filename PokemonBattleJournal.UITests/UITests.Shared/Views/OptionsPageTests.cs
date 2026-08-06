@@ -363,24 +363,28 @@ namespace UITests
         /// (docs/memory/feedback_uiscrollable_direction.md), so content displaced upward past the
         /// scroll position is simply unreachable — a lookup failure with no visible cause.
         ///
-        /// SimulateLoadingButton is the probe because it sits directly below the indicator (so it
-        /// moves first if anything does) and is guaranteed to be in the viewport, having just
-        /// been clicked. Both reads happen at the same scroll offset with no navigation between
-        /// them, so any difference is displacement rather than scrolling.
+        /// SimulateLoadingButton is the probe because it sits directly below where the indicator
+        /// used to be, so it moves first if anything does.
         ///
-        /// Note this also covers InputTransparent implicitly: the overlay is drawn over the whole
-        /// page, so if it swallowed input the toggle-off click below could never land and this
-        /// test would fail in ClickSimulateLoadingUntil rather than on the assertion.
+        /// BOTH reads are taken AFTER a click, which is load-bearing. Measuring before the first
+        /// click compares two different scroll offsets: WinAppDriver scrolls an off-screen
+        /// element into view in order to click it, so if an alphabetically earlier test left the
+        /// page scrolled, the button starts above the viewport and the first click pulls it back
+        /// down. That produced a 132px "shift" (y=-52 to y=80) in a full-suite run while the
+        /// isolated run passed, because in isolation the page was already at the top. Clicking
+        /// first pins the scroll offset, so what remains is layout.
+        ///
+        /// This also covers InputTransparent implicitly: the overlay is drawn over the whole
+        /// page, so if it swallowed input the toggle-off click could never land and this test
+        /// would fail inside ClickSimulateLoadingUntil rather than on the assertion.
         /// </remarks>
         [Test]
         public void OptionsPage_LoadingIndicator_DoesNotDisplacePageContent()
         {
-            int before = FindUIElement("SimulateLoadingButton").Location.Y;
-
-            ClickSimulateLoadingUntil("LoadingIndicatorHost", shouldBePresent: true);
             int during;
             try
             {
+                ClickSimulateLoadingUntil("LoadingIndicatorHost", shouldBePresent: true);
                 during = FindUIElement("SimulateLoadingButton").Location.Y;
             }
             finally
@@ -388,15 +392,17 @@ namespace UITests
                 ClickSimulateLoadingUntil("LoadingIndicatorHost", shouldBePresent: false);
             }
 
-            int shift = Math.Abs(during - before);
-            PerfLog($"Loading indicator displaced SimulateLoadingButton by {shift}px (y {before} -> {during})");
+            int after = FindUIElement("SimulateLoadingButton").Location.Y;
+
+            int shift = Math.Abs(during - after);
+            PerfLog($"Loading indicator displaced SimulateLoadingButton by {shift}px (y {during} with spinner -> {after} without)");
 
             shift.ShouldBeLessThanOrEqualTo(
                 AllowedShiftPixels,
                 $"the spinner must render as an overlay and take no layout space, but showing it " +
-                $"moved SimulateLoadingButton {shift}px (from y={before} to y={during}). Content " +
-                "that changes position depending on whether the spinner is up is unreachable to " +
-                "Android's scroll-down-only element lookup.");
+                $"moved SimulateLoadingButton {shift}px (y={during} with the spinner up, y={after} " +
+                "without). Content that changes position depending on whether the spinner is up " +
+                "is unreachable to Android's scroll-down-only element lookup.");
         }
 
         [Test]

@@ -23,369 +23,395 @@
     <ContentPage.Resources>
         <toolkit:IsNotNullConverter x:Key="IsNotNullConverter" />
     </ContentPage.Resources>
-    <ScrollView AutomationId="ReadJournalPage" Margin="16">
-        <VerticalStackLayout Spacing="12">
+    <Grid>
+        <!--  Loading-gate sentinel, OUTSIDE the scrolling content on purpose. UI tests
+              WaitUntilGone("Busy_MatchHistory") before querying page elements.
 
-            <!--  Loading-gate sentinel: visible only while match history loads. UI tests
-                  WaitUntilGone("Busy_MatchHistory") before querying page elements.  -->
-            <Label
-                AutomationId="Busy_MatchHistory"
-                HeightRequest="1"
-                IsVisible="{Binding IsBusyMatchHistory}"
-                WidthRequest="1" />
+              As a child of the content stack it was a layout participant, so un-hiding it added
+              its 1px plus the stack's Spacing and pushed everything below it down — 13px on
+              OptionsPage, measured. On Android a row displaced upward past the scroll position
+              is unreachable, because UiScrollable only scrolls down. As a direct Grid child it
+              overlaps the content, pinned top-left at 1×1 with no text: invisible, no layout
+              cost, still reachable by AutomationId.  -->
+        <Label
+            AutomationId="Busy_MatchHistory"
+            HeightRequest="1"
+            HorizontalOptions="Start"
+            IsVisible="{Binding IsBusyMatchHistory}"
+            VerticalOptions="Start"
+            WidthRequest="1" />
 
-            <!--  Visible loading indicator. IsVisible follows the control's own IsShowing rather
-                  than the gate, so the minimum-visible-duration inside LoadingIndicator decides
-                  when it clears and fast loads do not flash.  -->
-            <VerticalStackLayout
-                AutomationId="LoadingIndicatorHost"
-                SemanticProperties.Description="Loading match history"
-                HorizontalOptions="Center"
-                IsVisible="{Binding Source={x:Reference PageLoadingIndicator}, Path=IsShowing, x:DataType=loading:LoadingIndicator}"
-                Spacing="4">
-                <loading:LoadingIndicator
-                    x:Name="PageLoadingIndicator"
-                    AutomationId="PageLoadingIndicator"
-                    ArcColor="{StaticResource BostonRed}"
-                    HeightRequest="96"
-                    IsBusy="{Binding IsBusyMatchHistory}"
-                    WidthRequest="96" />
-                <Label
-                    AutomationId="LoadingIndicatorLabel"
-                    FontFamily="SairaRegular"
-                    FontSize="12"
+        <ScrollView AutomationId="ReadJournalPage" Margin="16">
+            <VerticalStackLayout Spacing="12">
+
+                <!--  Selected match detail card  -->
+                <Border
+                    AutomationId="SelectedMatchCard"
+                    SemanticProperties.Description="Selected match detail card"
+                    Padding="16"
+                    IsVisible="{Binding SelectedMatch, Converter={StaticResource IsNotNullConverter}}"
+                    Stroke="{StaticResource PokeYellow}"
+                    StrokeThickness="1.5">
+                    <VerticalStackLayout Spacing="10">
+
+                        <!--  Matchup header  -->
+                        <HorizontalStackLayout
+                            HorizontalOptions="Center"
+                            Spacing="4">
+                            <Image
+                                AutomationId="PlayingIcon"
+                                SemanticProperties.Description="Your deck icon"
+                                HeightRequest="48"
+                                Source="{Binding PlayingIconSource}"
+                                WidthRequest="48" />
+                            <Image
+                                AutomationId="PlayingIcon2"
+                                SemanticProperties.Description="Your deck second icon"
+                                HeightRequest="48"
+                                IsVisible="{Binding HasPlayingIcon2}"
+                                Source="{Binding PlayingIconSource2}"
+                                WidthRequest="48" />
+                            <Label
+                                FontFamily="SairaRegular"
+                                FontSize="Body"
+                                AutomationId="PlayingNameLabel"
+                                SemanticProperties.Description="Your deck"
+                                Text="{Binding PlayingName}"
+                                TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
+                                VerticalOptions="Center" />
+                            <Label
+                                FontFamily="PokemonSolid"
+                                FontSize="Body"
+                                Text="VS"
+                                TextColor="{StaticResource PokeBlue}"
+                                VerticalOptions="Center" />
+                            <Label
+                                FontFamily="SairaRegular"
+                                FontSize="Body"
+                                AutomationId="AgainstNameLabel"
+                                SemanticProperties.Description="Opponent deck"
+                                Text="{Binding AgainstName}"
+                                TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
+                                VerticalOptions="Center" />
+                            <Image
+                                AutomationId="AgainstIcon"
+                                SemanticProperties.Description="Opponent deck icon"
+                                HeightRequest="48"
+                                Source="{Binding AgainstIconSource}"
+                                WidthRequest="48" />
+                            <Image
+                                AutomationId="AgainstIcon2"
+                                SemanticProperties.Description="Opponent deck second icon"
+                                HeightRequest="48"
+                                IsVisible="{Binding HasAgainstIcon2}"
+                                Source="{Binding AgainstIconSource2}"
+                                WidthRequest="48" />
+                        </HorizontalStackLayout>
+
+                        <!--  Notes  -->
+                        <Editor
+                            AutomationId="SelectedMatchNotes"
+                            SemanticProperties.Description="Notes for the selected match"
+                            HeightRequest="120"
+                            IsReadOnly="True"
+                            MaximumWidthRequest="700"
+                            Text="{Binding SelectedNote}" />
+
+                        <!--  Tags — FlexLayout + BindableLayout, NOT CollectionView.
+                              Three CollectionViews here (plus MatchHistoryList) kept the Android
+                              UI thread busy enough that every UiAutomator query burned the full
+                              ~20 s waitForIdle budget. BindableLayout renders plain children with
+                              no virtualization machinery — nothing left running between queries.
+                              See docs/memory/project_readjournal_android_slow.md.  -->
+                        <Grid
+                            ColumnDefinitions="Auto,*"
+                            RowDefinitions="Auto, Auto, Auto"
+                            RowSpacing="4">
+
+                            <Border
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Margin="0,4,8,4"
+                                Padding="10,4"
+                                BackgroundColor="{StaticResource PokeBlue}"
+                                StrokeThickness="0"
+                                VerticalOptions="Start">
+                                <Label Style="{StaticResource TagBadge}" Text="Game 1" />
+                            </Border>
+                            <FlexLayout
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Margin="0,4"
+                                AutomationId="Game1TagsView"
+                                SemanticProperties.Description="Tags for game 1"
+                                AlignItems="Start"
+                                BindableLayout.ItemsSource="{Binding TagsSelectedGame1}"
+                                Direction="Row"
+                                ToolTipProperties.Text="Tags for game 1"
+                                Wrap="Wrap">
+                                <BindableLayout.EmptyView>
+                                    <VerticalStackLayout HorizontalOptions="Center">
+                                        <Label
+                                            FontSize="Small"
+                                            HorizontalOptions="Center"
+                                            Text="No Tags for Game 1"
+                                            TextColor="{StaticResource Gray400}" />
+                                        <Label
+                                            FontSize="Micro"
+                                            HorizontalOptions="Center"
+                                            Text="{Binding Game1TagsInfo}"
+                                            TextColor="{StaticResource Gray400}" />
+                                    </VerticalStackLayout>
+                                </BindableLayout.EmptyView>
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="model:Tags">
+                                        <Border
+                                            Margin="0,0,6,4"
+                                            Padding="10,4"
+                                            BackgroundColor="{StaticResource PokeBlue}"
+                                            HeightRequest="32"
+                                            StrokeThickness="0">
+                                            <Label Style="{StaticResource TagBadge}" Text="{Binding Name}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </FlexLayout>
+
+                            <Border
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Margin="0,4,8,4"
+                                Padding="10,4"
+                                BackgroundColor="{StaticResource PokeBlue}"
+                                IsVisible="{Binding SelectedMatch.Game2, Converter={StaticResource IsNotNullConverter}}"
+                                StrokeThickness="0"
+                                VerticalOptions="Start">
+                                <Label Style="{StaticResource TagBadge}" Text="Game 2" />
+                            </Border>
+                            <FlexLayout
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Margin="0,4"
+                                AutomationId="Game2TagsView"
+                                SemanticProperties.Description="Tags for game 2"
+                                AlignItems="Start"
+                                BindableLayout.ItemsSource="{Binding TagsSelectedGame2}"
+                                Direction="Row"
+                                IsVisible="{Binding SelectedMatch.Game2, Converter={StaticResource IsNotNullConverter}}"
+                                ToolTipProperties.Text="Tags for game 2"
+                                Wrap="Wrap">
+                                <BindableLayout.EmptyView>
+                                    <VerticalStackLayout HorizontalOptions="Center">
+                                        <Label
+                                            FontSize="Small"
+                                            HorizontalOptions="Center"
+                                            Text="No Tags for Game 2"
+                                            TextColor="{StaticResource Gray400}" />
+                                        <Label
+                                            FontSize="Micro"
+                                            HorizontalOptions="Center"
+                                            Text="{Binding Game2TagsInfo}"
+                                            TextColor="{StaticResource Gray400}" />
+                                    </VerticalStackLayout>
+                                </BindableLayout.EmptyView>
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="model:Tags">
+                                        <Border
+                                            Margin="0,0,6,4"
+                                            Padding="10,4"
+                                            BackgroundColor="{StaticResource PokeBlue}"
+                                            HeightRequest="32"
+                                            StrokeThickness="0">
+                                            <Label Style="{StaticResource TagBadge}" Text="{Binding Name}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </FlexLayout>
+
+                            <Border
+                                Grid.Row="2"
+                                Grid.Column="0"
+                                Margin="0,4,8,4"
+                                Padding="10,4"
+                                BackgroundColor="{StaticResource PokeBlue}"
+                                IsVisible="{Binding SelectedMatch.Game3, Converter={StaticResource IsNotNullConverter}}"
+                                StrokeThickness="0"
+                                VerticalOptions="Start">
+                                <Label Style="{StaticResource TagBadge}" Text="Game 3" />
+                            </Border>
+                            <FlexLayout
+                                Grid.Row="2"
+                                Grid.Column="1"
+                                Margin="0,4"
+                                AutomationId="Game3TagsView"
+                                SemanticProperties.Description="Tags for game 3"
+                                AlignItems="Start"
+                                BindableLayout.ItemsSource="{Binding TagsSelectedGame3}"
+                                Direction="Row"
+                                IsVisible="{Binding SelectedMatch.Game3, Converter={StaticResource IsNotNullConverter}}"
+                                ToolTipProperties.Text="Tags for game 3"
+                                Wrap="Wrap">
+                                <BindableLayout.EmptyView>
+                                    <VerticalStackLayout HorizontalOptions="Center">
+                                        <Label
+                                            FontSize="Small"
+                                            HorizontalOptions="Center"
+                                            Text="No Tags for Game 3"
+                                            TextColor="{StaticResource Gray400}" />
+                                        <Label
+                                            FontSize="Micro"
+                                            HorizontalOptions="Center"
+                                            Text="{Binding Game3TagsInfo}"
+                                            TextColor="{StaticResource Gray400}" />
+                                    </VerticalStackLayout>
+                                </BindableLayout.EmptyView>
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="model:Tags">
+                                        <Border
+                                            Margin="0,0,6,4"
+                                            Padding="10,4"
+                                            BackgroundColor="{StaticResource PokeBlue}"
+                                            HeightRequest="32"
+                                            StrokeThickness="0">
+                                            <Label Style="{StaticResource TagBadge}" Text="{Binding Name}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </FlexLayout>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!--  Match list heading  -->
+                <Label AutomationId="ReadJournalTitle" Style="{StaticResource Headline}" Text="Pick a Match" />
+
+                <!--  Match history list  -->
+                <CollectionView
+                    AutomationId="MatchHistoryList"
+                    SemanticProperties.Description="Match history"
+                    EmptyView="No Matches Found"
+                    HeightRequest="300"
                     HorizontalOptions="Center"
-                    Text="Loading journal…"
-                    TextColor="{StaticResource PokeYellow}" />
-            </VerticalStackLayout>
-
-            <!--  Selected match detail card  -->
-            <Border
-                AutomationId="SelectedMatchCard"
-                SemanticProperties.Description="Selected match detail card"
-                Padding="16"
-                IsVisible="{Binding SelectedMatch, Converter={StaticResource IsNotNullConverter}}"
-                Stroke="{StaticResource PokeYellow}"
-                StrokeThickness="1.5">
-                <VerticalStackLayout Spacing="10">
-
-                    <!--  Matchup header  -->
-                    <HorizontalStackLayout
-                        HorizontalOptions="Center"
-                        Spacing="4">
-                        <Image
-                            AutomationId="PlayingIcon"
-                            SemanticProperties.Description="Your deck icon"
-                            HeightRequest="48"
-                            Source="{Binding PlayingIconSource}"
-                            WidthRequest="48" />
-                        <Image
-                            AutomationId="PlayingIcon2"
-                            SemanticProperties.Description="Your deck second icon"
-                            HeightRequest="48"
-                            IsVisible="{Binding HasPlayingIcon2}"
-                            Source="{Binding PlayingIconSource2}"
-                            WidthRequest="48" />
-                        <Label
-                            FontFamily="SairaRegular"
-                            FontSize="Body"
-                            AutomationId="PlayingNameLabel"
-                            SemanticProperties.Description="Your deck"
-                            Text="{Binding PlayingName}"
-                            TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
-                            VerticalOptions="Center" />
-                        <Label
-                            FontFamily="PokemonSolid"
-                            FontSize="Body"
-                            Text="VS"
-                            TextColor="{StaticResource PokeBlue}"
-                            VerticalOptions="Center" />
-                        <Label
-                            FontFamily="SairaRegular"
-                            FontSize="Body"
-                            AutomationId="AgainstNameLabel"
-                            SemanticProperties.Description="Opponent deck"
-                            Text="{Binding AgainstName}"
-                            TextColor="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource PokeYellow}}"
-                            VerticalOptions="Center" />
-                        <Image
-                            AutomationId="AgainstIcon"
-                            SemanticProperties.Description="Opponent deck icon"
-                            HeightRequest="48"
-                            Source="{Binding AgainstIconSource}"
-                            WidthRequest="48" />
-                        <Image
-                            AutomationId="AgainstIcon2"
-                            SemanticProperties.Description="Opponent deck second icon"
-                            HeightRequest="48"
-                            IsVisible="{Binding HasAgainstIcon2}"
-                            Source="{Binding AgainstIconSource2}"
-                            WidthRequest="48" />
-                    </HorizontalStackLayout>
-
-                    <!--  Notes  -->
-                    <Editor
-                        AutomationId="SelectedMatchNotes"
-                        SemanticProperties.Description="Notes for the selected match"
-                        HeightRequest="120"
-                        IsReadOnly="True"
-                        MaximumWidthRequest="700"
-                        Text="{Binding SelectedNote}" />
-
-                    <!--  Tags — FlexLayout + BindableLayout, NOT CollectionView.
-                          Three CollectionViews here (plus MatchHistoryList) kept the Android
-                          UI thread busy enough that every UiAutomator query burned the full
-                          ~20 s waitForIdle budget. BindableLayout renders plain children with
-                          no virtualization machinery — nothing left running between queries.
-                          See docs/memory/project_readjournal_android_slow.md.  -->
-                    <Grid
-                        ColumnDefinitions="Auto,*"
-                        RowDefinitions="Auto, Auto, Auto"
-                        RowSpacing="4">
-
-                        <Border
-                            Grid.Row="0"
-                            Grid.Column="0"
-                            Margin="0,4,8,4"
-                            Padding="10,4"
-                            BackgroundColor="{StaticResource PokeBlue}"
-                            StrokeThickness="0"
-                            VerticalOptions="Start">
-                            <Label Style="{StaticResource TagBadge}" Text="Game 1" />
-                        </Border>
-                        <FlexLayout
-                            Grid.Row="0"
-                            Grid.Column="1"
-                            Margin="0,4"
-                            AutomationId="Game1TagsView"
-                            SemanticProperties.Description="Tags for game 1"
-                            AlignItems="Start"
-                            BindableLayout.ItemsSource="{Binding TagsSelectedGame1}"
-                            Direction="Row"
-                            ToolTipProperties.Text="Tags for game 1"
-                            Wrap="Wrap">
-                            <BindableLayout.EmptyView>
-                                <VerticalStackLayout HorizontalOptions="Center">
-                                    <Label
-                                        FontSize="Small"
-                                        HorizontalOptions="Center"
-                                        Text="No Tags for Game 1"
-                                        TextColor="{StaticResource Gray400}" />
-                                    <Label
-                                        FontSize="Micro"
-                                        HorizontalOptions="Center"
-                                        Text="{Binding Game1TagsInfo}"
-                                        TextColor="{StaticResource Gray400}" />
-                                </VerticalStackLayout>
-                            </BindableLayout.EmptyView>
-                            <BindableLayout.ItemTemplate>
-                                <DataTemplate x:DataType="model:Tags">
-                                    <Border
-                                        Margin="0,0,6,4"
-                                        Padding="10,4"
-                                        BackgroundColor="{StaticResource PokeBlue}"
+                    ItemSizingStrategy="MeasureFirstItem"
+                    ItemsSource="{Binding MatchHistory}"
+                    ItemsUpdatingScrollMode="KeepItemsInView"
+                    MaximumWidthRequest="560"
+                    SelectedItem="{Binding SelectedMatch}"
+                    SelectionChangedCommand="{Binding LoadMatchCommand}"
+                    SelectionMode="Single"
+                    VerticalOptions="Fill"
+                    VerticalScrollBarVisibility="Always">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="model:MatchEntry">
+                            <Border
+                                AutomationId="{Binding Id, StringFormat='MatchRow_{0}'}"
+                                SemanticProperties.Description="{Binding Playing.Name, StringFormat='Match with {0}'}"
+                                Margin="4,3" Padding="12,8" Stroke="{StaticResource PokeBlue}" StrokeThickness="1">
+                                <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="8">
+                                    <Image
+                                        Grid.Column="0"
                                         HeightRequest="32"
-                                        StrokeThickness="0">
-                                        <Label Style="{StaticResource TagBadge}" Text="{Binding Name}" />
-                                    </Border>
-                                </DataTemplate>
-                            </BindableLayout.ItemTemplate>
-                        </FlexLayout>
-
-                        <Border
-                            Grid.Row="1"
-                            Grid.Column="0"
-                            Margin="0,4,8,4"
-                            Padding="10,4"
-                            BackgroundColor="{StaticResource PokeBlue}"
-                            IsVisible="{Binding SelectedMatch.Game2, Converter={StaticResource IsNotNullConverter}}"
-                            StrokeThickness="0"
-                            VerticalOptions="Start">
-                            <Label Style="{StaticResource TagBadge}" Text="Game 2" />
-                        </Border>
-                        <FlexLayout
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Margin="0,4"
-                            AutomationId="Game2TagsView"
-                            SemanticProperties.Description="Tags for game 2"
-                            AlignItems="Start"
-                            BindableLayout.ItemsSource="{Binding TagsSelectedGame2}"
-                            Direction="Row"
-                            IsVisible="{Binding SelectedMatch.Game2, Converter={StaticResource IsNotNullConverter}}"
-                            ToolTipProperties.Text="Tags for game 2"
-                            Wrap="Wrap">
-                            <BindableLayout.EmptyView>
-                                <VerticalStackLayout HorizontalOptions="Center">
+                                        SemanticProperties.Description="{Binding Playing.Name, StringFormat='{0} deck icon'}"
+                                        Source="{Binding Playing.ImagePath}"
+                                        VerticalOptions="Center"
+                                        WidthRequest="32" />
                                     <Label
-                                        FontSize="Small"
-                                        HorizontalOptions="Center"
-                                        Text="No Tags for Game 2"
-                                        TextColor="{StaticResource Gray400}" />
+                                        Grid.Column="1"
+                                        Style="{StaticResource MatchCardName}"
+                                        Text="{Binding Playing.Name}" />
                                     <Label
-                                        FontSize="Micro"
-                                        HorizontalOptions="Center"
-                                        Text="{Binding Game2TagsInfo}"
-                                        TextColor="{StaticResource Gray400}" />
-                                </VerticalStackLayout>
-                            </BindableLayout.EmptyView>
-                            <BindableLayout.ItemTemplate>
-                                <DataTemplate x:DataType="model:Tags">
-                                    <Border
-                                        Margin="0,0,6,4"
-                                        Padding="10,4"
-                                        BackgroundColor="{StaticResource PokeBlue}"
-                                        HeightRequest="32"
-                                        StrokeThickness="0">
-                                        <Label Style="{StaticResource TagBadge}" Text="{Binding Name}" />
-                                    </Border>
-                                </DataTemplate>
-                            </BindableLayout.ItemTemplate>
-                        </FlexLayout>
-
-                        <Border
-                            Grid.Row="2"
-                            Grid.Column="0"
-                            Margin="0,4,8,4"
-                            Padding="10,4"
-                            BackgroundColor="{StaticResource PokeBlue}"
-                            IsVisible="{Binding SelectedMatch.Game3, Converter={StaticResource IsNotNullConverter}}"
-                            StrokeThickness="0"
-                            VerticalOptions="Start">
-                            <Label Style="{StaticResource TagBadge}" Text="Game 3" />
-                        </Border>
-                        <FlexLayout
-                            Grid.Row="2"
-                            Grid.Column="1"
-                            Margin="0,4"
-                            AutomationId="Game3TagsView"
-                            SemanticProperties.Description="Tags for game 3"
-                            AlignItems="Start"
-                            BindableLayout.ItemsSource="{Binding TagsSelectedGame3}"
-                            Direction="Row"
-                            IsVisible="{Binding SelectedMatch.Game3, Converter={StaticResource IsNotNullConverter}}"
-                            ToolTipProperties.Text="Tags for game 3"
-                            Wrap="Wrap">
-                            <BindableLayout.EmptyView>
-                                <VerticalStackLayout HorizontalOptions="Center">
-                                    <Label
-                                        FontSize="Small"
-                                        HorizontalOptions="Center"
-                                        Text="No Tags for Game 3"
-                                        TextColor="{StaticResource Gray400}" />
-                                    <Label
-                                        FontSize="Micro"
-                                        HorizontalOptions="Center"
-                                        Text="{Binding Game3TagsInfo}"
-                                        TextColor="{StaticResource Gray400}" />
-                                </VerticalStackLayout>
-                            </BindableLayout.EmptyView>
-                            <BindableLayout.ItemTemplate>
-                                <DataTemplate x:DataType="model:Tags">
-                                    <Border
-                                        Margin="0,0,6,4"
-                                        Padding="10,4"
-                                        BackgroundColor="{StaticResource PokeBlue}"
-                                        HeightRequest="32"
-                                        StrokeThickness="0">
-                                        <Label Style="{StaticResource TagBadge}" Text="{Binding Name}" />
-                                    </Border>
-                                </DataTemplate>
-                            </BindableLayout.ItemTemplate>
-                        </FlexLayout>
-                    </Grid>
-                </VerticalStackLayout>
-            </Border>
-
-            <!--  Match list heading  -->
-            <Label AutomationId="ReadJournalTitle" Style="{StaticResource Headline}" Text="Pick a Match" />
-
-            <!--  Match history list  -->
-            <CollectionView
-                AutomationId="MatchHistoryList"
-                SemanticProperties.Description="Match history"
-                EmptyView="No Matches Found"
-                HeightRequest="300"
-                HorizontalOptions="Center"
-                ItemSizingStrategy="MeasureFirstItem"
-                ItemsSource="{Binding MatchHistory}"
-                ItemsUpdatingScrollMode="KeepItemsInView"
-                MaximumWidthRequest="560"
-                SelectedItem="{Binding SelectedMatch}"
-                SelectionChangedCommand="{Binding LoadMatchCommand}"
-                SelectionMode="Single"
-                VerticalOptions="Fill"
-                VerticalScrollBarVisibility="Always">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="model:MatchEntry">
-                        <Border
-                            AutomationId="{Binding Id, StringFormat='MatchRow_{0}'}"
-                            SemanticProperties.Description="{Binding Playing.Name, StringFormat='Match with {0}'}"
-                            Margin="4,3" Padding="12,8" Stroke="{StaticResource PokeBlue}" StrokeThickness="1">
-                            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="8">
-                                <Image
-                                    Grid.Column="0"
-                                    HeightRequest="32"
-                                    SemanticProperties.Description="{Binding Playing.Name, StringFormat='{0} deck icon'}"
-                                    Source="{Binding Playing.ImagePath}"
-                                    VerticalOptions="Center"
-                                    WidthRequest="32" />
-                                <Label
-                                    Grid.Column="1"
-                                    Style="{StaticResource MatchCardName}"
-                                    Text="{Binding Playing.Name}" />
-                                <Label
-                                    Grid.Column="2"
-                                    FontFamily="SairaRegular"
-                                    FontSize="11"
-                                    HorizontalOptions="Center"
-                                    Text="{Binding Against.Name}"
-                                    TextColor="{StaticResource Gray400}"
-                                    VerticalOptions="Center" />
-                                <Label
-                                    Grid.Column="3"
-                                    FontFamily="SairaRegular"
-                                    FontSize="11"
-                                    Text="{Binding DatePlayed, StringFormat='{0:d}'}"
-                                    TextColor="{StaticResource PokeYellow}"
-                                    VerticalOptions="Center" />
-                                <Border
-                                    Grid.Column="4"
-                                    Padding="8,2"
-                                    BackgroundColor="{StaticResource PokeBlue}"
-                                    StrokeThickness="0"
-                                    VerticalOptions="Center">
-                                    <Label
+                                        Grid.Column="2"
                                         FontFamily="SairaRegular"
-                                        FontSize="12"
-                                        Text="{Binding Result}"
-                                        TextColor="{StaticResource White}" />
-                                </Border>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                                        FontSize="11"
+                                        HorizontalOptions="Center"
+                                        Text="{Binding Against.Name}"
+                                        TextColor="{StaticResource Gray400}"
+                                        VerticalOptions="Center" />
+                                    <Label
+                                        Grid.Column="3"
+                                        FontFamily="SairaRegular"
+                                        FontSize="11"
+                                        Text="{Binding DatePlayed, StringFormat='{0:d}'}"
+                                        TextColor="{StaticResource PokeYellow}"
+                                        VerticalOptions="Center" />
+                                    <Border
+                                        Grid.Column="4"
+                                        Padding="8,2"
+                                        BackgroundColor="{StaticResource PokeBlue}"
+                                        StrokeThickness="0"
+                                        VerticalOptions="Center">
+                                        <Label
+                                            FontFamily="SairaRegular"
+                                            FontSize="12"
+                                            Text="{Binding Result}"
+                                            TextColor="{StaticResource White}" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
 
-            <!--  Debug view (Windows only)  -->
-            <Border IsVisible="{OnPlatform WinUI=true, Default=false}" Padding="12">
-                <VerticalStackLayout Spacing="4">
-                    <Label Text="{Binding MatchHistory.Count, StringFormat='Matches Loaded: {0}'}" FontSize="Small" />
-                    <Label Text="{Binding SelectedMatch.Id, StringFormat='Selected Match ID: {0}'}" FontSize="Small" />
-                    <Label Text="{Binding PlayingName, StringFormat='Playing: {0}'}" FontSize="Small" />
-                    <Label Text="{Binding AgainstName, StringFormat='Against: {0}'}" FontSize="Small" />
-                    <Label Text="{Binding TagsSelectedGame1.Count, StringFormat='Game 1 Tags: {0}'}" FontSize="Small" />
-                    <Label Text="{Binding HasGame1Tags, StringFormat='Has Game 1 Tags: {0}'}" FontSize="Small" />
-                    <Label Text="{Binding Game1TagsInfo}" FontSize="Small" />
-                    <Label Text="{Binding TagsSelectedGame2.Count, StringFormat='Game 2 Tags: {0}'}" FontSize="Small" />
-                    <Label Text="{Binding HasGame2Tags, StringFormat='Has Game 2 Tags: {0}'}" FontSize="Small" />
-                    <Label Text="{Binding Game2TagsInfo}" FontSize="Small" />
-                    <Label Text="{Binding TagsSelectedGame3.Count, StringFormat='Game 3 Tags: {0}'}" FontSize="Small" />
-                    <Label Text="{Binding HasGame3Tags, StringFormat='Has Game 3 Tags: {0}'}" FontSize="Small" />
-                    <Label Text="{Binding Game3TagsInfo}" FontSize="Small" />
-                </VerticalStackLayout>
-            </Border>
+                <!--  Debug view (Windows only)  -->
+                <Border IsVisible="{OnPlatform WinUI=true, Default=false}" Padding="12">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="{Binding MatchHistory.Count, StringFormat='Matches Loaded: {0}'}" FontSize="Small" />
+                        <Label Text="{Binding SelectedMatch.Id, StringFormat='Selected Match ID: {0}'}" FontSize="Small" />
+                        <Label Text="{Binding PlayingName, StringFormat='Playing: {0}'}" FontSize="Small" />
+                        <Label Text="{Binding AgainstName, StringFormat='Against: {0}'}" FontSize="Small" />
+                        <Label Text="{Binding TagsSelectedGame1.Count, StringFormat='Game 1 Tags: {0}'}" FontSize="Small" />
+                        <Label Text="{Binding HasGame1Tags, StringFormat='Has Game 1 Tags: {0}'}" FontSize="Small" />
+                        <Label Text="{Binding Game1TagsInfo}" FontSize="Small" />
+                        <Label Text="{Binding TagsSelectedGame2.Count, StringFormat='Game 2 Tags: {0}'}" FontSize="Small" />
+                        <Label Text="{Binding HasGame2Tags, StringFormat='Has Game 2 Tags: {0}'}" FontSize="Small" />
+                        <Label Text="{Binding Game2TagsInfo}" FontSize="Small" />
+                        <Label Text="{Binding TagsSelectedGame3.Count, StringFormat='Game 3 Tags: {0}'}" FontSize="Small" />
+                        <Label Text="{Binding HasGame3Tags, StringFormat='Has Game 3 Tags: {0}'}" FontSize="Small" />
+                        <Label Text="{Binding Game3TagsInfo}" FontSize="Small" />
+                    </VerticalStackLayout>
+                </Border>
 
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!--  Loading indicator, drawn OVER the page rather than in it.
+
+              It is a sibling of the ScrollView in the same Grid cell, so it occupies no
+              layout space and nothing below it moves when it appears. As an inline child it
+              pushed ~144px of content down every time it showed, which gave every element
+              below two possible positions depending on timing.
+
+              InputTransparent passes clicks through to the content underneath. Layout
+              cascades this to children by default, so the spinner and its label are
+              transparent too. It matters because the indicator deliberately lingers 500ms
+              after the busy gate clears, so a user (or a UI test) is interacting with the
+              page again while it is still on screen.
+
+              IsVisible follows the control's own IsShowing rather than the raw busy flag, so
+              that minimum-visible-duration is what decides when the host disappears —
+              otherwise fast work would flash.  -->
+        <VerticalStackLayout
+            AutomationId="LoadingIndicatorHost"
+            SemanticProperties.Description="Loading match history"
+            HorizontalOptions="Center"
+            InputTransparent="True"
+            IsVisible="{Binding Source={x:Reference PageLoadingIndicator}, Path=IsShowing, x:DataType=loading:LoadingIndicator}"
+            Spacing="4"
+            VerticalOptions="Center">
+            <loading:LoadingIndicator
+                x:Name="PageLoadingIndicator"
+                AutomationId="PageLoadingIndicator"
+                ArcColor="{StaticResource BostonRed}"
+                HeightRequest="96"
+                IsBusy="{Binding IsBusyMatchHistory}"
+                WidthRequest="96" />
+            <Label
+                AutomationId="LoadingIndicatorLabel"
+                FontFamily="SairaRegular"
+                FontSize="12"
+                HorizontalOptions="Center"
+                Text="Loading journal…"
+                TextColor="{StaticResource PokeYellow}" />
         </VerticalStackLayout>
-    </ScrollView>
+    </Grid>
 </ContentPage>
