@@ -14,7 +14,7 @@ namespace PokemonBattleJournal.Services.Restore
         /// Same ceiling the TrainerHill import enforces. A backup is our own file, but "our own
         /// file" is only ever a claim about a byte array the user picked off disk.
         /// </summary>
-        private const int MaxBytes = 8 * 1024 * 1024;
+        private const int MaxBytes = IRestoreService.MaxBackupBytes;
 
         private const int MaxDepth = 16;
 

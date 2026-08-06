@@ -1,5 +1,6 @@
 using System.Text;
 using CommunityToolkit.Maui.Storage;
+using PokemonBattleJournal.Services.Restore;
 
 namespace PokemonBattleJournal.ViewModels
 {
@@ -14,8 +15,9 @@ namespace PokemonBattleJournal.ViewModels
         private readonly AppShellViewModel _shellVm;
         private readonly ITrainerHillImportService _importService;
         private readonly IExportService _exportService;
+        private readonly IRestoreService _restoreService;
 
-        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService, AppShellViewModel shellVm, ITrainerHillImportService importService, IExportService exportService, IErrorHandler errorHandler)
+        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService, AppShellViewModel shellVm, ITrainerHillImportService importService, IExportService exportService, IRestoreService restoreService, IErrorHandler errorHandler)
         {
             _connection = connection;
             _logger = logger;
@@ -24,6 +26,7 @@ namespace PokemonBattleJournal.ViewModels
             _shellVm = shellVm;
             _importService = importService;
             _exportService = exportService;
+            _restoreService = restoreService;
         }
 
         [ObservableProperty]
@@ -270,6 +273,167 @@ namespace PokemonBattleJournal.ViewModels
                 _errorHandler.HandleError(ex);
             }
         }
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasRestoreStatus))]
+        public partial string RestoreStatusMessage { get; set; } = string.Empty;
+
+        public bool HasRestoreStatus => !string.IsNullOrEmpty(RestoreStatusMessage);
+
+        /// <summary>
+        /// Restores a backup envelope the user picks off disk.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately not gated on an active trainer, unlike the TrainerHill import: a backup
+        /// carries its own trainers, and the case where this matters most — a fresh install with
+        /// no trainer at all — is exactly the case a trainer guard would block.
+        /// </remarks>
+        [RelayCommand]
+        public async Task RestoreBackupAsync()
+        {
+            try
+            {
+                FileResult? file = await FilePicker.Default.PickAsync(new PickOptions
+                {
+                    PickerTitle = "Select a Pokémon Battle Journal backup",
+                    FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                    {
+                        { DevicePlatform.WinUI, [".json"] },
+                        { DevicePlatform.Android, ["application/json"] },
+                        { DevicePlatform.iOS, ["public.json"] },
+                        { DevicePlatform.MacCatalyst, ["public.json"] },
+                    })
+                });
+
+                if (file is null)
+                    return;
+
+                string json;
+
+                // Gate starts AFTER the picker returns — the picker is user browsing time, not
+                // app processing time, and gating it would leave Busy_Mutating up for as long as
+                // the user takes to choose a file. Same reasoning as the import and export paths.
+                IsBusyMutating = true;
+                try
+                {
+                    await using Stream stream = await file.OpenReadAsync();
+
+                    // The service enforces the same ceiling, but only once the file is already a
+                    // string in memory. Checking the length first means a hostile or corrupt
+                    // multi-gigabyte file is refused instead of being materialised to be measured.
+                    if (stream.CanSeek && stream.Length > IRestoreService.MaxBackupBytes)
+                    {
+                        _logger.LogWarning("Restore refused: {Bytes} bytes exceeds the limit", stream.Length);
+                        RestoreStatusMessage = $"Backup refused: the file is larger than {IRestoreService.MaxBackupBytes / (1024 * 1024)}MB.";
+                        return;
+                    }
+
+                    using StreamReader reader = new(stream);
+                    json = await reader.ReadToEndAsync();
+                }
+                finally
+                {
+                    IsBusyMutating = false;
+                }
+
+                await ApplyRestoreAsync(json);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading backup file for restore");
+                RestoreStatusMessage = "Restore failed";
+                _errorHandler.HandleError(ex);
+            }
+        }
+
+        /// <summary>
+        /// Runs a restore over already-read JSON and reports what it did.
+        /// </summary>
+        /// <remarks>
+        /// Split out from the command so the reporting is testable: <c>FilePicker</c> is a MAUI
+        /// static with no seam, so anything downstream of it in the command body can only be
+        /// exercised on a device.
+        /// </remarks>
+        internal async Task ApplyRestoreAsync(string json)
+        {
+            IsBusyMutating = true;
+            try
+            {
+                RestoreResult result = await _restoreService.RestoreBackupAsync(json);
+                RestoreStatusMessage = DescribeRestore(result);
+
+                _logger.LogInformation(
+                    "Restore: {Created} trainers created, {Merged} trainers merged, {Inserted} matches inserted, {Skipped} already present, {Conflicts} conflicts, {Errors} errors",
+                    result.TrainersCreated, result.TrainersMerged, result.MatchesInserted,
+                    result.MatchesSkippedIdentical, result.Conflicts.Count, result.Errors.Count);
+
+                // The status line can only carry counts. Whatever a count stands for has to reach
+                // the log, or a user reporting "2 failed" leaves nothing to diagnose it with.
+                if (result.Errors.Count > 0)
+                    _logger.LogWarning("Restore errors: {Errors}", string.Join("; ", result.Errors));
+
+                if (result.Conflicts.Count > 0)
+                {
+                    _logger.LogWarning("Restore conflicts left unapplied: {Conflicts}", string.Join("; ",
+                        result.Conflicts.Select(c => $"{c.TrainerName} @ {c.StartTime:o}: {c.Description}")));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during backup restore");
+                RestoreStatusMessage = "Restore failed";
+                _errorHandler.HandleError(ex);
+            }
+            finally
+            {
+                IsBusyMutating = false;
+            }
+        }
+
+        /// <summary>
+        /// Turns a <see cref="RestoreResult"/> into the one sentence the user gets.
+        /// </summary>
+        /// <remarks>
+        /// Every outcome is named separately and none of them share a word. The import status
+        /// message used to report the *error* count as "skipped", which reads as "already
+        /// present" — opposite meanings, with the reassuring phrasing on the alarming case.
+        ///
+        /// A result with nothing at all in it and an error is a whole-file rejection (wrong
+        /// version, too large, unparsable). That reason is shown verbatim: "0 matches, 1 failed"
+        /// would hide the only sentence saying whether to pick a different file or update the app.
+        /// </remarks>
+        internal static string DescribeRestore(RestoreResult result)
+        {
+            int touched = result.TrainersCreated + result.TrainersMerged + result.MatchesInserted
+                + result.MatchesSkippedIdentical + result.MatchesMerged + result.Conflicts.Count;
+
+            if (touched == 0)
+                return result.Errors.Count > 0 ? result.Errors[0] : "Backup contained no matches";
+
+            List<string> parts = [$"Restored {Pluralize(result.MatchesInserted, "match", "matches")}"];
+
+            if (result.TrainersCreated > 0)
+                parts.Add($"{Pluralize(result.TrainersCreated, "trainer", "trainers")} added");
+
+            if (result.MatchesSkippedIdentical > 0)
+                parts.Add($"{result.MatchesSkippedIdentical} already present");
+
+            if (result.MatchesMerged > 0)
+                parts.Add($"{result.MatchesMerged} updated");
+
+            // "not applied" is spelled out because the conflict resolution UI does not exist yet:
+            // until it does, this count is the only sign that anything is still outstanding.
+            if (result.Conflicts.Count > 0)
+                parts.Add($"{result.Conflicts.Count} {(result.Conflicts.Count == 1 ? "needs" : "need")} review (not applied)");
+
+            if (result.Errors.Count > 0)
+                parts.Add($"{result.Errors.Count} failed");
+
+            return string.Join(", ", parts);
+        }
+
+        private static string Pluralize(int count, string singular, string plural) =>
+            $"{count} {(count == 1 ? singular : plural)}";
 
         /// <summary>Strips characters that are illegal in a file name on any target platform.</summary>
         private static string SanitizeForFileName(string? name)
