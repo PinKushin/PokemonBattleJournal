@@ -441,10 +441,12 @@ built-in native renderer — `AcrylicBrush` on WinUI, `RenderEffect` on Android 
 handler or platform view. That is ordinary platform-specific customisation, which MAUI is
 designed to accommodate.
 
-Do not confuse this with the spinner's residual flicker, which was abandoned for a different
-and much harder reason: fixing that properly would mean custom DX drawing, and wiring DX into
-MAUI is essentially impractical because MAUI is not built for it (user, 2026-08-05). Native
-built-in effects are a tractable per-platform job; bypassing MAUI's renderer is not.
+Do not cite the spinner's residual flicker as precedent against this. That was left alone as a
+priority call, and the DX reasoning first recorded for it did not survive checking: MAUI's
+Windows backend already renders through DirectX via Win2D, and the real escape hatch would be
+SkiaSharp — already a dependency, cross-platform, with `SKShader.CreateSweepGradient` as the
+exact primitive `ICanvas` lacks. See [[project_spinner_drawing_lessons]] and
+[[feedback_fact_check_the_user]].
 
 So: ship the dim first because it is one line of XAML and works everywhere, and treat acrylic /
 RenderEffect as a per-platform enhancement if the dim proves too flat.
