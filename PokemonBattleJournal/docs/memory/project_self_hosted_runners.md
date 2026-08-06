@@ -37,12 +37,18 @@ the Windows runner natively, the Linux runner in WSL — so unlike a local test-
 the Windows UI matrix and the Android UI matrix could run **genuinely in parallel on one
 desktop**.
 
-**How confident to be about the interference: low, but not zero.** The user recalls a focus
-issue and leans towards it having been real, while saying outright they may be wrong. The
-mechanism would be one-directional — Windows Appium needs the app window frontmost, Android
-does not care about focus but takes the foreground anyway, so Android runs would break
-Windows runs and never the reverse. Treat that as an unmeasured hypothesis; the setup is gone
-and nobody instrumented it.
+**Interference is real, and it runs the OTHER way.** Measured 2026-08-06 by running both
+suites concurrently by hand — see [[project_android_session_poisoning]] for the numbers and
+the control.
+
+The recollection was that Android broke Windows, reasoning that Windows Appium needs its
+window frontmost while the emulator takes the foreground. The measurement says the reverse:
+**Windows passed 80/80 and was not measurably slowed** (`Shell ready` 244ms while the emulator
+cold-booted on the same CPU), while **Android failed 79/79**. The focus-sensitive suite was
+fine; the emulator-based one collapsed.
+
+So the runners almost certainly did interfere — just not in the direction anyone assumed, and
+a Windows job would have been the aggressor rather than the victim.
 
 The plainer problem is not in doubt: **a CI run on the machine you are sitting at is a run you
 have to leave alone**, and these runners made that hard to sustain. That alone undercuts the
