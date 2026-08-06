@@ -320,6 +320,15 @@ Prior art worth a look for scope, not code:
 [jlgrimes/training-court](https://github.com/jlgrimes/training-court) is a battle-log and
 tournament tracker for the same audience.
 
+**Live tools tracking the CURRENT format** — the useful reference, since they must keep working
+as Live changes:
+
+- [replay.ptcgtools.com](https://replay.ptcgtools.com/en) — the informative one. Where the
+  card-ID export setting and English-only constraint above came from.
+- [deaddraw.app](https://deaddraw.app/) — also turns a pasted Live log into a replay. Its page
+  is client-rendered, so an automated fetch returns only the title; **nothing about it has been
+  verified**. Worth opening by hand when capturing fresh logs, to compare what it accepts.
+
 ## Deck Maker
 
 Build and store deck lists tied to archetypes. Goals:
