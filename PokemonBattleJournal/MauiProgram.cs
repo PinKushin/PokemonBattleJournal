@@ -5,6 +5,7 @@ using PokemonBattleJournal.Scraper.Interfaces;
 using PokemonBattleJournal.Scraper.Services;
 using PokemonBattleJournal.Services.Export;
 using PokemonBattleJournal.Services.Import;
+using PokemonBattleJournal.Services.Restore;
 using Serilog;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using System.Runtime.Versioning;
@@ -112,6 +113,7 @@ namespace PokemonBattleJournal
             builder.Services.AddSingleton<ITrainerSwitchService, TrainerSwitchService>();
             builder.Services.AddSingleton<ITrainerHillImportService, TrainerHillImportService>();
             builder.Services.AddSingleton<IExportService, ExportService>();
+            builder.Services.AddSingleton<IRestoreService, RestoreService>();
             builder.Services.AddSingleton<AppShellViewModel>();
             builder.Services.AddSingleton<AppShell>();
 
