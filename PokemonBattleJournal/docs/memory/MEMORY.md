@@ -1,5 +1,7 @@
 # Memory Index
 
+- [SESSION HANDOFF 2026-08-06](project_session_handoff_2026_08_06.md) — **READ FIRST.** feat/loading-indicator is one Android test from green; the failure is layout shift from the inline indicator and the planned overlay fixes it structurally.
+
 - [TrainerHill import feature](project_trainerhill_import.md) — JSON import from trainerhill.com; mixed-type turn field (int/string JsonElement), slug-to-name conversion, get-or-create archetype/tag, per-entry error collection.
 
 - [In-app DEBUG seeding](project_in_app_seeding.md) — App.xaml.cs seeds UITestTrainer on startup in #if DEBUG; must call SetActiveAsync after create/find; bypasses MAUI's GUID DB path problem.
