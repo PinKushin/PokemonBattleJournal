@@ -44,7 +44,7 @@
 - [OptionsPageViewModel bugs fixed](project_options_vm_bugs_fixed.md) — SaveTagAsync/SaveArchetypeAsync discarded return values fixed; NewDeckIcon pre-initialized to ball_icon.png so icon guard doesn't early-return silently.
 - [SonarAnalyzer + Roslynator warnings fixed](project_sonar_warnings_fixed.md) — All S112/S3267/S8969/S6562/S6444/S6608/S3168/S2068/S1450 resolved in commit dc45c19; suppression patterns documented.
 - [UI test nav cascade + Windows picker stall](project_uitest_nav_cascade_fix.md) — NavigateTo resets _currentPage=null on failure; picker SendKeys("L") + SendKeys(Enter) split to fix Windows Game3Tab stall.
-- [Self-hosted CI runners](project_self_hosted_runners.md) — PinPC (Windows) + UbuntuBox (Linux); use auto labels [self-hosted,Windows,X64]/[Linux,X64]; DOTNET_INSTALL_DIR must be set at job level not workflow level.
+- [CI runners — GitHub-hosted, NOT self-hosted](project_self_hosted_runners.md) — superseded 2026-08-06: everything is windows-latest/ubuntu-latest. Two offline self-hosted registrations linger in repo settings and explain nothing; a run failing only in `Set up job` is GitHub infrastructure, not the commit.
 - [Commit description requirement](feedback_commit_descriptions.md) — Every commit needs a body: what was learned (root cause, platform quirk) and what it tests/validates.
 - [Android pm clear vs Fast Deployment](project_android_pm_clear.md) — pm clear wipes .__override__/ and crashes VS-deployed apps; use force-stop + DB delete instead; pm clear only safe for EmbedAssembliesIntoApk builds.
 - [Android local test workflow](feedback_android_local_testing.md) — Always use ANDROID_USE_INSTALLED=1 locally; never trigger AppiumSetup's 7min EmbedAssembliesIntoApk build; deploy once from VS then rerun tests freely.
