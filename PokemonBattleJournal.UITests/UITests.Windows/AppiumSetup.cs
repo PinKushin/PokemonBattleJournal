@@ -153,9 +153,67 @@ namespace UITests
             shellWaitTimer.Stop();
             Log($"6. Shell ready ({shellWaitTimer.ElapsedMilliseconds}ms)");
             PerfLog($"{logPrefix} Shell ready ({shellWaitTimer.ElapsedMilliseconds}ms)");
-            
+
+            ApplyWindowSizeOverride();
+
             setupTimer.Stop();
             PerfLog($"{logPrefix} Windows AppiumSetup complete ({setupTimer.ElapsedMilliseconds}ms)");
+        }
+
+        /// <summary>
+        /// Forces the app window to a given size when <c>UITEST_WINDOW_SIZE</c> is set
+        /// (e.g. <c>1024x768</c>). Always logs the resulting size.
+        /// </summary>
+        /// <remarks>
+        /// Exists to make a CI-only failure reproducible locally. The Windows MainPageTests
+        /// flake (docs/memory/project_windows_mainpage_click_flake.md) has never reproduced on
+        /// a dev machine, and the leading explanation is geometry: GitHub's windows-latest
+        /// desktop is 1024x768, MainPage's MainColumnsGrid collapses to a single column at
+        /// narrow widths, and turning BO3 on adds a whole panel — so controls that sit
+        /// comfortably on screen here can fall below the fold there, where a WinAppDriver click
+        /// is dispatched but never lands.
+        ///
+        /// Logging the size unconditionally matters as much as the override: every past
+        /// investigation of this flake had to guess at the runner's geometry, and the artifacts
+        /// never recorded it.
+        /// </remarks>
+        private static void ApplyWindowSizeOverride()
+        {
+            string? requested = Environment.GetEnvironmentVariable("UITEST_WINDOW_SIZE");
+            if (!string.IsNullOrWhiteSpace(requested))
+            {
+                string[] parts = requested.Split('x', StringSplitOptions.TrimEntries);
+                if (parts.Length == 2
+                    && int.TryParse(parts[0], out int width)
+                    && int.TryParse(parts[1], out int height))
+                {
+                    try
+                    {
+                        App.Manage().Window.Size = new System.Drawing.Size(width, height);
+                        Log($"7. UITEST_WINDOW_SIZE applied: {width}x{height}");
+                    }
+                    catch (OpenQA.Selenium.WebDriverException ex)
+                    {
+                        Log($"7. UITEST_WINDOW_SIZE '{requested}' could not be applied: {ex.GetType().Name}");
+                    }
+                }
+                else
+                {
+                    Log($"7. UITEST_WINDOW_SIZE '{requested}' is not in WIDTHxHEIGHT form — ignored");
+                }
+            }
+
+            try
+            {
+                System.Drawing.Size size = App.Manage().Window.Size;
+                System.Drawing.Point position = App.Manage().Window.Position;
+                Log($"7. App window: {size.Width}x{size.Height} at ({position.X},{position.Y})");
+                PerfLog($"App window: {size.Width}x{size.Height} at ({position.X},{position.Y})");
+            }
+            catch (OpenQA.Selenium.WebDriverException ex)
+            {
+                Log($"7. Could not read the app window geometry: {ex.GetType().Name}");
+            }
         }
 
         [OneTimeTearDown]

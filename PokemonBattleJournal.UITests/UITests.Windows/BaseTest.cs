@@ -203,5 +203,122 @@ namespace UITests
             catch (Exception ex) { NavLog($"re-anchor after picker failed: {ex.Message}"); }
             PerfLog($"SelectWindowsPickerItem('{itemName}'): click {clickMs}ms, letter {letterMs}ms, tab {tabMs}ms, re-anchor {sw.ElapsedMilliseconds - clickMs - letterMs - tabMs}ms");
         }
+
+        /// <summary>
+        /// Records what could be swallowing input when a click-with-retry helper gives up.
+        /// </summary>
+        /// <remarks>
+        /// Targets docs/memory/project_windows_mainpage_click_flake.md: partway through
+        /// MainPageTests on CI, every click-driven test starts failing while every find-only
+        /// test keeps passing. The driver reports each click as dispatched (~1000ms), the
+        /// target is present, and nothing happens. An element dump cannot explain that — the
+        /// element is right there — so the interesting state is *above* the app: another
+        /// top-level window, or a leftover popup holding focus.
+        ///
+        /// Three facts, cheap to collect, that between them distinguish the candidates:
+        ///
+        /// - **Window count.** More than one top-level window means a popup or dialog is up.
+        ///   This only READS WindowHandles. It does not switch to them, and it is not a
+        ///   revival of the deleted WindowHandles-iterating picker selection — see
+        ///   docs/memory/project_windows_picker_ci.md, which forbids reinstating that
+        ///   *selection mechanism*. Reading a count in a failure path is not that mechanism,
+        ///   and switching windows here would mutate driver state mid-test, which is exactly
+        ///   what made the old approach fragile.
+        /// - **Focused element.** A modal popup holding focus explains clicks going nowhere.
+        /// - **Whether the archetype popup is still open.** MainPage_ArchetypePicker_Search_
+        ///   FiltersResults opens one earlier in the run, and a popup left open would swallow
+        ///   clicks while leaving the page underneath perfectly findable — which matches the
+        ///   fingerprint exactly. This is the leading hypothesis.
+        ///
+        /// Best-effort throughout: this runs while something is already wrong, and the
+        /// original failure is the one worth reporting.
+        /// </remarks>
+        protected override void LogInputBlockers(string context, string? targetAutomationId = null)
+        {
+            // Off-screen target is the leading hypothesis, so check it first and loudest.
+            //
+            // WinAppDriver's Click on an element outside the visible viewport does not reliably
+            // reach the handler (docs/memory/feedback_flaui_scroll_into_view.md is the same
+            // lesson for CollectionView items). The element is still in the UIA tree with
+            // sensible bounds, so it is found, clicked, reported as clicked — and nothing
+            // happens. That is exactly the observed shape.
+            //
+            // It also explains why this only ever fails on CI: the runner's desktop is smaller
+            // than a dev monitor, MainPage's MainColumnsGrid collapses to one column, and
+            // turning BO3 on adds a whole panel — so the tab row can sit below the fold there
+            // and never here.
+            if (targetAutomationId is not null)
+            {
+                try
+                {
+                    AppiumElement target = FindUIElement(targetAutomationId);
+                    System.Drawing.Point origin = target.Location;
+                    System.Drawing.Size size = target.Size;
+                    System.Drawing.Point windowOrigin = App.Manage().Window.Position;
+                    System.Drawing.Size windowSize = App.Manage().Window.Size;
+
+                    bool insideViewport =
+                        origin.Y >= windowOrigin.Y &&
+                        origin.Y + size.Height <= windowOrigin.Y + windowSize.Height &&
+                        origin.X >= windowOrigin.X &&
+                        origin.X + size.Width <= windowOrigin.X + windowSize.Width;
+
+                    PerfLog($"BLOCKERS [{context}] target '{targetAutomationId}' at ({origin.X},{origin.Y}) {size.Width}x{size.Height}; " +
+                        $"window at ({windowOrigin.X},{windowOrigin.Y}) {windowSize.Width}x{windowSize.Height}; insideViewport={insideViewport}");
+
+                    if (!insideViewport)
+                    {
+                        PerfLog($"BLOCKERS [{context}] '{targetAutomationId}' IS OUTSIDE THE VISIBLE WINDOW. " +
+                            "It is in the UIA tree so it is found and 'clicked', but the click cannot land. " +
+                            "Scroll it into view before clicking rather than retrying the click.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    PerfLog($"BLOCKERS [{context}] could not measure '{targetAutomationId}': {ex.GetType().Name}");
+                }
+            }
+
+            try
+            {
+                System.Collections.ObjectModel.ReadOnlyCollection<string> handles = App.WindowHandles;
+                PerfLog($"BLOCKERS [{context}] top-level windows: {handles.Count} (current '{App.CurrentWindowHandle}')");
+                if (handles.Count > 1)
+                {
+                    PerfLog($"BLOCKERS [{context}] MORE THAN ONE WINDOW — a popup or dialog is up and is the likely input sink. Handles: {string.Join(", ", handles)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                PerfLog($"BLOCKERS [{context}] could not read window handles: {ex.GetType().Name}");
+            }
+
+            try
+            {
+                AppiumElement focused = (AppiumElement)App.SwitchTo().ActiveElement();
+                PerfLog($"BLOCKERS [{context}] focused element: AutomationId='{focused.GetDomAttribute("AutomationId")}' Name='{focused.GetDomAttribute("Name")}' ClassName='{focused.GetDomAttribute("ClassName")}'");
+            }
+            catch (Exception ex)
+            {
+                PerfLog($"BLOCKERS [{context}] could not read the focused element: {ex.GetType().Name}");
+            }
+
+            // The archetype popup is the leading suspect, so name it explicitly rather than
+            // leaving a future reader to infer it from a generic dump.
+            foreach (string popupMarker in new[] { "ArchetypeSearchBar", "ArchetypeItem_Other", "ArchetypePopupCancel" })
+            {
+                try
+                {
+                    if (IsElementPresent(popupMarker))
+                    {
+                        PerfLog($"BLOCKERS [{context}] '{popupMarker}' IS PRESENT — an archetype popup is still open and is almost certainly eating the clicks");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    PerfLog($"BLOCKERS [{context}] could not probe '{popupMarker}': {ex.GetType().Name}");
+                }
+            }
+        }
     }
 }

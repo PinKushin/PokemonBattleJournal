@@ -124,9 +124,15 @@ namespace UITests
                 PerfLog($"ClickTab('{tabAutomationId}'): attempt {attempt} — click took {clickMs}ms but '{expectedPanelElementId}' never appeared, retrying");
             }
 
+            // Clicks are being dispatched and going nowhere. See
+            // docs/memory/project_windows_mainpage_click_flake.md — on Windows CI this is where
+            // the fixture stops responding to input while every element stays findable.
+            LogInputBlockers($"ClickTab({tabAutomationId})", tabAutomationId);
+
             throw new OpenQA.Selenium.NoSuchElementException(
                 $"ClickTab: '{expectedPanelElementId}' never appeared after {attempts} clicks on '{tabAutomationId}'. " +
-                "The tab click is not reaching the handler — see PerfLog for per-attempt click timings.");
+                "The tab click is not reaching the handler — see PerfLog for per-attempt click timings, " +
+                "and for BLOCKERS lines naming what owned input at the time.");
         }
 
         // Template method: handles page-tracking and logging; platform provides navigation steps.
@@ -210,12 +216,36 @@ namespace UITests
         protected virtual void DumpVisibleElements(string context, int maxItems = 40) { }
 
         /// <summary>
+        /// Diagnostic for the case where clicks stop landing but elements are still findable.
+        /// Windows BaseTest implements it; other platforms are a no-op.
+        /// </summary>
+        /// <remarks>
+        /// Call this when a click-with-retry helper gives up. The failure it exists for looks
+        /// nothing like a missing element: the driver reports the click succeeded, the target
+        /// element is present and returns sensible bounds, and yet nothing happens — and from
+        /// that point on nothing in the fixture that requires a click works again, while every
+        /// find-only test keeps passing. See
+        /// docs/memory/project_windows_mainpage_click_flake.md.
+        ///
+        /// That shape says something is swallowing input above the app: a leftover popup or a
+        /// second top-level window. Neither shows up in an element dump, which is why
+        /// DumpVisibleElements has never explained this one.
+        /// </remarks>
+        protected virtual void LogInputBlockers(string context, string? targetAutomationId = null) { }
+
+        /// <summary>
         /// Polls via platform-aware single-shot lookup until the element shows <paramref name="expected"/> text
         /// or <paramref name="timeoutMs"/> elapses. Uses a 200ms implicit wait per iteration.
         /// Safer than WebDriverWait + MobileBy.AccessibilityId, which maps to content-desc on Android
         /// (not AutomationId/resource-id) and silently never finds elements that only have AutomationId set.
         /// </summary>
-        protected void WaitUntilText(string automationId, string expected, int timeoutMs = 5000)
+        /// <returns>
+        /// True if the text was observed before the deadline. Callers that treat a timeout as
+        /// benign may ignore it, but a caller deciding whether an interaction actually landed
+        /// must check it — this used to return void, so a timeout was indistinguishable from
+        /// success and a click that never reached its handler looked like a click that worked.
+        /// </returns>
+        protected bool WaitUntilText(string automationId, string expected, int timeoutMs = 5000)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(200);
@@ -226,12 +256,14 @@ namespace UITests
                     try
                     {
                         if (GetElementText(automationId) == expected)
-                            return;
+                            return true;
                     }
                     catch (OpenQA.Selenium.NoSuchElementException) { }
                 }
             }
             finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
+
+            return false;
         }
 
         /// <summary>

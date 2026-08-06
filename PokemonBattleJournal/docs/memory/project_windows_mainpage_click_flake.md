@@ -62,18 +62,95 @@ From the PerfLog for run 31071811345:
 **Does not reproduce locally.** Full suite 78/78, and `MainPageTests` alone — matching CI's
 per-fixture matrix — is 25/25.
 
+## Leftover-popup theory: DISPROVEN, do not re-run it
+
+It was the leading hypothesis and it is wrong. The PerfLog for 31071811345 shows the popup
+opened by `MainPage_ArchetypePicker_Search_FiltersResults` closing cleanly:
+
+```
+[04:46:32.975] DismissArchetypePopup: try TryClickIfPresent(ArchetypePopupCancel)
+[04:46:33.391] DismissArchetypePopup: cancelClicked=True
+[04:46:33.711] DismissArchetypePopup: OK — searchBar gone via Cancel in 313ms
+```
+
+and clicks kept working for eleven seconds afterwards (`BO3GameTabs`, `BOSwitch_DisplayedAnd
+Toggled`, `BOSwitch_ShowsBO3Fields` all clicked successfully through 04:46:44).
+
+Worth knowing anyway: `DismissArchetypePopup` **logs but does not throw** when the popup
+survives, and its fallback `SendAndroidBack()` is a no-op on Windows. So on Windows a failed
+dismiss is silent. That is a real latent hole even though it did not fire here.
+
+## Falsified hypotheses — do not re-run these
+
+Three, each killed by evidence rather than opinion. Re-testing them is wasted time.
+
+1. **Leftover archetype popup swallowing clicks.** Disproven above — the popup closed cleanly
+   and clicks kept working for eleven seconds after.
+2. **Global input death after some point.** Disproven: `EnsureBO3On` logged
+   `Game2Tab appeared in 450ms (attempt 1)` at 04:46:46.877, *after* the supposed cut-off. It
+   is element-specific, not a dead session.
+3. **Window geometry / below-the-fold clicks.** This was the strongest remaining theory:
+   `MainColumnsGrid` collapses to one column at narrow widths, and BO3 adds a panel.
+
+   Falsified — but note **how nearly it was falsified wrongly.** The first attempt guessed
+   CI's window from the runner's desktop resolution and tested 1024x768 and 800x600. The new
+   `App window:` log line then showed the real value: **754x512 at (59,52)** — smaller than
+   either guess, so the test had been run at sizes that could not reproduce it by
+   construction. Re-run at exactly 754x512: **MainPageTests 25/25**, setup log confirming the
+   resize applied. Geometry is genuinely dead now.
+
+   The lesson is the general one: a negative result is only worth as much as the fidelity of
+   the setup that produced it. Measure the environment, do not infer it from a plausible proxy.
+
+What that leaves is CI-specific **timing**, and the numbers are stark. On CI `Shell ready`
+took 8798ms against ~485ms locally — roughly 18x — and every click in the failing run took
+~1000ms against ~200ms here. Nothing about the app's layout differs; the runner is simply
+far slower, and the tests' polling deadlines (2500-3000ms) were tuned on fast hardware.
+
+The point of this branch is that the next occurrence arrives with the answer attached rather
+than needing another round of theories.
+
+**The instrumentation is confirmed working on CI**, not just locally: run 31074492325 emitted
+`7. App window: 754x512 at (59,52)` in the setup log and PerfLog. Diagnostics that silently
+no-op in the environment that matters would be worse than none, so check this line still
+appears if the logging is ever refactored.
+
+## Where the failure actually starts
+
+Last successful click: `MainPage_BOSwitch_ShowsBO3Fields`, ending 04:46:44.275 — it toggles
+BO3 **on**. First failed click: 04:46:52.392. In between only `MainPage_FirstCheck_Displayed`
+(a find) and the start of `Game3Tab_ShowsGamePanel`.
+
+**CORRECTED:** I first wrote that no click happened in between. Wrong — `MainPage_BOSwitch_
+ShowsBO3Fields` ends with `finally { ResetBOSwitch(); }`, and `EnsureBO3On` then logged
+`Game2Tab appeared in 450ms (attempt 1)` at 04:46:46.877.
+
+The honest summary is that **the PerfLog cannot tell you which clicks landed**, because the two
+things it logs are both ambiguous:
+
+- `TryClickIfPresent('BOSwitch'): clicked after 973ms` reports *dispatch*, not effect.
+- `EnsureBO3On: Game2Tab appeared` can be reached without clicking at all, when the label
+  already reads "Best of 3".
+
+So "the last successful click" was not actually determinable from the artifacts. That gap is
+now closed: `ResetBOSwitch` verifies the label flips and says so when it does not, and
+`WaitUntilText` returns bool instead of void so a timeout stops looking like success.
+
+What *is* solid: `Game2Tab` was present and clicked three times, and `UserNoteInput2` never
+appeared; the same for the archetype pickers. The element exists, the click is dispatched, the
+handler does not run.
+
 ## Next steps when picking this up
 
-1. Find what runs between the last good click and the first bad one. In 31071811345 that
-   window is `MainPage_FirstCheck_Displayed` and the start of `Game3Tab_ShowsGamePanel`
-   (`EnsureBO3On`).
-2. Suspect a leftover modal/popup owning input: a ComboBox popup left open swallows clicks
-   while leaving the underlying tree findable, which matches the fingerprint exactly.
-   `MainPage_ArchetypePicker_Search_FiltersResults` opens a popup earlier in the run.
-3. Log the UIA window list (not just the element tree) on click failure — a second top-level
-   window would show up immediately and would explain everything.
-4. Note the local/CI difference is most likely **screen size**: CI runs a smaller desktop, and
-   MainPage's `MainColumnsGrid` collapses to one column, changing what is on screen.
+1. Read the `BLOCKERS [...]` lines now emitted by `LogInputBlockers` on every click-helper
+   giveup (`UITests.Windows/BaseTest.cs`). They record top-level window count, the focused
+   element, and whether any archetype-popup marker is present — enough to separate "second
+   window", "focus stolen" and "popup open" without another guessing round.
+2. Look hard at what toggling BO3 changes. It cascades `IsVisible` across the Game 2/3 panels,
+   so it is the one structural layout change immediately before input dies.
+3. The local/CI difference is most likely **screen size**: CI runs a smaller desktop, and
+   MainPage's `MainColumnsGrid` collapses to one column, which changes what is on screen and
+   what overlaps what.
 
 ## Related
 
