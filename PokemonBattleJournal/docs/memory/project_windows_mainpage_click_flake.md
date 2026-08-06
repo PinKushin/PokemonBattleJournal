@@ -89,16 +89,31 @@ Three, each killed by evidence rather than opinion. Re-testing them is wasted ti
 2. **Global input death after some point.** Disproven: `EnsureBO3On` logged
    `Game2Tab appeared in 450ms (attempt 1)` at 04:46:46.877, *after* the supposed cut-off. It
    is element-specific, not a dead session.
-3. **Window geometry / below-the-fold clicks.** This was the strongest remaining theory: CI's
-   desktop is 1024x768, `MainColumnsGrid` collapses to one column at narrow widths, and BO3
-   adds a panel. Tested directly with the new `UITEST_WINDOW_SIZE` override — **MainPageTests
-   is 25/25 at both 1024x768 and 800x600**, with the setup log confirming the resize applied.
-   Geometry alone does not reproduce it.
+3. **Window geometry / below-the-fold clicks.** This was the strongest remaining theory:
+   `MainColumnsGrid` collapses to one column at narrow widths, and BO3 adds a panel.
 
-What that leaves is CI-specific *timing* (the runner is far slower, and every click in the
-failing run took ~1000ms versus ~200ms locally), or something not yet imagined. The point of
-this branch is that the next occurrence arrives with the answer attached rather than needing
-another round of theories.
+   Falsified — but note **how nearly it was falsified wrongly.** The first attempt guessed
+   CI's window from the runner's desktop resolution and tested 1024x768 and 800x600. The new
+   `App window:` log line then showed the real value: **754x512 at (59,52)** — smaller than
+   either guess, so the test had been run at sizes that could not reproduce it by
+   construction. Re-run at exactly 754x512: **MainPageTests 25/25**, setup log confirming the
+   resize applied. Geometry is genuinely dead now.
+
+   The lesson is the general one: a negative result is only worth as much as the fidelity of
+   the setup that produced it. Measure the environment, do not infer it from a plausible proxy.
+
+What that leaves is CI-specific **timing**, and the numbers are stark. On CI `Shell ready`
+took 8798ms against ~485ms locally — roughly 18x — and every click in the failing run took
+~1000ms against ~200ms here. Nothing about the app's layout differs; the runner is simply
+far slower, and the tests' polling deadlines (2500-3000ms) were tuned on fast hardware.
+
+The point of this branch is that the next occurrence arrives with the answer attached rather
+than needing another round of theories.
+
+**The instrumentation is confirmed working on CI**, not just locally: run 31074492325 emitted
+`7. App window: 754x512 at (59,52)` in the setup log and PerfLog. Diagnostics that silently
+no-op in the environment that matters would be worse than none, so check this line still
+appears if the logging is ever refactored.
 
 ## Where the failure actually starts
 
