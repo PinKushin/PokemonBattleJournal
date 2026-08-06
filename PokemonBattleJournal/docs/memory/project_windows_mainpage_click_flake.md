@@ -148,9 +148,36 @@ handler does not run.
    window", "focus stolen" and "popup open" without another guessing round.
 2. Look hard at what toggling BO3 changes. It cascades `IsVisible` across the Game 2/3 panels,
    so it is the one structural layout change immediately before input dies.
-3. The local/CI difference is most likely **screen size**: CI runs a smaller desktop, and
-   MainPage's `MainColumnsGrid` collapses to one column, which changes what is on screen and
-   what overlaps what.
+3. Chase **timing**, not geometry. An earlier version of this list said the local/CI difference
+   was "most likely screen size" — that contradicted the falsified-hypotheses section directly
+   above it, which had already re-run the fixture at CI's real 754x512 for 25/25. Screen size
+   is dead. What survives is the 18x `Shell ready` gap and ~1000ms clicks against deadlines
+   tuned at ~200ms.
+
+## Foreground and pointer state: a real mechanism, but not this bug
+
+Windows Appium clicks depend on the app window being frontmost, and this is **confirmed by
+direct observation**, not theory: on 2026-08-06 a local full-suite run failed an About-page
+click because the user moved the mouse as the driver clicked, and clicking the page by hand
+let the run continue.
+
+Two qualifiers, both of which matter:
+
+- The user notes stray input "wasn't always the case" — the suite appears to have become more
+  sensitive to it at some point. Nobody has investigated when or why. **Open thread**, and
+  possibly the more interesting one, since a suite that grew input-sensitive may have grown
+  other timing sensitivities.
+- A related idea — that the retired self-hosted runners' parallel Windows/Android runs stole
+  focus the same way — is a recollection the user leans towards but does not stand behind. Not
+  evidence; the setup is gone and was never instrumented. What is certain is that those
+  runners made the machine hard to leave alone while a run was live, which produces the same
+  symptom by the confirmed route above. See [[project_self_hosted_runners]].
+
+So "focus stolen" is a demonstrated way for a dispatched Windows click to do nothing, which is
+exactly this bug's symptom — but it **does not explain the CI failures**. Each hosted matrix
+job is its own VM with no human at the mouse and no emulator sharing the desktop. Keep it as a
+mechanism to recognise in local runs, and as the reason a local run that anyone touched is not
+evidence either way.
 
 ## Related
 

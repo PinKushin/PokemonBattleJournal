@@ -479,5 +479,28 @@ namespace UITests
         {
             FindUIElement("ExportBackupButton").ShouldNotBeNull();
         }
+
+        // ---------------------------------------------------------------------------
+        // Restore
+        //
+        // Presence only, for the same reason as the export tests above: the command opens the
+        // operating system's file picker, which is outside the app's accessibility tree and
+        // owns the foreground until something dismisses it. The restore itself is covered by
+        // RestoreServiceIntegrationTests and OptionsPageRestoreIntegrationTests, neither of
+        // which needs a UI. What only a UI test establishes is that the control exists, carries
+        // its automation id, and is reachable at the bottom of a page that needs scrolling.
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void OptionsPage_RestoreSectionHeading_Visible()
+        {
+            FindUIElement("RestoreSectionHeading").ShouldNotBeNull();
+        }
+
+        [Test]
+        public void OptionsPage_RestoreBackupButton_Visible()
+        {
+            FindUIElement("RestoreBackupButton").ShouldNotBeNull();
+        }
     }
 }
