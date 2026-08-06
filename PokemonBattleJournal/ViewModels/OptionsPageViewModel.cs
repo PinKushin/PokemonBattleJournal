@@ -147,6 +147,36 @@ namespace PokemonBattleJournal.ViewModels
             }
         }
 
+        /// <summary>
+        /// True in Debug builds only. Bound to the visibility of the loading-indicator toggle
+        /// so the affordance simply is not there in Release.
+        /// </summary>
+        public static bool IsDebugBuild =>
+#if DEBUG
+            true;
+#else
+            false;
+#endif
+
+        /// <summary>
+        /// Holds <see cref="IsBusyMutating"/> open so the loading indicator can be seen.
+        /// </summary>
+        /// <remarks>
+        /// A toggle rather than a timed "simulate a slow operation", deliberately. A timed
+        /// version would need a <c>Task.Delay</c>, which this project bans outside of tests, and
+        /// it would give UI tests a window to race. Toggling holds the gate open until it is
+        /// switched off, so the test is deterministic and the animation can be watched for as
+        /// long as it takes to judge it.
+        ///
+        /// Debug-only in effect: the button that invokes it is bound to <see cref="IsDebugBuild"/>.
+        /// </remarks>
+        [RelayCommand]
+        public void ToggleSimulatedLoading()
+        {
+            IsBusyMutating = !IsBusyMutating;
+            _logger.LogInformation("Simulated loading toggled {State}", IsBusyMutating ? "on" : "off");
+        }
+
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(HasExportStatus))]
         public partial string ExportStatusMessage { get; set; } = string.Empty;

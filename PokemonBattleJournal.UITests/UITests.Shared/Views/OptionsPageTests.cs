@@ -271,6 +271,35 @@ namespace UITests
             FindUIElement("ExportSectionHeading").ShouldNotBeNull();
         }
 
+        // ---------------------------------------------------------------------------
+        // Loading indicator
+        //
+        // Real operations here finish in tens of milliseconds, so a test that clicked Save and
+        // looked for the spinner would be racing the database and would usually lose. The
+        // DEBUG-only toggle holds the busy gate open indefinitely instead, which makes this
+        // deterministic and doubles as the way to eyeball the animation while developing.
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void OptionsPage_LoadingIndicator_ShownWhileBusyAndHiddenAfter()
+        {
+            FindUIElement("SimulateLoadingButton").Click();
+            try
+            {
+                IsElementPresent("LoadingIndicatorHost")
+                    .ShouldBeTrue("the spinner must appear while a busy gate is held open");
+            }
+            finally
+            {
+                // Leaving the gate open would strand every later test behind a
+                // WaitUntilBusyGone("Busy_Mutating") that never completes.
+                FindUIElement("SimulateLoadingButton").Click();
+            }
+
+            WaitUntilRemoved("LoadingIndicatorHost")
+                .ShouldBeTrue("the spinner must disappear once the work is done");
+        }
+
         [Test]
         public void OptionsPage_ExportTrainerHillButton_Visible()
         {
