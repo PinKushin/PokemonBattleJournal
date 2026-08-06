@@ -49,7 +49,37 @@ What the artifacts show (`android-ui-timing-logs-OptionsPageTests`):
 - `SaveTagButton` sat at `boundsInScreen Rect(251, 2268 - 829, 2391)` on a 1080×2400 screen,
   i.e. its bottom edge is 9px from the bottom of the display.
 
-### ROOT CAUSE: `cmd overlay enable` is ADDITIVE, so the #6 fix never did anything
+### CORRECTION FIRST: the gesture-nav finding below is REAL but does NOT explain the CI failure
+
+I wrote the section below as "root cause". It is not, for CI. Verified from the first run with
+the new logging (job 31072099343, `f7661fe`):
+
+```
+4e. navbar overlays before = [ ] threebutton | [ ] twobutton | [ ] transparent | [ ] gestural
+4e. three-button navigation already active — no gesture strip to fall into
+```
+
+**The CI emulator is already `navigation_mode = 0` with no navbar overlay enabled.** Gesture
+navigation was never on there, so the fix below is a no-op on CI. It is still correct and worth
+keeping — the local `pixel_7_-_api_35` AVD *does* default to gesture (mode 2), which is a real
+hazard for local runs — but it does not explain run 31068218325.
+
+**Current best hypothesis for CI, unproven:** with three-button navigation there is a HOME
+*button* at bottom-centre, and the app draws underneath the nav bar. In the failing run
+`SaveTagButton` had `boundsInScreen Rect(251, 2268 - 829, 2391)` on a 1080×2400 screen, so its
+click centre is **(540, 2329)** — bottom-centre, which is where HOME sits. Logcat for that run
+confirms a nav bar exists (90 `NavigationBar` entries). A click meant for the button would then
+press HOME, which is exactly what the ActivityTaskManager line shows.
+
+If that holds, the fix is not about navigation mode at all — it is that
+`UiScrollable.scrollIntoView` leaves the target flush against the bottom of the screen, under
+the system bar. Candidate fixes: scroll further so the target is not in the bottom band, or
+refuse to click any element whose centre falls inside the nav-bar inset and scroll first.
+
+To confirm: read `boundsInScreen` of the element about to be clicked and compare against the
+nav-bar inset before clicking. That check is cheap and would turn this from hypothesis to fact.
+
+### The gesture-nav finding: `cmd overlay enable` is ADDITIVE, so the #6 fix never did anything
 
 Verified by hand against a booted API 35 emulator, 2026-08-06:
 
