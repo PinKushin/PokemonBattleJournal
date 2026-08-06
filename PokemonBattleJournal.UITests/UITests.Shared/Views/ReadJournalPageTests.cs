@@ -162,8 +162,20 @@ namespace UITests
         public void ReadJournalPage_BO3Match_ShowsGame2And3Notes()
         {
             EnsureBO3MatchDetailOpen();
-            FindReadJournalElement("SelectedMatchNotes2").ShouldNotBeNull();
-            FindReadJournalElement("SelectedMatchNotes3").ShouldNotBeNull();
+
+            // Assert the TEXT, not just that the editors exist. "Element is present" would pass
+            // with both boxes empty, or with all three bound to SelectedNote — and a value that
+            // is computed but never reaches the screen is exactly the bug this feature fixes.
+            // The seeder writes distinct notes per game (Seed-BO3{a,b}-G{1,2,3}), so matching on
+            // the suffix proves each property reached its OWN editor without pinning which of
+            // the two seeded BO3 matches sorts first.
+            string note2 = FindReadJournalElement("SelectedMatchNotes2").Text;
+            string note3 = FindReadJournalElement("SelectedMatchNotes3").Text;
+
+            note2.ShouldEndWith("-G2", Case.Sensitive,
+                $"game 2's editor must show game 2's note, not another game's. Showed: '{note2}'");
+            note3.ShouldEndWith("-G3", Case.Sensitive,
+                $"game 3's editor must show game 3's note, not another game's. Showed: '{note3}'");
         }
     }
 }
