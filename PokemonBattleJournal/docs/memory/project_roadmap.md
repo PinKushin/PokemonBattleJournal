@@ -233,19 +233,67 @@ tags, per-entry error collection. A Live parser is another front end onto
 `MatchOperations.SaveAsync`, most likely alongside `TrainerHillImportService` under
 `Services/Import/`.
 
-Unknowns to settle first, before designing anything:
+### The log format — established 2026-08-05 from real samples
 
-- **Where the logs live and what format they are in.** Live shows a log in-client; whether it
-  can be exported to a file, and whether that file is structured or prose, decides everything
-  about the parser.
-- **Whether a match timestamp is present, and at what precision.** This directly drives
-  duplicate detection — see the restore section above, where sub-second timestamps are what
-  make a dedupe key trustworthy.
-- **Whether the opponent's username appears at all.** The user doubts it. Do not design around
-  it either way; see the note above on why opponent identity is not a dependable field.
-- **Whether deck archetype is inferable.** Live logs list cards played, not a deck name, so
-  archetype would have to be derived — which overlaps the existing slug/meta-deck resolution
-  and could reuse `ILimitlessMetaService`.
+Checked against actual battle logs in
+[kagd/pokemon-tcg-battle-replay](https://github.com/kagd/pokemon-tcg-battle-replay), so these
+are facts rather than guesses.
+
+**It is plain prose text with rigidly consistent sentences**, not JSON:
+
+```
+Setup
+Shinwrld chose heads for the opening coin flip.
+Shinwrld won the coin toss.
+Shinwrld decided to go first.
+gklinsing drew 7 cards for the opening hand.
+   • Raikou V, Ultra Ball, Prime Catcher, Basic Lightning Energy, ...
+
+Turn # 1 - Shinwrld's Turn
+Shinwrld attached Basic Psychic Energy to Drifloon in the Active Spot.
+Shinwrld ended their turn.
+...
+All Prize cards taken. gklinsing wins.
+```
+
+What that gives us, mapped to `MatchEntry`:
+
+| Field | Available? | From |
+|---|---|---|
+| Result | **yes** | `"All Prize cards taken. <name> wins."` |
+| Turn (went first) | **yes** | `"<name> decided to go first."` |
+| Playing / Against | derivable | cards played — deck NAMES are never stated |
+| Notes / Tags | no | nothing corresponds |
+| DatePlayed / StartTime / EndTime | **NO** | not in the log at all |
+
+**Two of the earlier assumptions were wrong:**
+
+- **Usernames ARE present**, both players', on nearly every line. The doubt about this was
+  unfounded. But it creates a requirement: the app must know **your own Live username** to tell
+  which side is you, otherwise Playing and Against cannot be assigned. That is a new setting.
+- **There are NO timestamps.** Grepped the full sample for dates, clock times and meridiems —
+  nothing. This is the important one, because it collides with the duplicate-detection design
+  above: **a Live import cannot supply `StartTime`**, so the timestamp key does not work for
+  these matches. Either the user supplies the time, or import time is used — and either way
+  Live-imported matches need a different duplicate story than TrainerHill ones.
+
+**Archetype has to be inferred from cards played**, since deck names never appear. Overlaps the
+existing meta-deck resolution and could reuse `ILimitlessMetaService`, but mapping a card list
+to an archetype is real work and probably wants a "confirm the deck" step rather than silent
+guessing.
+
+**Do not copy the existing parsers.** [kagd/pokemon-tcg-battle-replay](https://github.com/kagd/pokemon-tcg-battle-replay)
+is TypeScript with **no licence file at all** — that means all rights reserved, not free to
+reuse, regardless of the language mismatch.
+[AugustDailey/Ptcgo-Log-Parser](https://github.com/AugustDailey/Ptcgo-Log-Parser) targets PTCG
+*Online*, the predecessor, so the format is likely stale. Their value is confirming the format
+is stable and parseable, which the sample above already does. The parser itself is a
+line-matching exercise well within reach in C#, and it belongs beside
+`TrainerHillImportService` under `Services/Import/`.
+
+Prior art worth a look for scope, not code:
+[jlgrimes/training-court](https://github.com/jlgrimes/training-court) is a battle-log and
+tournament tracker for the same audience.
 
 ## Deck Maker
 
