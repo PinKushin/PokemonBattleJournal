@@ -17,7 +17,7 @@ merged to master.
 | Unit | 478/478 |
 | Integration | 180/180 |
 | Windows UI | 77/77 |
-| Android UI | **75/76** — one failure, see below |
+| Android UI | 76/76 on the retry (`73b2e19`); 75/76 on `eed352b` — see below |
 
 **Both UI CI workflows run a five-job matrix, one fixture per job**
 (`--filter "FullyQualifiedName~${{ matrix.fixture }}"`), so a job's pass count is one
@@ -36,28 +36,27 @@ platform-only partials: Windows has `MainPage_BOSwitch_DisplayedAndToggled` and
 `OptionsPageTests.cs:308` — `FindUIElement($"DeleteTag_{tagName}")` cannot find the row it
 just created. CI run 31065757204.
 
-**Cause: layout shift from the INLINE loading indicator.** The indicator and its DEBUG toggle
-were added near the top of OptionsPage, pushing ~150px of content down. Android's
-`UiScrollable` **only scrolls down** ([[feedback_uiscrollable_direction]]), so a row that ends
-up above the current scroll position is unreachable. The shift was enough to flip this test.
+**CORRECTED 2026-08-06 — it was intermittent, not deterministic.** The same app code passed
+on the next run (31067488064, `73b2e19`); `git diff --stat eed352b..73b2e19` is **docs only**.
+So whatever flipped this test, it is not a hard layout break.
 
-**The fix is the overlay change already on the roadmap**, and the user said so directly:
-*"im thinking some of these problems would be fixed by a proper loading icon."* An overlay in
-the same Grid cell takes **no layout space**, so nothing shifts, and this failure disappears
-without touching the test. That is a better fix than adding a scroll-to-top workaround, which
-would only paper over displacement the user already wants gone.
+My original recorded cause — "layout shift from the inline indicator pushes ~150px down, and
+`UiScrollable` only scrolls down ([[feedback_uiscrollable_direction]]), so the row is above the
+scroll position" — is a **plausible flake mechanism, not a proven cause**. It was never
+verified: no `UiScrollable` failure was observed, no scroll position was measured. Treat it as
+an untested hypothesis. If this test fails again, measure before acting.
+
+The inline layout is still worth removing, and the user still wants it
+(*"im thinking some of these problems would be fixed by a proper loading icon"*), but the
+honest reason is **shrinking the flake surface**, not fixing a known break: an overlay in the
+same Grid cell takes no layout space, so no page's element positions depend on whether the
+spinner happens to be up. Do not claim the overlay "fixed" this test — it was already green.
 
 Note there is **no `AndroidScrollToTop` / `ScrollToTop` helper** in the codebase — I checked.
 The memory that mentions calling one is describing a technique, not an existing method.
 
-### Two options
-
-1. **Do the overlay now** (recommended). It is required before release anyway, removes this
-   failure structurally, and is the one thing the user has already reviewed and rejected the
-   current version of.
-2. Merge with the inline version and one known-failing Android test. Not recommended — it
-   leaves Android red, which this project has worked hard to keep green
-   ([[feedback_dont_churn_stable_ci]]).
+**Resolved:** merged to master with all three workflows green on `73b2e19`. The overlay is now
+its own branch, not a merge blocker.
 
 ## What the loading indicator is, as built
 
