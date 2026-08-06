@@ -98,19 +98,50 @@ moment to pin down what the parser will and will not accept.
 inserts every match twice. So this is not only a restore problem — it already affects
 TrainerHill import, and fixing it once fixes both.
 
-**The crux: match timestamp precision is not uniform.** This is what makes a naive
-"dedupe on DatePlayed" wrong.
+**Key on `StartTime`, not `DatePlayed`.** Corrected 2026-08-05 — an earlier version of this
+note claimed app-created matches only carry date precision, which is wrong. `MainPageViewModel`
+records both a start and an end time and stores them as full timestamps:
 
-- TrainerHill entries carry sub-second precision (`"2026-07-27 19:45:24.403684"`), so
-  timestamp collisions between genuinely different matches are effectively impossible.
-- Matches created in the app take `DatePlayed` from a picker, so they land on the same instant
-  for every match logged that day. Two real matches can share it legitimately — you can play
-  the same matchup twice in an evening.
+```csharp
+StartTime = DatePlayed.Date + StartTime,   // date + time-of-day from the picker
+EndTime   = DatePlayed.Date + EndTime,
+```
 
-So the same key is near-certain for imported rows and merely suggestive for app-created ones.
-Treat a match as a **candidate** duplicate on
-`(TrainerId, DatePlayed, PlayingId, AgainstId, Result)`, then decide by how much precision the
-timestamp actually has: sub-second means confident, midnight means ask.
+So every match has a time of day regardless of source:
+
+- **TrainerHill entries** — sub-second (`"2026-07-27 19:45:24.403684"`), and the importer sets
+  `StartTime`/`EndTime` from it. Collisions between genuinely different matches are effectively
+  impossible.
+- **App-created** — minute precision from the time picker, defaulting to the current time, so
+  consecutive entries naturally differ. Two matches colliding needs the same matchup, the same
+  day *and* the same start minute.
+
+`DatePlayed` is the weak field (a date picker leaves it at midnight), so it is the wrong thing
+to key on. Use:
+
+`(TrainerId, StartTime, PlayingId, AgainstId, Result)`
+
+with `EndTime` available as a further discriminator, since duration differs between matches
+that somehow share a start minute. That is strong enough to act on for both sources, rather
+than only for imported rows.
+
+**Fix the export first — the backup format is not as lossless as claimed.** Found 2026-08-05
+while designing this, in the export shipped the same day:
+
+- `ExportEntry` has a single `time` field and **no `startTime`/`endTime`**, so a restore loses
+  `EndTime` outright. Not cosmetic: `EndTime` feeds `CalculateAverageMatchDuration` and
+  `CalculateWinRateByMatchLength`, so restoring a backup would silently corrupt two stats.
+- `ExportService` writes `Time = match.DatePlayed` — the *weak* field, midnight whenever the
+  date came from a picker — instead of `StartTime`, which carries the actual time of day.
+
+TrainerHill's schema genuinely only has one `time` field, so that export stays single-valued;
+write `StartTime` into it rather than `DatePlayed`, since it holds the same date plus real
+precision. **The backup envelope has no such constraint and should carry `startTime` and
+`endTime` explicitly** — being lossless is its entire reason for existing
+([[project_db_session_lock_pairing]] is unrelated; see the export section above).
+
+Do this before the restore, not after: a restore built against the current format would bake
+in the data loss and every backup taken meanwhile would already be missing durations.
 
 **What to do with a candidate (user's preference, best first)**
 
