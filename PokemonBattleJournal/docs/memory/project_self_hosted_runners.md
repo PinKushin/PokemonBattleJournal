@@ -68,24 +68,46 @@ CI cause.
 
 Kept because the same problems return if this is ever revisited. Not current.
 
-- **PinPC** — Windows 11 dev machine; runner at `C:\Users\pinku\actions-runner`, started via
-  `.\run.cmd` or as a service. **UbuntuBox** — WSL Ubuntu, registered separately.
+- Two runners, both still registered and configured as of 2026-08-06 — stopping them is all
+  that was ever done. Neither is installed as a service, so both are manual foreground starts:
+
+  | Runner | Location | Start |
+  |---|---|---|
+  | `windows-box` | `C:\actions-runner` | `C:\actions-runner\run.cmd` |
+  | `UbuntuBox` | `~/actions-runner` in WSL | `wsl -e bash -lc "cd ~/actions-runner && ./run.sh"` |
+
+  The Windows path is **`C:\actions-runner`**, not the `C:\Users\pinku\actions-runner` this
+  file used to claim, and the agent name is `windows-box`, not `PinPC`. Read `.runner` in the
+  install directory for the registered name rather than trusting either.
 - On speed: hosted runners are no longer the slower option for Android anyway —
   see [[project_android_test_execution_strategy]].
 - Registered with auto-assigned labels only, so workflows had to say
   `[self-hosted, Windows, X64]` / `[self-hosted, Linux, X64]`. Custom labels (`PinPC`) needed
   re-registration with `--labels`.
-- `actions/setup-dotnet` failed on them: it writes to `C:\Program Files\dotnet` or a system
-  path, both admin-only. Fix was **job-level** env, never workflow-level — `runner.temp`
-  only resolves in job/step scope, and a global `env:` using it is a workflow parse error:
+- `actions/setup-dotnet` fails on them: it writes to `C:\Program Files\dotnet` or a system
+  path, both admin-only. The fix is `DOTNET_INSTALL_DIR` / `DOTNET_ROOT` pointed at
+  `${{ runner.temp }}` — **at step level**, on the `setup-dotnet` step itself:
 
   ```yaml
-  jobs:
-    my-job:
-      env:
-        DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
-        DOTNET_ROOT: ${{ runner.temp }}/.dotnet
+  - uses: actions/setup-dotnet@v6
+    env:
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
+      DOTNET_ROOT: ${{ runner.temp }}/.dotnet
+    with:
+      dotnet-version: '10.x'
   ```
+
+  **This file previously said job-level, and that is wrong** — it cost three dead workflow
+  runs on 2026-08-06. The `runner` context is not among the contexts allowed in
+  `jobs.<id>.env`; that list is github, needs, strategy, matrix, vars, secrets, inputs.
+  Workflow-level is equally invalid. Only step scope works.
+
+  **What the failure looks like, because it is genuinely misleading:** every run completes as
+  `failure` with **zero jobs created**. There is no job log, and the REST API surfaces no
+  message — `/runs/<id>` just says failure and `/runs/<id>/jobs` returns an empty array. It
+  reads as "the runners never connected", and both runners were in fact online and idle
+  throughout. Zero jobs plus no log means the workflow never parsed: look at the YAML diff,
+  not at the infrastructure.
 
 - Android on bare Ubuntu needed the SDK installed by hand (`ANDROID_HOME`, `emulator`,
   `platform-tools`, `system-images;android-35;google_apis;x86_64`) plus KVM for hardware
