@@ -202,6 +202,7 @@ namespace UITests
         // actually leaving the UIA tree so the next test starts on a clean main page.
         private void DismissArchetypePopup()
         {
+            bool dismissFailed = false;
             PerfLog("DismissArchetypePopup: try TryClickIfPresent(ArchetypePopupCancel)");
             bool cancelClicked = TryClickIfPresent("ArchetypePopupCancel");
             PerfLog($"DismissArchetypePopup: cancelClicked={cancelClicked}");
@@ -241,8 +242,30 @@ namespace UITests
                 }
                 PerfLog($"DismissArchetypePopup: FAIL — searchBar STILL PRESENT after BACK + {backPollSw.ElapsedMilliseconds}ms poll");
                 DumpVisibleElements("DismissArchetypePopup FAIL");
+                LogInputBlockers("DismissArchetypePopup FAIL");
+                dismissFailed = true;
             }
             finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
+
+            // Fail here rather than let the next test discover it. An open popup sits over the
+            // page swallowing every click while leaving the page underneath perfectly
+            // findable, so the real symptom is a run of unrelated tests failing on elements
+            // that are demonstrably present — the exact shape of
+            // docs/memory/project_windows_mainpage_click_flake.md, which cost a full
+            // investigation to attribute. Logging and returning is a silent guard
+            // (docs/memory/feedback_no_silent_guards.md): it hides the one fact that explains
+            // everything after it.
+            //
+            // Note SendAndroidBack() above is a no-op on Windows, so on Windows this path has
+            // no fallback at all once Cancel misses.
+            if (dismissFailed)
+            {
+                throw new OpenQA.Selenium.NoSuchElementException(
+                    "DismissArchetypePopup: the archetype popup is still open after Cancel and BACK. " +
+                    "Failing now because an open popup swallows clicks for every following test in " +
+                    "this fixture while leaving their elements findable, which presents as a series " +
+                    "of unrelated failures. See the BLOCKERS lines in PerfLog.");
+            }
         }
 
         // MAUI Picker on Android opens a native AlertDialog. The option list items are
@@ -703,6 +726,12 @@ namespace UITests
                 }
                 PerfLog($"OpenArchetypePopup({comboBoxId}): attempt {i + 1} — popup did not appear, retrying click");
             }
+
+            // Clicks are being dispatched and going nowhere. See
+            // docs/memory/project_windows_mainpage_click_flake.md — on Windows CI this is the
+            // point where the whole fixture stops responding to input while staying findable.
+            LogInputBlockers($"OpenArchetypePopup({comboBoxId})");
+
             throw new OpenQA.Selenium.NoSuchElementException(
                 $"Archetype popup did not open after {attempts} clicks on '{comboBoxId}'.");
         }

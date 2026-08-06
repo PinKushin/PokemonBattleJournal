@@ -62,18 +62,48 @@ From the PerfLog for run 31071811345:
 **Does not reproduce locally.** Full suite 78/78, and `MainPageTests` alone — matching CI's
 per-fixture matrix — is 25/25.
 
+## Leftover-popup theory: DISPROVEN, do not re-run it
+
+It was the leading hypothesis and it is wrong. The PerfLog for 31071811345 shows the popup
+opened by `MainPage_ArchetypePicker_Search_FiltersResults` closing cleanly:
+
+```
+[04:46:32.975] DismissArchetypePopup: try TryClickIfPresent(ArchetypePopupCancel)
+[04:46:33.391] DismissArchetypePopup: cancelClicked=True
+[04:46:33.711] DismissArchetypePopup: OK — searchBar gone via Cancel in 313ms
+```
+
+and clicks kept working for eleven seconds afterwards (`BO3GameTabs`, `BOSwitch_DisplayedAnd
+Toggled`, `BOSwitch_ShowsBO3Fields` all clicked successfully through 04:46:44).
+
+Worth knowing anyway: `DismissArchetypePopup` **logs but does not throw** when the popup
+survives, and its fallback `SendAndroidBack()` is a no-op on Windows. So on Windows a failed
+dismiss is silent. That is a real latent hole even though it did not fire here.
+
+## Where the failure actually starts
+
+Last successful click: `MainPage_BOSwitch_ShowsBO3Fields`, ending 04:46:44.275 — it toggles
+BO3 **on**. First failed click: 04:46:52.392. In between only `MainPage_FirstCheck_Displayed`
+(a find) and the start of `Game3Tab_ShowsGamePanel`.
+
+**`EnsureBO3On` does not click here.** It is idempotent by design
+([[feedback_bo3_state_idempotent]]): it reads `BO3StatusLabel` first and only clicks when the
+state is wrong, and BO3 was already on from the previous test. So there is no successful click
+between the BO3 toggle and the first failure — every click after that toggle fails, including
+`Game2Tab`, `PlayerArchetype` and `RivalArchetype`. Global input death is back on the table,
+and **toggling BO3 on is the last thing that happened before it**.
+
 ## Next steps when picking this up
 
-1. Find what runs between the last good click and the first bad one. In 31071811345 that
-   window is `MainPage_FirstCheck_Displayed` and the start of `Game3Tab_ShowsGamePanel`
-   (`EnsureBO3On`).
-2. Suspect a leftover modal/popup owning input: a ComboBox popup left open swallows clicks
-   while leaving the underlying tree findable, which matches the fingerprint exactly.
-   `MainPage_ArchetypePicker_Search_FiltersResults` opens a popup earlier in the run.
-3. Log the UIA window list (not just the element tree) on click failure — a second top-level
-   window would show up immediately and would explain everything.
-4. Note the local/CI difference is most likely **screen size**: CI runs a smaller desktop, and
-   MainPage's `MainColumnsGrid` collapses to one column, changing what is on screen.
+1. Read the `BLOCKERS [...]` lines now emitted by `LogInputBlockers` on every click-helper
+   giveup (`UITests.Windows/BaseTest.cs`). They record top-level window count, the focused
+   element, and whether any archetype-popup marker is present — enough to separate "second
+   window", "focus stolen" and "popup open" without another guessing round.
+2. Look hard at what toggling BO3 changes. It cascades `IsVisible` across the Game 2/3 panels,
+   so it is the one structural layout change immediately before input dies.
+3. The local/CI difference is most likely **screen size**: CI runs a smaller desktop, and
+   MainPage's `MainColumnsGrid` collapses to one column, which changes what is on screen and
+   what overlaps what.
 
 ## Related
 
