@@ -87,12 +87,19 @@ per-platform code.
 Not tested, and not worth doing for a spinner that already looks good. Recorded so nobody
 concludes "impossible" from a reason that does not survive checking.
 
-One untried cheap option if it ever matters: the redraw runs at 30fps
-(`LoadingIndicator.FrameInterval = 33ms`), and a rotating object at 30fps judders against a
-faster display, which reads as flicker independently of any compositing artefact. Moving to
-16ms is one line — but it doubles UI-thread work, and a busy UI thread is exactly what made
-Android UI automation crawl before ([[project_readjournal_android_slow]]), so it needs an
-Android measurement, not just a Windows glance.
+**The frame rate was already raised, and it worked — this is done, not pending.** The redraw
+ran at 30fps (`FrameInterval = 33ms`); a rotating object at 30fps judders badly against a
+244Hz display, which reads as flicker independently of any compositing artefact. Moved to
+16ms, the user confirmed the ball spin was much smoother, and it was kept. `FrameInterval` is
+16ms today.
+
+The remaining shimmer is what is left *after* that change, which is why the Skia route above
+is the only untried option, not the frame rate.
+
+Still outstanding: this doubled UI-thread work and has **not** been measured on Android, where
+a busy UI thread is what made UI automation crawl before
+([[project_readjournal_android_slow]]). If Android UI tests slow down, back off `TrailLayers`
+first (44 → 24 costs gradient smoothness), then `FrameInterval`.
 
 ## Tuned values, and why (settled with the user 2026-08-05, on screenshots of both platforms)
 
