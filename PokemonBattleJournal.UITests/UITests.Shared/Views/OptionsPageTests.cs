@@ -344,6 +344,61 @@ namespace UITests
         // deterministic and doubles as the way to eyeball the animation while developing.
         // ---------------------------------------------------------------------------
 
+        /// <summary>
+        /// Largest movement treated as measurement noise rather than displacement. Layout
+        /// rounding differs by a pixel between platforms; the inline indicator moved content by
+        /// well over a hundred, so nothing about this threshold is delicate.
+        /// </summary>
+        private const int AllowedShiftPixels = 2;
+
+        /// <summary>
+        /// The spinner must not occupy layout space, so no element's position depends on
+        /// whether it happens to be on screen.
+        /// </summary>
+        /// <remarks>
+        /// This is the property that matters for the whole test suite, not just for looks. When
+        /// the indicator was an inline sibling it pushed roughly 130px of OptionsPage down every
+        /// time it appeared, which means every element below it had two possible positions
+        /// depending on timing. Android's UiScrollable only scrolls down
+        /// (docs/memory/feedback_uiscrollable_direction.md), so content displaced upward past the
+        /// scroll position is simply unreachable — a lookup failure with no visible cause.
+        ///
+        /// SimulateLoadingButton is the probe because it sits directly below the indicator (so it
+        /// moves first if anything does) and is guaranteed to be in the viewport, having just
+        /// been clicked. Both reads happen at the same scroll offset with no navigation between
+        /// them, so any difference is displacement rather than scrolling.
+        ///
+        /// Note this also covers InputTransparent implicitly: the overlay is drawn over the whole
+        /// page, so if it swallowed input the toggle-off click below could never land and this
+        /// test would fail in ClickSimulateLoadingUntil rather than on the assertion.
+        /// </remarks>
+        [Test]
+        public void OptionsPage_LoadingIndicator_DoesNotDisplacePageContent()
+        {
+            int before = FindUIElement("SimulateLoadingButton").Location.Y;
+
+            ClickSimulateLoadingUntil("LoadingIndicatorHost", shouldBePresent: true);
+            int during;
+            try
+            {
+                during = FindUIElement("SimulateLoadingButton").Location.Y;
+            }
+            finally
+            {
+                ClickSimulateLoadingUntil("LoadingIndicatorHost", shouldBePresent: false);
+            }
+
+            int shift = Math.Abs(during - before);
+            PerfLog($"Loading indicator displaced SimulateLoadingButton by {shift}px (y {before} -> {during})");
+
+            shift.ShouldBeLessThanOrEqualTo(
+                AllowedShiftPixels,
+                $"the spinner must render as an overlay and take no layout space, but showing it " +
+                $"moved SimulateLoadingButton {shift}px (from y={before} to y={during}). Content " +
+                "that changes position depending on whether the spinner is up is unreachable to " +
+                "Android's scroll-down-only element lookup.");
+        }
+
         [Test]
         public void OptionsPage_LoadingIndicator_ShownWhileBusyAndHiddenAfter()
         {
