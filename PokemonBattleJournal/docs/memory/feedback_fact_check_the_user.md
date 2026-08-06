@@ -32,6 +32,24 @@ The conclusion ("leave the flicker") survived. The stated reason did not, and I 
 written it into two documents as justification — including citing it as precedent against an
 unrelated feature ([[feedback_platform_specific_is_fine]]).
 
+## It cuts both ways — check your own inferences hardest
+
+Later the same day I twice recorded conclusions about PTCG Live's battle logs that the user
+had to correct, and both times the fault was the same: **inferring from a third party's
+description instead of checking the artefact.**
+
+From [replay.ptcgtools.com](https://replay.ptcgtools.com/en)'s setup text — *"Enable Windowed
+Mode, the Tracker needs this to access log files"* — plus an uploaded replay named
+`ptcgl_log_20260805_073547.txt`, I concluded Live writes timestamped battle-log files to disk,
+and rewrote the feature design around reading them. The user said plainly it was clipboard
+only. Checking the actual install settled it in one command: 21 `Game*.log` files, all Unity
+exception traces, **zero** battle phrases; `Player.log` empty; nothing named `ptcgl_log_*`.
+The filename was the Tracker's own naming on upload.
+
+The lesson is not "trust the user over the evidence" — it is that a vendor's marketing and
+setup copy is **not** evidence about someone else's file formats. The check cost one command
+and would have cost nothing had it come first.
+
 ## How to apply
 
 - When a claim would change what gets built or what gets recorded, verify before acting.

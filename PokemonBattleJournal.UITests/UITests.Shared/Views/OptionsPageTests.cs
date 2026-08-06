@@ -29,10 +29,24 @@ namespace UITests
         [TearDown]
         public void ClearStuckLoadingIndicator()
         {
+            // Key on the RAW GATE, never on the indicator.
+            //
+            // The indicator deliberately lingers for MinimumVisibleDuration (500ms) after the
+            // gate clears, so straight after any mutating test it is legitimately still on
+            // screen. An earlier version of this teardown checked the indicator, read that
+            // perfectly normal state as "stuck", and clicked the toggle — which turns
+            // IsBusyMutating ON. With retries it could leave it on, and CI run on e8edb16 duly
+            // failed nearly the whole fixture. The safety net caused the exact failure it was
+            // added to prevent.
+            //
+            // Busy_Mutating is bound to IsBusyMutating, which is precisely what the toggle
+            // flips, so it identifies a stuck toggle without false positives. Page loading
+            // raises IsBusyArchetypeList and a different sentinel, so it cannot be confused
+            // with one.
             bool stuck;
             try
             {
-                stuck = IsElementPresent("LoadingIndicatorHost");
+                stuck = IsElementPresent("Busy_Mutating");
             }
             catch (InvalidOperationException)
             {

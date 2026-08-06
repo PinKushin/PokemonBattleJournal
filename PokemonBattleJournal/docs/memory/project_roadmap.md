@@ -344,44 +344,46 @@ expectation for this feature — "trivial upload" should mean less typing, not z
 Their stated flow also confirms the mechanics for the manual path: play a game, open the battle
 log, copy the full text, paste.
 
-### Live writes log FILES — and their names carry the timestamp
+### There is NO battle log file — clipboard only. VERIFIED on this machine 2026-08-05
 
-From [replay.ptcgtools.com](https://replay.ptcgtools.com/en), which ships a desktop "Tracker"
-that auto-uploads after every game. Its setup requirements give the game away:
+I briefly recorded the opposite, from [replay.ptcgtools.com](https://replay.ptcgtools.com/en)
+whose Tracker setup says *"Enable Windowed Mode — the Tracker needs this to access log files"*,
+plus a public replay named `ptcgl_log_20260805_073547.txt`. I inferred Live persists battle
+logs to disk with timestamped filenames. **That was wrong** — inferred from a third party's
+marketing copy instead of checking. The user said from the start it was clipboard-only.
 
-> **Enable Windowed Mode** — Check "WINDOWED" in VIDEO OPTIONS. *The Tracker needs this to
-> access log files.*
+Checked the actual install at `%LOCALAPPDATA%Low\pokemon\Pokemon TCG Live\`:
 
-So the client does persist logs to disk, even though its in-client button only copies to the
-clipboard. And a public replay on their site is named:
+- `Game<yyyy.MM.dd_HH.mm.ss>.log` — timestamped filenames, tempting, but **Unity exception
+  traces only**. Grepped every one of 21 files for battle phrases (`drew N cards`, `Turn # `,
+  `ended their turn`, `Prize cards taken`): **zero matches**. Sampled contents are stack traces
+  from `EventBuyInButton`.
+- `Player.log` / `Player-prev.log` — Unity's standard player logs, also zero battle matches.
+  `Player.log` was 0 bytes.
+- Nothing anywhere named `ptcgl_log_*`.
 
-```
-ptcgl_log_20260805_073547.txt
-```
+So `ptcgl_log_20260805_073547.txt` is **the Tracker's own naming on upload**, not Live's. And
+"needs windowed mode" is almost certainly about driving or watching the game window — a
+plausible way to auto-upload is to click Live's own copy button and take the clipboard — not
+about reading a battle log file that does not exist.
 
-**That is a timestamp to the second in the filename** — 2026-08-05 07:35:47 — even though the
-log text contains none. It resolves the problem flagged above: read the *file* and a Live
-import can supply a real `StartTime`, which makes the duplicate-detection key work for these
-matches after all. Paste the *text* and it cannot.
+**Consequences, now settled:**
 
-That splits the feature cleanly along platform lines, which is exactly the "easy split" case
-[[feedback_platform_specific_is_fine]] describes:
+- **The clipboard is the only source, on every platform.** MAUI's
+  `Clipboard.Default.GetTextAsync()` covers Windows and Android alike, so a single
+  "Paste from clipboard" button removes the notepad step the user complained about, with no
+  platform split needed.
+- **No timestamp is available from anywhere.** Not the log text, not a filename. `DatePlayed`,
+  `StartTime` and `EndTime` must come from the user or from import time, and Live-imported
+  matches therefore need a different duplicate story than TrainerHill ones — as originally
+  flagged.
+- **Genuine auto-import is out of scope.** It would mean automating the Live client, which is
+  what the Tracker does and why it demands windowed mode. Fragile, and far more than this
+  feature is worth.
 
-- **Windows** — find the log directory and read files directly. Gives timestamps for free, and
-  makes genuine auto-import possible (watch the directory, import on change) rather than the
-  copy-open-notepad-paste dance. The user's own words: it is *"hard to remember to copy the
-  log, then open a notepad to paste it."*
-- **Android** — PTCG Live's own files are inside its app sandbox and not readable by another
-  app, so mobile stays on the clipboard path. MAUI's `Clipboard.Default.GetTextAsync()` still
-  removes the notepad step: a "Paste from clipboard" button is one tap. The timestamp then has
-  to come from the user or from import time.
-
-**Unknown to settle:** where the log directory actually is. Requires a current client to find,
-and belongs with the "capture fresh logs" task.
-
-**Also confirmed by their required settings** — Windowed Mode, English only, and disable HIDE
-CARD IDS FROM EXPORT. And they do "automatic archetype detection", so inferring the deck from
-card IDs is demonstrably achievable rather than speculative.
+**Their required settings are still useful and confirmed:** Windowed Mode, English only, and
+disable HIDE CARD IDS FROM EXPORT. They also do "automatic archetype detection", so inferring a
+deck from card IDs is demonstrably achievable rather than speculative.
 
 ## Deck Maker
 
