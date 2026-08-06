@@ -85,6 +85,49 @@ with a collected error) and that **nothing was written to the DB**.
 Do this with, or before, the export work — the two share the format and it is the natural
 moment to pin down what the parser will and will not accept.
 
+### Backup restore + duplicate handling (design agreed with the user 2026-08-05, NOT started)
+
+**Trainer targeting**
+
+- **Full backup restore:** trainers come from the file. **Merge into an existing trainer of the
+  same name** rather than creating a second one.
+- **TrainerHill import:** entries go to whoever is importing. Verified 2026-08-05 — already the
+  behaviour, `ImportFromTrainerHillAsync` passes `_trainer.Id` (the active trainer).
+
+**There is no duplicate detection today, at all.** Verified: importing the same log twice
+inserts every match twice. So this is not only a restore problem — it already affects
+TrainerHill import, and fixing it once fixes both.
+
+**The crux: match timestamp precision is not uniform.** This is what makes a naive
+"dedupe on DatePlayed" wrong.
+
+- TrainerHill entries carry sub-second precision (`"2026-07-27 19:45:24.403684"`), so
+  timestamp collisions between genuinely different matches are effectively impossible.
+- Matches created in the app take `DatePlayed` from a picker, so they land on the same instant
+  for every match logged that day. Two real matches can share it legitimately — you can play
+  the same matchup twice in an evening.
+
+So the same key is near-certain for imported rows and merely suggestive for app-created ones.
+Treat a match as a **candidate** duplicate on
+`(TrainerId, DatePlayed, PlayingId, AgainstId, Result)`, then decide by how much precision the
+timestamp actually has: sub-second means confident, midnight means ask.
+
+**What to do with a candidate (user's preference, best first)**
+
+1. **Identical in every compared field** — skip silently. Nothing to decide.
+2. **One side strictly richer** — one has tags and the other does not, one has a note and the
+   other does not. **Merge**: union the tags, take the non-empty note. Strictly better than
+   asking, and the user explicitly preferred merging where possible.
+3. **Genuine conflict** — both sides have different non-empty values for the same field. **Ask
+   which to keep.** Do not silently pick.
+
+Note the modal constraint: the user has a standing objection to modals in automation
+([[project_error_handler_di]]). A conflict prompt during a bulk restore would also be
+miserable — batch the conflicts and resolve them in one pass rather than one dialog per match.
+
+**Reuses the existing import hardening.** Size, depth, entry-count and name-length caps already
+run before any DB write; the envelope path goes through the same parser, so it inherits them.
+
 ### Export — two modes
 
 **TrainerHill export (per-trainer):**
