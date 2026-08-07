@@ -1,4 +1,4 @@
-using PokemonBattleJournal.Scraper.Services;
+﻿using PokemonBattleJournal.Scraper.Services;
 
 namespace PokemonBattleJournal.Tests.Services;
 
@@ -166,6 +166,83 @@ public class LimitlessDeckParserTests
         string html = "<table><tr><td>1</td></tr></table>";
         List<MetaDeck> result = _parser.Parse(html, 10);
         result.ShouldBeEmpty();
+    }
+
+    // ---------------------------------------------------------------------------
+    // Gaps found by mutation testing (Stryker, 2026-08-07). Every case above uses
+    // rows with exactly ONE image and tidy anchor text, so two behaviours were
+    // never exercised and mutating them changed nothing any test could see.
+    // ---------------------------------------------------------------------------
+
+    /// <summary>
+    /// A row with two sprites must yield the second as SecondaryImageUrl.
+    /// </summary>
+    /// <remarks>
+    /// Dual-icon decks are a real feature (Archetype.ImagePath2, the ComboBox and ReadJournal
+    /// both render it), and no parser test had a two-image row — so
+    /// <c>imgs.Length > 1 ? imgs[1]... : null</c> was never true and three mutants survived on
+    /// that line, including replacing the whole expression with null.
+    /// </remarks>
+    [Test]
+    public void Parse_RowWithTwoImages_ExtractsSecondaryImageUrl()
+    {
+        const string html =
+            "<table><tbody><tr>" +
+            "<td>1</td>" +
+            "<td>" +
+            "<img class=\"pokemon\" src=\"https://r2.limitlesstcg.net/pokemon/gen9/dragapult.png\" alt=\"dragapult\">" +
+            "<img class=\"pokemon\" src=\"https://r2.limitlesstcg.net/pokemon/gen9/dusknoir.png\" alt=\"dusknoir\">" +
+            "</td>" +
+            "<td><a href=\"/decks/284\">Dragapult <span class=\"annotation\">ex</span></a></td>" +
+            "<td>2227</td><td>49.22%</td>" +
+            "</tr></tbody></table>";
+
+        List<MetaDeck> decks = new LimitlessDeckParser().Parse(html, 10);
+
+        decks.ShouldHaveSingleItem();
+        decks[0].ImageUrl.ShouldEndWith("dragapult.png");
+        decks[0].SecondaryImageUrl.ShouldNotBeNull("a two-sprite row must expose the second sprite");
+        decks[0].SecondaryImageUrl!.ShouldEndWith("dusknoir.png");
+    }
+
+    /// <summary>
+    /// A single-sprite row must leave SecondaryImageUrl null — the other side of the boundary.
+    /// </summary>
+    [Test]
+    public void Parse_RowWithOneImage_LeavesSecondaryImageUrlNull()
+    {
+        List<MetaDeck> decks = new LimitlessDeckParser().Parse(DragapultHtml, 1);
+
+        decks.ShouldHaveSingleItem();
+        decks[0].SecondaryImageUrl.ShouldBeNull("a one-sprite row has no second icon to report");
+    }
+
+    /// <summary>
+    /// The annotation branch exists to normalise spacing, and that is all it does.
+    /// </summary>
+    /// <remarks>
+    /// For tidy markup the branch is a no-op: the anchor's TextContent already reads
+    /// "Dragapult ex", so rebuilding it from base + annotation returns the same string, and
+    /// mutating the branch away changed nothing. It only earns its keep when the markup has
+    /// irregular whitespace — which is exactly what a scraped page produces.
+    /// </remarks>
+    [Test]
+    public void Parse_AnnotationWithIrregularWhitespace_NormalisesTheName()
+    {
+        const string html =
+            "<table><tbody><tr>" +
+            "<td>1</td>" +
+            "<td><img class=\"pokemon\" src=\"https://r2.limitlesstcg.net/pokemon/gen9/dragapult.png\" alt=\"dragapult\"></td>" +
+            "<td><a href=\"/decks/284\">Dragapult    <span class=\"annotation\">ex</span></a></td>" +
+            "<td>2227</td><td>49.22%</td>" +
+            "</tr></tbody></table>";
+
+        List<MetaDeck> decks = new LimitlessDeckParser().Parse(html, 1);
+
+        decks.ShouldHaveSingleItem();
+        decks[0].Name.ShouldBe("Dragapult ex",
+            "the annotation branch collapses the gap between base name and annotation; " +
+            "without it the raw anchor text keeps the run of spaces");
     }
 
     [Test]

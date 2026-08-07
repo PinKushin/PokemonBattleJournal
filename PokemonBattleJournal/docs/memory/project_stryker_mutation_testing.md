@@ -19,12 +19,32 @@ the assertions, not the code. "506 unit tests pass" says they run; this says whe
 catch a regression. It is the natural companion to the sabotage checks used by hand all through
 2026-08-06 — break the thing on purpose, confirm a test goes red — done exhaustively.
 
-## First result: the Scraper scores 78.46%
+## Result: 78.46% → 100% after triaging the survivors
 
-51 killed, 14 survived, 4 compile-errored, 9 ignored. **The 14 survivors are the output** — each
-is a change to `PokemonBattleJournal.Scraper` that no test detects. Read them in the HTML report
-under `StrykerOutput/` (gitignored) before adding tests; some will be equivalent mutants that
-cannot be killed, and those are not defects.
+First run: 51 killed, 14 survived. All 14 killed by 8 new tests; now 65 killed, 0 survived
+(4 compile-errored and 9 ignored are Stryker's own, not gaps). `break` is now **90** — there is
+a baseline to defend.
+
+**What the 14 actually were**, because the shape is more useful than the number:
+
+- **5 in `LimitlessDeckParser`** — every existing test row had exactly ONE image, so
+  `imgs.Length > 1 ? imgs[1]... : null` was never true and the **dual-icon path was entirely
+  untested**. That is a real shipped feature. The annotation branch was also unkillable for a
+  different reason: with tidy markup it is a no-op, since rebuilding "base + annotation" returns
+  the anchor's own text. It only earns its keep on irregular whitespace, which is exactly what a
+  scraped page produces — so the test that kills it uses `"Dragapult    <span>ex</span>"`.
+- **8 logging mutants** in `HttpMetaDeckFetcher` and `LimitlessMetaService` — every test used
+  `NullLogger`, so deleting a `LogWarning` went unnoticed. These are not cosmetic: all four sites
+  swallow a failure and return empty, so **the log is the only evidence the caller gets**, which
+  is the standard in [[feedback_no_silent_guards]]. Tests now use `RecordingLogger`.
+- **1 in `MetaServiceFactory`** — deleting the whole constructor body survived, because the only
+  test asserted `Create()` returns the right TYPE. That passes with every field null, since
+  construction never dereferences them; the failure would surface later as an NRE from inside a
+  service the factory appeared to build correctly. Killed by exercising the built service.
+
+**The pattern worth remembering:** none of these were "untested code". Every one had tests that
+passed. They were tests that could not fail — asserting a type instead of behaviour, using a
+null logger, or seeding data that never reaches the branch.
 
 ## It CANNOT mutate the MAUI app project — do not retry blindly
 
