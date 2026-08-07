@@ -80,6 +80,12 @@ UITEST_WINDOW_SIZE=754x512 UITEST_WINDOW_POS=85,78 dotnet test PokemonBattleJour
 # the whole fixture in OneTimeSetUp — it looks exactly like a regression. Kill it first.
 Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 
+
+# Mutation testing — grades the assertions, not the code. Scraper only: Stryker's
+# internal recompile cannot handle the MAUI head (XAML codegen + MVVM source
+# generators), and surfaces no CS error when it fails. ~5 min.
+dotnet tool restore
+dotnet stryker            # report in StrykerOutput/ (gitignored)
 ```
 
 **Solution file:** always use `PokemonBattleJournal.slnx`. Do not recreate `PokemonBattleJournal.sln`.

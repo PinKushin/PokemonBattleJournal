@@ -18,12 +18,27 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisModeSecurity>All</AnalysisModeSecurity>
 
-    <!-- NOT set here: TreatWarningsAsErrors. The repo standard is already zero
-         warnings and it is held manually. Turning it on would also apply to the
-         iOS and MacCatalyst TFMs, which are never built locally or in CI, so the
-         first person to build them would meet a wall of errors nobody had a
-         chance to see. Worth doing, but as its own change with those TFMs
-         actually built. -->
+    <!-- TreatWarningsAsErrors is deliberately NOT set, and this is a decision
+         rather than an omission. It is right for a library like
+         TcgDex.CSharpSdk and wrong here, for three reasons:
+
+         Generated code. CommunityToolkit.Mvvm emits a .g.cs per
+         [ObservableProperty] and [RelayCommand], and the XAML compiler emits
+         more. A warning in code nobody wrote would stop the build.
+
+         Cross-platform. The app multi-targets Windows, Android, iOS and
+         MacCatalyst, and platform analyzers disagree across heads — CA1416
+         already fires on the reference-only net10.0 TFM for a call that is
+         valid on every TFM that ships. iOS and MacCatalyst are never built
+         here or in CI, so errors there would land on whoever built them next.
+
+         And it is a hard rule in the middle of interactive work. An SDK is
+         written in long deliberate passes; a UI is written by running it,
+         looking at it, and changing it. A build that refuses to produce a
+         binary over an unused variable makes that loop worse.
+
+         Zero warnings is still the standard — it is enforced by reading the
+         build output, not by breaking it. -->
   </PropertyGroup>
 
 </Project>

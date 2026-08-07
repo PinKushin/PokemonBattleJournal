@@ -381,3 +381,6 @@ FodyWeavers.xsd
 /CoverageReport
 /.tools
 /tools
+
+# Stryker mutation testing reports
+StrykerOutput/
