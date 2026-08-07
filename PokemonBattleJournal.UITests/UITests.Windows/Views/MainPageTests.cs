@@ -1,4 +1,4 @@
-namespace UITests
+﻿namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {

@@ -1,4 +1,4 @@
-namespace UITests
+﻿namespace UITests
 {
     public partial class OptionsPageTests : BaseTest
     {
@@ -149,7 +149,7 @@ namespace UITests
                 input.Clear();
                 input.SendKeys(deckName);
 
-                FindUIElement("SaveArchetypeButton").Click();
+                ClickElement("SaveArchetypeButton");
 
                 // Poll for new row — proves async save completed before checking input.
                 FindUIElement($"DeleteArchetype_{deckName}").ShouldNotBeNull();
@@ -201,7 +201,7 @@ namespace UITests
                 tagInput.Clear();
                 tagInput.SendKeys(tagName);
 
-                FindUIElement("SaveTagButton").Click();
+                ClickElement("SaveTagButton");
 
                 // Poll for new row — proves async save completed.
                 FindUIElement($"DeleteTag_{tagName}").ShouldNotBeNull();
@@ -276,7 +276,7 @@ namespace UITests
             AppiumElement input = FindUIElement("ArchetypeNameInput");
             input.Clear();
             input.SendKeys(deckName);
-            FindUIElement("SaveArchetypeButton").Click();
+            ClickElement("SaveArchetypeButton");
             // Sync on the save + AllArchetypes rebind completing before checking the row —
             // otherwise the CollectionView rebind races the presence check.
             WaitUntilBusyGone("Busy_Mutating");
@@ -301,7 +301,7 @@ namespace UITests
             AppiumElement tagInput = FindUIElement("TagInput");
             tagInput.Clear();
             tagInput.SendKeys(tagName);
-            FindUIElement("SaveTagButton").Click();
+            ClickElement("SaveTagButton");
             // Sync on the save + AllTags rebind completing before checking the row.
             WaitUntilBusyGone("Busy_Mutating");
 
@@ -446,7 +446,7 @@ namespace UITests
         {
             for (int attempt = 1; attempt <= attempts; attempt++)
             {
-                FindUIElement("SimulateLoadingButton").Click();
+                ClickElement("SimulateLoadingButton");
 
                 bool reached = shouldBePresent
                     ? IsElementPresent(indicatorId)
