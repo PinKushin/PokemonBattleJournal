@@ -671,7 +671,23 @@ namespace UITests
 
                 FindUIElement("SaveMatchButton").Click();
                 WaitUntilBusyGone("Busy_Mutating");
-                FindUIElement("SaveMatchButton").ShouldNotBeNull();
+
+                // Was `FindUIElement("SaveMatchButton").ShouldNotBeNull()` — it asserted the
+                // button still existed after being clicked, which is true whether the match
+                // saved or the command bailed at a guard. A test named "_Saves" that passes when
+                // nothing is saved is worse than no test: it reports coverage of the save path
+                // while watching the button instead.
+                //
+                // SavedFileDisplay rebinds the button's text to "Saved: …" on success, which is
+                // the app's own confirmation and the same signal the sibling archetype test uses.
+                var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(5));
+                string savedText = wait.Until(_ =>
+                {
+                    string text = FindUIElement("SaveMatchButton").Text;
+                    return text.StartsWith("Saved") ? text : null;
+                });
+                savedText.ShouldStartWith("Saved",
+                    Case.Sensitive, "saving with a result selected must report success on the button");
             }
             finally { CloseWindowsPickers("PossibleResultsPicker"); }
         }
