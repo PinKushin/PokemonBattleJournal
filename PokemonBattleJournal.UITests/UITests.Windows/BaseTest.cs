@@ -305,14 +305,38 @@ namespace UITests
                 System.Drawing.Point windowOrigin = App.Manage().Window.Position;
                 System.Drawing.Size windowSize = App.Manage().Window.Size;
 
-                bool inside =
+                // Check BOTH coordinate spaces and only report outside when it fails both.
+                //
+                // Which space WinAppDriver reports an element rect in is not reliably one or the
+                // other. CI produced 'UserNoteInput' at (24,311) inside a window at (85,78) —
+                // x=24 is left of the window origin, which is impossible for a child unless that
+                // rect is window-relative. But the taskbar clicks that started this whole
+                // investigation are screen-space behaviour. Treating either reading as universal
+                // gets one of the two cases wrong.
+                //
+                // Requiring failure in both keeps the protection that matters — an element
+                // hundreds of pixels below the window is outside on any reading — while never
+                // blocking a click over a disagreement about the origin. This cost a red CI
+                // once: the screen-space-only check failed a test that had been passing, and it
+                // was invisible locally because UITEST_WINDOW_SIZE pins the window to (0,0),
+                // where the two spaces coincide.
+                bool insideScreenSpace =
                     origin.Y >= windowOrigin.Y &&
                     origin.Y + size.Height <= windowOrigin.Y + windowSize.Height &&
                     origin.X >= windowOrigin.X &&
                     origin.X + size.Width <= windowOrigin.X + windowSize.Width;
 
+                bool insideWindowRelative =
+                    origin.Y >= 0 &&
+                    origin.Y + size.Height <= windowSize.Height &&
+                    origin.X >= 0 &&
+                    origin.X + size.Width <= windowSize.Width;
+
+                bool inside = insideScreenSpace || insideWindowRelative;
+
                 geometry = $"Element at ({origin.X},{origin.Y}) {size.Width}x{size.Height}; " +
-                    $"window at ({windowOrigin.X},{windowOrigin.Y}) {windowSize.Width}x{windowSize.Height}.";
+                    $"window at ({windowOrigin.X},{windowOrigin.Y}) {windowSize.Width}x{windowSize.Height}; " +
+                    $"insideScreenSpace={insideScreenSpace} insideWindowRelative={insideWindowRelative}.";
 
                 if (!inside)
                     PerfLog($"ClickElement('{automationId}'): TARGET OUTSIDE WINDOW — {geometry}");

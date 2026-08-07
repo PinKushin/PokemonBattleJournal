@@ -1,4 +1,4 @@
-namespace UITests
+﻿namespace UITests
 {
     [SetUpFixture]
     public class AppiumSetup
@@ -205,8 +205,25 @@ namespace UITests
                         // WinAppDriver reports element coordinates in SCREEN space, so an
                         // element laid out below the window bottom is clicked at a screen
                         // coordinate belonging to whatever is there.
-                        App.Manage().Window.Position = new System.Drawing.Point(0, 0);
-                        Log($"7. UITEST_WINDOW_SIZE applied: {width}x{height} at (0,0)");
+                        // Default (0,0), overridable with UITEST_WINDOW_POS=x,y. The default is
+                        // for reproducibility; the override exists because (0,0) makes
+                        // screen-space and window-relative coordinates identical, which once hid
+                        // a real coordinate-space bug in the off-window click guard until CI —
+                        // where the window sits at (85,78) — failed on it. Reproducing a
+                        // geometry bug needs CI's ORIGIN as well as its size.
+                        System.Drawing.Point origin = new(0, 0);
+                        string? requestedPos = Environment.GetEnvironmentVariable("UITEST_WINDOW_POS");
+                        if (!string.IsNullOrWhiteSpace(requestedPos))
+                        {
+                            string[] xy = requestedPos.Split(',', StringSplitOptions.TrimEntries);
+                            if (xy.Length == 2 && int.TryParse(xy[0], out int px) && int.TryParse(xy[1], out int py))
+                                origin = new System.Drawing.Point(px, py);
+                            else
+                                Log($"7. UITEST_WINDOW_POS '{requestedPos}' is not in X,Y form — using (0,0)");
+                        }
+
+                        App.Manage().Window.Position = origin;
+                        Log($"7. UITEST_WINDOW_SIZE applied: {width}x{height} at ({origin.X},{origin.Y})");
                     }
                     catch (OpenQA.Selenium.WebDriverException ex)
                     {
