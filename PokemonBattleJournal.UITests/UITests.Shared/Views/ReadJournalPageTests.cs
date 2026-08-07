@@ -149,6 +149,62 @@ namespace UITests
         }
 
         /// <summary>
+        /// A best-of-one match must not show empty game 2 and 3 note boxes.
+        /// </summary>
+        /// <remarks>
+        /// <para>The negative half of <see cref="ReadJournalPage_BO3Match_ShowsGame2And3Notes"/>.
+        /// Without it, deleting <c>IsVisible="{Binding HasGame2}"</c> from the XAML leaves every
+        /// other test green while every BO1 match grows two empty editors — verified by removing
+        /// those bindings and watching only this test fail.</para>
+        ///
+        /// <para>Targets the LAST row rather than an index. The seeder writes four matches — BO1
+        /// at −14d and −8d, BO3 at −2d and +1d — and the list sorts newest-first, so the oldest
+        /// row is always a BO1. An index is not safe: MainPageTests sorts ahead of this fixture
+        /// and saves matches stamped ~now, which land between the BO3s in a full-suite run and
+        /// are absent in a single-fixture run. Same order-dependence that broke HasSeededMatches.</para>
+        /// </remarks>
+        [Test]
+        public void ReadJournalPage_BO1Match_HidesGame2And3Notes()
+        {
+            FindLastMatchRow().Click();
+
+            // Prove WHICH match is selected, not merely that a panel opened. Without this the
+            // test's real claim is unverified: "no game 2 editor" is also true of a panel that
+            // never rendered, and would be true if the click landed on nothing. Confirmed to
+            // discriminate — pointed at the first row it fails with "read 'Seed-BO3b-G1'".
+            // Contains, not StartsWith: on Android an Editor's .Text is its
+            // SemanticProperties.Description followed by the value, so this reads
+            // "Notes for game 1 of the selected match, Seed-BO1-1" there and bare "Seed-BO1-1"
+            // on Windows. The BO3 test gets away with ShouldEndWith for the same reason — the
+            // value is always the tail. Anchoring to the start only works on Windows.
+            string game1Note = FindReadJournalElement("SelectedMatchNotes").Text;
+            game1Note.ShouldContain("Seed-BO1-", Case.Sensitive,
+                $"the oldest row must be a seeded best-of-one match, but game 1's note read '{game1Note}' — " +
+                "if this shows a Seed-BO3 note the click selected the wrong row and the assertions below prove nothing");
+
+            // IsElementPresent uses a zero implicit wait. A missing element costs ~6.8s at the
+            // ambient wait and ~0 here, and there are two of them. See feedback_uitest_timeouts.
+            IsElementPresent("SelectedMatchNotes2")
+                .ShouldBeFalse("a best-of-one match has no game 2, so its note editor must stay hidden");
+            IsElementPresent("SelectedMatchNotes3")
+                .ShouldBeFalse("a best-of-one match has no game 3, so its note editor must stay hidden");
+        }
+
+        /// <summary>Oldest match row — always a seeded BO1. See the BO1 test for why not an index.</summary>
+        private AppiumElement FindLastMatchRow()
+        {
+            System.Collections.ObjectModel.ReadOnlyCollection<AppiumElement> rows = App is WindowsDriver
+                ? App.FindElements(MobileBy.XPath("//*[contains(@AutomationId,'MatchRow_')]"))
+                : App.FindElements(MobileBy.AndroidUIAutomator(
+                    "new UiSelector().resourceIdMatches(\"com.PinKushin.PokemonBattleJournal:id/MatchRow_.*\")"));
+
+            rows.Count.ShouldBeGreaterThan(1,
+                "need at least two match rows to have a BO1 distinct from the newest BO3 — seed missing?");
+
+            return rows[^1];
+        }
+
+        /// <summary>
         /// Game 2 and 3 notes must actually reach the screen.
         /// </summary>
         /// <remarks>
