@@ -7,6 +7,7 @@
     xmlns:loading="clr-namespace:PokemonBattleJournal.Controls.Loading"
     xmlns:models="clr-namespace:PokemonBattleJournal.Models"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    xmlns:restore="clr-namespace:PokemonBattleJournal.Services.Restore;assembly=PokemonBattleJournal.Core"
     xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
     x:Name="BasePage"
     Title="{Binding Title}"
@@ -336,6 +337,161 @@
                     IsVisible="{Binding HasRestoreStatus}"
                     Text="{Binding RestoreStatusMessage}"
                     TextColor="{StaticResource PokeYellow}" />
+
+                <!--  Conflicts left by the last restore  -->
+                <!--
+                    Hidden entirely when there is nothing outstanding, so the page does not carry
+                    an empty panel around. Everything here is staged: choosing writes nothing, and
+                    only Apply reaches the database.
+                -->
+                <VerticalStackLayout IsVisible="{Binding HasConflicts}" Spacing="8">
+
+                    <Label
+                        AutomationId="ConflictSectionHeading"
+                        SemanticProperties.HeadingLevel="Level2"
+                        Style="{StaticResource Headline}"
+                        Margin="0,8,0,0"
+                        Text="Needs review" />
+
+                    <Label
+                        AutomationId="ConflictHelpLabel"
+                        SemanticProperties.Description="What the review choices mean"
+                        FontFamily="SairaRegular"
+                        FontSize="12"
+                        HorizontalTextAlignment="Center"
+                        Text="These matches differ from the backup. Nothing is saved until you press Apply."
+                        TextColor="{StaticResource PokeYellow}" />
+
+                    <CollectionView
+                        AutomationId="ConflictList"
+                        ItemsSource="{Binding Conflicts}"
+                        SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodel:ConflictRowViewModel">
+                                <Border
+                                    Margin="0,4"
+                                    Padding="10"
+                                    Stroke="{StaticResource PokeBlue}"
+                                    StrokeThickness="1">
+                                    <VerticalStackLayout Spacing="6">
+
+                                        <Label
+                                            AutomationId="ConflictTitleLabel"
+                                            FontFamily="SairaBold"
+                                            FontSize="13"
+                                            Text="{Binding Title}"
+                                            TextColor="{StaticResource PokeYellow}" />
+
+                                        <Label
+                                            FontFamily="SairaRegular"
+                                            FontSize="11"
+                                            Text="{Binding Description}" />
+
+                                        <!--
+                                            One block per differing game. BindableLayout rather
+                                            than a nested CollectionView: a CollectionView inside
+                                            a CollectionView virtualises independently and its
+                                            rows leave the accessibility tree when scrolled, which
+                                            is what made ReadJournal's tag lists unreachable —
+                                            see project_readjournal_android_slow.
+                                        -->
+                                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Games}" Spacing="4">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate x:DataType="viewmodel:ConflictGameRowViewModel">
+                                                    <VerticalStackLayout Spacing="2">
+                                                        <Label
+                                                            FontFamily="SairaBold"
+                                                            FontSize="11"
+                                                            Text="{Binding Label}"
+                                                            TextColor="{StaticResource PokeBlue}" />
+                                                        <Label
+                                                            FontFamily="SairaRegular"
+                                                            FontSize="11"
+                                                            IsVisible="{Binding HasPresenceDifference}"
+                                                            Text="{Binding PresenceSummary}" />
+                                                        <Label
+                                                            FontFamily="SairaRegular"
+                                                            FontSize="11"
+                                                            IsVisible="{Binding HasTagDifference}"
+                                                            Text="{Binding AddedTagSummary}" />
+                                                        <Label
+                                                            FontFamily="SairaRegular"
+                                                            FontSize="11"
+                                                            IsVisible="{Binding HasTagDifference}"
+                                                            Text="{Binding RemovedTagSummary}" />
+                                                        <VerticalStackLayout
+                                                            BindableLayout.ItemsSource="{Binding NoteDiffLines}"
+                                                            IsVisible="{Binding HasNoteDifference}">
+                                                            <BindableLayout.ItemTemplate>
+                                                                <DataTemplate x:DataType="restore:NoteDiffLine">
+                                                                    <Label
+                                                                        FontFamily="SairaRegular"
+                                                                        FontSize="11"
+                                                                        Text="{Binding Text}" />
+                                                                </DataTemplate>
+                                                            </BindableLayout.ItemTemplate>
+                                                        </VerticalStackLayout>
+                                                    </VerticalStackLayout>
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </VerticalStackLayout>
+
+                                        <!--
+                                            Three real Buttons, not a styled Border with a gesture.
+                                            A Border exposes no UIA pattern, so a screen reader can
+                                            announce it and never activate it — see
+                                            feedback_invokable_controls.
+                                        -->
+                                        <HorizontalStackLayout HorizontalOptions="Center" Spacing="6">
+                                            <Button
+                                                AutomationId="ConflictKeepButton"
+                                                SemanticProperties.Description="Keep the version already in the app"
+                                                Command="{Binding ChooseKeepCommand}"
+                                                FontSize="11"
+                                                Text="Keep mine"
+                                                WidthRequest="100" />
+                                            <Button
+                                                AutomationId="ConflictAppendButton"
+                                                SemanticProperties.Description="Keep both versions, joined together"
+                                                Command="{Binding ChooseAppendCommand}"
+                                                FontSize="11"
+                                                Text="Keep both"
+                                                WidthRequest="100" />
+                                            <Button
+                                                AutomationId="ConflictReplaceButton"
+                                                SemanticProperties.Description="Replace with the version from the backup"
+                                                Command="{Binding ChooseReplaceCommand}"
+                                                FontSize="11"
+                                                Text="Use backup"
+                                                WidthRequest="100" />
+                                        </HorizontalStackLayout>
+
+                                        <Label
+                                            AutomationId="ConflictChoiceLabel"
+                                            SemanticProperties.Description="Your choice for this match"
+                                            FontFamily="SairaRegular"
+                                            FontSize="11"
+                                            HorizontalOptions="Center"
+                                            Text="{Binding ChoiceSummary}"
+                                            TextColor="{StaticResource PokeYellow}" />
+
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <Button
+                        x:Name="ApplyConflictsButton"
+                        AutomationId="ApplyConflictsButton"
+                        SemanticProperties.Description="Apply the choices you have made"
+                        SemanticProperties.Hint="Writes only the matches you answered. Anything left blank stays listed"
+                        Command="{Binding ApplyConflictsCommand}"
+                        HorizontalOptions="Center"
+                        Text="Apply choices"
+                        WidthRequest="220" />
+
+                </VerticalStackLayout>
 
                 <!--  Save all / danger zone  -->
                 <BoxView
