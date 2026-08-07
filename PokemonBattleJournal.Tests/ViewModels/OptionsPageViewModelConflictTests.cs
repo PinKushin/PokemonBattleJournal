@@ -121,9 +121,9 @@ namespace PokemonBattleJournal.Tests.ViewModels
             await _viewModel.ApplyConflictsAsync();
 
             await _restoreService.Received(1)
-                .ApplyResolutionAsync(Arg.Is<RestoreConflict>(c => c.ExistingMatchId == 1), ConflictResolution.Replace);
+                .ApplyResolutionAsync(Arg.Is<RestoreConflict>(c => c != null && c.ExistingMatchId == 1), ConflictResolution.Replace);
             await _restoreService.DidNotReceive()
-                .ApplyResolutionAsync(Arg.Is<RestoreConflict>(c => c.ExistingMatchId == 2), Arg.Any<ConflictResolution>());
+                .ApplyResolutionAsync(Arg.Is<RestoreConflict>(c => c != null && c.ExistingMatchId == 2), Arg.Any<ConflictResolution>());
         }
 
         [Test]
