@@ -103,17 +103,12 @@ namespace PokemonBattleJournal.Services.Restore
                     return incoming;
 
                 case ConflictResolution.Append:
-                    List<string> merged = [.. existing];
-                    HashSet<string> seen = [.. existing];
-                    foreach (string tag in incoming)
-                    {
-                        if (seen.Add(tag))
-                        {
-                            merged.Add(tag);
-                        }
-                    }
-
-                    return merged;
+                    // Except already yields distinct results, so this both de-duplicates against
+                    // the existing tags and collapses repeats within the incoming set. Written as
+                    // an expression rather than a loop with a HashSet: the obvious loop trips
+                    // S3267, and the fix that analyzer suggests — Where(seen.Add) — filters using
+                    // a predicate that mutates, which is worse than the thing it replaces.
+                    return [.. existing, .. incoming.Except(existing, StringComparer.Ordinal)];
 
                 default:
                     return existing;

@@ -317,12 +317,17 @@ namespace PokemonBattleJournal.Services.Restore
         /// Only two outcomes are acted on. Identical is skipped and counted; anything else is
         /// recorded as a conflict and left alone.
         ///
-        /// Nothing is merged or overwritten here, deliberately. Matches are insert-only today —
-        /// there is no update path in MatchOperations at all — so a backup restore can meet a
-        /// match that is identical or one that does not exist yet, and nothing else. A "richer"
-        /// or genuinely conflicting pair therefore means the data diverged some other way, and
-        /// guessing at it risks destroying a real match the app cannot distinguish from a
-        /// duplicate: the key includes AgainstId, which identifies a *deck*, not a person.
+        /// Nothing is merged or overwritten HERE, deliberately — but not because it cannot be.
+        /// An earlier version of this comment claimed matches were insert-only and that
+        /// MatchOperations had no update path; that was simply wrong. SaveAsync calls
+        /// tran.Update when Id is non-zero, and SaveGame updates games and rewrites their tag
+        /// relationships. Resolution is applied through exactly that, from ApplyResolutionAsync.
+        ///
+        /// The real reason nothing is decided automatically is that the app cannot tell a
+        /// re-import from two genuinely distinct matches: the dedupe key includes AgainstId,
+        /// which identifies a *deck*, not a person, and the model stores no opponent identity at
+        /// all. Two opponents on the same deck in the same minute are indistinguishable here. So
+        /// the difference is recorded with both sides attached and a human decides.
         /// </remarks>
         private RestoreOutcome ClassifyAgainstExisting(ExportEntry entry, MatchEntry existing, string trainerName)
         {
@@ -337,15 +342,45 @@ namespace PokemonBattleJournal.Services.Restore
                 return RestoreOutcome.SkippedIdentical;
             }
 
+            ConflictGameDiff[] games =
+            [
+                BuildDiff(entry.Game1, existing.Game1, "Game 1"),
+                BuildDiff(entry.Game2, existing.Game2, "Game 2"),
+                BuildDiff(entry.Game3, existing.Game3, "Game 3"),
+            ];
+
             _pendingConflicts.Add(new RestoreConflict
             {
                 TrainerName = trainerName,
                 ExistingMatchId = existing.Id,
                 StartTime = existing.StartTime,
                 Description = string.Join("; ", differences),
+                // Only the games that actually differ. Rendering three panels when one changed
+                // buries the decision the user is being asked to make.
+                Games = [.. games.Where(g => g.HasAnyDifference)],
             });
             return RestoreOutcome.Conflicted;
         }
+
+        /// <summary>
+        /// Captures both versions of one game so a resolution can be applied later.
+        /// </summary>
+        /// <remarks>
+        /// Must stay in step with <see cref="CompareGame"/>: that one decides a conflict exists,
+        /// this one describes it. If they disagreed, the user would be shown a difference that
+        /// was not the one flagged, or a conflict with nothing visible in it.
+        /// </remarks>
+        private static ConflictGameDiff BuildDiff(ExportGame? incoming, Game? existing, string label) =>
+            new()
+            {
+                Label = label,
+                ExistingPresent = existing is not null,
+                IncomingPresent = incoming is not null,
+                ExistingNotes = existing?.Notes,
+                IncomingNotes = incoming?.Notes,
+                ExistingTags = [.. (existing?.Tags ?? []).Select(t => t.Name ?? string.Empty)],
+                IncomingTags = incoming?.Tags ?? [],
+            };
 
         private static void CompareGame(ExportGame? incoming, Game? existing, string label, List<string> differences)
         {

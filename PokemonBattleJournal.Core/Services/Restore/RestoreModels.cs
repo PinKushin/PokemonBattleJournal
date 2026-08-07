@@ -45,6 +45,18 @@ namespace PokemonBattleJournal.Services.Restore
 
         /// <summary>Plain-English account of what differs, for display without re-deriving it.</summary>
         public required string Description { get; init; }
+
+        /// <summary>
+        /// Both versions of each game that differs, so the user can see what they are choosing
+        /// between.
+        /// </summary>
+        /// <remarks>
+        /// Without this a conflict could only be reported, never resolved: the backup's version
+        /// of the data was discarded the moment the conflict was recorded, leaving nothing for a
+        /// Replace or an Append to apply. Games that agree are omitted rather than rendered as
+        /// three identical panels.
+        /// </remarks>
+        public IReadOnlyList<ConflictGameDiff> Games { get; init; } = [];
     }
 
     /// <summary>
