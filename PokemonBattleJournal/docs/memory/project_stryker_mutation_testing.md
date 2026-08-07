@@ -1,6 +1,6 @@
 ---
 name: project_stryker_mutation_testing
-description: "Stryker.NET pinned as a local tool. Scores the Scraper at 78.46% (51 killed / 14 survived). It CANNOT mutate the MAUI app project — Stryker's internal recompile fails on XAML codegen + MVVM source generators, with no CS error surfaced."
+description: "Stryker.NET pinned as a local tool. Scraper 100%. Core baseline 53.09% on 2026-08-07, the first time app logic was ever measured — 352 mutants sit in code NO test touches. Still cannot mutate the MAUI head."
 metadata:
   type: project
 ---
@@ -45,6 +45,50 @@ a baseline to defend.
 **The pattern worth remembering:** none of these were "untested code". Every one had tests that
 passed. They were tests that could not fail — asserting a type instead of behaviour, using a
 null logger, or seeding data that never reaches the branch.
+
+## Core baseline: 53.09% (2026-08-07, first measurement ever)
+
+`dotnet stryker --config-file stryker-core.json` — both test projects, 727 tests, ~14 min on a
+quiet machine.
+
+```
+1523 mutants created
+ 133 CompileError   (Stryker's own)
+ 258 Ignored        (block already covered)
+ 352 NoCoverage     <-- no test reaches these at all
+ 780 tested -> Killed 595 | Survived 179 | Timeout 6
+```
+
+**53.09% = 601 detected / 1132 real.** NoCoverage counts as undetected, which is correct.
+
+**Read the two failure kinds separately — they need different fixes.** 352 NoCoverage is
+*untested code*; 179 Survived is *covered code with tests that cannot fail*
+([[feedback_tests_that_cannot_fail]]). Only the second kind is the classic assertion problem.
+
+| Worst | score | surv | nocov |
+|---|---|---|---|
+| `Services/MatchDuplicateKey.cs` | 0.0% | 0 | 2 |
+| `Restore/RestoreService.cs` | 29.2% | 2 | 117 |
+| `Services/TrainerOperations.cs` | 29.5% | 13 | 85 |
+| `Services/MatchOperations.cs` | 48.8% | 35 | 52 |
+| `Services/ArchetypeOperations.cs` | 55.0% | 39 | 19 |
+
+Already at 100%: `SqliteConnectionFactory`, `SpriteResolver`, `DbSession`,
+`MatchResultsCalculatorFactory`, `TrainerHillModels`, `Archetype`. `Calculations` 93.3%,
+`MatchAnalysisService` 90.1%.
+
+**Two things checked rather than assumed.** `RestoreService` is NOT mocked in the integration
+suite — `RestoreServiceIntegrationTests` constructs the real thing, so its 117 uncovered
+mutants are genuinely unreached branches (error, conflict and version-refusal paths), not a
+mocking artifact. And `MatchDuplicateKey` has **no test that names it at all**, which matters
+because it is the dedupe key shared by import and restore.
+
+**Timeouts inflate a score**, because Stryker counts a Timeout as killed. This run had 6, so the
+number is trustworthy — but a run competing with another Stryker process is not. Measure on a
+quiet machine before treating any score as a baseline.
+
+`break` stays 0 for Core until the survivors are triaged; raising it before anyone has seen the
+number teaches people to pass `--break-at` rather than fix tests.
 
 ## It CANNOT mutate the MAUI app project — do not retry blindly
 
