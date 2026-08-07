@@ -154,6 +154,43 @@ handler does not run.
    is dead. What survives is the 18x `Shell ready` gap and ~1000ms clicks against deadlines
    tuned at ~200ms.
 
+## STRONGEST LEAD (2026-08-06 evening): clicks landing OFF the app window
+
+**Observed directly.** Running a cross-page test at CI's window size
+(`UITEST_WINDOW_SIZE=754x512`) locally, the user watched a click land on **the browser window
+behind the app**, pulling it to the front. The app then returned, Save was clicked on an empty
+form, and every following test desynced or stalled.
+
+So at 754x512 the driver clicked at coordinates **outside the app window** and hit whatever was
+underneath.
+
+**Why this is the best remaining explanation for the CI failures.** CI's window is exactly
+754x512 (measured, logged as `7. App window: 754x512 at (59,52)`). There is no browser behind
+it there — an off-window click lands on the empty desktop and silently does nothing. That is
+the recorded signature precisely:
+
+- the click is dispatched and takes its usual ~1000ms
+- no handler runs
+- find-only tests keep passing, because *finding* an off-viewport element still works
+- it starts partway through a fixture — after BO3 toggling grows the page and pushes targets
+  further down
+
+**This does not contradict the geometry falsification above; it refines it.** That re-run at
+754x512 went 25/25 and killed "elements cannot be FOUND at CI's size". It never tested whether
+a click **lands on-window**. Finding and clicking are separate questions and only the first was
+answered.
+
+### What to do with it
+
+1. Before clicking, assert the target's rect is inside the window rect, and log both when it is
+   not. `LogInputBlockers` already reports `insideViewport` — check whether the failing clicks
+   were flagged and, if not, why that check did not fire.
+2. Scroll the target into view before clicking rather than trusting WinAppDriver's implicit
+   scroll-on-click.
+3. **Design the page to fit 754x512** (user's suggestion, and the structural fix). If nothing
+   needs scrolling to be clicked, off-window clicks stop being possible. That is worth more
+   than any amount of retry logic — see [[feedback_dont_churn_stable_ci]] on fixing at source.
+
 ## Foreground and pointer state: a real mechanism, but not this bug
 
 Windows Appium clicks depend on the app window being frontmost, and this is **confirmed by
