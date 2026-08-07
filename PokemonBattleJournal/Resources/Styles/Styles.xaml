@@ -105,6 +105,10 @@
         <Setter Property="FontFamily" Value="SairaRegular" />
         <Setter Property="FontSize" Value="Body" />
         <Setter Property="BorderWidth" Value="0" />
+        <!-- BorderColor as well as BorderWidth: on WinUI a Button keeps its default
+             BorderBrush when only the width is zeroed, which shows as a ~1px outline on
+             every button and made the tabs read 2-3px larger than intended. -->
+        <Setter Property="BorderColor" Value="Transparent" />
         <Setter Property="CornerRadius" Value="5" />
         <Setter Property="Padding" Value="16,10" />
         <Setter Property="MinimumHeightRequest" Value="44" />

@@ -1,4 +1,4 @@
-using FlaUI.Core.AutomationElements;
+﻿using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
 
 namespace UITests
@@ -17,9 +17,9 @@ namespace UITests
         protected override void DoNavigateTo(string pageTitle)
         {
             PerfLog($"NAV click OK");
-            App.FindElement(MobileBy.AccessibilityId("OK")).Click();
+            ClickElement("OK");
             PerfLog($"NAV click '{pageTitle}'");
-            App.FindElement(MobileBy.AccessibilityId(pageTitle)).Click();
+            ClickElement(pageTitle);
         }
 
         // Poll every 500ms for up to 30s using WinAppDriver.
@@ -143,7 +143,7 @@ namespace UITests
                 {
                     try
                     {
-                        App.FindElement(MobileBy.AccessibilityId(id)).Click();
+                        ClickElement(id);
                         if (total.ElapsedMilliseconds > SlowAttemptMs)
                             PerfLog($"TryClickIfPresent('{id}'): clicked after {total.ElapsedMilliseconds}ms (budget {timeoutMs}ms)");
                         return true;
@@ -161,6 +161,159 @@ namespace UITests
                 return false;
             }
             finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
+        }
+
+        /// <summary>
+        /// Activates a control through UIA patterns instead of a synthesized mouse click.
+        /// </summary>
+        /// <remarks>
+        /// <para>The pattern ladder, in order: scroll into view, then Invoke, then Toggle, then
+        /// SelectionItem, and only then a real WinAppDriver click. Each pattern step carries no
+        /// screen coordinates, so window bounds cannot make it miss.</para>
+        ///
+        /// <para><b>Why.</b> WinAppDriver's click is mouse input at the element's centre,
+        /// reported in SCREEN coordinates. An element MAUI has laid out below the window bottom
+        /// is therefore "clicked" wherever that lands — at CI's 754x512 window this hit the
+        /// taskbar and launched Visual Studio. On CI nothing sits behind the app, so the same
+        /// click reaches empty desktop and does nothing at all: dispatched, ~1000ms, no handler.
+        /// That is the open MainPage flake's exact signature.</para>
+        ///
+        /// <para>The mouse fallback stays because patterns cannot cover everything — a MAUI
+        /// <c>Border</c> with a <c>TapGestureRecognizer</c> exposes no InvokePattern at all,
+        /// which is why the tabs had to become Buttons (project_windows_tab_click_ci). When it
+        /// is used, the element's rect is checked against the window first and a miss is logged
+        /// loudly rather than dispatched into another application.</para>
+        /// </remarks>
+        protected override void ClickElement(string automationId)
+        {
+            AutomationElement? el = TryFindViaUia(automationId);
+
+            if (el is not null)
+            {
+                try
+                {
+                    if (el.Patterns.ScrollItem.IsSupported)
+                        el.Patterns.ScrollItem.Pattern.ScrollIntoView();
+
+                    if (el.Patterns.Invoke.IsSupported)
+                    {
+                        el.Patterns.Invoke.Pattern.Invoke();
+                        PerfLog($"ClickElement('{automationId}'): UIA Invoke");
+                        return;
+                    }
+
+                    if (el.Patterns.Toggle.IsSupported)
+                    {
+                        el.Patterns.Toggle.Pattern.Toggle();
+                        PerfLog($"ClickElement('{automationId}'): UIA Toggle");
+                        return;
+                    }
+
+                    if (el.Patterns.SelectionItem.IsSupported)
+                    {
+                        el.Patterns.SelectionItem.Pattern.Select();
+                        PerfLog($"ClickElement('{automationId}'): UIA Select");
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Fall through to the mouse path rather than failing the test here: a
+                    // pattern can be advertised and still throw (element re-rendered mid-call).
+                    PerfLog($"ClickElement('{automationId}'): UIA pattern failed ({ex.GetType().Name}: {ex.Message}) — falling back to mouse");
+                }
+            }
+
+            // Refuse rather than warn. A mouse click on an off-window element is never correct:
+            // on CI it lands on empty desktop and does nothing (the flake), and locally it goes
+            // to whatever application occupies that screen position — this suite has launched
+            // Visual Studio and the Epic Games store that way. A loud failure is strictly better
+            // than input sent to somebody else's window.
+            if (IsOutsideWindow(automationId, out string geometry))
+            {
+                throw new OpenQA.Selenium.ElementNotInteractableException(
+                    $"'{automationId}' is outside the app window and has no UIA pattern to invoke, " +
+                    $"so a click would land on another application. {geometry}");
+            }
+
+            FindUIElement(automationId).Click();
+            PerfLog($"ClickElement('{automationId}'): mouse click (no usable UIA pattern)");
+        }
+
+        /// <summary>
+        /// Windows: resolve the element's AutomationId and go through the guarded path so
+        /// element-based call sites cannot bypass the off-window check.
+        /// </summary>
+        protected override void ClickElement(AppiumElement element)
+        {
+            string? id = null;
+            try { id = element.GetAttribute("AutomationId"); }
+            catch (OpenQA.Selenium.WebDriverException) { /* attribute unavailable — click directly */ }
+
+            if (!string.IsNullOrEmpty(id))
+                ClickElement(id);
+            else
+                element.Click();
+        }
+
+        /// <summary>Finds an element in the live UIA tree, or null. Best-effort.</summary>
+        private AutomationElement? TryFindViaUia(string automationId)
+        {
+            try
+            {
+                string handleStr = App.CurrentWindowHandle;
+                IntPtr hwnd = new IntPtr(Convert.ToInt64(
+                    handleStr.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? handleStr : "0x" + handleStr, 16));
+                return UIA.FromHandle(hwnd).FindFirstDescendant(cf => cf.ByAutomationId(automationId));
+            }
+            catch (Exception ex)
+            {
+                NavLog($"TryFindViaUia('{automationId}') error: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Logs loudly when a about-to-be-clicked element sits outside the window.
+        /// </summary>
+        /// <remarks>
+        /// Does not throw. A mouse click on an off-window element is how this suite launched
+        /// other applications, but turning that into a hard failure today would convert an
+        /// intermittent flake into a hard stop before the pattern ladder has been proven across
+        /// every call site. The log line is what makes it findable in the meantime.
+        /// </remarks>
+        private bool IsOutsideWindow(string automationId, out string geometry)
+        {
+            geometry = string.Empty;
+            try
+            {
+                AppiumElement target = FindUIElement(automationId);
+                System.Drawing.Point origin = target.Location;
+                System.Drawing.Size size = target.Size;
+                System.Drawing.Point windowOrigin = App.Manage().Window.Position;
+                System.Drawing.Size windowSize = App.Manage().Window.Size;
+
+                bool inside =
+                    origin.Y >= windowOrigin.Y &&
+                    origin.Y + size.Height <= windowOrigin.Y + windowSize.Height &&
+                    origin.X >= windowOrigin.X &&
+                    origin.X + size.Width <= windowOrigin.X + windowSize.Width;
+
+                geometry = $"Element at ({origin.X},{origin.Y}) {size.Width}x{size.Height}; " +
+                    $"window at ({windowOrigin.X},{windowOrigin.Y}) {windowSize.Width}x{windowSize.Height}.";
+
+                if (!inside)
+                    PerfLog($"ClickElement('{automationId}'): TARGET OUTSIDE WINDOW — {geometry}");
+
+                return !inside;
+            }
+            catch (Exception ex)
+            {
+                // Cannot tell — allow the click. Blocking on a failed measurement would turn a
+                // diagnostic into an outage.
+                PerfLog($"ClickElement('{automationId}'): could not check window bounds ({ex.GetType().Name})");
+                return false;
+            }
         }
 
         // Scrolls the element with the given AutomationId into the viewport via FlaUI's
@@ -184,7 +337,10 @@ namespace UITests
             }
             catch (Exception ex) { NavLog($"ScrollIntoView({automationId}) failed: {ex.Message}"); }
 
-            App.FindElement(MobileBy.AccessibilityId(automationId)).Click();
+            // Through the guarded path: ScrollIntoView above may still leave the target
+            // off-window in a container UIA cannot scroll, and a raw click there lands in
+            // another application.
+            ClickElement(automationId);
         }
 
         // Click picker, type first letter to select item, Tab to confirm.
@@ -193,7 +349,17 @@ namespace UITests
         protected override void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            pickerElement.Click();
+            // Route through the UIA path when the element carries an AutomationId — this is the
+            // last Windows click site that could otherwise fire a raw mouse event at an
+            // off-window coordinate.
+            string? pickerId = null;
+            try { pickerId = pickerElement.GetAttribute("AutomationId"); }
+            catch (OpenQA.Selenium.WebDriverException) { /* attribute unavailable — fall through */ }
+
+            if (!string.IsNullOrEmpty(pickerId))
+                ClickElement(pickerId);
+            else
+                pickerElement.Click();
             long clickMs = sw.ElapsedMilliseconds;
             pickerElement.SendKeys(itemName[0].ToString());
             long letterMs = sw.ElapsedMilliseconds - clickMs;

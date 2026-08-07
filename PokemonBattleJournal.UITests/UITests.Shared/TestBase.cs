@@ -1,4 +1,4 @@
-namespace UITests
+﻿namespace UITests
 {
     /// <summary>
     /// Shared test infrastructure. Platform-specific BaseTest classes inherit this and
@@ -107,7 +107,7 @@ namespace UITests
                 // Re-find each attempt: a partial state change can re-render the tab and stale
                 // the previous handle.
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-                FindUIElement(tabAutomationId).Click();
+                ClickElement(tabAutomationId);
                 long clickMs = sw.ElapsedMilliseconds;
 
                 var deadline = DateTime.UtcNow.AddMilliseconds(3000);
@@ -189,6 +189,42 @@ namespace UITests
         /// Override in Windows BaseTest. Android tests never reach this — guarded by
         /// <c>if (App is not WindowsDriver)</c> at the call site.
         /// </summary>
+        /// <summary>
+        /// Activates the control with the given AutomationId.
+        /// </summary>
+        /// <remarks>
+        /// A seam, not a convenience. The default synthesizes a real mouse click at the
+        /// element's centre, and WinAppDriver reports that centre in SCREEN coordinates — so an
+        /// element laid out below the window is "clicked" at a screen position belonging to
+        /// something else entirely. Observed 2026-08-06 at CI's 754x512 window: clicks landed on
+        /// the taskbar and launched Visual Studio. On CI nothing sits behind the app, so the
+        /// same click hits empty desktop and silently does nothing — the open MainPage flake.
+        ///
+        /// The Windows override routes through UIA's InvokePattern instead, which carries no
+        /// coordinates at all. See docs/memory/project_windows_mainpage_click_flake.md.
+        /// </remarks>
+        protected virtual void ClickElement(string automationId) => FindUIElement(automationId).Click();
+
+        /// <summary>
+        /// Activates an already-resolved element, going through <see cref="ClickElement(string)"/>
+        /// when it carries an AutomationId.
+        /// </summary>
+        /// <remarks>
+        /// Exists so call sites holding an element rather than an id — list rows, pickers, an
+        /// entry being focused — cannot bypass the off-window guard. Without it those sites keep
+        /// dispatching raw mouse input at screen coordinates, which is how this suite launched
+        /// other applications, and "I did not see it happen" is not evidence that it did not.
+        /// </remarks>
+        /// <remarks>
+        /// Virtual, and a plain click by default. Only Windows needs the indirection: UiAutomator
+        /// clicks by element bounds inside the device screen and cannot land outside the app, so
+        /// Android has no coordinate problem to solve. Routing it there actively broke things —
+        /// Android's AutomationId attribute comes back as a fully-qualified resource id
+        /// (com.PinKushin.PokemonBattleJournal:id/MatchRow_5), which does not resolve when fed
+        /// back to FindUIElement, and it took out four ReadJournal tests.
+        /// </remarks>
+        protected virtual void ClickElement(AppiumElement element) => element.Click();
+
         protected virtual void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName) =>
             throw new PlatformNotSupportedException("SelectWindowsPickerItem is Windows-only.");
 

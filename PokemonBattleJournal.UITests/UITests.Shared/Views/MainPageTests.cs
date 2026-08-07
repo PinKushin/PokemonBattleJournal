@@ -1,4 +1,4 @@
-namespace UITests
+﻿namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {
@@ -87,7 +87,7 @@ namespace UITests
             // region we just interacted with, so their disappearance is a reliable signal.
             for (int i = 0; i < 3; i++)
             {
-                FindUIElement("Game1Tab").Click();
+                ClickElement("Game1Tab");
                 var deadline = DateTime.UtcNow.AddMilliseconds(2500);
                 while (DateTime.UtcNow < deadline)
                 {
@@ -202,7 +202,7 @@ namespace UITests
             {
                 if (GetBO3LabelTextSafe() != "Best of 3")
                 {
-                    FindUIElement("BOSwitch").Click();
+                    ClickElement("BOSwitch");
                     WaitUntilText("BO3StatusLabel", "Best of 3", timeoutMs: 3000);
                 }
 
@@ -383,7 +383,7 @@ namespace UITests
                         // the screen and the tap lands in the gesture-navigation home zone.
                         // UiAutomator2's SendKeys sets text directly without needing focus.
                         if (App is WindowsDriver)
-                            userEntry.Click();
+                            ClickElement(userEntry);
                         userEntry.Clear();
                         userEntry.SendKeys(expected);
                         // Android: the soft keyboard opened by SendKeys covers the lower
@@ -621,12 +621,12 @@ namespace UITests
 
                 // Select player archetype — WaitUntilGone syncs on popup dismissal before opening rival.
                 OpenArchetypePopup("PlayerArchetype");
-                FindUIElement("ArchetypeItem_Other").Click();
+                ClickElement("ArchetypeItem_Other");
                 WaitUntilGone("ArchetypeItem_Other");
 
                 // Select rival archetype
                 OpenArchetypePopup("RivalArchetype");
-                FindUIElement("ArchetypeItem_Other").Click();
+                ClickElement("ArchetypeItem_Other");
                 WaitUntilGone("ArchetypeItem_Other");
 
                 // Select result
@@ -638,7 +638,7 @@ namespace UITests
                 else
                     SelectWindowsPickerItem(resultPicker, "Win");
 
-                FindUIElement("SaveMatchButton").Click();
+                ClickElement("SaveMatchButton");
                 // Sync on the DB write settling before polling for the "Saved" text —
                 // avoids racing the save on slower local/CI runs.
                 WaitUntilBusyGone("Busy_Mutating");
@@ -669,7 +669,7 @@ namespace UITests
                 else
                     SelectWindowsPickerItem(resultPicker, "Win");
 
-                FindUIElement("SaveMatchButton").Click();
+                ClickElement("SaveMatchButton");
                 WaitUntilBusyGone("Busy_Mutating");
 
                 // Was `FindUIElement("SaveMatchButton").ShouldNotBeNull()` — it asserted the
@@ -699,7 +699,7 @@ namespace UITests
             OpenArchetypePopup("PlayerArchetype");
             try
             {
-                FindUIElement("ArchetypeItem_Dragapult ex / Dusknoir").Click();
+                ClickElement("ArchetypeItem_Dragapult ex / Dusknoir");
                 WaitUntilGone("ArchetypeItem_Dragapult ex / Dusknoir");
             }
             finally { DismissArchetypePopup(); }
@@ -720,7 +720,7 @@ namespace UITests
                 // Reset PlayerArchetype back to Other so match-save tests stay clean
                 ScrollPageToTop();
                 OpenArchetypePopup("PlayerArchetype");
-                try { FindUIElement("ArchetypeItem_Other").Click(); }
+                try { ClickElement("ArchetypeItem_Other"); }
                 finally { DismissArchetypePopup(); }
             }
         }
@@ -751,7 +751,7 @@ namespace UITests
         private void DismissPopupPlatform()
         {
             if (App is WindowsDriver)
-                FindUIElement("ArchetypePopupCancel").Click();
+                ClickElement("ArchetypePopupCancel");
             else
                 SendAndroidBack();
         }
@@ -766,7 +766,7 @@ namespace UITests
         {
             for (int i = 0; i < attempts; i++)
             {
-                FindUIElement(comboBoxId).Click();
+                ClickElement(comboBoxId);
 
                 // Poll for popup content (search bar) with a short per-attempt deadline.
                 var deadline = DateTime.UtcNow.AddMilliseconds(2500);

@@ -1,4 +1,4 @@
-namespace UITests
+﻿namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {
@@ -9,14 +9,14 @@ namespace UITests
             AppiumElement statusLabel = FindUIElement("BO3StatusLabel");
 
             if (statusLabel.Text == "Best of 3")
-                boSwitch.Click();
+                ClickElement(boSwitch);
 
             try
             {
-                boSwitch.Click();
+                ClickElement(boSwitch);
                 string toggledOn = FindUIElement("BO3StatusLabel").Text;
 
-                boSwitch.Click();
+                ClickElement(boSwitch);
                 string toggledOff = FindUIElement("BO3StatusLabel").Text;
 
                 boSwitch.ShouldNotBeNull();

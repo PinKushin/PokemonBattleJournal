@@ -3,7 +3,7 @@
 - [Backup restore — service done, UI not](project_backup_restore.md) — export is lossless now (timings + archetype icons); RestoreService merges trainers by name and never overwrites on a key hit; TrainerHill re-imports no longer duplicate. UI wiring and conflict resolution remain.
 - [Mocks return null where ops return empty](feedback_mock_returns_null_not_empty.md) — unstubbed NSubstitute calls return null; stub the fixture, never add null-tolerance to production. Hit three times in one day, once silently.
 
-- [Windows MainPage click flake — OPEN, strong lead](project_windows_mainpage_click_flake.md) — clicks stop reaching handlers partway through the fixture while find-only tests keep passing. NEW LEAD: at CI's 754x512 window a click was seen landing OUTSIDE the app window (hit the browser behind it); on CI that lands on empty desktop and silently does nothing. Geometry was only falsified for FINDING elements, never for clicks landing on-window.
+- [Windows click flake — CAUSE FOUND, FIXED](project_windows_mainpage_click_flake.md) — WinAppDriver Click() is mouse input at SCREEN coordinates, so a target below the window is clicked outside it; on CI that hits empty desktop and silently does nothing. Fixed via UIA pattern ladder (Invoke/Toggle/SelectionItem) behind TestBase.ClickElement; Windows suite 83/83 at CI's 754x512. Border+TapGestureRecognizer has no InvokePattern — converting those to Button/Switch is also an accessibility fix.
 
 - [SESSION HANDOFF 2026-08-06](project_session_handoff_2026_08_06.md) — **READ FIRST.** feat/loading-indicator is one Android test from green; the failure is layout shift from the inline indicator and the planned overlay fixes it structurally.
 
