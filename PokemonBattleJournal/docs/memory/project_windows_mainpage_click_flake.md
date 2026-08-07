@@ -99,10 +99,17 @@ Three, each killed by evidence rather than opinion. Re-testing them is wasted ti
    construction. Re-run at exactly 754x512: **MainPageTests 25/25**, setup log confirming the
    resize applied. Geometry is genuinely dead now.
 
-   The lesson is the general one: a negative result is only worth as much as the fidelity of
-   the setup that produced it. Measure the environment, do not infer it from a plausible proxy.
+   **SUPERSEDED 2026-08-06 evening — read the CONFIRMED MECHANISM section above.** That
+   25/25 result proved elements can be *found* at CI's size. It never tested whether a click
+   *lands on-window*, and they are different questions. Off-window clicks at 754x512 are now
+   directly observed. Geometry is NOT dead; only "elements cannot be found" is.
 
-What that leaves is CI-specific **timing**, and the numbers are stark. On CI `Shell ready`
+   The lesson is the general one, and it applies to this very entry: a negative result is only
+   worth as much as the fidelity of the setup that produced it — and as much as the precision
+   of the claim it is taken to refute.
+
+Timing remains a contributing factor and the numbers are stark, though it is no longer the
+only surviving theory. On CI `Shell ready`
 took 8798ms against ~485ms locally — roughly 18x — and every click in the failing run took
 ~1000ms against ~200ms here. Nothing about the app's layout differs; the runner is simply
 far slower, and the tests' polling deadlines (2500-3000ms) were tuned on fast hardware.
@@ -154,7 +161,75 @@ handler does not run.
    is dead. What survives is the 18x `Shell ready` gap and ~1000ms clicks against deadlines
    tuned at ~200ms.
 
-## STRONGEST LEAD (2026-08-06 evening): clicks landing OFF the app window
+## CONFIRMED MECHANISM (2026-08-06 evening): clicks landing OFF the app window
+
+**Running the Windows UI suite at `UITEST_WINDOW_SIZE=754x512` on a normal desktop has real
+side effects.** The off-window clicks hit whatever occupies that screen coordinate — observed
+launching Visual Studio from the taskbar and pulling a browser to the front. Expect it; it is
+not a red test misbehaving, it is genuine input going to other applications.
+
+**Why it reaches the taskbar.** Not window placement — the window is nowhere near it
+(screenshot: 754x512 at (0,0) on a 1920x1080 desktop, taskbar at y~1040). WinAppDriver reports
+element coordinates in **screen space**, so an element MAUI has laid out ~545px below the
+window bottom is clicked at y~1057, which is the taskbar. Any element below the fold can be
+"clicked" anywhere on the desktop.
+
+### The evidence
+
+Two independent observations at CI's window size, both watched live:
+
+1. A click landed on the **browser window behind** the app, bringing it to the front. The app
+   returned, Save then fired on an empty form, and every following test desynced or stalled.
+2. Several MainPage tests clicked the **taskbar**, trying to open Visual Studio.
+
+So the driver is issuing clicks at coordinates outside the app window.
+
+### Why CI shows a different symptom
+
+On CI the app window fills the desktop and there is no taskbar or other window beneath it, so
+the identical off-window click lands on nothing and returns silently. That is precisely the
+recorded CI signature:
+
+- the click is dispatched and takes its usual ~1000ms
+- no handler runs
+- find-only tests keep passing, because *finding* an off-viewport element still works
+- onset is partway through a fixture, after BO3 toggling grows the page and pushes targets down
+
+### The stacking breakpoint: necessary, not sufficient
+
+`MainPage.OnSizeAllocated` stacked its columns only below **560**px while CI runs at **754**px,
+so CI rendered two columns at ~377px each — narrow enough that the note editor stops shrinking
+gracefully and the result and rival pickers clip at the right edge. Raised to **800**.
+
+**But stacking alone did not stop the off-window clicks, and may make them likelier.** Verified
+after the change: clicks still reached the taskbar. Stacking trades horizontal clipping for a
+taller page, and at 754x512 **height** is the binding constraint — the page ends at "Start
+Time / End Time" and everything below is off-window. Fixing the clipping moved more targets
+below the fold.
+
+So the breakpoint is worth keeping for layout quality, but the actual defect is in the click
+path, not the geometry.
+
+### Root cause of the geometry
+
+`MainPage.OnSizeAllocated` stacked its two columns only below **560**px. CI runs at **754**px,
+which cleared that threshold and so rendered two columns at ~377px each. At that width the note
+editor stops shrinking gracefully and the result picker and rival archetype picker clip at the
+right edge — and a control clipped at the window edge can have its centre, and therefore its
+click point, outside the window.
+
+Raised to **800** so CI's width stacks. Nothing then needs to be clipped or scrolled to be
+clicked, which removes the failure mode rather than compensating for it.
+
+### Still open after the breakpoint change
+
+The breakpoint fixes the *geometry*. It does not fix the *test helpers*, which will still
+dispatch a click at an off-window coordinate whenever a target does end up outside the viewport.
+`LogInputBlockers` already computes `insideViewport` — the open question is why that never fired
+on the failing CI runs. A click helper that refuses to click an off-window element, and says so,
+is the durable guard.
+
+## Earlier framing of the same lead
 
 **Observed directly.** Running a cross-page test at CI's window size
 (`UITEST_WINDOW_SIZE=754x512`) locally, the user watched a click land on **the browser window

@@ -190,7 +190,23 @@ namespace UITests
                     try
                     {
                         App.Manage().Window.Size = new System.Drawing.Size(width, height);
-                        Log($"7. UITEST_WINDOW_SIZE applied: {width}x{height}");
+
+                        // Pin the position too, not just the size. Windows cascades each new
+                        // window ~26px down-right from the last, so consecutive runs landed at
+                        // (85,78), (111,104), (137,130), (189,182) — measured 2026-08-06, while
+                        // CI is pinned at (59,52) every time. A local repro of a CI geometry bug
+                        // that starts from a different origin each run is testing a different
+                        // geometry each run.
+                        //
+                        // NOTE: this is reproducibility only. It is NOT the cause of the clicks
+                        // that land on the taskbar — the window is nowhere near it at any of
+                        // those origins (verified by screenshot: 754x512 at (0,0) on a 1920x1080
+                        // desktop, taskbar at y~1040). Those clicks land off-window because
+                        // WinAppDriver reports element coordinates in SCREEN space, so an
+                        // element laid out below the window bottom is clicked at a screen
+                        // coordinate belonging to whatever is there.
+                        App.Manage().Window.Position = new System.Drawing.Point(0, 0);
+                        Log($"7. UITEST_WINDOW_SIZE applied: {width}x{height} at (0,0)");
                     }
                     catch (OpenQA.Selenium.WebDriverException ex)
                     {
