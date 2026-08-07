@@ -174,7 +174,7 @@ jobs:
       #   where every test passed). The regex crashpad_handle[r] matches the real
       #   process but not the literal "crashpad_handle[r]" text in our own cmdline.
       - name: Run Android UI Tests
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 35
           target: default

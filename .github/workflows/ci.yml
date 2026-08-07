@@ -33,7 +33,7 @@ jobs:
         run: dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --no-restore --collect "XPlat Code Coverage" --results-directory TestResults/unit
 
       - name: Generate coverage report
-        uses: danielpalme/ReportGenerator-GitHub-Action@5
+        uses: danielpalme/ReportGenerator-GitHub-Action@d3ebf1f760f7d8ab92cc44d9bcfee7ad73722a31 # v5
         with:
           reports: TestResults/unit/**/coverage.cobertura.xml
           targetdir: TestResults/unit/report
@@ -68,7 +68,7 @@ jobs:
         run: dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj --no-restore --filter "Category!=LiveWeb" --collect "XPlat Code Coverage" --results-directory TestResults/integration
 
       - name: Generate coverage report
-        uses: danielpalme/ReportGenerator-GitHub-Action@5
+        uses: danielpalme/ReportGenerator-GitHub-Action@d3ebf1f760f7d8ab92cc44d9bcfee7ad73722a31 # v5
         with:
           reports: TestResults/integration/**/coverage.cobertura.xml
           targetdir: TestResults/integration/report

@@ -48,6 +48,17 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
         try
         {
             await _semaphore.WaitAsync();
+
+            // Double-checked locking, and the second check is load-bearing. This type is a DI
+            // singleton, so several pages can be inside InitAsync at once: another caller can
+            // pass the check above, win the semaphore, and finish table creation while this one
+            // is still suspended on WaitAsync. Without this it would build a second connection
+            // and re-run every CreateTableAsync.
+            //
+            // CodeQL flags it as cs/constant-condition ("always true"), because its flow analysis
+            // reasons from the early return above and does not model another thread mutating
+            // _database across the await. Dismissed as a false positive on 2026-08-07 — do not
+            // "simplify" this away.
             if (_database is null)
             {
                 _database = new SQLiteAsyncConnection(GetDbPath(), Constants.Flags);

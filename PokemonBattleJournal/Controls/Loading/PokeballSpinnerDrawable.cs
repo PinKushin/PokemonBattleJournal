@@ -29,6 +29,15 @@ namespace PokemonBattleJournal.Controls.Loading
         /// This is the cost knob. Each layer is one stroked arc per frame, so at 60fps this is
         /// ~2,600 arcs a second — fine for Win2D on a small view, and the first thing to reduce
         /// if Android struggles.
+        ///
+        /// <para>
+        /// Must be at least 2. <see cref="DrawTrail"/> divides by <c>TrailLayers - 1</c> to place
+        /// each layer along the tail, so a value of 1 makes that 0/0 and every arc is drawn at
+        /// NaN — no exception, just an invisible spinner. There used to be a
+        /// <c>TrailLayers == 1</c> ternary guarding it, which could never run because this is a
+        /// compile-time constant; the invariant belongs here, next to the value someone would
+        /// actually edit.
+        /// </para>
         /// </remarks>
         private const int TrailLayers = 44;
 
@@ -147,7 +156,7 @@ namespace PokemonBattleJournal.Controls.Loading
 
             for (int i = 0; i < TrailLayers; i++)
             {
-                float t = TrailLayers == 1 ? 1f : (float)i / (TrailLayers - 1);
+                float t = (float)i / (TrailLayers - 1);
 
                 // Layer 0 spans the whole sweep and is thinnest; the last layer is a short,
                 // full-width cap right behind the ball.
