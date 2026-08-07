@@ -35,5 +35,24 @@ namespace PokemonBattleJournal.Interfaces
         /// <see cref="RestoreResult.Errors"/> so one bad entry cannot abort the rest.
         /// </returns>
         Task<RestoreResult> RestoreBackupAsync(string json);
+
+        /// <summary>
+        /// Applies one decision to one conflicted match.
+        /// </summary>
+        /// <param name="conflict">A conflict returned by <see cref="RestoreBackupAsync"/>.</param>
+        /// <param name="resolution">What the user chose.</param>
+        /// <returns>
+        /// Rows affected. Zero for <see cref="ConflictResolution.Keep"/>, which writes nothing by
+        /// definition, and zero when the match no longer exists.
+        /// </returns>
+        /// <remarks>
+        /// One match per call, on purpose. A match's games are written in a single transaction,
+        /// so a match is either fully resolved or untouched — there is no half-merged entry,
+        /// which would leave the user believing more was saved than was.
+        ///
+        /// A conflict can arrive against a match the user has since deleted, because decisions
+        /// are staged and applied later. That returns zero rather than throwing.
+        /// </remarks>
+        Task<int> ApplyResolutionAsync(RestoreConflict conflict, ConflictResolution resolution);
     }
 }

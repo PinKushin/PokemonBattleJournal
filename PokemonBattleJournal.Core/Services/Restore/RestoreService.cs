@@ -138,6 +138,106 @@ namespace PokemonBattleJournal.Services.Restore
             };
         }
 
+        /// <inheritdoc/>
+        public async Task<int> ApplyResolutionAsync(RestoreConflict conflict, ConflictResolution resolution)
+        {
+            // Keep is not a no-op by accident — it is the answer "the stored match is already
+            // what I want". Writing the row back unchanged would burn a transaction and make the
+            // affected count lie about what happened.
+            if (resolution == ConflictResolution.Keep)
+            {
+                _logger.LogInformation("Conflict kept for match {MatchId}; nothing written", conflict.ExistingMatchId);
+                return 0;
+            }
+
+            try
+            {
+                MatchEntry? stored = await _factory.Matches.GetByIdAsync(conflict.ExistingMatchId);
+                if (stored is null)
+                {
+                    // Decisions are staged, so the user can delete a match from the journal while
+                    // its conflict is still on screen. Reported, not thrown.
+                    _logger.LogWarning(
+                        "Conflict resolution skipped: match {MatchId} no longer exists",
+                        conflict.ExistingMatchId);
+                    return 0;
+                }
+
+                List<Game> games = [];
+                await ApplyToSlotAsync(stored.Game1, conflict, "Game 1", resolution, stored.TrainerId, games);
+                await ApplyToSlotAsync(stored.Game2, conflict, "Game 2", resolution, stored.TrainerId, games);
+                await ApplyToSlotAsync(stored.Game3, conflict, "Game 3", resolution, stored.TrainerId, games);
+
+                if (games.Count == 0)
+                {
+                    _logger.LogWarning(
+                        "Conflict resolution skipped: match {MatchId} has no games to write",
+                        conflict.ExistingMatchId);
+                    return 0;
+                }
+
+                // SaveAsync updates rather than inserts because every id is non-zero, and it wraps
+                // the whole set in one transaction — which is what makes a match all-or-nothing.
+                int affected = await _factory.Matches.SaveAsync(stored, games);
+                _logger.LogInformation(
+                    "Conflict resolved for match {MatchId} as {Resolution}: {Affected} row(s)",
+                    conflict.ExistingMatchId, resolution, affected);
+                return affected;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to resolve conflict for match {MatchId}", conflict.ExistingMatchId);
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Applies the resolution to one game slot, if that slot is one of the differing ones.
+        /// </summary>
+        /// <remarks>
+        /// Every existing game goes into the list, changed or not: SaveAsync writes the set it is
+        /// given, so omitting an untouched game would drop it from the match. Only the slots the
+        /// conflict actually names get rewritten.
+        /// </remarks>
+        private async Task ApplyToSlotAsync(
+            Game? game,
+            RestoreConflict conflict,
+            string label,
+            ConflictResolution resolution,
+            uint trainerId,
+            List<Game> games)
+        {
+            if (game is null)
+            {
+                return;
+            }
+
+            games.Add(game);
+
+            ConflictGameDiff? diff = conflict.Games.FirstOrDefault(g => g.Label == label);
+            if (diff is null)
+            {
+                return;
+            }
+
+            game.Notes = ConflictResolver.ResolveNotes(diff.ExistingNotes, diff.IncomingNotes, resolution);
+
+            IReadOnlyList<string> names = ConflictResolver.ResolveTags(
+                diff.ExistingTags, diff.IncomingTags, resolution);
+
+            List<Tags> tags = [];
+            foreach (string name in names)
+            {
+                Tags? tag = await ResolveTagAsync(name, trainerId);
+                if (tag is not null)
+                {
+                    tags.Add(tag);
+                }
+            }
+
+            game.Tags = tags;
+        }
+
         private readonly List<RestoreConflict> _pendingConflicts = [];
 
         private enum RestoreOutcome { Inserted, SkippedIdentical, Conflicted, Failed }
