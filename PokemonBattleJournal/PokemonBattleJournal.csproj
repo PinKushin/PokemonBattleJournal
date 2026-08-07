@@ -125,6 +125,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\PokemonBattleJournal.Scraper\PokemonBattleJournal.Scraper.csproj" />
+		<ProjectReference Include="..\PokemonBattleJournal.Core\PokemonBattleJournal.Core.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

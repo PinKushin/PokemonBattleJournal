@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<!-- Matches the MAUI head exactly. This project was created by MOVING files out of
+		     that head, so any difference in compilation settings would turn a pure move into
+		     a rewrite and hide which errors came from the move itself. Aligning both projects
+		     to ImplicitUsings=disable is worth doing and belongs in its own commit. -->
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>preview</LangVersion>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<!-- Why this project exists: Stryker cannot mutate the MAUI head at all — its internal
+	     Roslyn recompile does not reproduce XAML codegen or the MVVM source generators, and
+	     surfaces no CS error when it fails. That left every branch in Services and Utilities
+	     unmeasured, which is where nearly all the logic lives. A plain class library is an
+	     ordinary project that Stryker handles fine, as the Scraper already proves.
+	     It is NOT for reuse; nothing will consume it as a package. -->
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="PokemonBattleJournal.Tests" />
+		<InternalsVisibleTo Include="PokemonBattleJournal.IntegrationTests" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
+		<PackageReference Include="Sentry.Serilog" Version="6.8.0" />
+		<PackageReference Include="Serilog" Version="4.4.0" />
+		<PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+		<PackageReference Include="SQLite.Net.Extensions.Async" Version="3.0.1" />
+		<PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
+	</ItemGroup>
+
+	<!-- Security overrides, mirrored from the app head deliberately. bundle_green 2.1.11
+	     drags in a vulnerable SQLitePCLRaw (GHSA-2m69-gcr7-jv3q); these raise it. They look
+	     like removable duplicates and are not — dropping them reproduces NU1903 here the same
+	     way it does in the app. Restore resolves per project, so the app's copies do not cover
+	     this one. See docs/memory/project_sqlite_security_pins.md. -->
+	<ItemGroup>
+		<PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
+		<PackageReference Include="SQLitePCLRaw.lib.e_sqlite3.android" Version="2.1.12" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Roslynator.Analyzers" Version="4.15.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.31.0.145097">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\PokemonBattleJournal.Scraper\PokemonBattleJournal.Scraper.csproj" />
+	</ItemGroup>
+
+</Project>
