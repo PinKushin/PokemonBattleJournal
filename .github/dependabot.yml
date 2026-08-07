@@ -1,0 +1,29 @@
+# Dependabot exists here for one reason: the third-party actions in the workflows
+# are pinned to commit SHAs rather than tags.
+#
+# Pinning is what CodeQL's actions/unpinned-tag asks for, and it is right — a tag
+# is a moveable pointer, so `@v2` means "whatever that repo's owner points v2 at
+# on the morning our CI next runs". On a public repo that is a supply-chain hole.
+#
+# But a SHA never moves, which means it also never picks up the fix when one of
+# those actions ships a security patch. Pinning without something to advance the
+# pins is not more secure, only differently insecure. This is that something: it
+# opens a PR when a pinned action has a newer release, and preserves the `# v2`
+# comment so the version stays readable.
+#
+# Only github-actions is enabled. NuGet is deliberately absent: this repo carries
+# deliberate transitive OVERRIDES for SQLitePCLRaw (lib.e_sqlite3 3.53.3 and
+# .android 2.1.12, pinning above bundle_green's vulnerable 2.1.11 — GHSA-2m69-
+# gcr7-jv3q). Those look like removable duplicates to a tool that has not read
+# the reasoning, and dropping them reintroduces 14 instances of NU1903. Package
+# updates stay a manual, deliberate act here. See project_sqlite_security_pins.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: thursday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(ci)"
