@@ -84,8 +84,6 @@ UITEST_WINDOW_SIZE=754x512 UITEST_WINDOW_POS=85,78 dotnet test PokemonBattleJour
 # the whole fixture in OneTimeSetUp — it looks exactly like a regression. Kill it first.
 Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 
-# Kill orphaned app after failed Appium run
-Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 ```
 
 **Solution file:** always use `PokemonBattleJournal.slnx`. Do not recreate `PokemonBattleJournal.sln`.
@@ -131,6 +129,10 @@ Every UI element must have:
   `Button` in the same Grid cell when custom visuals are required, moving the `AutomationId`
   and command onto it. Also what makes UI tests click reliably — see
   `docs/memory/feedback_invokable_controls.md`.
+
+- **The contract is enforced on Windows.** `MainPage_InteractiveElement_IsAnnouncedAndOperable`
+  and its OptionsPage twin read the live UIA tree and require both a Name and a control pattern.
+  Add new interactive elements to those `[TestCase]` lists. They do not cover Android.
 
 
 ## TDD workflow
