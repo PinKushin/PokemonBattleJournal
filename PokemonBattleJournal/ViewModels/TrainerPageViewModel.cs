@@ -157,7 +157,7 @@ namespace PokemonBattleJournal.ViewModels
                 TrainerName = trainer.Name ?? TrainerName;
                 WelcomeMsg = $"{TrainerName}'s Profile";
 
-                _logger.LogInformation("Loading matches for trainer: {TrainerId} ({TrainerName})", trainer.Id, trainer.Name);
+                _logger.LogInformation("Loading matches for trainer: {TrainerId}", trainer.Id);
                 matches = await _connection.Matches.GetByTrainerIdAsync(trainer.Id, true);
             }
             catch (Exception ex)

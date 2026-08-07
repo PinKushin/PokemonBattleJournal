@@ -81,7 +81,7 @@ namespace PokemonBattleJournal.Services
                 throw new ArgumentException("Trainer ID is required", nameof(trainerId));
             }
 
-            _logger.LogDebug("SaveAsync: saving tag {Name} for trainer {TrainerId}", tagTxt, trainerId);
+            _logger.LogDebug("SaveAsync: saving tag for trainer {TrainerId} ({NameLength} chars)", trainerId, tagTxt.Length);
             Tags tag = new()
             { Name = tagTxt, TrainerId = trainerId };
 
@@ -109,7 +109,7 @@ namespace PokemonBattleJournal.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving tag: {TagName} - {Message}", tagTxt, ex.Message);
+                _logger.LogError(ex, "Error saving tag ({NameLength} chars): {Message}", tagTxt.Length, ex.Message);
                 _errorHandler.HandleError(ex);
                 return 0;
             }
@@ -125,7 +125,7 @@ namespace PokemonBattleJournal.Services
                 throw new ArgumentException("Tag ID is required", nameof(tag));
             }
 
-            _logger.LogDebug("DeleteAsync: deleting tag {Name} ({Id})", tag.Name, tag.Id);
+            _logger.LogDebug("DeleteAsync: deleting tag {TagId}", tag.Id);
             try
             {
                 using DbSession session = await _factory.BeginAsync();
@@ -137,8 +137,8 @@ namespace PokemonBattleJournal.Services
 
                 if (tagGameCount > 0)
                 {
-                    _logger.LogInformation("Tag {TagId} ({TagName}) is used in {Count} games, " +
-                        "related relationships will be deleted", tag.Id, tag.Name, tagGameCount);
+                    _logger.LogInformation("Tag {TagId} is used in {Count} games, " +
+                        "related relationships will be deleted", tag.Id, tagGameCount);
                 }
 
                 int affected = 0;
@@ -173,8 +173,8 @@ namespace PokemonBattleJournal.Services
                     }
                 });
 
-                _logger.LogInformation("Successfully deleted tag {TagId} ({TagName}) with {Count} affected rows",
-                    tag.Id, tag.Name, affected);
+                _logger.LogInformation("Successfully deleted tag {TagId} with {Count} affected rows",
+                    tag.Id, affected);
                 return affected;
             }
             catch (ArgumentException ex)
@@ -191,7 +191,7 @@ namespace PokemonBattleJournal.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting tag: {TagName} - {Message}", tag.Name ?? "Unknown", ex.Message);
+                _logger.LogError(ex, "Error deleting tag {TagId}: {Message}", tag.Id, ex.Message);
                 _errorHandler.HandleError(ex);
                 return 0;
             }
