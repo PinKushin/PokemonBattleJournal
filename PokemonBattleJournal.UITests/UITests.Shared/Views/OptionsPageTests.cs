@@ -502,5 +502,120 @@
         {
             FindUIElement("RestoreBackupButton").ShouldNotBeNull();
         }
+        // ---------------------------------------------------------------------------
+        // Restore conflict review
+        // ---------------------------------------------------------------------------
+        //
+        // The section is invisible until a conflict exists, and producing a real one needs an
+        // export, an edit and a restore through a file picker Appium cannot drive. A DEBUG-only
+        // button seeds two samples instead: one genuinely conflicting, which arrives unanswered,
+        // and one where the backup merely knows more, which arrives pre-selected as Append.
+        //
+        // Seeding CLEARS the list first, so each test below is self-contained regardless of
+        // NUnit's alphabetical order.
+
+        /// <summary>
+        /// Answers whatever is left and applies it, so the extra page height cannot push later
+        /// tests' targets off screen.
+        /// </summary>
+        /// <remarks>
+        /// Targeted, in a finally, only for tests that mutate — per
+        /// docs/memory/feedback_uitest_cleanup_pattern.md. Answering the first row is enough:
+        /// the second sample is pre-answered, so one click makes both applicable.
+        /// </remarks>
+        private void ClearSeededConflicts()
+        {
+            if (!IsElementPresent("ConflictList"))
+            {
+                return;
+            }
+
+            ClickElement("ConflictKeepButton");
+            ClickElement("ApplyConflictsButton");
+        }
+
+        [Test]
+        public void OptionsPage_SeedConflicts_ShowsTheReviewSection()
+        {
+            try
+            {
+                ClickElement("SeedConflictsButton");
+
+                FindUIElement("ConflictSectionHeading").ShouldNotBeNull();
+                FindUIElement("ConflictList").ShouldNotBeNull();
+                FindUIElement("ConflictTitleLabel").ShouldNotBeNull();
+            }
+            finally
+            {
+                ClearSeededConflicts();
+            }
+        }
+
+        [Test]
+        public void OptionsPage_ConflictButtons_AreOperable()
+        {
+            // These four cannot join the page-level accessibility contract test, because that one
+            // asserts against elements present on a freshly loaded page and this section is
+            // hidden until seeded. Asserting it here is what keeps them covered at all.
+            try
+            {
+                ClickElement("SeedConflictsButton");
+
+                foreach (string id in new[]
+                {
+                    "ConflictKeepButton", "ConflictAppendButton",
+                    "ConflictReplaceButton", "ApplyConflictsButton",
+                })
+                {
+                    FindUIElement(id).ShouldNotBeNull($"{id} must exist and be reachable");
+                }
+            }
+            finally
+            {
+                ClearSeededConflicts();
+            }
+        }
+
+        [Test]
+        public void OptionsPage_ChoosingAResolution_UpdatesThatRowsChoice()
+        {
+            try
+            {
+                ClickElement("SeedConflictsButton");
+                ClickElement("ConflictReplaceButton");
+
+                // Contains, not equals: Android prefixes SemanticProperties.Description onto
+                // .Text while Windows returns the value alone. See
+                // docs/memory/feedback_maui_content_desc_reset.md.
+                FindUIElement("ConflictChoiceLabel").Text
+                    .ShouldContain("backup", Case.Insensitive);
+            }
+            finally
+            {
+                ClearSeededConflicts();
+            }
+        }
+
+        [Test]
+        public void OptionsPage_ApplyChoices_WritesAnsweredRowsAndLeavesTheRest()
+        {
+            // The seeded pair is the point of this test: one row arrives pre-answered and one
+            // blank, so a single Apply must take exactly one of them and say so. A UI that
+            // cleared both would be claiming more was saved than was.
+            try
+            {
+                ClickElement("SeedConflictsButton");
+
+                ClickElement("ApplyConflictsButton");
+
+                FindUIElement("RestoreStatusLabel").Text.ShouldContain("1 applied");
+                FindUIElement("ConflictList").ShouldNotBeNull("the unanswered row must still be listed");
+            }
+            finally
+            {
+                ClearSeededConflicts();
+            }
+        }
+
     }
 }

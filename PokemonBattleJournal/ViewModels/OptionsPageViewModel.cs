@@ -440,6 +440,68 @@ namespace PokemonBattleJournal.ViewModels
         /// </remarks>
         public ObservableCollection<ConflictRowViewModel> Conflicts { get; } = [];
 
+        /// <summary>
+        /// Fills the review list with two sample conflicts so the section can be seen and driven.
+        /// </summary>
+        /// <remarks>
+        /// Debug-only in effect: the button that invokes it is bound to <see cref="IsDebugBuild"/>,
+        /// the same arrangement as the simulated-loading toggle.
+        ///
+        /// It exists because the conflict section is invisible until a conflict exists, and
+        /// producing a real one takes an export, an edit and a restore — a round trip through a
+        /// file picker that Appium cannot drive. The service path is covered by integration
+        /// tests; what needs a UI test is the rendering, the three buttons and the apply gate.
+        ///
+        /// Both samples point at match ids no row can hold, so applying them reports nothing done
+        /// rather than rewriting a real match. One arrives pre-selected and one blank, which is
+        /// the distinction the UI is supposed to make visible.
+        /// </remarks>
+        [RelayCommand]
+        public void SeedSampleConflicts()
+        {
+            Conflicts.Clear();
+
+            Conflicts.Add(new ConflictRowViewModel(new RestoreConflict
+            {
+                TrainerName = TrainerName.Length > 0 ? TrainerName : "Trainer",
+                ExistingMatchId = uint.MaxValue,
+                StartTime = DateTime.Now,
+                Description = "game 1 notes differ",
+                Games =
+                [
+                    new ConflictGameDiff
+                    {
+                        Label = "Game 1",
+                        ExistingNotes = "dead draw",
+                        IncomingNotes = "misplayed turn 3",
+                        ExistingTags = ["bricked"],
+                        IncomingTags = ["donked"],
+                    },
+                ],
+            }));
+
+            Conflicts.Add(new ConflictRowViewModel(new RestoreConflict
+            {
+                TrainerName = TrainerName.Length > 0 ? TrainerName : "Trainer",
+                ExistingMatchId = uint.MaxValue - 1,
+                StartTime = DateTime.Now.AddHours(-2),
+                Description = "game 1 notes differ",
+                Games =
+                [
+                    new ConflictGameDiff
+                    {
+                        Label = "Game 1",
+                        ExistingNotes = string.Empty,
+                        IncomingNotes = "they conceded",
+                    },
+                ],
+            }));
+
+            OnPropertyChanged(nameof(HasConflicts));
+            _logger.LogInformation("Seeded {Count} sample conflicts for review", Conflicts.Count);
+        }
+
+
         public bool HasConflicts => Conflicts.Count > 0;
 
         /// <summary>

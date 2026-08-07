@@ -338,6 +338,20 @@
                     Text="{Binding RestoreStatusMessage}"
                     TextColor="{StaticResource PokeYellow}" />
 
+                <!--  DEBUG only: the review section is invisible until a conflict exists, and
+                      producing a real one needs an export, an edit and a restore through a file
+                      picker Appium cannot drive. Same arrangement as the loading toggle.  -->
+                <Button
+                    x:Name="SeedConflictsButton"
+                    AutomationId="SeedConflictsButton"
+                    SemanticProperties.Description="Seed sample conflicts"
+                    SemanticProperties.Hint="Debug only. Fills the review list with two example conflicts"
+                    Command="{Binding SeedSampleConflictsCommand}"
+                    HorizontalOptions="Center"
+                    IsVisible="{Binding IsDebugBuild, x:DataType=viewmodel:OptionsPageViewModel}"
+                    Text="Seed sample conflicts"
+                    WidthRequest="220" />
+
                 <!--  Conflicts left by the last restore  -->
                 <!--
                     Hidden entirely when there is nothing outstanding, so the page does not carry

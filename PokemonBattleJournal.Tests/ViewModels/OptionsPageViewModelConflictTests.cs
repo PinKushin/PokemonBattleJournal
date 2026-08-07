@@ -180,6 +180,30 @@ namespace PokemonBattleJournal.Tests.ViewModels
         }
 
         [Test]
+        public void SeedSampleConflicts_ProducesOneAnsweredAndOneUnansweredRow()
+        {
+            // Debug-only affordance. The conflict section is invisible until a conflict exists,
+            // so without this a UI test would have to perform a whole export/edit/restore cycle
+            // through a file picker Appium cannot drive.
+            _viewModel.SeedSampleConflictsCommand.Execute(null);
+
+            _viewModel.Conflicts.Count.ShouldBe(2);
+            _viewModel.HasConflicts.ShouldBeTrue();
+            _viewModel.Conflicts.Count(c => c.IsResolved)
+                .ShouldBe(1, "the richer sample must arrive pre-selected and the contradicting one blank");
+        }
+
+        [Test]
+        public void SeedSampleConflicts_UsesMatchIdsThatCannotExist()
+        {
+            // The samples are applied through the real service. Pointing them at ids no row can
+            // hold means Apply reports nothing done instead of rewriting somebody's match.
+            _viewModel.SeedSampleConflictsCommand.Execute(null);
+
+            _viewModel.Conflicts.ShouldAllBe(c => c.Conflict.ExistingMatchId > uint.MaxValue - 10);
+        }
+
+        [Test]
         public async Task ApplyRestoreAsync_Twice_DoesNotAccumulateStaleConflicts()
         {
             // Restoring a second file must replace the outstanding list, not append to it —
