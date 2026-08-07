@@ -1,0 +1,31 @@
+name: PokemonBattleJournal CodeQL config
+
+# Scope note: this repo is a MAUI app, so the generated-code problem is larger
+# here than in a plain library. CommunityToolkit.Mvvm's source generators emit a
+# .g.cs for every [ObservableProperty] and [RelayCommand] — hundreds of files —
+# and the XAML compiler emits more.
+#
+# IMPORTANT, learned in TcgDex.CSharpSdk: for COMPILED languages `paths-ignore`
+# does not actually exclude generated code. CodeQL analyses what the compiler
+# pulled into the build, and the generators emit into obj/ during `dotnet build`.
+# There it was verified directly — the config loaded and all 211 generated-file
+# alerts survived it. The mechanism that works is `query-filters`, excluding the
+# specific rule that only ever fires in generated code.
+#
+# So this is kept for the cases where it does apply, and the real triage happens
+# after the first scan: if a rule fires only in *.g.cs, exclude the rule and say
+# why. Do NOT tolerate unactionable alerts — a Security tab full of noise trains
+# everyone to ignore it, which is exactly where a real finding would appear.
+paths-ignore:
+  - "**/*.g.cs"
+  - "**/*.sg.cs"
+  - "**/obj/**"
+  - "**/bin/**"
+
+queries:
+  # Superset of the default suite. This app parses JSON from two external
+  # sources (TrainerHill imports and the Limitless scrape) and writes it to
+  # SQLite, which is precisely the interprocedural taint-flow shape the
+  # CA3xxx/CA5xxx build analyzers cannot see — they match dangerous API shapes at
+  # a single call site.
+  - uses: security-and-quality
