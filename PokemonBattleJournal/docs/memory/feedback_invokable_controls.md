@@ -54,6 +54,32 @@ Two gotchas when doing this, both hit on 2026-08-06:
 - `BorderWidth="0"` alone does not remove a WinUI Button's border — it keeps its default
   `BorderBrush` unless `BorderColor` is set too. Now set to Transparent on the implicit style.
 
+### AutomationId cannot be moved onto the overlay
+
+**MAUI throws `AutomationId may only be set one time`.** It cannot be cleared or reassigned once
+XAML has set it — attempting `AutomationId = string.Empty` inside `OnPropertyChanged` crashes the
+app at launch. Verified 2026-08-06.
+
+So for a control whose id is set by *consumers* (a reusable control like `ComboBoxControl`), the
+id stays on the host and the overlay Button cannot claim it:
+
+- **Copying** it to the Button puts a duplicate in the UIA tree, and a lookup resolves the
+  **parent** first — the non-invokable one — so it changes nothing.
+- **Moving** it is impossible per the above.
+- Landing it on the Button means **not setting it on the host at all**, i.e. exposing a separate
+  bindable property and changing every call site. Only worth it if the automation path actually
+  needs the pattern.
+
+What you *can* always forward is `SemanticProperties.Description` and `Hint` — ordinary attached
+BindableProperties with no set-once rule. That is enough to make the invokable Button the named
+one, which is the accessibility half. The automation half keeps the guarded mouse click.
+
+This does not apply when the element is built in code and you control the id outright — the
+archetype popup items and the BO3 switch both put the id straight onto the Button, and both
+invoke cleanly.
+
+### Focus visuals
+
 The white outline that remains on focus is WinUI's **focus visual**, a different mechanism.
 Do not delete it: a visible focus indicator is WCAG 2.4.7. Recolour it to the palette instead.
 
