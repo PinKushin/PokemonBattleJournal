@@ -1,0 +1,86 @@
+name: CodeQL
+
+# CodeQL does interprocedural taint analysis — it follows a value from where it
+# enters the program to where it is used. That is the class of problem the
+# CA3xxx/CA5xxx analyzers in the build cannot see: those match known-dangerous
+# API shapes at a single call site.
+#
+# This app has two untrusted inputs worth tracing end to end: TrainerHill JSON
+# imports and the Limitless meta scrape. Both are parsed and written to SQLite,
+# and the import limits are enforced before any DB write precisely because a
+# name creates a row on demand.
+#
+# Free for public repositories.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    # Weekly, Thursday 05:17 UTC. A different day and an off-hour minute from
+    # everything else, so a scheduled security scan never queues behind the
+    # other workflows — and on a repo whose UI suites already run a per-fixture
+    # matrix, queueing is the thing that costs real time.
+    - cron: "17 5 * * 4"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  analyze:
+    name: Analyze C#
+    # windows-latest, not ubuntu: the app's source only compiles in full under a
+    # platform TFM, and net10.0-windows is the one whose head contains the
+    # WinUI-specific code. ubuntu could build net10.0-android instead, but that
+    # would analyse the same shared source through a slower workload install.
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    permissions:
+      # Required to upload results to the Security tab.
+      security-events: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      - name: Initialise CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: csharp
+          # Query suite and generated-file handling live in the config file, so
+          # the reasoning sits next to the settings rather than spread across
+          # workflow inputs.
+          config-file: ./.github/codeql-config.yml
+
+      - name: Install MAUI Windows workload
+        run: dotnet workload install maui-windows
+
+      # An explicit build, not autobuild. Autobuild would try the solution, which
+      # multi-targets android/iOS/maccatalyst and would need every workload
+      # installed — minutes of setup to analyse source that is identical across
+      # them. -f must target the app project, never the solution: the test and
+      # scraper projects do not have the Windows TFM and fail with NETSDK1005.
+      - name: Build app (Windows head)
+        run: dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
+
+      # Built separately because it is where untrusted HTML/JSON first enters the
+      # process, and it does not target the Windows TFM.
+      - name: Build scraper
+        run: dotnet build PokemonBattleJournal.Scraper/PokemonBattleJournal.Scraper.csproj
+
+      - name: Analyse
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:csharp"

@@ -1,0 +1,29 @@
+<Project>
+
+  <PropertyGroup>
+    <!-- Security rules at full strength across every project.
+
+         The build already runs SonarAnalyzer and Roslynator, but neither turns
+         on the .NET security analyzers (CA2100 SQL injection, CA3003 file-path
+         injection, CA5350+ weak crypto) beyond their default subset. This app
+         parses JSON from TrainerHill and HTML from the Limitless scrape, writes
+         both to SQLite, and reads user-chosen files off disk — the exact shapes
+         those rules exist for.
+
+         Complementary to the CodeQL workflow rather than redundant: these match
+         dangerous API shapes at a single call site, CodeQL follows a value
+         across methods. TcgDex.CSharpSdk found the difference concretely — a
+         deliberate `new Random()` probe went unflagged by the analyzers while
+         `SHA1.Create()` was caught. -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisModeSecurity>All</AnalysisModeSecurity>
+
+    <!-- NOT set here: TreatWarningsAsErrors. The repo standard is already zero
+         warnings and it is held manually. Turning it on would also apply to the
+         iOS and MacCatalyst TFMs, which are never built locally or in CI, so the
+         first person to build them would meet a wall of errors nobody had a
+         chance to see. Worth doing, but as its own change with those TFMs
+         actually built. -->
+  </PropertyGroup>
+
+</Project>
