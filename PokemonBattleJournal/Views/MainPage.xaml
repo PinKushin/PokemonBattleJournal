@@ -225,12 +225,17 @@
                                 SemanticProperties.Hint="Double tap to switch between best of one and best of three"
                                 AutomationProperties.IsInAccessibleTree="True"
                                 BackgroundColor="Transparent"
+                                BorderColor="Transparent"
                                 BorderWidth="0"
                                 Command="{Binding ToggleBO3Command}"
                                 CornerRadius="16"
                                 HeightRequest="32"
                                 Padding="0"
-                                WidthRequest="68" />
+                                WidthRequest="68"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center"
+                                MinimumHeightRequest="0"
+                                MinimumWidthRequest="0" />
                         </Grid>
                         <Label
                             AutomationId="BO3StatusLabel"
