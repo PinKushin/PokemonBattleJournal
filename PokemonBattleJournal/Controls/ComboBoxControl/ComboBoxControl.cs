@@ -267,11 +267,82 @@ public IEnumerable? ItemsSource
             MinimumWidthRequest = 0
         };
         activator.Clicked += (s, e) => OnTapped(s, EventArgs.Empty);
+        _activator = activator;
 
         Content = new Grid { Children = { _border, activator } };
 
+        // Consumers set AutomationId and semantics on the control; forward whatever is already
+        // set before the handler exists, then keep them in sync in OnPropertyChanged.
+        ForwardAutomationToActivator();
+
         UpdateDisplay();
     }
+
+    /// <summary>
+    /// Moves the screen-reader semantics from this ContentView onto the inner activator Button.
+    /// </summary>
+    /// <remarks>
+    /// The Button is the only part of this control exposing a UIA InvokePattern, so it is what a
+    /// screen reader can act on — but consumers set the description and hint on the ContentView,
+    /// which has no pattern. Left there, the named element is not invokable and the invokable
+    /// element is anonymous.
+    ///
+    /// Moved rather than copied so the description is announced once, against the control that
+    /// can actually be activated.
+    /// </remarks>
+    private void ForwardAutomationToActivator()
+    {
+        if (_activator is null || _forwardingAutomation)
+            return;
+
+        _forwardingAutomation = true;
+        try
+        {
+            // AutomationId is deliberately NOT forwarded. MAUI throws
+            // "AutomationId may only be set one time" — it cannot be cleared or reassigned once
+            // XAML has set it, so it can only be COPIED to the activator, and a duplicate id
+            // resolves to this ContentView first because a lookup finds the parent. Copying
+            // would change nothing and add an ambiguous id to the tree.
+            //
+            // Consequence: automation still reaches this control by its guarded mouse click,
+            // while a screen reader gets an invokable, named Button. Making the id land on the
+            // Button would mean not setting it on the control at all — a consumer-facing API
+            // change, and not worth it for a click that is already verified inside the window.
+            string? description = SemanticProperties.GetDescription(this);
+            if (!string.IsNullOrEmpty(description))
+            {
+                SemanticProperties.SetDescription(_activator, description);
+                SemanticProperties.SetDescription(this, string.Empty);
+            }
+
+            string? hint = SemanticProperties.GetHint(this);
+            if (!string.IsNullOrEmpty(hint))
+            {
+                SemanticProperties.SetHint(_activator, hint);
+                SemanticProperties.SetHint(this, string.Empty);
+            }
+        }
+        finally
+        {
+            _forwardingAutomation = false;
+        }
+    }
+
+    protected override void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+    {
+        base.OnPropertyChanged(propertyName);
+
+        if (_forwardingAutomation)
+            return;
+
+        if (propertyName is "Description" or "Hint")
+        {
+            ForwardAutomationToActivator();
+        }
+    }
+
+    private readonly Button? _activator;
+    private bool _forwardingAutomation;
 
     private static void OnSelectedItemChanged(BindableObject bindable, object? oldValue, object? newValue)
     {
