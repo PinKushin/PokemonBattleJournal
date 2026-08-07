@@ -110,7 +110,7 @@
                         <Label Style="{StaticResource FieldLabel}" Text="Archetype Icon" />
                         <controls:ComboBoxControl
                             x:Name="NewArchetypeIcon"
-                            AutomationId="ArchetypeIconPicker"
+                            ActivatorAutomationId="ArchetypeIconPicker"
                             SemanticProperties.Description="Archetype icon"
                             SemanticProperties.Hint="Pick an icon for the new archetype"
                             Style="{StaticResource ArchetypePicker}"

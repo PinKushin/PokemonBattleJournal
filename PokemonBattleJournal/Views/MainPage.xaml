@@ -146,7 +146,7 @@
                         <controls:ComboBoxControl
                             x:Name="PlayerArchetype"
                             Style="{StaticResource ArchetypePicker}"
-                            AutomationId="PlayerArchetype"
+                            ActivatorAutomationId="PlayerArchetype"
                             SemanticProperties.Description="Your deck archetype"
                             SemanticProperties.Hint="Double tap to choose the deck you played"
                             Placeholder="Player"
@@ -157,7 +157,7 @@
                         <controls:ComboBoxControl
                             x:Name="RivalArchetype"
                             Style="{StaticResource ArchetypePicker}"
-                            AutomationId="RivalArchetype"
+                            ActivatorAutomationId="RivalArchetype"
                             SemanticProperties.Description="Opponent deck archetype"
                             SemanticProperties.Hint="Double tap to choose the deck your opponent played"
                             Placeholder="Rival"
