@@ -71,7 +71,13 @@ namespace PokemonBattleJournal.DevSeed
                 for (int i = 0; i < bo1.Length; i++)
                 {
                     var (playing, against, result, turn, days, mins, tag) = bo1[i];
-                    DateTime date = baseDate.AddDays(days).AddHours(i % 3 * 4);
+                    // 4d, not 4: AddHours takes a double, so `i % 3 * 4` multiplies as int and
+                    // converts afterwards. Harmless here — i is bounded by bo1.Length, so the
+                    // product never exceeds 8 — but the pattern is only safe because of a bound
+                    // that lives somewhere else, which is exactly what cs/loss-of-precision is
+                    // pointing at. Doing the arithmetic in floating point costs nothing and does
+                    // not depend on the array staying short.
+                    DateTime date = baseDate.AddDays(days).AddHours(i % 3 * 4d);
                     await factory.Matches.SaveAsync(
                         new MatchEntry
                         {
