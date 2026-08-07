@@ -123,6 +123,11 @@ namespace PokemonBattleJournal.Services.Import
                     // already a row in the database by the time anything notices.
                     if (!TryValidateEntry(entry, out string? problem))
                     {
+                        // The deck names come from the imported file and are kept verbatim on
+                        // purpose: naming the entry is the only way a reader can find it in their
+                        // own file and fix it. They stay on the device — SentryRedactingSink
+                        // withholds them on the way out, and forwards {Problem}, which this app
+                        // wrote. Same trade as the import summary in OptionsPageViewModel.
                         _logger.LogWarning("Skipped entry {Playing} vs {Against}: {Problem}",
                             entry.Playing, entry.Against, problem);
                         errors.Add($"Skipped entry ({Truncate(entry.Playing)} vs {Truncate(entry.Against)}): {problem}");

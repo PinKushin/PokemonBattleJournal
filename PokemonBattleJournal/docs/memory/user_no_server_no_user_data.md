@@ -37,19 +37,18 @@ lossy. **The rule the user arrived at by practice: separate types when the shape
 differs, not on principle.** That is also why the domain/persistence split was rejected in
 [[project_core_library_extraction_plan]] — there the two shapes are identical.
 
-## Worth checking against this: Sentry is already shipping
+## Sentry was audited against this and fixed — 2026-08-07
 
-The app registers **Sentry** and it uploads crash and session data off-device — visible in the
-startup logs. That is in tension with "I don't want people's information" and the user may not
-have connected the two.
+**Done. Do not re-open it as an open question.** Full findings in
+[[project_sentry_privacy_audit]]; the short version:
 
-Specifically worth auditing rather than assuming: exception messages and breadcrumbs can carry
-user content, and this app's error paths log match notes, trainer names, archetype names and
-file paths. The repo standard already forbids PII in logs and error messages
-([[feedback_security]]) — Sentry is where that standard actually gets tested, because those
-strings leave the machine.
+Sentry's own configuration was never the leak — every PII-adjacent option defaults to false and
+none was overridden. The app's own log strings were, because the Serilog sink turned every
+`LogInformation` into a breadcrumb carrying the rendered message. Fixed at the call sites (ids,
+counts and lengths instead of names and paths) **and** with `SentryRedactingSink`, which forwards
+property values by TYPE, so free text is withheld without anyone having to decide field by field
+whether it counts as PII.
 
-**QUEUED as the next piece of work** (task #18, agreed 2026-08-07). The user is aware and wants
-it audited — while keeping local logs useful and keeping crash reports arriving without relying
-on GitHub issues or people emailing. Those goals are compatible; the fix is to stop putting user
-content into the strings in the first place, not to make logging quieter.
+All three goals held: local logs stay complete, crash reports still arrive without relying on
+GitHub issues or email, and user content stops leaving the device. The fix was to stop putting it
+in the strings, not to make logging quieter.

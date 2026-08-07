@@ -82,9 +82,12 @@ namespace PokemonBattleJournal.Services
                     }
                     else
                     {
-                        _logger.LogInformation("Inserting match entry: {@MatchEntry}", matchEntry);
-                        _logger.LogInformation("Playing: {PlayingName} \nAgainst: {AgainstName}",
-                            matchEntry.Playing?.Name, matchEntry.Against?.Name);
+                        // Ids, not the destructured entry. {@MatchEntry} walked every navigation
+                        // property, so it printed both Archetype objects in full — and would have
+                        // printed Game.Notes the moment those were populated before the insert.
+                        _logger.LogInformation(
+                            "Inserting match entry for trainer {TrainerId}: Playing={PlayingId}, Against={AgainstId}, Result={Result}",
+                            matchEntry.TrainerId, matchEntry.PlayingId, matchEntry.AgainstId, matchEntry.Result);
                         affected += tran.Insert(matchEntry);
                     }
 
@@ -334,7 +337,7 @@ namespace PokemonBattleJournal.Services
             Game? game = await db.GetWithChildrenAsync<Game>(gameId, true);
             if (game != null)
             {
-                _logger.LogDebug("Game {GameId} Tags loaded: {@Tags}", gameId, game.Tags);
+                _logger.LogDebug("Game {GameId} Tags loaded: {TagCount}", gameId, game.Tags?.Count ?? 0);
             }
             return game;
         }
@@ -366,7 +369,7 @@ namespace PokemonBattleJournal.Services
                     // Make sure tag exists in the database
                     if (tag.Id == 0)
                     {
-                        _logger.LogDebug("Inserting new tag: {TagName}", tag.Name);
+                        _logger.LogDebug("Inserting new tag ({NameLength} chars)", tag.Name?.Length ?? 0);
                         affected += tran.Insert(tag);
                     }
 

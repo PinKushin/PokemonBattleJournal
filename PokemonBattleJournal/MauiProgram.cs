@@ -1,6 +1,7 @@
 using CommunityToolkit.Maui;
 using LiveChartsCore.SkiaSharpView.Maui;
 using PokemonBattleJournal.Interfaces;
+using PokemonBattleJournal.Logging;
 using PokemonBattleJournal.Scraper.Interfaces;
 using PokemonBattleJournal.Scraper.Services;
 using PokemonBattleJournal.Services.Export;
@@ -72,18 +73,11 @@ namespace PokemonBattleJournal
                 .WriteTo.Debug()
                 .WriteTo.File(Path.Combine(logsDir, "log.txt"),
                 rollingInterval: RollingInterval.Day)
-                // Sentry sink: this app's error policy catches everything and logs it
-                // (silent catch is banned; errors surface via ModalErrorHandler + ILogger),
-                // so without this sink only truly-unhandled crashes ever reached Sentry —
-                // handled-and-logged errors, i.e. nearly all of them, were invisible.
-                // InitializeSdk=false: UseSentry above owns the SDK lifecycle; the sink
-                // just forwards events to the existing hub.
-                .WriteTo.Sentry(o =>
-                {
-                    o.InitializeSdk = false;
-                    o.MinimumEventLevel = Serilog.Events.LogEventLevel.Error;
-                    o.MinimumBreadcrumbLevel = Serilog.Events.LogEventLevel.Information;
-                })
+                // Sentry sink, behind the redactor. The two sinks above stay on the device and
+                // keep every value; this one leaves it, so it only carries property values whose
+                // type cannot express user content. Levels and reasoning live in
+                // SentryRedactingSinkExtensions.RedactedSentry — the only place they are set.
+                .WriteTo.RedactedSentry()
             .CreateLogger();
 #if DEBUG
             builder.Logging.AddDebug();

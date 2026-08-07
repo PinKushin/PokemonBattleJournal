@@ -31,4 +31,4 @@ using System.Diagnostics.CodeAnalysis;
     "CA1416:Validate platform compatibility",
     Justification = "Only fires on the reference-only net10.0 TFM; FileSaver is supported on every TFM the app ships to.",
     Scope = "member",
-    Target = "~M:PokemonBattleJournal.ViewModels.OptionsPageViewModel.SaveExportAsync(System.Func{System.Threading.Tasks.Task{System.String}},System.String)~System.Threading.Tasks.Task")]
+    Target = "~M:PokemonBattleJournal.ViewModels.OptionsPageViewModel.SaveExportAsync(System.Func{System.Threading.Tasks.Task{System.String}},System.String,PokemonBattleJournal.ViewModels.OptionsPageViewModel.ExportFormat)~System.Threading.Tasks.Task")]

@@ -168,25 +168,25 @@ namespace PokemonBattleJournal.ViewModels
                 Trainer? trainer = _switchService.ActiveTrainer ?? await _connection.Trainers.GetActiveAsync();
                 if (trainer == null)
                 {
-                    _logger.LogInformation("Trainer not found: {TrainerName}", TrainerName);
+                    _logger.LogInformation("Trainer not found: name is {NameLength} chars", TrainerName?.Length ?? 0);
                     return;
                 }
                 TrainerName = trainer.Name ?? TrainerName;
                 WelcomeMsg = $"{TrainerName}'s Journal";
-                _logger.LogInformation("Loading matches for trainer: {TrainerId} {TrainerName}", trainer.Id, trainer.Name);
+                _logger.LogInformation("Loading matches for trainer: {TrainerId}", trainer.Id);
                 List<MatchEntry>? matches = await _connection.Matches.GetByTrainerIdAsync(trainer.Id, includeRelated: true);
 
                 if (matches.Count < 1 || matches is null)
                 {
-                    _logger.LogInformation("No matches found for trainer: {TrainerId} {TrainerName}", trainer.Id, trainer.Name);
+                    _logger.LogInformation("No matches found for trainer: {TrainerId}", trainer.Id);
                     MatchHistory = [];
                     return;
                 }
 #if DEBUG
                 foreach (MatchEntry match in matches)
                 {
-                    _logger.LogInformation("Match loaded: ID={Id}, Playing={@Playing}, Against={@Against}",
-                        match.Id, match.Playing, match.Against);
+                    _logger.LogInformation("Match loaded: ID={Id}, Playing={PlayingId}, Against={AgainstId}",
+                        match.Id, match.PlayingId, match.AgainstId);
                 }
 #endif
 

@@ -42,7 +42,7 @@ namespace PokemonBattleJournal.Services
             {
                 using DbSession session = await _factory.BeginAsync();
                 Trainer? active = await session.Connection.Table<Trainer>().Where(t => t.IsActive).FirstOrDefaultAsync();
-                _logger.LogDebug("GetActiveAsync: active trainer = {Name} ({Id})", active?.Name, active?.Id);
+                _logger.LogDebug("GetActiveAsync: active trainer = {TrainerId}", active?.Id);
                 return active;
             }
             catch (Exception ex)
@@ -55,7 +55,7 @@ namespace PokemonBattleJournal.Services
         /// <inheritdoc/>
         public virtual async Task SetActiveAsync(Trainer trainer)
         {
-            _logger.LogDebug("SetActiveAsync: setting trainer {Name} ({Id}) as active", trainer.Name, trainer.Id);
+            _logger.LogDebug("SetActiveAsync: setting trainer {TrainerId} as active", trainer.Id);
             try
             {
                 using DbSession session = await _factory.BeginAsync();
@@ -214,8 +214,8 @@ namespace PokemonBattleJournal.Services
                     // Finally delete the trainer
                     affected += tran.Delete(trainer);
 
-                    _logger.LogInformation("Successfully deleted trainer {TrainerId} ({TrainerName}) with {Count} affected rows",
-                        trainer.Id, trainer.Name, affected);
+                    _logger.LogInformation("Successfully deleted trainer {TrainerId} with {Count} affected rows",
+                        trainer.Id, affected);
                 });
 
                 // Verify all related records are properly deleted
@@ -254,7 +254,7 @@ namespace PokemonBattleJournal.Services
                 throw new ArgumentException("Trainer name is required", nameof(trainerName));
             }
 
-            _logger.LogDebug("SaveAsync: saving trainer {Name}", trainerName);
+            _logger.LogDebug("SaveAsync: saving trainer ({NameLength} chars)", trainerName.Length);
             // Create the trainer instance
             Trainer trainer = new() { Name = trainerName };
 

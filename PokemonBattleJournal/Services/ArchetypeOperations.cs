@@ -139,7 +139,7 @@ namespace PokemonBattleJournal.Services
                 throw new ArgumentException("Trainer ID is required", nameof(trainerId));
             }
 
-            _logger.LogDebug("SaveAsync: saving archetype {Name} for trainer {TrainerId}", name, trainerId);
+            _logger.LogDebug("SaveAsync: saving archetype for trainer {TrainerId} ({NameLength} chars)", trainerId, name.Length);
             Archetype archetype = new()
             {
                 Name = name,
@@ -172,7 +172,7 @@ namespace PokemonBattleJournal.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving archetype: {Name} - {Message}", name, ex.Message);
+                _logger.LogError(ex, "Error saving archetype ({NameLength} chars): {Message}", name.Length, ex.Message);
                 _errorHandler.HandleError(ex);
                 return 0;
             }
@@ -205,7 +205,7 @@ namespace PokemonBattleJournal.Services
                 throw new ArgumentException("Archetype ID is required", nameof(archetype));
             }
 
-            _logger.LogDebug("DeleteAsync: deleting archetype {Name} ({Id})", archetype.Name, archetype.Id);
+            _logger.LogDebug("DeleteAsync: deleting archetype {ArchetypeId}", archetype.Id);
             try
             {
                 using DbSession session = await _factory.BeginAsync();
@@ -220,8 +220,8 @@ namespace PokemonBattleJournal.Services
 
                     if (matchCount > 0)
                     {
-                        _logger.LogWarning("Archetype {ArchetypeId} ({ArchetypeName}) is used in {Count} matches",
-                            archetype.Id, archetype.Name, matchCount);
+                        _logger.LogWarning("Archetype {ArchetypeId} is used in {Count} matches",
+                            archetype.Id, matchCount);
                         throw new InvalidOperationException(
                             $"Cannot delete archetype '{archetype.Name}' because it is used in {matchCount} matches");
                     }
@@ -238,8 +238,7 @@ namespace PokemonBattleJournal.Services
                     }
                 });
 
-                _logger.LogInformation("Successfully deleted archetype {ArchetypeId} ({ArchetypeName})",
-                    archetype.Id, archetype.Name);
+                _logger.LogInformation("Successfully deleted archetype {ArchetypeId}", archetype.Id);
                 return affected;
             }
             catch (ArgumentException ex)
@@ -262,7 +261,7 @@ namespace PokemonBattleJournal.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting archetype: {Name} - {Message}", archetype.Name, ex.Message);
+                _logger.LogError(ex, "Error deleting archetype {ArchetypeId}: {Message}", archetype.Id, ex.Message);
                 _errorHandler.HandleError(ex);
                 return 0;
             }

@@ -39,6 +39,7 @@ Tracked here so nothing gets lost between sessions. Bugs first (things broken ri
 |---|---|---|
 | F-01 | BO3 result validation — require Game 3 only when ShowGame3 is true | Already partially implemented via `ShowGame3` property and `ValidateEntryAsync`. Needs end-to-end UI test coverage. |
 | ~~F-02~~ | ~~Clear form after save~~ | **Done.** `SaveMatchAsync` clears the form on success. |
+| F-30 | Online vs in person, plus an optional event name | User, 2026-08-07. A toggle defaulting to **online**, and a free-text event name defaulting to **null**. New columns on `MatchEntry`, so it needs a migration path for existing rows — both defaults are chosen so untouched rows stay valid. Worth having on TrainerPage afterwards: win rate split by online/in person is a stat the app cannot currently produce. **The event name must never be logged.** It is free text naming a real place and date, which is the most identifying field the model would hold; `SentryRedactingSink` withholds it by type without any change, and nothing should be added to the allowlist for it. See [[project_sentry_privacy_audit]]. |
 
 ### TrainerPage — Charts
 

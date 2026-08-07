@@ -29,7 +29,7 @@ namespace PokemonBattleJournal.ViewModels
             _switchService.TrainerChanged += OnTrainerChanged;
 
 
-            _logger.LogInformation("Created Main Page ViewModel {This}", this);
+            _logger.LogInformation("Created Main Page ViewModel");
             WelcomeMsg = $"Welcome {TrainerName}";
         }
 
@@ -422,7 +422,7 @@ namespace PokemonBattleJournal.ViewModels
             {
                 ValidationMessage = "Trainer not found. Please create a trainer profile first.";
                 HasValidationErrors = true;
-                _logger.LogError("Trainer not found: {TrainerName}", TrainerName);
+                _logger.LogError("Trainer not found: name is {NameLength} chars", TrainerName?.Length ?? 0);
                 return 0;
             }
 
@@ -432,13 +432,12 @@ namespace PokemonBattleJournal.ViewModels
                 await _semaphore.WaitAsync();
                 DateTime startTimestamp = DateTime.UtcNow;
 
-                _logger.LogInformation("Starting match save process for trainer {TrainerId} ({TrainerName})",
-                    _trainer.Id, _trainer.Name);
+                _logger.LogInformation("Starting match save process for trainer {TrainerId}", _trainer.Id);
 
                 IMatchResultCalculator calc = _calculatorFactory.GetCalculator(BO3Toggle);
 
-                _logger.LogDebug("Creating match entry with Playing={PlayingId} ({PlayingName}), Against={AgainstId} ({AgainstName})",
-                    PlayerSelected?.Id, PlayerSelected?.Name, RivalSelected?.Id, RivalSelected?.Name);
+                _logger.LogDebug("Creating match entry with Playing={PlayingId}, Against={AgainstId}",
+                    PlayerSelected?.Id, RivalSelected?.Id);
 
                 MatchEntry matchEntry = new()
                 {
@@ -460,7 +459,7 @@ namespace PokemonBattleJournal.ViewModels
                     Turn = FirstCheck ? 1u : 2u,
                     Notes = UserNoteInput
                 };
-                _logger.LogDebug("Saving Game1 Tags: {@Tags}", game1.Tags);
+                _logger.LogDebug("Saving Game1 with {TagCount} tags", game1.Tags?.Count ?? 0);
                 games.Add(game1);
 
                 if (BO3Toggle)
@@ -472,7 +471,7 @@ namespace PokemonBattleJournal.ViewModels
                         Turn = FirstCheck2 ? 1u : 2u,
                         Notes = UserNoteInput2
                     };
-                    _logger.LogDebug("Saving Game2 Tags: {@Tags}", game2.Tags);
+                    _logger.LogDebug("Saving Game2 with {TagCount} tags", game2.Tags?.Count ?? 0);
                     games.Add(game2);
 
                     Game game3 = new()
@@ -482,7 +481,7 @@ namespace PokemonBattleJournal.ViewModels
                         Turn = FirstCheck3 ? 1u : 2u,
                         Notes = UserNoteInput3
                     };
-                    _logger.LogDebug("Saving Game3 Tags: {@Tags}", game3.Tags);
+                    _logger.LogDebug("Saving Game3 with {TagCount} tags", game3.Tags?.Count ?? 0);
                     games.Add(game3);
                 }
                 // Calculate overall match result
@@ -498,8 +497,8 @@ namespace PokemonBattleJournal.ViewModels
                 {
                     SavedFileDisplay = $"Saved: Match at {DateTimeOffset.Now}";
                     _logger.LogInformation("Match saved successfully in {ElapsedMs}ms", elapsedMs);
-                    _logger.LogInformation("Match details: Playing={Playing} Against={Against}, Result={Result}",
-                        matchEntry.Playing?.Name, matchEntry.Against?.Name, matchEntry.Result);
+                    _logger.LogInformation("Match details: Playing={PlayingId}, Against={AgainstId}, Result={Result}",
+                        matchEntry.PlayingId, matchEntry.AgainstId, matchEntry.Result);
                     _logger.LogDebug("Created {GameCount} games for match {MatchId}", games.Count, matchEntry.Id);
 
                     HasValidationErrors = false;

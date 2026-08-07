@@ -145,7 +145,14 @@ namespace PokemonBattleJournal.ViewModels
                         imported, skippedDuplicates, errors.Count);
 
                     if (errors.Count > 0)
+                    {
+                        // Kept verbatim ON PURPOSE. These name entries from the imported file, so
+                        // they are user content — but a count alone cannot diagnose "2 failed",
+                        // and this log is where the answer has to be. It stays complete on the
+                        // device and is withheld on the way to Sentry by SentryRedactingSink.
+                        // That split is the whole point of having both layers.
                         _logger.LogWarning("TrainerHill import errors: {Errors}", string.Join("; ", errors));
+                    }
                 }
                 finally
                 {
@@ -211,7 +218,8 @@ namespace PokemonBattleJournal.ViewModels
 
             await SaveExportAsync(
                 () => _exportService.ExportTrainerHillAsync(_trainer.Id),
-                $"trainerhill-battle-log-{SanitizeForFileName(_trainer.Name)}-{DateTime.Now:yyyy-MM-dd}.json");
+                $"trainerhill-battle-log-{SanitizeForFileName(_trainer.Name)}-{DateTime.Now:yyyy-MM-dd}.json",
+                ExportFormat.TrainerHill);
         }
 
         /// <summary>
@@ -221,7 +229,23 @@ namespace PokemonBattleJournal.ViewModels
         public async Task ExportBackupAsync() =>
             await SaveExportAsync(
                 () => _exportService.ExportBackupAsync(),
-                $"pbj-backup-{DateTime.Now:yyyy-MM-dd}.json");
+                $"pbj-backup-{DateTime.Now:yyyy-MM-dd}.json",
+                ExportFormat.Backup);
+
+        /// <summary>
+        /// Which serializer an export ran, for logging.
+        /// </summary>
+        /// <remarks>
+        /// An enum rather than a string because the redacting Sentry sink forwards values by
+        /// TYPE: an enum is diagnostic by construction, whereas a string — even a literal one
+        /// written here — would be withheld, and widening the sink's allowlist to let it through
+        /// would weaken the rule for every other string in the app.
+        /// </remarks>
+        private enum ExportFormat
+        {
+            TrainerHill,
+            Backup,
+        }
 
         /// <summary>
         /// Serializes, then writes the result wherever the user chooses.
@@ -235,7 +259,7 @@ namespace PokemonBattleJournal.ViewModels
         /// for as long as the user takes to choose a folder — the same reasoning as the import
         /// picker.
         /// </remarks>
-        private async Task SaveExportAsync(Func<Task<string>> serialize, string suggestedFileName)
+        private async Task SaveExportAsync(Func<Task<string>> serialize, string suggestedFileName, ExportFormat format)
         {
             try
             {
@@ -258,17 +282,20 @@ namespace PokemonBattleJournal.ViewModels
                     // Cancelling the dialog surfaces here as an unsuccessful result, so this is
                     // the normal "changed my mind" path as well as the genuine failure path.
                     // Log at Information and say nothing alarming.
-                    _logger.LogInformation(result.Exception, "Export not saved: {File}", suggestedFileName);
+                    _logger.LogInformation(result.Exception, "Export not saved: {Format}", format);
                     ExportStatusMessage = string.Empty;
                     return;
                 }
 
-                _logger.LogInformation("Exported to {Path}", result.FilePath);
+                // Never the path. The suggested name embeds the trainer's name, and the chosen
+                // path embeds the OS account name — which is a real name far more often than a
+                // trainer name is. Neither answers a question the format and size do not.
+                _logger.LogInformation("Exported {Format}: {Bytes} bytes", format, json.Length);
                 ExportStatusMessage = $"Exported to {Path.GetFileName(result.FilePath)}";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during export of {File}", suggestedFileName);
+                _logger.LogError(ex, "Error during export of {Format}", format);
                 ExportStatusMessage = "Export failed";
                 _errorHandler.HandleError(ex);
             }
@@ -516,18 +543,24 @@ namespace PokemonBattleJournal.ViewModels
                 _trainer = _switchService.ActiveTrainer ?? await _connection.Trainers.GetActiveAsync();
                 TrainerName = _trainer?.Name ?? string.Empty;
                 Title = $"{TrainerName}'s Options";
-                _logger.LogInformation("Current Trainer Name: {TrainerName}", TrainerName);
+                _logger.LogInformation("Active trainer resolved: {TrainerId}", _trainer?.Id ?? 0);
                 AllTrainers = await _connection.Trainers.GetAllAsync();
                 SelectedSwitchTrainer = AllTrainers.FirstOrDefault(t => t.Id == (_trainer?.Id ?? 0));
                 AllArchetypes = await _connection.Archetypes.GetAllAsync();
                 AllTags = await _connection.Tags.GetAllAsync();
-                _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
+                _logger.LogInformation(
+                    "Options loaded for trainer {TrainerId}: {TrainerCount} trainers, {ArchetypeCount} archetypes, {TagCount} tags",
+                    _trainer?.Id ?? 0, AllTrainers.Count, AllArchetypes.Count, AllTags.Count);
             }
             catch (Exception ex)
             {
                 // Log only — no dialog from AppearingAsync. ContentDialog requires XamlRoot
                 // which isn't set until the page is fully composed; calling it here crashes WinUI (0xc000027b).
-                _logger.LogError(ex, "Error loading ViewModel: {TrainerName} {@IconCollection}", TrainerName, IconCollection);
+                // Ids and counts, not names: this line reaches Sentry as an error event. The
+                // icon collection used to be destructured here, which said nothing a count does
+                // not — the question it ever answered was "did the icons load at all".
+                _logger.LogError(ex, "Error loading Options page for trainer {TrainerId} ({IconCount} icons)",
+                    _trainer?.Id ?? 0, IconCollection?.Count ?? 0);
             }
             finally
             {
@@ -577,7 +610,7 @@ namespace PokemonBattleJournal.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting trainer {TrainerName}", trainer.Name);
+                _logger.LogError(ex, "Error deleting trainer {TrainerId}", trainer.Id);
                 _errorHandler.HandleError(ex);
                 return;
             }
@@ -615,17 +648,21 @@ namespace PokemonBattleJournal.ViewModels
                 int affected = await _connection.Trainers.SaveAsync(NameInput);
                 if (affected == 0)
                 {
-                    _logger.LogInformation("Trainer not saved: {TrainerName}", TrainerName);
+                    // No id exists yet on a failed save, so the length stands in for the name.
+                    // It is the property that actually explains a rejection — empty, or long
+                    // enough to hit a column limit — and it identifies nobody.
+                    _logger.LogInformation("Trainer not saved: name is {NameLength} chars", NameInput.Length);
                     return;
                 }
-                _logger.LogInformation("Trainer saved: {TrainerName}", TrainerName);
+                _logger.LogInformation("Trainer saved: name is {NameLength} chars", NameInput.Length);
                 _trainer = await _connection.Trainers.GetByNameAsync(NameInput);
                 if (_trainer is null)
                 {
-                    _logger.LogInformation("Trainer not found immediately after save: {TrainerName}", TrainerName);
+                    _logger.LogInformation("Trainer not found immediately after save: name is {NameLength} chars",
+                        NameInput.Length);
                     return;
                 }
-                _logger.LogInformation("Trainer Loaded: {TrainerName}", TrainerName);
+                _logger.LogInformation("Trainer loaded: {TrainerId}", _trainer.Id);
                 await _switchService.SwitchToAsync(_trainer);
                 AllTrainers = await _connection.Trainers.GetAllAsync();
                 _shellVm.OnTrainerCreated(_trainer);
@@ -633,7 +670,7 @@ namespace PokemonBattleJournal.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving Trainer: {TrainerName}", TrainerName);
+                _logger.LogError(ex, "Error saving Trainer: name is {NameLength} chars", NameInput?.Length ?? 0);
                 _errorHandler.HandleError(ex);
             }
             finally
@@ -658,7 +695,10 @@ namespace PokemonBattleJournal.ViewModels
 
             if (_trainer is null)
             {
-                _logger.LogWarning("Tag not saved: no active trainer (tag was {TagInput})", TagInput);
+                // The length, not the text. What this line has to establish is that TagInput WAS
+                // populated, so the reader knows the trainer was the missing piece — the tag's
+                // wording never mattered, and tags are free text a person typed.
+                _logger.LogWarning("Tag not saved: no active trainer (tag was {TagLength} chars)", TagInput.Length);
                 return;
             }
 
@@ -669,15 +709,16 @@ namespace PokemonBattleJournal.ViewModels
                 int affected = await _connection.Tags.SaveAsync(TagInput, _trainer.Id);
                 if (affected == 0)
                 {
-                    _logger.LogInformation("Tag not saved: {TagInput}", TagInput);
+                    _logger.LogInformation("Tag not saved: tag is {TagLength} chars", TagInput.Length);
                     return;
                 }
-                _logger.LogInformation("Tag saved: {TagInput}", TagInput);
+                _logger.LogInformation("Tag saved for trainer {TrainerId} ({TagLength} chars)",
+                    _trainer.Id, TagInput.Length);
                 AllTags = await _connection.Tags.GetAllAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving Tag: {TagInput}", TagInput);
+                _logger.LogError(ex, "Error saving Tag: tag is {TagLength} chars", TagInput.Length);
                 _errorHandler.HandleError(ex);
             }
             finally
@@ -699,13 +740,15 @@ namespace PokemonBattleJournal.ViewModels
 
             if (NewDeckIcon is null)
             {
-                _logger.LogWarning("Archetype not saved: no deck icon selected (deck was {NewDeckName})", NewDeckName);
+                _logger.LogWarning("Archetype not saved: no deck icon selected (deck name was {DeckNameLength} chars)",
+                    NewDeckName.Length);
                 return;
             }
 
             if (_trainer is null)
             {
-                _logger.LogWarning("Archetype not saved: no active trainer (deck was {NewDeckName})", NewDeckName);
+                _logger.LogWarning("Archetype not saved: no active trainer (deck name was {DeckNameLength} chars)",
+                    NewDeckName.Length);
                 return;
             }
 
@@ -716,15 +759,18 @@ namespace PokemonBattleJournal.ViewModels
                 int affected = await _connection.Archetypes.SaveAsync(NewDeckName, NewDeckIcon, _trainer.Id);
                 if (affected == 0)
                 {
-                    _logger.LogInformation("Archetype not saved: {DeckName} {DeckIcon}", NewDeckName, NewDeckIcon);
+                    _logger.LogInformation("Archetype not saved: deck name is {DeckNameLength} chars, icon selected {HasIcon}",
+                        NewDeckName.Length, NewDeckIcon is not null);
                     return;
                 }
-                _logger.LogInformation("Archetype saved: {DeckName} {DeckIcon}", NewDeckName, NewDeckIcon);
+                _logger.LogInformation("Archetype saved for trainer {TrainerId} ({DeckNameLength} chars, icon selected {HasIcon})",
+                    _trainer.Id, NewDeckName.Length, NewDeckIcon is not null);
                 AllArchetypes = await _connection.Archetypes.GetAllAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving Archetype: {DeckName} {DeckIcon}", NewDeckName, NewDeckIcon);
+                _logger.LogError(ex, "Error saving Archetype: deck name is {DeckNameLength} chars, icon selected {HasIcon}",
+                    NewDeckName.Length, NewDeckIcon is not null);
                 _errorHandler.HandleError(ex);
             }
             finally
@@ -746,15 +792,15 @@ namespace PokemonBattleJournal.ViewModels
                 int affected = await _connection.Archetypes.DeleteAsync(archetype);
                 if (affected == 0)
                 {
-                    _logger.LogInformation("Archetype not deleted: {Name}", archetype.Name);
+                    _logger.LogInformation("Archetype not deleted: {ArchetypeId}", archetype.Id);
                     return;
                 }
-                _logger.LogInformation("Archetype deleted: {Name}", archetype.Name);
+                _logger.LogInformation("Archetype deleted: {ArchetypeId}", archetype.Id);
                 AllArchetypes = await _connection.Archetypes.GetAllAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting Archetype: {Name}", archetype.Name);
+                _logger.LogError(ex, "Error deleting Archetype: {ArchetypeId}", archetype.Id);
                 _errorHandler.HandleError(ex);
             }
             finally
@@ -774,15 +820,15 @@ namespace PokemonBattleJournal.ViewModels
                 int affected = await _connection.Tags.DeleteAsync(tag);
                 if (affected == 0)
                 {
-                    _logger.LogInformation("Tag not deleted: {Name}", tag.Name);
+                    _logger.LogInformation("Tag not deleted: {TagId}", tag.Id);
                     return;
                 }
-                _logger.LogInformation("Tag deleted: {Name}", tag.Name);
+                _logger.LogInformation("Tag deleted: {TagId}", tag.Id);
                 AllTags = await _connection.Tags.GetAllAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting Tag: {Name}", tag.Name);
+                _logger.LogError(ex, "Error deleting Tag: {TagId}", tag.Id);
                 _errorHandler.HandleError(ex);
             }
             finally
@@ -818,6 +864,9 @@ namespace PokemonBattleJournal.ViewModels
                 return;
             }
 
+            // Captured before the try, because the try clears _trainer on the way through and
+            // the catch would otherwise have nothing left to name.
+            uint trainerId = _trainer.Id;
             IsBusyMutating = true;
             try
             {
@@ -828,7 +877,7 @@ namespace PokemonBattleJournal.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting Trainer: {TrainerName}", TrainerName);
+                _logger.LogError(ex, "Error deleting Trainer: {TrainerId}", trainerId);
                 _errorHandler.HandleError(ex);
                 return;
             }
