@@ -64,8 +64,6 @@ namespace PokemonBattleJournal.Services.Restore
         /// </summary>
         public int MatchesSkippedIdentical { get; init; }
 
-        public int MatchesMerged { get; init; }
-
         /// <summary>Left untouched, awaiting a decision. Never auto-resolved.</summary>
         public IReadOnlyList<RestoreConflict> Conflicts { get; init; } = [];
 
