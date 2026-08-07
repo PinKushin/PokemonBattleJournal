@@ -2,7 +2,7 @@
 
 namespace PokemonBattleJournal.Platforms.iOS
 {
-    public class Program
+    public static class Program
     {
         // This is the main entry point of the application.
         private static void Main(string[] args)

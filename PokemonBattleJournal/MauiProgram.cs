@@ -100,7 +100,9 @@ namespace PokemonBattleJournal
                 ILogger<SqliteConnectionFactory> logger = loggerFactory.CreateLogger<SqliteConnectionFactory>();
                 ILimitlessMetaService metaService = sp.GetRequiredService<ILimitlessMetaService>();
                 IErrorHandler errorHandler = sp.GetRequiredService<IErrorHandler>();
-                return new SqliteConnectionFactory(logger, metaService, errorHandler);
+                // The MAUI subclass, because it is the only one that can resolve an app-data
+                // path. Everything else about the connection lives in Core.
+                return new MauiSqliteConnectionFactory(logger, metaService, errorHandler);
             });
             builder.Services.AddSingleton<IMatchResultsCalculatorFactory, MatchResultCalculatorFactory>();
             builder.Services.AddSingleton<IMatchAnalysisService, MatchAnalysisService>();

@@ -1,11 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using PokemonBattleJournal.Interfaces;
 using PokemonBattleJournal.Scraper.Interfaces;
 using PokemonBattleJournal.Scraper.Models;
-using PokemonBattleJournal.Services;
-using SQLite;
 
 namespace PokemonBattleJournal.Services.Import
 {

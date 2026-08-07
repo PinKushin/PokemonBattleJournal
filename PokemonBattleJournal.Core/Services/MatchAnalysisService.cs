@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 
 namespace PokemonBattleJournal.Services
 {

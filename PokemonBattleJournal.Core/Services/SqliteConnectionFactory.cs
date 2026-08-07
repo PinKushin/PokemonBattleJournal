@@ -5,12 +5,17 @@ namespace PokemonBattleJournal.Services;
 /// <summary>
 /// Provides methods for interacting with the SQLite database.
 /// </summary>
-public class SqliteConnectionFactory : ISqliteConnectionFactory
+/// <remarks>
+/// Abstract because it owns everything about the database except WHERE it is — see
+/// <see cref="GetDbPath"/>. The host supplies that: the app head through
+/// <c>MauiSqliteConnectionFactory</c>, the integration tests through a temp file per fixture.
+/// </remarks>
+public abstract class SqliteConnectionFactory : ISqliteConnectionFactory
 {
     private SQLiteAsyncConnection? _database;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    public SqliteConnectionFactory(ILogger logger, ILimitlessMetaService metaService, IErrorHandler errorHandler)
+    protected SqliteConnectionFactory(ILogger logger, ILimitlessMetaService metaService, IErrorHandler errorHandler)
     {
         Trainers = new TrainerOperations(this, logger, errorHandler);
         Matches = new MatchOperations(this, logger, errorHandler);
@@ -36,7 +41,17 @@ public class SqliteConnectionFactory : ISqliteConnectionFactory
         return _semaphore;
     }
 
-    protected virtual string GetDbPath() => Constants.DatabasePath;
+    /// <summary>
+    /// Where the SQLite file lives. Supplied by the host, never decided here.
+    /// </summary>
+    /// <remarks>
+    /// Abstract rather than defaulting to an app-data path, because resolving one needs MAUI's
+    /// <c>FileSystem</c> and this project deliberately cannot reference it. The app head answers
+    /// it in <c>MauiSqliteConnectionFactory</c>; the integration tests answer it with a temp file
+    /// per fixture, which they already did by overriding this method. Making it abstract turns
+    /// the boundary from a convention into something the compiler enforces.
+    /// </remarks>
+    protected abstract string GetDbPath();
 
     private async Task InitAsync()
     {

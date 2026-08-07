@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
+        <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <UseMaui>true</UseMaui>
@@ -36,16 +36,10 @@
 
     <ItemGroup>
         <ProjectReference Include="..\PokemonBattleJournal\PokemonBattleJournal.csproj" />
+        <ProjectReference Include="..\PokemonBattleJournal.Core\PokemonBattleJournal.Core.csproj" />
         <ProjectReference Include="..\PokemonBattleJournal.Scraper\PokemonBattleJournal.Scraper.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Using Include="NUnit.Framework" />
-        <Using Include="Shouldly" />
-        <Using Include="NSubstitute" />
-        <Using Include="Microsoft.Extensions.Logging.Abstractions" />
-        <Using Include="PokemonBattleJournal.IntegrationTests.Infrastructure" />
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Update="Microsoft.Maui.Controls" Version="10.0.90" />

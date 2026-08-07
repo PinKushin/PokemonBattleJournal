@@ -85,11 +85,13 @@ UITEST_WINDOW_SIZE=754x512 UITEST_WINDOW_POS=85,78 dotnet test PokemonBattleJour
 Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 
 
-# Mutation testing — grades the assertions, not the code. Scraper only: Stryker's
-# internal recompile cannot handle the MAUI head (XAML codegen + MVVM source
-# generators), and surfaces no CS error when it fails. ~5 min.
+# Mutation testing — grades the assertions, not the code. Stryker still cannot
+# touch the MAUI head (its internal recompile does not reproduce XAML codegen or
+# the MVVM source generators, and surfaces no CS error when it fails), which is
+# why the logic lives in PokemonBattleJournal.Core. Two configs, two targets.
 dotnet tool restore
-dotnet stryker            # report in StrykerOutput/ (gitignored)
+dotnet stryker                                  # Scraper (~5 min)
+dotnet stryker --config-file stryker-core.json  # Core (slower; uses both test projects)
 ```
 
 **Solution file:** always use `PokemonBattleJournal.slnx`. Do not recreate `PokemonBattleJournal.sln`.
@@ -97,6 +99,19 @@ dotnet stryker            # report in StrykerOutput/ (gitignored)
 ## Architecture
 
 MVVM app: `Views (XAML) → ViewModels → Services → ISqliteConnectionFactory → SQLite`
+
+**Two projects hold that.** `PokemonBattleJournal` is the MAUI head — Views, ViewModels,
+Controls, and exactly three files that need a platform: `ModalErrorHandler` (Shell),
+`FileHelper` (FileSystem/DeviceInfo) and `MainThreadHelper` (MainThread), plus
+`MauiSqliteConnectionFactory`, which exists only to answer where the database file lives.
+`PokemonBattleJournal.Core` is a plain `net10.0` library holding Models, Services, Utilities,
+Interfaces and Logging. Namespaces are identical across both, so a `using` never tells you
+which assembly a type is in.
+
+**Put new logic in Core unless it needs MAUI.** That is not a style preference: Stryker cannot
+mutation-test the app head at all, so anything added there is unmeasured by definition. If a
+new service needs a platform capability, take it as a constructor dependency or an abstract
+method and let the head answer it — `SqliteConnectionFactory.GetDbPath()` is the worked example.
 
 - **MVVM:** CommunityToolkit.Mvvm source generators (`[ObservableProperty]`, `[RelayCommand]`)
 - **DI:** `MauiProgram.cs` — the three data pages are **singletons** (`MainPage`, `ReadJournalPage`, `TrainerPage` and their VMs, plus `AppShellViewModel`); only `OptionsPage` and `AboutPage` are transient. Singleton VMs hold state across navigations, which is why MainPage UI tests need a `[TearDown]` to reset it
