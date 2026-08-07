@@ -2,11 +2,11 @@
 
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
-		<!-- Matches the MAUI head exactly. This project was created by MOVING files out of
-		     that head, so any difference in compilation settings would turn a pure move into
-		     a rewrite and hide which errors came from the move itself. Aligning both projects
-		     to ImplicitUsings=disable is worth doing and belongs in its own commit. -->
-		<ImplicitUsings>enable</ImplicitUsings>
+		<!-- Disabled deliberately. The SDK's implicit set is invisible magic: what a file
+		     depends on should be greppable. The seven namespaces it would have supplied are
+		     declared explicitly in GlobalUsings.cs instead, in one place, so the decision is
+		     visible rather than inherited from the SDK version. -->
+		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>preview</LangVersion>
 		<IsPackable>false</IsPackable>

@@ -5,7 +5,7 @@
          a plain TFM can't consume -windows assets so NuGet fell back to the
          .NET Framework 4.8 asset and raised NU1701. Windows-only test project anyway. -->
     <TargetFramework>net10.0-windows</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsTestProject>true</IsTestProject>
     <RootNamespace>UITests</RootNamespace>
