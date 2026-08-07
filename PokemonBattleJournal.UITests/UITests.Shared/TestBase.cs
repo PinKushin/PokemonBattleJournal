@@ -215,17 +215,15 @@
         /// dispatching raw mouse input at screen coordinates, which is how this suite launched
         /// other applications, and "I did not see it happen" is not evidence that it did not.
         /// </remarks>
-        protected void ClickElement(AppiumElement element)
-        {
-            string? id = null;
-            try { id = element.GetAttribute("AutomationId"); }
-            catch (OpenQA.Selenium.WebDriverException) { /* attribute unavailable on this platform */ }
-
-            if (!string.IsNullOrEmpty(id))
-                ClickElement(id);
-            else
-                element.Click();
-        }
+        /// <remarks>
+        /// Virtual, and a plain click by default. Only Windows needs the indirection: UiAutomator
+        /// clicks by element bounds inside the device screen and cannot land outside the app, so
+        /// Android has no coordinate problem to solve. Routing it there actively broke things —
+        /// Android's AutomationId attribute comes back as a fully-qualified resource id
+        /// (com.PinKushin.PokemonBattleJournal:id/MatchRow_5), which does not resolve when fed
+        /// back to FindUIElement, and it took out four ReadJournal tests.
+        /// </remarks>
+        protected virtual void ClickElement(AppiumElement element) => element.Click();
 
         protected virtual void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName) =>
             throw new PlatformNotSupportedException("SelectWindowsPickerItem is Windows-only.");

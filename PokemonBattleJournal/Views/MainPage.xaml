@@ -169,22 +169,26 @@
                     <!--#region BO3 Switch & Display-->
                     <Label AutomationId="MatchFormatHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Match Format" />
                     <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
-                        <!--  Pokeball slider track  -->
-                        <Border
-                            AutomationId="BOSwitch"
-                            SemanticProperties.Description="Match format toggle"
-                            SemanticProperties.Hint="Double tap to switch between best of one and best of three"
-                            AutomationProperties.IsInAccessibleTree="True"
-                            BackgroundColor="{Binding BO3Toggle, Converter={StaticResource BO3TrackColorConverter}}"
-                            HeightRequest="32"
-                            Stroke="{StaticResource PokeYellow}"
-                            StrokeShape="RoundRectangle 16"
-                            StrokeThickness="2"
-                            WidthRequest="68"
-                            VerticalOptions="Center">
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer Command="{Binding ToggleBO3Command}" />
-                            </Border.GestureRecognizers>
+                        <!--  Pokeball slider track.
+                              The Border draws the switch; a transparent Button sits on top of it
+                              and owns the interaction. A Border with a TapGestureRecognizer
+                              exposes NO UIA pattern, so it can only be driven by a synthesized
+                              mouse click at screen coordinates — which lands outside the app
+                              entirely when the control is below the window, silently doing
+                              nothing on CI. It is also unreachable for a screen reader, which
+                              activates controls through patterns rather than by clicking.
+                              MAUI's Button cannot host this layout as content, so it overlays it
+                              instead. See docs/memory/project_windows_mainpage_click_flake.md.  -->
+                        <Grid HorizontalOptions="Center" VerticalOptions="Center">
+                            <Border
+                                InputTransparent="True"
+                                BackgroundColor="{Binding BO3Toggle, Converter={StaticResource BO3TrackColorConverter}}"
+                                HeightRequest="32"
+                                Stroke="{StaticResource PokeYellow}"
+                                StrokeShape="RoundRectangle 16"
+                                StrokeThickness="2"
+                                WidthRequest="68"
+                                VerticalOptions="Center">
                             <Grid ColumnDefinitions="*,*" Padding="3">
                                 <!--  Ball on left = OFF  -->
                                 <Image
@@ -208,8 +212,26 @@
                                     Source="ball_icon.png"
                                     VerticalOptions="Center"
                                     WidthRequest="24" />
-                            </Grid>
-                        </Border>
+                                </Grid>
+                            </Border>
+
+                            <!--  The actual control. Transparent and borderless so the Border
+                                  above shows through unchanged; it carries the AutomationId and
+                                  the semantics because it is what UIA, Appium and screen readers
+                                  activate. Last sibling in the Grid cell, so it sits on top.  -->
+                            <Button
+                                AutomationId="BOSwitch"
+                                SemanticProperties.Description="Match format toggle"
+                                SemanticProperties.Hint="Double tap to switch between best of one and best of three"
+                                AutomationProperties.IsInAccessibleTree="True"
+                                BackgroundColor="Transparent"
+                                BorderWidth="0"
+                                Command="{Binding ToggleBO3Command}"
+                                CornerRadius="16"
+                                HeightRequest="32"
+                                Padding="0"
+                                WidthRequest="68" />
+                        </Grid>
                         <Label
                             AutomationId="BO3StatusLabel"
                             SemanticProperties.Description="Current match format"

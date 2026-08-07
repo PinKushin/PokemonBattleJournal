@@ -240,6 +240,22 @@ namespace UITests
             PerfLog($"ClickElement('{automationId}'): mouse click (no usable UIA pattern)");
         }
 
+        /// <summary>
+        /// Windows: resolve the element's AutomationId and go through the guarded path so
+        /// element-based call sites cannot bypass the off-window check.
+        /// </summary>
+        protected override void ClickElement(AppiumElement element)
+        {
+            string? id = null;
+            try { id = element.GetAttribute("AutomationId"); }
+            catch (OpenQA.Selenium.WebDriverException) { /* attribute unavailable — click directly */ }
+
+            if (!string.IsNullOrEmpty(id))
+                ClickElement(id);
+            else
+                element.Click();
+        }
+
         /// <summary>Finds an element in the live UIA tree, or null. Best-effort.</summary>
         private AutomationElement? TryFindViaUia(string automationId)
         {

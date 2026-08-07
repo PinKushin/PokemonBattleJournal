@@ -1,12 +1,39 @@
 ---
 name: project_windows_mainpage_click_flake
-description: "OPEN BUG: on Windows CI, MainPageTests reaches a point where every click-driven test fails while every find-only test still passes. Same six tests each time. Predates the loading indicator — do not blame the overlay."
+description: "CAUSE FOUND 2026-08-06: WinAppDriver clicks are mouse input at SCREEN coordinates, so targets below the window are clicked outside it — on CI that hits empty desktop and silently does nothing. Fixed by activating via UIA patterns; suite now 83/83 at CI geometry."
 metadata:
   type: project
 ---
 
-**Open, not diagnosed.** Recurring Windows CI failure in `MainPageTests`. Recorded 2026-08-06
-so the next occurrence is recognised instead of re-investigated from scratch.
+**CAUSE FOUND AND FIXED 2026-08-06.** Kept in full because the investigation is more
+instructive than the fix, and because several confident conclusions along the way were wrong.
+
+## The answer
+
+`WinAppDriver`'s `Click()` is **synthesized mouse input at the element's centre, in SCREEN
+coordinates**. An element MAUI has laid out below the window bottom is therefore "clicked" at
+whatever screen position that resolves to.
+
+- **Locally** that launched Visual Studio and the Epic Games store from the taskbar.
+- **On CI** nothing sits behind the app, so the identical click lands on empty desktop and
+  returns silently: dispatched, ~1000ms, no handler runs. Find-only tests keep passing because
+  *finding* an off-viewport element works fine.
+
+**Fix:** `TestBase.ClickElement` seam, with a Windows override that walks a UIA pattern ladder —
+`ScrollIntoView`, then `Invoke`, then `Toggle`, then `SelectionItem`. None of those carry
+coordinates, so window bounds cannot make them miss. The mouse path survives only for controls
+with no pattern, and **refuses** to click a target measured outside the window.
+
+**Result: the full Windows suite is 83/83 at CI's exact 754x512 geometry**, where it previously
+failed and fired clicks into other applications. Both `Game3Tab` tests — two of the six in the
+signature below — pass there now, having failed at that size before the change.
+
+Controls with no InvokePattern are the remaining mouse users: `BOSwitch` and the archetype
+popup items, both `Border`/`Grid` + `TapGestureRecognizer`. Converting those to real controls
+(`Button`, `Switch`) would make the suite fully coordinate-free — **and is an accessibility fix
+too, since a control with no InvokePattern cannot be activated by a screen reader either.**
+
+
 
 ## Fingerprint
 
