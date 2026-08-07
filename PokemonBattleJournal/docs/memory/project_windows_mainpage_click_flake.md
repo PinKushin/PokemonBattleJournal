@@ -34,6 +34,27 @@ items are the last controls reachable only by mouse** (`ComboBoxPopup.cs`, a `Gr
 `TapGestureRecognizer` per deck). See [[feedback_invokable_controls]] for the rule and the
 overlay recipe.
 
+**The Windows suite now issues ZERO coordinate clicks.** The full ladder, in order:
+
+| Step | Used for |
+|---|---|
+| `ScrollItem.ScrollIntoView` | bring into view first |
+| `Invoke` | buttons |
+| `Toggle` | checkboxes, switches |
+| `SelectionItem` | list/tab items |
+| `ExpandCollapse` (+ `Focus()` first) | MAUI `Picker` → WinUI ComboBox |
+| `Focus()` for ControlType Edit/Document | text inputs — clicking one *means* focusing it |
+| same patterns on up to 3 **ancestors** | id sits on a child of the element that has the pattern |
+| guarded mouse | last resort; refuses if outside the window under both coordinate spaces |
+
+The ancestor walk is the subtle one. ReadJournal rows put their `AutomationId` on a `Border`
+*inside* the CollectionView item container, and the container is what holds
+`SelectionItemPattern` — the id named a child with no pattern while its parent was perfectly
+selectable. Those rows had **no** accessibility defect (`SelectionMode="Single"` means a screen
+reader could always select them); it was purely an automation-lookup mismatch, so it is fixed
+in the test helper, not the app. That distinction is worth checking before changing app markup:
+ask whether the element is genuinely unreachable, or merely mis-identified.
+
 **Final state:** Windows 83/83 at CI's 754x512 *and* at the normal window size, Android 82/82,
 unit 506, integration 197. Merged at `6a49611`.
 
