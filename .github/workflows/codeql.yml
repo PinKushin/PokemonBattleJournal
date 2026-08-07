@@ -10,6 +10,10 @@ name: CodeQL
 # and the import limits are enforced before any DB write precisely because a
 # name creates a row on demand.
 #
+# Those are the app's inputs. The repo has a third surface that is not C# at all:
+# the workflows themselves, which run on a public repo with pull_request triggers
+# and a token. Scanning them is why `actions` is in the matrix below.
+#
 # Free for public repositories.
 
 on:
@@ -35,12 +39,8 @@ env:
 
 jobs:
   analyze:
-    name: Analyze C#
-    # windows-latest, not ubuntu: the app's source only compiles in full under a
-    # platform TFM, and net10.0-windows is the one whose head contains the
-    # WinUI-specific code. ubuntu could build net10.0-android instead, but that
-    # would analyse the same shared source through a slower workload install.
-    runs-on: windows-latest
+    name: Analyze ${{ matrix.language }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
 
     permissions:
@@ -48,23 +48,46 @@ jobs:
       security-events: write
       contents: read
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # windows-latest, not ubuntu: the app's source only compiles in full
+          # under a platform TFM, and net10.0-windows is the one whose head
+          # contains the WinUI-specific code. ubuntu could build net10.0-android
+          # instead, but that would analyse the same shared source through a
+          # slower workload install.
+          - language: csharp
+            runner: windows-latest
+          # The workflows are code, and on a public repo with pull_request
+          # triggers they are the part an outsider can most nearly influence.
+          # They were left out of the first version of this file because the
+          # language list was chosen by reasoning about the APP's untrusted
+          # inputs — which is the wrong model for CI. Every alert this repo has
+          # open today is in the part that reasoning excluded. Needs no build and
+          # no workload, so it runs on ubuntu in about a minute.
+          - language: actions
+            runner: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v6
+        if: matrix.language == 'csharp'
         with:
           dotnet-version: '10.x'
 
       - name: Initialise CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: csharp
+          languages: ${{ matrix.language }}
           # Query suite and generated-file handling live in the config file, so
           # the reasoning sits next to the settings rather than spread across
           # workflow inputs.
           config-file: ./.github/codeql-config.yml
 
       - name: Install MAUI Windows workload
+        if: matrix.language == 'csharp'
         run: dotnet workload install maui-windows
 
       # An explicit build, not autobuild. Autobuild would try the solution, which
@@ -73,14 +96,16 @@ jobs:
       # them. -f must target the app project, never the solution: the test and
       # scraper projects do not have the Windows TFM and fail with NETSDK1005.
       - name: Build app (Windows head)
+        if: matrix.language == 'csharp'
         run: dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
 
       # Built separately because it is where untrusted HTML/JSON first enters the
       # process, and it does not target the Windows TFM.
       - name: Build scraper
+        if: matrix.language == 'csharp'
         run: dotnet build PokemonBattleJournal.Scraper/PokemonBattleJournal.Scraper.csproj
 
       - name: Analyse
         uses: github/codeql-action/analyze@v4
         with:
-          category: "/language:csharp"
+          category: "/language:${{ matrix.language }}"

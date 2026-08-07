@@ -6,6 +6,14 @@ on:
   pull_request:
     branches: [master, main]
 
+# Least privilege for GITHUB_TOKEN. Without this the token takes the repository
+# default, which on a public repo with pull_request triggers means workflow code
+# proposed by a stranger runs with whatever that default happens to be. Read-only
+# is all any job here needs: nothing writes to the repo, opens a release, or
+# comments on a PR. Flagged as actions/missing-workflow-permissions by CodeQL.
+permissions:
+  contents: read
+
 jobs:
   # Build the APK once — each matrix job used to rebuild the identical APK from
   # scratch (~18 min on a 2-core runner, ×5 jobs). AppiumSetup.BuildAndroidApk()

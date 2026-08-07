@@ -6,6 +6,14 @@ on:
   pull_request:
     branches: [master, main]
 
+# Least privilege for GITHUB_TOKEN. Without this the token takes the repository
+# default, which on a public repo with pull_request triggers means workflow code
+# proposed by a stranger runs with whatever that default happens to be. Read-only
+# is all any job here needs: nothing writes to the repo, opens a release, or
+# comments on a PR. Flagged as actions/missing-workflow-permissions by CodeQL.
+permissions:
+  contents: read
+
 jobs:
   ui-tests-windows:
     name: Windows UI Tests (${{ matrix.fixture }})
