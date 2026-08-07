@@ -71,6 +71,15 @@ dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
 # UI tests honour UITEST_WINDOW_SIZE; this is the app's own equivalent.
 PBJ_WINDOW_SIZE=754x512 dotnet run --project PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
 
+# Reproduce CI's Windows geometry in the UI tests. Set BOTH: the size alone pins the window to
+# (0,0), where screen-space and window-relative coordinates coincide — which once hid a real
+# coordinate-space bug until CI, whose window sits at (85,78), failed on it.
+UITEST_WINDOW_SIZE=754x512 UITEST_WINDOW_POS=85,78 dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
+
+# A leftover PokemonBattleJournal.exe makes WinAppDriver attach to the wrong window and fails
+# the whole fixture in OneTimeSetUp — it looks exactly like a regression. Kill it first.
+Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
+
 # Kill orphaned app after failed Appium run
 Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 ```

@@ -66,9 +66,14 @@ id stays on the host and the overlay Button cannot claim it:
 - **Copying** it to the Button puts a duplicate in the UIA tree, and a lookup resolves the
   **parent** first — the non-invokable one — so it changes nothing.
 - **Moving** it is impossible per the above.
-- Landing it on the Button means **not setting it on the host at all**, i.e. exposing a separate
-  bindable property and changing every call site. Only worth it if the automation path actually
-  needs the pattern.
+- Landing it on the Button means **not setting it on the host at all** — and this is the
+  answer. `ComboBoxControl` exposes an `ActivatorAutomationId` bindable property and applies it
+  to the Button; call sites use that instead of `AutomationId`. Lookups still resolve
+  `"PlayerArchetype"`, they now resolve to something invokable.
+
+  I first rejected this as a "consumer-facing API change" without counting the call sites.
+  There were three, all in this repo's own XAML. **Price a change by its actual call-site count,
+  not by how the change sounds.**
 
 What you *can* always forward is `SemanticProperties.Description` and `Hint` — ordinary attached
 BindableProperties with no set-once rule. That is enough to make the invokable Button the named
@@ -77,6 +82,28 @@ one, which is the accessibility half. The automation half keeps the guarded mous
 This does not apply when the element is built in code and you control the id outright — the
 archetype popup items and the BO3 switch both put the id straight onto the Button, and both
 invoke cleanly.
+
+## First ask: unreachable, or merely mis-identified?
+
+Not every mouse-only element needs new markup, and assuming so leads to changing app code that
+was already correct.
+
+ReadJournal's match rows looked identical to the cases above — a `Border` with an
+`AutomationId`, clicked by mouse. But they sit in a `SelectionMode="Single"` `CollectionView`,
+so the **item container** is natively selectable and announced: a screen reader could always
+pick a match. The id simply pointed at a `Border` two levels inside the element that held
+`SelectionItemPattern`.
+
+That is an automation-lookup mismatch, not an unreachable control, and it was fixed in the test
+helper — the click ladder now walks up to three ancestors for a pattern — with no app change at
+all.
+
+| Symptom | Diagnosis | Fix |
+|---|---|---|
+| No pattern anywhere on the element or its ancestors | genuinely unreachable | real control / overlay Button |
+| Element has no pattern but an ancestor does | mis-identified | move the id, or look up the ancestor |
+
+Check the ancestors before editing markup.
 
 ### Focus visuals
 
