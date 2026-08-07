@@ -399,6 +399,16 @@ namespace PokemonBattleJournal.ViewModels
                 if (result.Errors.Count > 0)
                     _logger.LogWarning("Restore errors: {Errors}", string.Join("; ", result.Errors));
 
+                // Replaces rather than appends: restoring a second file must not leave rows from
+                // the first lingering with no way to tell them apart.
+                Conflicts.Clear();
+                foreach (RestoreConflict conflict in result.Conflicts)
+                {
+                    Conflicts.Add(new ConflictRowViewModel(conflict));
+                }
+
+                OnPropertyChanged(nameof(HasConflicts));
+
                 if (result.Conflicts.Count > 0)
                 {
                     _logger.LogWarning("Restore conflicts left unapplied: {Conflicts}", string.Join("; ",
@@ -412,6 +422,140 @@ namespace PokemonBattleJournal.ViewModels
             {
                 _logger.LogError(ex, "Error during backup restore");
                 RestoreStatusMessage = "Restore failed";
+                _errorHandler.HandleError(ex);
+            }
+            finally
+            {
+                IsBusyMutating = false;
+            }
+        }
+
+        /// <summary>
+        /// Conflicted matches from the last restore, awaiting a decision.
+        /// </summary>
+        /// <remarks>
+        /// Populated by the restore and emptied only by applying. Nothing here has been written
+        /// to the database — that is the point of staging. A user who closes the app mid-review
+        /// loses their selections and nothing else, and the backup file is still on disk.
+        /// </remarks>
+        public ObservableCollection<ConflictRowViewModel> Conflicts { get; } = [];
+
+        /// <summary>
+        /// Fills the review list with two sample conflicts so the section can be seen and driven.
+        /// </summary>
+        /// <remarks>
+        /// Debug-only in effect: the button that invokes it is bound to <see cref="IsDebugBuild"/>,
+        /// the same arrangement as the simulated-loading toggle.
+        ///
+        /// It exists because the conflict section is invisible until a conflict exists, and
+        /// producing a real one takes an export, an edit and a restore — a round trip through a
+        /// file picker that Appium cannot drive. The service path is covered by integration
+        /// tests; what needs a UI test is the rendering, the three buttons and the apply gate.
+        ///
+        /// Both samples point at match ids no row can hold, so applying them reports nothing done
+        /// rather than rewriting a real match. One arrives pre-selected and one blank, which is
+        /// the distinction the UI is supposed to make visible.
+        /// </remarks>
+        [RelayCommand]
+        public void SeedSampleConflicts()
+        {
+            Conflicts.Clear();
+
+            Conflicts.Add(new ConflictRowViewModel(new RestoreConflict
+            {
+                TrainerName = TrainerName.Length > 0 ? TrainerName : "Trainer",
+                ExistingMatchId = uint.MaxValue,
+                StartTime = DateTime.Now,
+                Description = "game 1 notes differ",
+                Games =
+                [
+                    new ConflictGameDiff
+                    {
+                        Label = "Game 1",
+                        ExistingNotes = "dead draw",
+                        IncomingNotes = "misplayed turn 3",
+                        ExistingTags = ["bricked"],
+                        IncomingTags = ["donked"],
+                    },
+                ],
+            }));
+
+            Conflicts.Add(new ConflictRowViewModel(new RestoreConflict
+            {
+                TrainerName = TrainerName.Length > 0 ? TrainerName : "Trainer",
+                ExistingMatchId = uint.MaxValue - 1,
+                StartTime = DateTime.Now.AddHours(-2),
+                Description = "game 1 notes differ",
+                Games =
+                [
+                    new ConflictGameDiff
+                    {
+                        Label = "Game 1",
+                        ExistingNotes = string.Empty,
+                        IncomingNotes = "they conceded",
+                    },
+                ],
+            }));
+
+            OnPropertyChanged(nameof(HasConflicts));
+            _logger.LogInformation("Seeded {Count} sample conflicts for review", Conflicts.Count);
+        }
+
+
+        public bool HasConflicts => Conflicts.Count > 0;
+
+        /// <summary>
+        /// Writes every decision the user has actually made, and leaves the rest listed.
+        /// </summary>
+        /// <remarks>
+        /// Per match and all-or-nothing, because that is how the service applies it. The status
+        /// afterwards names both halves — what went in and what is still outstanding — since the
+        /// failure this whole flow is designed against is a user believing more was saved than
+        /// was.
+        /// </remarks>
+        [RelayCommand]
+        public async Task ApplyConflictsAsync()
+        {
+            List<ConflictRowViewModel> answered = [.. Conflicts.Where(c => c.IsResolved)];
+            if (answered.Count == 0)
+            {
+                _logger.LogWarning("Apply conflicts declined: no decisions have been made");
+                return;
+            }
+
+            IsBusyMutating = true;
+            try
+            {
+                int applied = 0;
+                foreach (ConflictRowViewModel row in answered)
+                {
+                    // SelectedResolution cannot be null here — IsResolved is exactly that check —
+                    // but reading it once keeps the call site honest about what is being applied.
+                    ConflictResolution resolution = row.SelectedResolution!.Value;
+                    _ = await _restoreService.ApplyResolutionAsync(row.Conflict, resolution);
+                    _ = Conflicts.Remove(row);
+                    applied++;
+                }
+
+                OnPropertyChanged(nameof(HasConflicts));
+
+                List<string> parts = [$"{applied} applied"];
+                if (Conflicts.Count > 0)
+                {
+                    parts.Add($"{Conflicts.Count} still {(Conflicts.Count == 1 ? "needs" : "need")} review");
+                }
+
+                RestoreStatusMessage = string.Join(", ", parts);
+                _logger.LogInformation(
+                    "Conflicts applied: {Applied} written, {Outstanding} outstanding",
+                    applied, Conflicts.Count);
+
+                await ReloadAfterRestoreAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error applying conflict resolutions");
+                RestoreStatusMessage = "Applying your choices failed";
                 _errorHandler.HandleError(ex);
             }
             finally

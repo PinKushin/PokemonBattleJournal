@@ -138,6 +138,106 @@ namespace PokemonBattleJournal.Services.Restore
             };
         }
 
+        /// <inheritdoc/>
+        public async Task<int> ApplyResolutionAsync(RestoreConflict conflict, ConflictResolution resolution)
+        {
+            // Keep is not a no-op by accident — it is the answer "the stored match is already
+            // what I want". Writing the row back unchanged would burn a transaction and make the
+            // affected count lie about what happened.
+            if (resolution == ConflictResolution.Keep)
+            {
+                _logger.LogInformation("Conflict kept for match {MatchId}; nothing written", conflict.ExistingMatchId);
+                return 0;
+            }
+
+            try
+            {
+                MatchEntry? stored = await _factory.Matches.GetByIdAsync(conflict.ExistingMatchId);
+                if (stored is null)
+                {
+                    // Decisions are staged, so the user can delete a match from the journal while
+                    // its conflict is still on screen. Reported, not thrown.
+                    _logger.LogWarning(
+                        "Conflict resolution skipped: match {MatchId} no longer exists",
+                        conflict.ExistingMatchId);
+                    return 0;
+                }
+
+                List<Game> games = [];
+                await ApplyToSlotAsync(stored.Game1, conflict, "Game 1", resolution, stored.TrainerId, games);
+                await ApplyToSlotAsync(stored.Game2, conflict, "Game 2", resolution, stored.TrainerId, games);
+                await ApplyToSlotAsync(stored.Game3, conflict, "Game 3", resolution, stored.TrainerId, games);
+
+                if (games.Count == 0)
+                {
+                    _logger.LogWarning(
+                        "Conflict resolution skipped: match {MatchId} has no games to write",
+                        conflict.ExistingMatchId);
+                    return 0;
+                }
+
+                // SaveAsync updates rather than inserts because every id is non-zero, and it wraps
+                // the whole set in one transaction — which is what makes a match all-or-nothing.
+                int affected = await _factory.Matches.SaveAsync(stored, games);
+                _logger.LogInformation(
+                    "Conflict resolved for match {MatchId} as {Resolution}: {Affected} row(s)",
+                    conflict.ExistingMatchId, resolution, affected);
+                return affected;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to resolve conflict for match {MatchId}", conflict.ExistingMatchId);
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Applies the resolution to one game slot, if that slot is one of the differing ones.
+        /// </summary>
+        /// <remarks>
+        /// Every existing game goes into the list, changed or not: SaveAsync writes the set it is
+        /// given, so omitting an untouched game would drop it from the match. Only the slots the
+        /// conflict actually names get rewritten.
+        /// </remarks>
+        private async Task ApplyToSlotAsync(
+            Game? game,
+            RestoreConflict conflict,
+            string label,
+            ConflictResolution resolution,
+            uint trainerId,
+            List<Game> games)
+        {
+            if (game is null)
+            {
+                return;
+            }
+
+            games.Add(game);
+
+            ConflictGameDiff? diff = conflict.Games.FirstOrDefault(g => g.Label == label);
+            if (diff is null)
+            {
+                return;
+            }
+
+            game.Notes = ConflictResolver.ResolveNotes(diff.ExistingNotes, diff.IncomingNotes, resolution);
+
+            IReadOnlyList<string> names = ConflictResolver.ResolveTags(
+                diff.ExistingTags, diff.IncomingTags, resolution);
+
+            List<Tags> tags = [];
+            foreach (string name in names)
+            {
+                Tags? tag = await ResolveTagAsync(name, trainerId);
+                if (tag is not null)
+                {
+                    tags.Add(tag);
+                }
+            }
+
+            game.Tags = tags;
+        }
+
         private readonly List<RestoreConflict> _pendingConflicts = [];
 
         private enum RestoreOutcome { Inserted, SkippedIdentical, Conflicted, Failed }
@@ -317,12 +417,17 @@ namespace PokemonBattleJournal.Services.Restore
         /// Only two outcomes are acted on. Identical is skipped and counted; anything else is
         /// recorded as a conflict and left alone.
         ///
-        /// Nothing is merged or overwritten here, deliberately. Matches are insert-only today —
-        /// there is no update path in MatchOperations at all — so a backup restore can meet a
-        /// match that is identical or one that does not exist yet, and nothing else. A "richer"
-        /// or genuinely conflicting pair therefore means the data diverged some other way, and
-        /// guessing at it risks destroying a real match the app cannot distinguish from a
-        /// duplicate: the key includes AgainstId, which identifies a *deck*, not a person.
+        /// Nothing is merged or overwritten HERE, deliberately — but not because it cannot be.
+        /// An earlier version of this comment claimed matches were insert-only and that
+        /// MatchOperations had no update path; that was simply wrong. SaveAsync calls
+        /// tran.Update when Id is non-zero, and SaveGame updates games and rewrites their tag
+        /// relationships. Resolution is applied through exactly that, from ApplyResolutionAsync.
+        ///
+        /// The real reason nothing is decided automatically is that the app cannot tell a
+        /// re-import from two genuinely distinct matches: the dedupe key includes AgainstId,
+        /// which identifies a *deck*, not a person, and the model stores no opponent identity at
+        /// all. Two opponents on the same deck in the same minute are indistinguishable here. So
+        /// the difference is recorded with both sides attached and a human decides.
         /// </remarks>
         private RestoreOutcome ClassifyAgainstExisting(ExportEntry entry, MatchEntry existing, string trainerName)
         {
@@ -337,15 +442,45 @@ namespace PokemonBattleJournal.Services.Restore
                 return RestoreOutcome.SkippedIdentical;
             }
 
+            ConflictGameDiff[] games =
+            [
+                BuildDiff(entry.Game1, existing.Game1, "Game 1"),
+                BuildDiff(entry.Game2, existing.Game2, "Game 2"),
+                BuildDiff(entry.Game3, existing.Game3, "Game 3"),
+            ];
+
             _pendingConflicts.Add(new RestoreConflict
             {
                 TrainerName = trainerName,
                 ExistingMatchId = existing.Id,
                 StartTime = existing.StartTime,
                 Description = string.Join("; ", differences),
+                // Only the games that actually differ. Rendering three panels when one changed
+                // buries the decision the user is being asked to make.
+                Games = [.. games.Where(g => g.HasAnyDifference)],
             });
             return RestoreOutcome.Conflicted;
         }
+
+        /// <summary>
+        /// Captures both versions of one game so a resolution can be applied later.
+        /// </summary>
+        /// <remarks>
+        /// Must stay in step with <see cref="CompareGame"/>: that one decides a conflict exists,
+        /// this one describes it. If they disagreed, the user would be shown a difference that
+        /// was not the one flagged, or a conflict with nothing visible in it.
+        /// </remarks>
+        private static ConflictGameDiff BuildDiff(ExportGame? incoming, Game? existing, string label) =>
+            new()
+            {
+                Label = label,
+                ExistingPresent = existing is not null,
+                IncomingPresent = incoming is not null,
+                ExistingNotes = existing?.Notes,
+                IncomingNotes = incoming?.Notes,
+                ExistingTags = [.. (existing?.Tags ?? []).Select(t => t.Name ?? string.Empty)],
+                IncomingTags = incoming?.Tags ?? [],
+            };
 
         private static void CompareGame(ExportGame? incoming, Game? existing, string label, List<string> differences)
         {

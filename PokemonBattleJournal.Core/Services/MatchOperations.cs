@@ -147,6 +147,19 @@ namespace PokemonBattleJournal.Services
             {
                 using DbSession session = await _factory.BeginAsync();
                 SQLiteAsyncConnection db = session.Connection;
+
+                // Existence is checked separately because GetWithChildrenAsync THROWS for a row
+                // that is not there rather than returning null, and the catch below treats a
+                // throw as a fault worth showing the user. A missing match is a normal answer:
+                // the restore conflict UI asks for one the user may have deleted since, and that
+                // was putting an error modal on screen for an expected situation.
+                bool exists = await db.Table<MatchEntry>().Where(m => m.Id == id).CountAsync() > 0;
+                if (!exists)
+                {
+                    _logger.LogDebug("GetByIdAsync: no match with id {MatchId}", id);
+                    return null;
+                }
+
                 MatchEntry? matchEntry = await db.GetWithChildrenAsync<MatchEntry>(id, true);
 
                 if (matchEntry != null && includeRelated)
