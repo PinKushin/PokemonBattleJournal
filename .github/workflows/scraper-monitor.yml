@@ -5,6 +5,14 @@ on:
     - cron: '0 13 * * *'   # 08:00 EST (UTC-5) daily
   workflow_dispatch:        # allow manual trigger
 
+# Least privilege for GITHUB_TOKEN. Without this the token takes the repository
+# default, which on a public repo with pull_request triggers means workflow code
+# proposed by a stranger runs with whatever that default happens to be. Read-only
+# is all any job here needs: nothing writes to the repo, opens a release, or
+# comments on a PR. Flagged as actions/missing-workflow-permissions by CodeQL.
+permissions:
+  contents: read
+
 jobs:
   scraper-live-check:
     name: Limitless Live Web Check
