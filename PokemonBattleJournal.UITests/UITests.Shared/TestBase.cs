@@ -205,6 +205,28 @@
         /// </remarks>
         protected virtual void ClickElement(string automationId) => FindUIElement(automationId).Click();
 
+        /// <summary>
+        /// Activates an already-resolved element, going through <see cref="ClickElement(string)"/>
+        /// when it carries an AutomationId.
+        /// </summary>
+        /// <remarks>
+        /// Exists so call sites holding an element rather than an id — list rows, pickers, an
+        /// entry being focused — cannot bypass the off-window guard. Without it those sites keep
+        /// dispatching raw mouse input at screen coordinates, which is how this suite launched
+        /// other applications, and "I did not see it happen" is not evidence that it did not.
+        /// </remarks>
+        protected void ClickElement(AppiumElement element)
+        {
+            string? id = null;
+            try { id = element.GetAttribute("AutomationId"); }
+            catch (OpenQA.Selenium.WebDriverException) { /* attribute unavailable on this platform */ }
+
+            if (!string.IsNullOrEmpty(id))
+                ClickElement(id);
+            else
+                element.Click();
+        }
+
         protected virtual void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName) =>
             throw new PlatformNotSupportedException("SelectWindowsPickerItem is Windows-only.");
 

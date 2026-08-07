@@ -321,7 +321,10 @@ namespace UITests
             }
             catch (Exception ex) { NavLog($"ScrollIntoView({automationId}) failed: {ex.Message}"); }
 
-            App.FindElement(MobileBy.AccessibilityId(automationId)).Click();
+            // Through the guarded path: ScrollIntoView above may still leave the target
+            // off-window in a container UIA cannot scroll, and a raw click there lands in
+            // another application.
+            ClickElement(automationId);
         }
 
         // Click picker, type first letter to select item, Tab to confirm.

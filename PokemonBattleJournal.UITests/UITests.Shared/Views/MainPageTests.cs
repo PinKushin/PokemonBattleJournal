@@ -383,7 +383,7 @@
                         // the screen and the tap lands in the gesture-navigation home zone.
                         // UiAutomator2's SendKeys sets text directly without needing focus.
                         if (App is WindowsDriver)
-                            userEntry.Click();
+                            ClickElement(userEntry);
                         userEntry.Clear();
                         userEntry.SendKeys(expected);
                         // Android: the soft keyboard opened by SendKeys covers the lower

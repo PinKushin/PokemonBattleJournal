@@ -1,4 +1,4 @@
-namespace UITests
+﻿namespace UITests
 {
     public partial class ReadJournalPageTests : BaseTest
     {
@@ -32,14 +32,14 @@ namespace UITests
         private void EnsureMatchDetailOpen()
         {
             if (!IsElementPresent("PlayingNameLabel"))
-                FindFirstMatchRow().Click();
+                ClickElement(FindFirstMatchRow());
         }
 
         // Same guard for the BO3 detail: skip click if Game2TagsView is already showing.
         private void EnsureBO3MatchDetailOpen()
         {
             if (!IsElementPresent("Game2TagsView"))
-                FindFirstMatchRow().Click();
+                ClickElement(FindFirstMatchRow());
         }
 
         [Test]
@@ -166,7 +166,7 @@ namespace UITests
         [Test]
         public void ReadJournalPage_BO1Match_HidesGame2And3Notes()
         {
-            FindLastMatchRow().Click();
+            ClickElement(FindLastMatchRow());
 
             // Prove WHICH match is selected, not merely that a panel opened. Without this the
             // test's real claim is unverified: "no game 2 editor" is also true of a panel that
