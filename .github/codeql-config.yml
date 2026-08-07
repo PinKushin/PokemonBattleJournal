@@ -29,3 +29,28 @@ queries:
   # CA3xxx/CA5xxx build analyzers cannot see — they match dangerous API shapes at
   # a single call site.
   - uses: security-and-quality
+
+query-filters:
+  # cs/catch-of-all-exceptions fires on `catch (Exception ex)`. That is the
+  # DOCUMENTED error policy of this repo, not a defect: every catch logs through
+  # ILogger and surfaces through an injected IErrorHandler, because an unhandled
+  # exception in a MAUI page is a crash and a user with no idea what happened.
+  # See project_error_handler_di — the injection refactor touched 54 such sites
+  # on purpose.
+  #
+  # It accounted for 116 of 216 alerts on the first working scan, more than every
+  # other rule combined, and not one was actionable. That is the failure mode the
+  # note at the top of this file warns about: a Security tab full of noise trains
+  # everyone to ignore it, which is exactly where a real finding would sit.
+  #
+  # What this does NOT stop being checked: the shape the repo standard actually
+  # bans is the SILENT catch — `catch { }` with no logging and no rethrow — and
+  # that is a different rule (cs/empty-catch-block), left enabled. Verified
+  # 2026-08-07 that the app and scraper contain zero empty catch blocks, so
+  # excluding the broad-catch rule removes noise without hiding the case that
+  # would matter.
+  #
+  # If the error policy ever changes to catching specific exception types, delete
+  # this filter rather than leaving it to quietly excuse the old pattern.
+  - exclude:
+      id: cs/catch-of-all-exceptions
