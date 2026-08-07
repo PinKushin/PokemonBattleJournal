@@ -71,6 +71,10 @@ dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
 ./build/ci-local.ps1 -All         # everything; leave the machine alone
 ./build/ci-local.ps1 -Suites WindowsUI -Combined   # one fast pass, less faithful
 
+# Launch the app at CI's window geometry to inspect layout the way CI sees it.
+# UI tests honour UITEST_WINDOW_SIZE; this is the app's own equivalent.
+PBJ_WINDOW_SIZE=754x512 dotnet run --project PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
+
 # Kill orphaned app after failed Appium run
 Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 ```
@@ -111,6 +115,14 @@ Every UI element must have:
 - `SemanticProperties.Hint` on tappable non-button elements — "Double tap to …"
 - `SemanticProperties.HeadingLevel="Level2"` on section headers
 - Images: `SemanticProperties.Description` with meaningful text (e.g., `"{Name} deck icon"`); purely decorative images get `SemanticProperties.IsInAccessibleTree="False"`
+- **Tappable elements must be real controls.** A `Border`/`Grid`/`Image` with a
+  `TapGestureRecognizer` exposes no UIA pattern, so a screen reader cannot activate it —
+  `SemanticProperties` on such an element is announced correctly and still unusable. Use
+  `Button`/`ImageButton` (Invoke), `CheckBox`/`Switch` (Toggle), or overlay a transparent
+  `Button` in the same Grid cell when custom visuals are required, moving the `AutomationId`
+  and command onto it. Also what makes UI tests click reliably — see
+  `docs/memory/feedback_invokable_controls.md`.
+
 
 ## TDD workflow
 

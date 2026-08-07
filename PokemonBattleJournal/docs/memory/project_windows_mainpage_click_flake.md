@@ -28,10 +28,22 @@ with no pattern, and **refuses** to click a target measured outside the window.
 failed and fired clicks into other applications. Both `Game3Tab` tests — two of the six in the
 signature below — pass there now, having failed at that size before the change.
 
-Controls with no InvokePattern are the remaining mouse users: `BOSwitch` and the archetype
-popup items, both `Border`/`Grid` + `TapGestureRecognizer`. Converting those to real controls
-(`Button`, `Switch`) would make the suite fully coordinate-free — **and is an accessibility fix
-too, since a control with no InvokePattern cannot be activated by a screen reader either.**
+`BOSwitch` has since been converted — a transparent `Button` overlays the Border and owns the
+AutomationId and command, so every BOSwitch click now logs `UIA Invoke`. **The archetype popup
+items are the last controls reachable only by mouse** (`ComboBoxPopup.cs`, a `Grid` with a
+`TapGestureRecognizer` per deck). See [[feedback_invokable_controls]] for the rule and the
+overlay recipe.
+
+**Final state:** Windows 83/83 at CI's 754x512 *and* at the normal window size, Android 82/82,
+unit 506, integration 197. Merged at `6a49611`.
+
+Two side-fixes worth knowing, both found while doing this:
+- The implicit `Button` style's `MinimumHeightRequest=44` beats an explicit `HeightRequest`, so
+  the first overlay rendered 44px tall over a 32px switch.
+- `BorderWidth="0"` does not remove a WinUI Button's border without `BorderColor` — that was the
+  outline on every button in the app, tabs included.
+- The white outline remaining on focus is the WinUI **focus visual**, not a border. Leave it
+  (WCAG 2.4.7); recolour it to the palette instead.
 
 
 

@@ -4,6 +4,7 @@
 - [Mocks return null where ops return empty](feedback_mock_returns_null_not_empty.md) — unstubbed NSubstitute calls return null; stub the fixture, never add null-tolerance to production. Hit three times in one day, once silently.
 
 - [Windows click flake — CAUSE FOUND, FIXED](project_windows_mainpage_click_flake.md) — WinAppDriver Click() is mouse input at SCREEN coordinates, so a target below the window is clicked outside it; on CI that hits empty desktop and silently does nothing. Fixed via UIA pattern ladder (Invoke/Toggle/SelectionItem) behind TestBase.ClickElement; Windows suite 83/83 at CI's 754x512. Border+TapGestureRecognizer has no InvokePattern — converting those to Button/Switch is also an accessibility fix.
+- [Tappable = a real control, not a Border](feedback_invokable_controls.md) — anything tappable must expose a UIA pattern. SemanticProperties on a pattern-less element is FAKE accessibility: announced correctly, impossible for a screen reader to activate. Overlay a transparent Button to keep custom visuals; watch MinimumHeightRequest=44 beating HeightRequest.
 
 - [SESSION HANDOFF 2026-08-06](project_session_handoff_2026_08_06.md) — **READ FIRST.** feat/loading-indicator is one Android test from green; the failure is layout shift from the inline indicator and the planned overlay fixes it structurally.
 
