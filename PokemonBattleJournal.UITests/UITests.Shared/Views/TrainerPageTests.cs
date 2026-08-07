@@ -1,4 +1,6 @@
-﻿namespace UITests
+﻿using System.Globalization;
+
+namespace UITests
 {
     public partial class TrainerPageTests : BaseTest
     {
@@ -8,6 +10,56 @@
             NavigateTo("Trainer's Profile");
             // Sync on match load + chart computation before any element queries.
             WaitUntilBusyGone("Busy_ChartData", timeoutMs: 15000);
+        }
+
+        /// <summary>
+        /// The four stat labels must agree with each other under the canonical win-rate formula.
+        /// </summary>
+        /// <remarks>
+        /// <para>Every other test here checks one label in isolation for a non-zero value. That
+        /// catches a stat that failed to load; it cannot catch a stat that loaded a wrong number,
+        /// which is the likelier defect and completely invisible today. A win rate computed over
+        /// the wrong denominator, ties not counted as half, or a label bound to the neighbouring
+        /// property all pass every existing assertion.</para>
+        ///
+        /// <para>Asserts the relationship rather than absolute values, deliberately. MainPageTests
+        /// sorts before this fixture and saves matches, so the counts differ between a full-suite
+        /// run and a single-fixture run — any hard-coded total would be correct in one and wrong
+        /// in the other. The invariant holds for every possible seed.</para>
+        ///
+        /// <para>Formula from <c>Utilities/Calculations.cs</c>, which CLAUDE.md names canonical:
+        /// <c>(wins + 0.5 * ties) / total * 100</c>. This pins the rendered UI to it, so stats
+        /// code drifting from the documented formula fails here rather than shipping.</para>
+        /// </remarks>
+        [Test]
+        public void TrainerPage_WinRate_AgreesWithWinsLossesAndTies()
+        {
+            // Read after the busy gate in SetUp, so all four reflect the same completed load.
+            int wins = ReadIntLabel("WinsLabel");
+            int losses = ReadIntLabel("LossesLabel");
+            int ties = ReadIntLabel("TiesLabel");
+
+            int total = wins + losses + ties;
+            total.ShouldBeGreaterThan(0, "the seeded trainer must have matches, or this proves nothing");
+
+            string winRateText = FindUIElement("WinRateLabel").Text;
+            double shown = double.Parse(winRateText.TrimEnd('%'), CultureInfo.InvariantCulture);
+            double expected = (wins + (0.5 * ties)) / total * 100;
+
+            // Tolerance covers the label's F1 rounding only.
+            shown.ShouldBe(expected, 0.05,
+                $"win rate must equal (wins + 0.5*ties)/total*100. " +
+                $"Showed '{winRateText}' with {wins}W/{losses}L/{ties}T");
+        }
+
+        /// <summary>Reads a stat label as an integer, failing with the actual text when it is not one.</summary>
+        private int ReadIntLabel(string automationId)
+        {
+            string text = FindUIElement(automationId).Text;
+            if (!int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
+                throw new AssertionException($"'{automationId}' should show a whole number but showed '{text}'");
+
+            return value;
         }
 
         [Test]
