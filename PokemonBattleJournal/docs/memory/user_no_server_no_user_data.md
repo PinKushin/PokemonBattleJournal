@@ -49,4 +49,7 @@ file paths. The repo standard already forbids PII in logs and error messages
 ([[feedback_security]]) — Sentry is where that standard actually gets tested, because those
 strings leave the machine.
 
-Not raised as a problem to fix unasked. Raise it if error reporting is ever touched.
+**QUEUED as the next piece of work** (task #18, agreed 2026-08-07). The user is aware and wants
+it audited — while keeping local logs useful and keeping crash reports arriving without relying
+on GitHub issues or people emailing. Those goals are compatible; the fix is to stop putting user
+content into the strings in the first place, not to make logging quieter.
