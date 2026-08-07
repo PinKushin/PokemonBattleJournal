@@ -227,6 +227,42 @@ namespace UITests
                         PerfLog($"ClickElement('{automationId}'): UIA Expand");
                         return;
                     }
+
+                    // Focusing is what clicking a text field MEANS. An Edit exposes no activation
+                    // pattern because there is no action to activate — a mouse click focuses it
+                    // and places the caret, and only the focus half matters to a test that is
+                    // about to type. Anything wired to pointer events on the field would not fire,
+                    // which is the tradeoff; nothing here depends on that.
+                    if (el.Properties.ControlType.ValueOrDefault == FlaUI.Core.Definitions.ControlType.Edit
+                        || el.Properties.ControlType.ValueOrDefault == FlaUI.Core.Definitions.ControlType.Document)
+                    {
+                        el.Focus();
+                        PerfLog($"ClickElement('{automationId}'): UIA Focus (text input)");
+                        return;
+                    }
+
+                    // Walk up for a pattern the element itself lacks. A CollectionView row carries
+                    // its AutomationId on a Border INSIDE the item container, and it is the
+                    // container that holds SelectionItemPattern — so the id names a child with no
+                    // pattern while its parent is perfectly selectable. Three levels is enough for
+                    // that nesting and shallow enough not to reach something unrelated.
+                    AutomationElement? ancestor = el.Parent;
+                    for (int depth = 0; depth < 3 && ancestor is not null; depth++, ancestor = ancestor.Parent)
+                    {
+                        if (ancestor.Patterns.SelectionItem.IsSupported)
+                        {
+                            ancestor.Patterns.SelectionItem.Pattern.Select();
+                            PerfLog($"ClickElement('{automationId}'): UIA Select on ancestor (depth {depth + 1})");
+                            return;
+                        }
+
+                        if (ancestor.Patterns.Invoke.IsSupported)
+                        {
+                            ancestor.Patterns.Invoke.Pattern.Invoke();
+                            PerfLog($"ClickElement('{automationId}'): UIA Invoke on ancestor (depth {depth + 1})");
+                            return;
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {

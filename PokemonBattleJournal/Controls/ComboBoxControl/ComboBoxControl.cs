@@ -271,8 +271,10 @@ public IEnumerable? ItemsSource
 
         Content = new Grid { Children = { _border, activator } };
 
-        // Consumers set AutomationId and semantics on the control; forward whatever is already
-        // set before the handler exists, then keep them in sync in OnPropertyChanged.
+        // Apply whatever was set before the activator existed, then stay in sync via
+        // OnPropertyChanged / the bindable property's changed handler.
+        if (!string.IsNullOrEmpty(ActivatorAutomationId))
+            activator.AutomationId = ActivatorAutomationId;
         ForwardAutomationToActivator();
 
         UpdateDisplay();
@@ -339,6 +341,41 @@ public IEnumerable? ItemsSource
         {
             ForwardAutomationToActivator();
         }
+    }
+
+    /// <summary>
+    /// AutomationId applied to the control's activator Button rather than to this ContentView.
+    /// </summary>
+    /// <remarks>
+    /// Use this instead of <c>AutomationId</c> on a ComboBoxControl. The activator Button is the
+    /// only part of this control exposing a UIA InvokePattern, so it is what automation and
+    /// assistive tech can act on — an id on the ContentView identifies an element neither can
+    /// activate, leaving clicks to fall back to a screen-coordinate mouse press.
+    ///
+    /// It cannot simply be forwarded from <c>AutomationId</c>: MAUI throws
+    /// "AutomationId may only be set one time", so the host's id can be neither cleared nor
+    /// moved, and copying it would put a duplicate in the UIA tree that resolves to the
+    /// non-invokable parent first. Setting it here, and NOT setting AutomationId, is what puts
+    /// the id on the element holding the behaviour.
+    /// </remarks>
+    public static readonly BindableProperty ActivatorAutomationIdProperty =
+        BindableProperty.Create(
+            nameof(ActivatorAutomationId),
+            typeof(string),
+            typeof(ComboBoxControl),
+            default(string),
+            propertyChanged: OnActivatorAutomationIdChanged);
+
+    public string? ActivatorAutomationId
+    {
+        get => (string?)GetValue(ActivatorAutomationIdProperty);
+        set => SetValue(ActivatorAutomationIdProperty, value);
+    }
+
+    private static void OnActivatorAutomationIdChanged(BindableObject bindable, object? oldValue, object? newValue)
+    {
+        if (bindable is ComboBoxControl control && control._activator is not null && newValue is string id && !string.IsNullOrEmpty(id))
+            control._activator.AutomationId = id;
     }
 
     private readonly Button? _activator;
