@@ -215,6 +215,18 @@ namespace UITests
                         PerfLog($"ClickElement('{automationId}'): UIA Select");
                         return;
                     }
+
+                    // A MAUI Picker becomes a WinUI ComboBox, which exposes ExpandCollapse and
+                    // none of the three above. Focus first: the picker helpers type the item's
+                    // first letter straight after opening, and an expand that leaves focus
+                    // elsewhere sends those keystrokes nowhere.
+                    if (el.Patterns.ExpandCollapse.IsSupported)
+                    {
+                        el.Focus();
+                        el.Patterns.ExpandCollapse.Pattern.Expand();
+                        PerfLog($"ClickElement('{automationId}'): UIA Expand");
+                        return;
+                    }
                 }
                 catch (Exception ex)
                 {
