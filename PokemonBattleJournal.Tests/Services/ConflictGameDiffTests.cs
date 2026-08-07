@@ -76,6 +76,52 @@ namespace PokemonBattleJournal.Tests.Services
             Diff(null, null, [], ["a"]).TagsDiffer.ShouldBeTrue();
         }
 
+        // ---------------- richer vs genuine conflict ----------------
+        //
+        // Richer means one side simply knows more, with nothing contradicting: Append produces
+        // the superset and there is no judgement to make. That is the case the UI pre-selects
+        // Append for. A genuine conflict is where both sides hold different non-empty values,
+        // and no automatic answer is defensible.
+
+        [Test]
+        public void IsRicher_WhenOnlyTheBackupHasANote_IsTrue() =>
+            Diff("", "misplayed turn 3").IsRicher.ShouldBeTrue();
+
+        [Test]
+        public void IsRicher_WhenOnlyTheStoredMatchHasANote_IsTrue() =>
+            Diff("dead draw", null).IsRicher.ShouldBeTrue();
+
+        [Test]
+        public void IsRicher_WhenBothNotesAreNonEmptyAndDiffer_IsFalse() =>
+            Diff("dead draw", "misplayed turn 3").IsRicher.ShouldBeFalse();
+
+        [Test]
+        public void IsRicher_WhenTagsAreOnlyAdded_IsTrue() =>
+            Diff(null, null, ["a"], ["a", "b"]).IsRicher.ShouldBeTrue();
+
+        [Test]
+        public void IsRicher_WhenTagsAreOnlyRemoved_IsTrue() =>
+            Diff(null, null, ["a", "b"], ["a"]).IsRicher.ShouldBeTrue();
+
+        [Test]
+        public void IsRicher_WhenTagsAreBothAddedAndRemoved_IsFalse() =>
+            // Neither side is a superset, so "just take both" is a decision rather than a fact.
+            Diff(null, null, ["a", "b"], ["b", "c"]).IsRicher.ShouldBeFalse();
+
+        [Test]
+        public void IsRicher_WhenTheGameExistsOnOneSideOnly_IsFalse()
+        {
+            // A BO1 against a BO3 backup. Appending a whole game changes the match FORMAT, which
+            // is a bigger claim than filling in a blank note, so it stays a human decision.
+            ConflictGameDiff missing = new()
+            {
+                Label = "Game 2",
+                ExistingPresent = false,
+                IncomingNotes = "they conceded",
+            };
+            missing.IsRicher.ShouldBeFalse();
+        }
+
         [Test]
         public void HasAnyDifference_IsFalseOnlyWhenNotesAndTagsBothAgree()
         {

@@ -69,5 +69,32 @@ namespace PokemonBattleJournal.Services.Restore
 
         /// <summary>True when there is anything here for the user to decide about.</summary>
         public bool HasAnyDifference => PresenceDiffers || NotesDiffer || TagsDiffer;
+
+        /// <summary>
+        /// True when one side simply knows more and nothing contradicts — Append produces the
+        /// superset and there is no judgement to make.
+        /// </summary>
+        /// <remarks>
+        /// This is the distinction <c>MatchMatchKind.Richer</c> described and no code made. The
+        /// UI pre-selects Append for these so the rows still showing no choice are the ones that
+        /// actually need thought. Nothing is written without an explicit Apply either way, so a
+        /// pre-selection is a suggestion rather than an action.
+        ///
+        /// Three things deliberately are NOT richer:
+        /// <list type="bullet">
+        /// <item>Both notes non-empty and different — Append would concatenate two real notes,
+        /// which is a choice, not a fact.</item>
+        /// <item>Tags added AND removed — neither side is a superset, so "take both" is a
+        /// decision.</item>
+        /// <item>A game on one side only — appending a whole game changes the match FORMAT, a
+        /// bigger claim than filling in a blank note.</item>
+        /// </list>
+        /// </remarks>
+        public bool IsRicher =>
+            !PresenceDiffers
+            && !(NotesDiffer
+                 && !string.IsNullOrEmpty(ExistingNotes)
+                 && !string.IsNullOrEmpty(IncomingNotes))
+            && !(AddedTags.Count > 0 && RemovedTags.Count > 0);
     }
 }

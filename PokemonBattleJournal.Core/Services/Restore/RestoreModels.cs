@@ -57,6 +57,29 @@ namespace PokemonBattleJournal.Services.Restore
         /// three identical panels.
         /// </remarks>
         public IReadOnlyList<ConflictGameDiff> Games { get; init; } = [];
+
+        /// <summary>
+        /// True when every differing game simply knows more, with nothing contradicting.
+        /// </summary>
+        /// <remarks>
+        /// Conservative on purpose: one genuinely conflicting game makes the whole match a
+        /// decision even if the others are trivially richer. Resolution applies per MATCH — its
+        /// games are written in one transaction — so the weakest game governs, and suggesting
+        /// Append for a match containing a real contradiction would be suggesting the user
+        /// overwrite something without noticing.
+        /// </remarks>
+        public bool IsRicher => Games.Count > 0 && Games.All(g => g.IsRicher);
+
+        /// <summary>
+        /// The resolution to pre-select, or null when no default is defensible.
+        /// </summary>
+        /// <remarks>
+        /// Null is not "do nothing" — it means the row stays unselected so it stands out against
+        /// the pre-answered ones, and the user has to look at it. Nothing is written without an
+        /// explicit Apply either way, so a suggestion is never an action.
+        /// </remarks>
+        public ConflictResolution? SuggestedResolution =>
+            IsRicher ? ConflictResolution.Append : null;
     }
 
     /// <summary>
