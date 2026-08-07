@@ -13,9 +13,27 @@ name: PokemonBattleJournal CodeQL config
 # specific rule that only ever fires in generated code.
 #
 # So this is kept for the cases where it does apply, and the real triage happens
-# after the first scan: if a rule fires only in *.g.cs, exclude the rule and say
-# why. Do NOT tolerate unactionable alerts — a Security tab full of noise trains
-# everyone to ignore it, which is exactly where a real finding would appear.
+# after the first scan. Do NOT tolerate unactionable alerts — a Security tab full
+# of noise trains everyone to ignore it, which is exactly where a real finding
+# would appear.
+#
+# HOW THE GENERATED-CODE NOISE IS ACTUALLY HANDLED (settled 2026-08-07): the
+# first working scan produced 216 alerts, 152 of them in generated files, and
+# paths-ignore stopped none of them — as predicted above. Those are DISMISSED
+# per alert in the Security tab as "won't fix", not excluded by rule id.
+#
+# The distinction matters. Every one of the 48 cs/useless-assignment-to-local
+# alerts was in a *.g.cs file and NONE was in hand-written code, so excluding the
+# rule would have switched off dead-store detection across the whole app to
+# silence code nobody here wrote. A dead store is a logic-bug signal — a value
+# assigned and never read usually means the wrong variable was assigned, or a
+# result was computed and forgotten — and that is worth keeping pointed at code
+# we do write. Dismissing per alert clears the tab and leaves the rule live.
+#
+# The cost is that a generator version bump can surface a few new ones to dismiss
+# again. That is the correct amount of churn. Only exclude a rule outright when
+# it fires on a pattern this repo uses ON PURPOSE, as with the broad-catch filter
+# at the bottom of this file.
 paths-ignore:
   - "**/*.g.cs"
   - "**/*.sg.cs"
