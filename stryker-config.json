@@ -1,0 +1,12 @@
+{
+  "stryker-config": {
+    "project": "PokemonBattleJournal.Scraper.csproj",
+    "test-projects": ["PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj"],
+    "reporters": ["html", "progress"],
+    "thresholds": {
+      "high": 85,
+      "low": 70,
+      "break": 0
+    }
+  }
+}
