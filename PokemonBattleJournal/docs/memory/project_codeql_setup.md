@@ -84,6 +84,29 @@ generated alerts passed straight through it.
   constant combined with a platform directory. A literal cannot be rooted, so the earlier
   argument can never be discarded. No user input reaches these paths.
 
+## Dismissals are location-anchored — a file MOVE resurrects them
+
+Confirmed 2026-08-07 by the Core extraction. Moving 46 files re-opened two alerts that had
+been dismissed with written reasons, because a dismissal is bound to the alert instance and a
+new path is a new instance:
+
+- `cs/constant-condition` — the double-checked lock, back at
+  `PokemonBattleJournal.Core/Services/SqliteConnectionFactory.cs`
+- `cs/path-combine` — the same benign literal-second-argument pattern, in the newly created
+  `MauiSqliteConnectionFactory`
+
+Both were re-dismissed with the same reasoning. **After any refactor that moves files, check
+the open alert list rather than assuming the dismissals held.** This is the same discipline as
+[[feedback_check_ci_annotations_and_artifacts]]: verify the run after the change, not the run
+before it. The check is cheap:
+
+```bash
+gh api --paginate "repos/{owner}/{repo}/code-scanning/alerts?state=open&per_page=100"   --jq '.[] | "\(.rule.id)  \(.most_recent_instance.location.path)"'
+```
+
+It is also why the reasoning for a load-bearing dismissal lives in a **code comment at the
+site** and not only in the GitHub UI — the comment moves with the file, the dismissal does not.
+
 ## Actions are pinned, and Dependabot exists because of it
 
 Third-party actions pin commit SHAs with the version in a trailing comment
