@@ -75,7 +75,9 @@ namespace PokemonBattleJournal.Services.Restore
         /// superset and there is no judgement to make.
         /// </summary>
         /// <remarks>
-        /// This is the distinction <c>MatchMatchKind.Richer</c> described and no code made. The
+        /// This is the distinction a <c>MatchMatchKind</c> enum used to describe and no code ever
+        /// made; the enum was deleted rather than kept as documentation, since unreachable code
+        /// depresses coverage and mutation numbers for nothing. The
         /// UI pre-selects Append for these so the rows still showing no choice are the ones that
         /// actually need thought. Nothing is written without an explicit Apply either way, so a
         /// pre-selection is a suggestion rather than an action.

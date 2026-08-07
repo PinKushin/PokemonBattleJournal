@@ -1,40 +1,6 @@
 namespace PokemonBattleJournal.Services.Restore
 {
     /// <summary>
-    /// How an incoming entry relates to a match already in the database.
-    /// </summary>
-    /// <remarks>
-    /// Deliberately four outcomes rather than a bool. The app cannot always tell a re-import
-    /// from two genuinely distinct matches: the dedupe key is
-    /// <c>(TrainerId, StartTime, PlayingId, AgainstId, Result)</c>, and <c>AgainstId</c>
-    /// identifies a *deck*, not a person — the model records no opponent identity at all. Two
-    /// different opponents on the same deck at the same minute produce an identical key.
-    ///
-    /// So nothing here may silently drop or overwrite. Ambiguity is reported and the user
-    /// decides.
-    /// </remarks>
-    public enum MatchMatchKind
-    {
-        /// <summary>No existing match shares the key. Insert it.</summary>
-        New,
-
-        /// <summary>Every compared field agrees. Skip, but count and report it.</summary>
-        Identical,
-
-        /// <summary>
-        /// One side has data the other lacks — a note or tags present on one and absent on the
-        /// other, never differing values. Safe to union.
-        /// </summary>
-        Richer,
-
-        /// <summary>
-        /// Both sides carry different non-empty values for the same field. Needs a human;
-        /// never resolved automatically.
-        /// </summary>
-        Conflict,
-    }
-
-    /// <summary>
     /// One incoming entry that could not be applied without a decision.
     /// </summary>
     public sealed record RestoreConflict
