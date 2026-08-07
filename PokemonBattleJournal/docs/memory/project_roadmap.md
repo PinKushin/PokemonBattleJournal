@@ -16,6 +16,30 @@ Planned features confirmed by the user. Implement via TDD — write failing test
 
 ---
 
+## Extract a Core class library — VERY STRONG CANDIDATE, next up (added 2026-08-07)
+
+Move `Models/`, `Services/` and `Utilities/` into a plain `net10.0` library the MAUI app
+references. **The user is leaning towards doing this next.**
+
+**The point is mutation testing.** Stryker cannot analyse the MAUI project at all, so
+"tests that pass but cannot fail" are invisible in exactly the code where a wrong answer would
+damage a user's data — `MatchAnalysisService`, `RestoreService`, the import limits. The one part
+of the repo Stryker *could* measure turned up 14 such tests on the first run, and every one had
+been passing.
+
+**Measured, not estimated:** of 36 candidate files, **only 3** actually depend on MAUI
+(`ModalErrorHandler`, `FileHelper`, `MainThreadHelper`). Everything else depends on SQLite-net,
+which is fine in a class library.
+
+Full step-by-step, risks and verification order: [[project_core_library_extraction_plan]].
+
+**Not for reuse** — nobody will consume it as a package, and that is not the reason. Rejected as
+part of this: splitting into separate domain entities with mapping. The models carry SQLite
+attributes and a purist would separate them, but that solves problems this app does not have and
+doubles the type count.
+
+---
+
 ## Import / Export (JSON)
 
 Format reverse-engineered from `trainerhill-battle-log-2026-07-27.json`:
