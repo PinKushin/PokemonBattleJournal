@@ -304,6 +304,41 @@ namespace UITests
                 element.Click();
         }
 
+        /// <summary>
+        /// What assistive technology can see and do with an element.
+        /// </summary>
+        /// <param name="Found">Whether the element is in the UIA tree at all.</param>
+        /// <param name="Name">What a screen reader announces. Comes from SemanticProperties.Description.</param>
+        /// <param name="Patterns">Control patterns it exposes — how assistive tech operates it.</param>
+        protected sealed record UiaContract(bool Found, string? Name, IReadOnlyList<string> Patterns);
+
+        /// <summary>
+        /// Reads an element's accessibility contract straight from the live UIA tree.
+        /// </summary>
+        /// <remarks>
+        /// This is the only way to check the rule that actually matters, because the properties
+        /// that LOOK like accessibility are not the ones assistive tech uses. The BO3 switch
+        /// carried SemanticProperties.Description, Hint and IsInAccessibleTree="True" — it
+        /// passed every review, was announced correctly by a screen reader, and could not be
+        /// activated by one, because a Border with a TapGestureRecognizer exposes no pattern.
+        /// Only reading the patterns catches that.
+        /// </remarks>
+        protected UiaContract GetUiaContract(string automationId)
+        {
+            AutomationElement? el = TryFindViaUia(automationId);
+            if (el is null)
+                return new UiaContract(false, null, []);
+
+            List<string> patterns = [];
+            if (el.Patterns.Invoke.IsSupported) patterns.Add("Invoke");
+            if (el.Patterns.Toggle.IsSupported) patterns.Add("Toggle");
+            if (el.Patterns.SelectionItem.IsSupported) patterns.Add("SelectionItem");
+            if (el.Patterns.ExpandCollapse.IsSupported) patterns.Add("ExpandCollapse");
+            if (el.Patterns.Value.IsSupported) patterns.Add("Value");
+
+            return new UiaContract(true, el.Properties.Name.ValueOrDefault, patterns);
+        }
+
         /// <summary>Finds an element in the live UIA tree, or null. Best-effort.</summary>
         private AutomationElement? TryFindViaUia(string automationId)
         {

@@ -1,7 +1,37 @@
-namespace UITests
+﻿namespace UITests
 {
     public partial class OptionsPageTests : BaseTest
     {
+        // Accessibility contract — see the MainPage partial for why these exist and what
+        // they catch. Windows-only: they read the UIA tree directly. No interactions.
+        [Test]
+        [TestCase("SaveTrainerNameButton")]
+        [TestCase("SaveArchetypeButton")]
+        [TestCase("SaveTagButton")]
+        [TestCase("SaveAllButton")]
+        [TestCase("ImportTrainerHillButton")]
+        [TestCase("ExportTrainerHillButton")]
+        [TestCase("ExportBackupButton")]
+        [TestCase("RestoreBackupButton")]
+        [TestCase("ArchetypeIconPicker")]
+        [TestCase("TrainerNameInput")]
+        [TestCase("ArchetypeNameInput")]
+        public void OptionsPage_InteractiveElement_IsAnnouncedAndOperable(string automationId)
+        {
+            UiaContract contract = GetUiaContract(automationId);
+
+            contract.Found.ShouldBeTrue($"'{automationId}' is not in the UIA tree at all");
+
+            contract.Name.ShouldNotBeNullOrWhiteSpace(
+                $"'{automationId}' has no accessible Name, so a screen reader announces nothing " +
+                "for it. Set SemanticProperties.Description.");
+
+            contract.Patterns.ShouldNotBeEmpty(
+                $"'{automationId}' exposes no UIA control pattern, so assistive technology " +
+                "cannot operate it — readable but unusable. See " +
+                "docs/memory/feedback_invokable_controls.md.");
+        }
+
         [Test]
         public async Task OptionsPage_TrainerNameInput_AcceptsText()
         {
