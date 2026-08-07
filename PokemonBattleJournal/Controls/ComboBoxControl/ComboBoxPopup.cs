@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using CommunityToolkit.Maui.Views;
@@ -79,14 +79,6 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             };
             label.SetBinding(Label.TextProperty, new Binding(displayMemberPath));
 
-            var tap = new TapGestureRecognizer();
-            tap.Tapped += async (s, e) =>
-            {
-                if (closing) return;
-                closing = true;
-                if (s is Grid g && g.BindingContext is { } item)
-                    await CloseAsync(new PickerResult(item));
-            };
 
             var iconStack = new HorizontalStackLayout
             {
@@ -95,6 +87,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
                 Children = { image, image2 }
             };
 
+            // Visuals only. InputTransparent so taps fall through to the Button layered over it.
             var grid = new Grid
             {
                 ColumnDefinitions =
@@ -104,13 +97,56 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
                 ],
                 Children = { iconStack, label },
                 HeightRequest = itemHeight,
-                BackgroundColor = backgroundColor
+                BackgroundColor = backgroundColor,
+                InputTransparent = true
             };
             Grid.SetColumn(label, 1);
-            grid.SetBinding(AutomationIdProperty, new Binding(displayMemberPath, stringFormat: "ArchetypeItem_{0}"));
-            grid.SetBinding(SemanticProperties.HintProperty, new Binding(displayMemberPath, stringFormat: "Double tap to select {0}"));
-            grid.GestureRecognizers.Add(tap);
-            return grid;
+
+            // The item was a Grid with a TapGestureRecognizer, which exposes NO UIA pattern.
+            // Two consequences, and the accessibility one is the more serious:
+            //
+            // A screen reader could not select a deck at all. Assistive tech activates controls
+            // through UIA patterns, not by clicking pixels, so every archetype in this list was
+            // announced correctly (the Hint below said "Double tap to select …") and was
+            // impossible to actually pick.
+            //
+            // And automation could only reach it by synthesized mouse click at screen
+            // coordinates, which lands outside the app when the item sits below the window —
+            // silently doing nothing on CI. See docs/memory/feedback_invokable_controls.md.
+            //
+            // MAUI's Button cannot host an icon+label layout as content, so it overlays the
+            // Grid instead: transparent, borderless, and carrying the AutomationId and semantics
+            // because it is what UIA, Appium and screen readers now see. Minimums are zeroed
+            // because the implicit Button style sets them to 44, and a minimum beats an
+            // explicit HeightRequest.
+            var button = new Button
+            {
+                BackgroundColor = Colors.Transparent,
+                BorderColor = Colors.Transparent,
+                BorderWidth = 0,
+                CornerRadius = 0,
+                Padding = 0,
+                HeightRequest = itemHeight,
+                MinimumHeightRequest = 0,
+                MinimumWidthRequest = 0
+            };
+            button.SetBinding(AutomationIdProperty, new Binding(displayMemberPath, stringFormat: "ArchetypeItem_{0}"));
+            button.SetBinding(SemanticProperties.DescriptionProperty, new Binding(displayMemberPath));
+            button.SetBinding(SemanticProperties.HintProperty, new Binding(displayMemberPath, stringFormat: "Double tap to select {0}"));
+            button.Clicked += async (s, e) =>
+            {
+                if (closing) return;
+                closing = true;
+                if (s is Button b && b.BindingContext is { } item)
+                    await CloseAsync(new PickerResult(item));
+            };
+
+            // Button last so it sits on top of the visuals in the same cell.
+            return new Grid
+            {
+                HeightRequest = itemHeight,
+                Children = { grid, button }
+            };
         });
 
         var titleLabel = new Label

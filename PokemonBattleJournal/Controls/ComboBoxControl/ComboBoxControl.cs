@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.ComponentModel;
 using System.Windows.Input;
 using CommunityToolkit.Maui;
@@ -249,11 +249,26 @@ public IEnumerable? ItemsSource
         _border.SetBinding(Border.StrokeThicknessProperty, new Binding(nameof(StrokeThickness), source: this));
         _border.SetBinding(Border.BackgroundColorProperty, new Binding(nameof(BackgroundColor), source: this));
 
-        var tapGesture = new TapGestureRecognizer();
-        tapGesture.Tapped += OnTapped;
-        _border.GestureRecognizers.Add(tapGesture);
+        // A Border with a TapGestureRecognizer exposes no UIA pattern: unusable by a screen
+        // reader, and reachable by automation only through a coordinate click that lands outside
+        // the app when the control sits below the window. A transparent Button overlays it and
+        // owns activation instead — MAUI's Button cannot host this layout as content, so it sits
+        // on top. See docs/memory/feedback_invokable_controls.md.
+        _border.InputTransparent = true;
 
-        Content = _border;
+        var activator = new Button
+        {
+            BackgroundColor = Colors.Transparent,
+            BorderColor = Colors.Transparent,
+            BorderWidth = 0,
+            CornerRadius = 0,
+            Padding = 0,
+            MinimumHeightRequest = 0,
+            MinimumWidthRequest = 0
+        };
+        activator.Clicked += (s, e) => OnTapped(s, EventArgs.Empty);
+
+        Content = new Grid { Children = { _border, activator } };
 
         UpdateDisplay();
     }
