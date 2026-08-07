@@ -41,12 +41,23 @@ namespace PokemonBattleJournal.Services.Restore
         /// Past this many lines on either side, stop diffing and show both versions whole.
         /// </summary>
         /// <remarks>
-        /// The LCS table is O(n×m) in both time and memory, so an unbounded diff of two pasted
-        /// walls of text would allocate millions of cells on a phone. Falling back is still
-        /// correct — the user sees both versions — just less granular, and a note that long was
-        /// never going to be read line-by-line in a conflict row anyway.
+        /// <para>
+        /// Sized for a note holding a DECK LIST, which is a first-class use of this field rather
+        /// than an abuse of it: pasting an opponent's list is how you later work out which
+        /// variant you actually played against. A list is roughly 25-35 lines grouped by count,
+        /// two of them plus commentary is under a hundred, and a full match log is a few hundred.
+        /// An earlier bound of 200 was picked assuming a note was a sentence, and would have
+        /// degraded on exactly the case where a line diff is most useful — seeing "+2 Iono,
+        /// -2 Judge" between two versions of the same list.
+        /// </para>
+        /// <para>
+        /// The real constraint is the LCS table, which is O(n×m) cells in both time and memory.
+        /// At 1000 that is ~3.8MB of int32 transiently, which is fine on a phone; 2000 would be
+        /// 15MB and 5000 would be 95MB, which is not. Falling back past the bound is still
+        /// correct — the user sees both versions whole — just not line-by-line.
+        /// </para>
         /// </remarks>
-        public const int MaxLines = 200;
+        public const int MaxLines = 1000;
 
         /// <summary>
         /// Diffs two notes by line.

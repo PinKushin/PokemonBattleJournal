@@ -41,6 +41,13 @@ Tracked here so nothing gets lost between sessions. Bugs first (things broken ri
 | ~~F-02~~ | ~~Clear form after save~~ | **Done.** `SaveMatchAsync` clears the form on success. |
 | F-30 | Online vs in person, plus an optional event name | User, 2026-08-07. A toggle defaulting to **online**, and a free-text event name defaulting to **null**. New columns on `MatchEntry`, so it needs a migration path for existing rows — both defaults are chosen so untouched rows stay valid. Worth having on TrainerPage afterwards: win rate split by online/in person is a stat the app cannot currently produce. **The event name must never be logged.** It is free text naming a real place and date, which is the most identifying field the model would hold; `SentryRedactingSink` withholds it by type without any change, and nothing should be added to the allowlist for it. See [[project_sentry_privacy_audit]]. |
 
+### Deck lists in notes
+
+| # | Description | Notes |
+|---|---|---|
+| F-31 | Paste a deck list into a game note, and default it from a PTCGL import | User, 2026-08-07. Pasting the **opponent's** list is the valuable case: it is how you later work out which variant you actually faced and whether their list deviates from the meta. Your own list is less necessary automatically, though someone will paste it. Would be the natural default note for a match imported from a PTCGL log. **Already works today** — nothing caps a typed or pasted note: the Editor has no `MaxLength`, and neither export nor restore truncates. The only cap in the pipeline is `TrainerHillImportService.MaxNotesLength` (4,000 chars), which a deck list clears comfortably at ~750 chars but a full match log would not. Parsing a PTCGL log is the real work here. |
+| F-32 | Deck comparer | Side-by-side diff of two lists, previously only in the memory roadmap. `Services/Restore/NoteDiff` gives the generic line diff for free, but a good comparer needs a **card-aware** diff on top: `4 Iono` against `2 Iono` should read as a count change on one card, not a removal plus an addition. So the line diff is the fallback, not the feature. Sizing is already settled — `NoteDiff.MaxLines` is 1000 because a list is ~30 lines and the LCS table is O(n×m), ~3.8MB of int32 at the bound. |
+
 ### TrainerPage — Charts
 
 | # | Chart | Notes |
