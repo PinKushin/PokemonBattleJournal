@@ -12,6 +12,59 @@ Confirmed immediately. Stryker's first run on the Scraper surfaced 14 mutants no
 and **none of them was untested code** — every one had tests that passed. They were tests that
 could not fail.
 
+## The framing that organises all of this — the user, 2026-08-07
+
+*"think about tests as scientific experiments if it helps, the measurements need to be measuring
+the right variable."*
+
+Map it and the shapes below stop being a list to memorise:
+
+| Experiment | Test |
+|---|---|
+| Manipulation of the independent variable | the mutation / the sabotage |
+| Measurement | the assertion |
+| Experimental condition | the input |
+| Control group | a second subject that must be unaffected |
+
+**A test that cannot fail is an experiment whose measurement is insensitive to the
+manipulation.** There are three distinct ways to get there, and they need different fixes:
+
+1. **Wrong instrument** — measuring a proxy that is not faithful to the variable. The Sentry
+   leak test searched serialized JSON BYTES when the variable was CONTENT; escaping decoupled
+   them. Fix the measurement: parse and walk the document.
+2. **Wrong condition** — an input for which both hypotheses predict the SAME observation.
+   `SuffixStrippingIgnoresCase` used `EX` and `tera`, which the regex alternation lists
+   explicitly, so flag-present and flag-absent agree. `Compute_OnlyOneSideOverTheBound` shared
+   no lines, so a real diff and the whole-block fallback agree. Fix the INPUT — `gx`, a shared
+   line.
+3. **No control** — one subject, so "affected everything" and "affected the target" are
+   indistinguishable. The trainer deletion cascade with a single trainer. Fix by adding a
+   bystander that must survive.
+4. **Effect size below resolution** — the condition is too small for the difference to show.
+   NoteDiff's ten survivors were this: every case was two or three lines, where a broken LCS
+   table and a correct one produce identical output. The manipulation was real and the assertion
+   was fine; the condition could not resolve it. Fix by ENLARGING the input — eight interleaved
+   lines, a block between a matching head and tail, repeated lines.
+
+**Predict exact values.** `ShouldBe("raging_bolt.png")` is a prediction; `ShouldNotBeNullOrEmpty()`
+reports that *an* effect occurred while staying blind to magnitude and direction. The one test
+in this repo still known not to discriminate — the ImagePath2 backfill case — uses exactly that
+weak form, and it may be concealing a real defect: when URL resolution fails,
+`TryResolveLocalSprite` falls back to the deck NAME, which would give a dual-icon deck the same
+sprite twice. Unverified as of writing; an exact assertion would settle it.
+
+**UI tests are the one place probability is legitimate, and only in measurement ACQUISITION.**
+The app is deterministic and so are the values; only WHEN a measurement can be taken varies.
+So synchronise on the condition, never the clock, and never retry a failure into a pass — see
+[[feedback_no_sleeps_in_tests]] and [[project_ci_retry_on_flake]], which reached the same
+conclusion from the other direction when six "flaky" Android failures turned out to be six real
+bugs.
+
+**The correction worth keeping: the instinct is to strengthen the assertion, and twice out of
+three that was the wrong move.** A stronger measurement cannot rescue a condition where both
+hypotheses agree. Ask first "is there an input where correct and broken differ?", and only then
+"does my assertion detect that difference?"
+
 ## The four shapes it found
 
 Recognise these; they are how a suite rots without anyone doing anything wrong.

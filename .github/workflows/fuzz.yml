@@ -1,0 +1,171 @@
+name: Fuzz
+
+# Not a per-push gate. Fuzzing answers a question that has no fixed running
+# time: it explores until it finds something or the budget runs out, so putting
+# it in front of every push would either be too short to find anything or too
+# slow to tolerate. The deterministic versions of these checks —
+# NoteDiffHarderTests, ConflictResolverTests, SentryRedactingSinkTypeTests —
+# run in the normal suite on every push.
+#
+# Ubuntu only. libFuzzer and the SharpFuzz instrumentation toolchain are
+# Linux-first, and PokemonBattleJournal.Core is plain net10.0 with no platform
+# of its own. The MAUI head cannot be fuzzed for the same reason it cannot be
+# mutation-tested.
+on:
+  schedule:
+    # Weekly, Thursday 04:23 UTC. A day off the main CI schedule so a failure
+    # here is not competing for attention with a failure there, and off the
+    # hour to avoid the queue that on-the-hour runs join.
+    - cron: "23 4 * * 4"
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: "Fuzzing budget in seconds"
+        required: false
+        default: "300"
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  fuzz:
+    name: Fuzz the restore and logging paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      # libfuzzer-dotnet is the bridge between libFuzzer and a .NET process. It
+      # is distributed as source, so it is built here rather than downloaded — a
+      # prebuilt binary from a third party is exactly the supply-chain risk this
+      # repository's dependency policy declines elsewhere.
+      - name: Install clang and build libfuzzer-dotnet
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang
+          curl -sSL -o libfuzzer-dotnet.cc \
+            https://raw.githubusercontent.com/Metalnem/libfuzzer-dotnet/master/libfuzzer-dotnet.cc
+          clang -fsanitize=fuzzer libfuzzer-dotnet.cc -o libfuzzer-dotnet
+
+      - name: Install SharpFuzz
+        run: dotnet tool install --global SharpFuzz.CommandLine
+
+      - name: Publish the fuzz target
+        run: dotnet publish PokemonBattleJournal.Fuzz -c Release -o fuzz-out
+
+      # Core is instrumented, not the harness: coverage feedback has to come
+      # from the code under test for the fuzzer to make progress.
+      - name: Instrument Core
+        run: sharpfuzz fuzz-out/PokemonBattleJournal.Core.dll
+
+      # The corpus is the fuzzer's memory, not test data: an input is kept only
+      # because it reached code no earlier input reached. Cached rather than
+      # committed — committing it would add megabytes to the repository that
+      # grow every week, for a file nobody reads.
+      #
+      # The key changes every run so each one saves a new entry, and
+      # restore-keys falls back to the most recent previous corpus. A cache miss
+      # is not a failure: the seeds below still make the run useful, it just
+      # starts further back.
+      #
+      # One job, so actions/cache is safe here. It is NOT safe in a matrix —
+      # see docs/memory/feedback_no_actions_cache_in_matrix.md.
+      - name: Restore the corpus
+        uses: actions/cache@v4
+        with:
+          path: corpus
+          key: fuzz-corpus-${{ github.run_id }}
+          restore-keys: |
+            fuzz-corpus-
+
+      # Seeds, written once per mode byte.
+      #
+      # The mode byte is why. The harness multiplexes on the first byte, so a
+      # seed file's own first byte decides which of the four modes it reaches —
+      # and every realistic seed here starts with a letter, which lands on
+      # whichever mode that letter happens to modulo into. Prefixing each seed
+      # with each mode byte is what makes all four start from structurally
+      # sensible input rather than one of them starting and three waiting for
+      # the fuzzer to discover structure by mutation.
+      #
+      # Measured in the sibling TcgDex.CSharpSdk repository, where the same trap
+      # applies: raw seeding started at 1,196 features and reached 2,705;
+      # mode-prefixed seeding started at 3,085 and reached 3,990. Proper seeding
+      # begins above where the naive run ended.
+      #
+      # Written every run rather than only on a cache miss, so a corpus
+      # minimised by libFuzzer cannot lose the known good inputs. Adding one
+      # that is already present costs nothing.
+      #
+      # \x00 is the side separator the harness splits on.
+      - name: Seed the corpus
+        run: |
+          mkdir -p corpus findings seeds
+          printf 'went first, drew Iono\000went second, drew Iono' > seeds/note-edit
+          printf '4 Charizard ex\n3 Pidgeot ex\n2 Iono\0004 Charizard ex\n3 Pidgeot ex\n2 Judge' > seeds/deck-list
+          printf 'a\nb\nc\nd\ne\nf\ng\nh\000a\nB\nc\nd\nX\ne\nf\nh' > seeds/interleaved
+          printf 'donk\nmulligan\000mulligan\nprized' > seeds/tags
+          printf 'TrainerName\000Ash Ketchum' > seeds/redact-name
+          printf 'ValidationMessage\000Select a deck' > seeds/redact-allowlisted
+          printf '\000' > seeds/empty-sides
+          restored=$(ls corpus | wc -l)
+          for seed in seeds/*; do
+            name=$(basename "$seed")
+            for mode in 0 1 2 3; do
+              printf "$(printf '\\%03o' "$mode")" | cat - "$seed" > "corpus/${name}-m${mode}.bin"
+            done
+          done
+          echo "restored $restored from cache, now $(ls corpus | wc -l) inputs"
+
+      - name: Fuzz
+        env:
+          BUDGET: ${{ github.event.inputs.seconds || '300' }}
+        run: |
+          ./libfuzzer-dotnet \
+            --target_path=fuzz-out/PokemonBattleJournal.Fuzz \
+            -max_total_time="$BUDGET" \
+            -artifact_prefix=findings/ \
+            -print_final_stats=1 \
+            corpus
+
+      # Without this the cached corpus grows every week and each run spends more
+      # of its budget loading inputs than mutating them. -merge=1 keeps the
+      # smallest set that preserves the coverage the whole corpus reaches, so
+      # what carries forward is the knowledge rather than the volume.
+      #
+      # Skipped when the fuzz step failed: a crash means there is a finding to
+      # collect, and rewriting the corpus first would be tidying up the evidence.
+      - name: Minimise the corpus
+        if: success()
+        run: |
+          before=$(ls corpus | wc -l)
+          mkdir -p corpus-min
+          ./libfuzzer-dotnet \
+            --target_path=fuzz-out/PokemonBattleJournal.Fuzz \
+            -merge=1 corpus-min corpus 2>&1 | tail -3
+          rm -rf corpus
+          mv corpus-min corpus
+          echo "minimised $before inputs to $(ls corpus | wc -l)"
+
+      # A crash is written as the exact bytes that caused it, which is a
+      # regression fixture rather than a bug report. Uploaded on failure as well
+      # as success, since failure is when there is something to collect.
+      - name: Upload findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-findings
+          path: |
+            findings/
+            corpus/
+          if-no-files-found: ignore

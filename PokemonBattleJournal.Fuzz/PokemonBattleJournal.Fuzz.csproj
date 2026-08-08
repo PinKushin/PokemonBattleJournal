@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Coverage-guided fuzzing of the pure logic that consumes input this app
+       did not produce: a restored backup's notes and tags, and every value that
+       reaches the Sentry sink.
+
+       Separate from the test suite on purpose. A fuzzer runs for minutes or
+       hours and finds inputs nobody wrote down, which is the opposite shape
+       from a gate that must answer in seconds on every push. The cheap,
+       deterministic version of these questions lives in NoteDiffHarderTests,
+       ConflictResolverTests and SentryRedactingSinkTypeTests, and runs every
+       time; this one goes deeper on a schedule.
+
+       Fuzzing is the other half of Stryker. Stryker mutates the CODE and asks
+       whether the tests notice; a fuzzer mutates the INPUT and asks whether the
+       code survives. Stryker measures whether an experiment is sensitive; this
+       explores the condition space no one thought to write down.
+
+       net10.0 only, and never packed: SharpFuzz instruments the assembly under
+       test, so this is a tool rather than a deliverable. Core rather than the
+       MAUI head for the same reason Stryker targets Core — the head cannot be
+       instrumented. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>PokemonBattleJournal.Fuzz</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>false</IsTestProject>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Version pinned here rather than centrally: this repository has no
+         Directory.Packages.props, unlike the sibling TcgDex.CSharpSdk. -->
+    <PackageReference Include="SharpFuzz" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PokemonBattleJournal.Core\PokemonBattleJournal.Core.csproj" />
+  </ItemGroup>
+
+</Project>
