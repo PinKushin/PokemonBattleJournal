@@ -29,8 +29,16 @@ namespace UITests
         // picks it up too, then return the Appium handle for downstream test interactions.
         protected override AppiumElement FindUIElement(string id)
         {
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-            var total = System.Diagnostics.Stopwatch.StartNew();
+            // Live, unbuffered. NUnit holds Console.Out until the test METHOD ends, which is
+            // precisely why a fixture grinding through thirty existence checks is visually
+            // identical to one that has hung. TestContext.Progress bypasses that buffer, so the
+            // console names each element as it is looked up: a stall shows one name frozen, a
+            // slow-but-healthy run shows names scrolling. Better than a spinner, because it says
+            // WHICH element rather than only that something is happening.
+            NUnit.Framework.TestContext.Progress.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] find {id}");
+
+            DateTime deadline = DateTime.UtcNow.AddSeconds(30);
+            System.Diagnostics.Stopwatch total = System.Diagnostics.Stopwatch.StartNew();
             int iteration = 0;
             try
             {
@@ -184,9 +192,82 @@ namespace UITests
         /// is used, the element's rect is checked against the window first and a miss is logged
         /// loudly rather than dispatched into another application.</para>
         /// </remarks>
+        /// <summary>
+        /// How long to keep re-querying for an element that is in the tree but advertises no
+        /// actionable pattern yet.
+        /// </summary>
+        /// <remarks>
+        /// The observed recovery was 70ms; 500ms is generous without being a cost when the
+        /// element genuinely has no pattern and belongs on the mouse path.
+        /// </remarks>
+        private static readonly TimeSpan PatternAppearWindow = TimeSpan.FromMilliseconds(500);
+
+        /// <summary>
+        /// Re-queries the UIA tree until the element advertises a pattern this method can use.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// WinAppDriver publishes an element as soon as it is realised, and for a beat it can
+        /// carry no activation pattern at all. A single query therefore answers "can this be
+        /// clicked" with a snapshot rather than with the truth, and CI failed on exactly that:
+        /// ApplyConflictsButton had no pattern, the guarded path gave up, and the SAME element
+        /// invoked cleanly 70ms later. The same commit passed on master and failed on another
+        /// branch, which is a race, not a regression.
+        /// </para>
+        /// <para>
+        /// Do NOT reach for the bounding rectangle here. These buttons report 0x0 to Appium for
+        /// their whole life and invoke perfectly through FlaUI, so waiting for a non-empty
+        /// rectangle waits forever and buys nothing — measured at six 5s stalls in one fixture,
+        /// which is where the off-window guard's "outside the app window" message comes from.
+        /// That message describes the geometry it read, not the reason the click failed.
+        /// </para>
+        /// </remarks>
+        private AutomationElement? FindWithActionablePattern(string automationId)
+        {
+            System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
+            AutomationElement? el = TryFindViaUia(automationId);
+
+            while (clock.Elapsed < PatternAppearWindow)
+            {
+                if (el is not null && HasActionablePattern(el))
+                {
+                    if (clock.ElapsedMilliseconds > 0)
+                        PerfLog($"ClickElement('{automationId}'): pattern appeared after {clock.ElapsedMilliseconds}ms");
+
+                    return el;
+                }
+
+                System.Threading.Thread.Sleep(25);
+                el = TryFindViaUia(automationId);
+            }
+
+            // Hand back whatever the last query produced. An element with no pattern is still
+            // usable via an ancestor or the mouse path, and deciding that is the caller's job.
+            return el;
+        }
+
+        /// <summary>True when the element itself carries a pattern <see cref="ClickElement(string)"/> acts on.</summary>
+        private static bool HasActionablePattern(AutomationElement el)
+        {
+            try
+            {
+                return el.Patterns.Invoke.IsSupported
+                    || el.Patterns.Toggle.IsSupported
+                    || el.Patterns.SelectionItem.IsSupported
+                    || el.Patterns.ExpandCollapse.IsSupported
+                    || el.Properties.ControlType.ValueOrDefault == FlaUI.Core.Definitions.ControlType.Edit
+                    || el.Properties.ControlType.ValueOrDefault == FlaUI.Core.Definitions.ControlType.Document;
+            }
+            catch (Exception)
+            {
+                // A stale element mid-rerender. Not actionable this instant; the loop re-queries.
+                return false;
+            }
+        }
+
         protected override void ClickElement(string automationId)
         {
-            AutomationElement? el = TryFindViaUia(automationId);
+            AutomationElement? el = FindWithActionablePattern(automationId);
 
             if (el is not null)
             {
