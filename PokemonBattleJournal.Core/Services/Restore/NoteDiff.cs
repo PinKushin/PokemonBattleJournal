@@ -46,18 +46,49 @@ namespace PokemonBattleJournal.Services.Restore
         /// than an abuse of it: pasting an opponent's list is how you later work out which
         /// variant you actually played against. A list is roughly 25-35 lines grouped by count,
         /// two of them plus commentary is under a hundred, and a full match log is a few hundred.
-        /// An earlier bound of 200 was picked assuming a note was a sentence, and would have
-        /// degraded on exactly the case where a line diff is most useful — seeing "+2 Iono,
-        /// -2 Judge" between two versions of the same list.
+        /// 300 covers all of that.
         /// </para>
         /// <para>
-        /// The real constraint is the LCS table, which is O(n×m) cells in both time and memory.
-        /// At 1000 that is ~3.8MB of int32 transiently, which is fine on a phone; 2000 would be
-        /// 15MB and 5000 would be 95MB, which is not. Falling back past the bound is still
-        /// correct — the user sees both versions whole — just not line-by-line.
+        /// <b>This number is measured, not reasoned.</b> It was 1000, justified by arithmetic on
+        /// the LCS table alone — "~3.8MB of int32 transiently, which is fine on a phone". The
+        /// allocation estimate was right (4.0MB measured) and it was the wrong thing to worry
+        /// about. BenchmarkDotNet over the real Compute path, desktop, 2026-08-08:
+        /// </para>
+        /// <code>
+        ///          AT MaxLines = 1000        AT MaxLines = 300
+        /// Lines    Mean      Alloc   Gen2    Mean      Alloc   Gen2
+        ///  100      71.18us    55KB    -      70.04us    55KB    -
+        ///  200         -        -      -     342.89us   189KB   49.8
+        ///  300         -        -      -     757.49us   404KB  110.4   &lt;- bound
+        ///  301         -        -      -      21.61us    67KB    -     &lt;- fallback
+        ///  500   2,100.29us  1,067KB  246      37.19us   101KB    -     &lt;- fallback
+        /// 1000   8,879.85us  4,096KB  984      76.92us   203KB    -     &lt;- fallback
+        /// </code>
+        /// <para>
+        /// Two things the arithmetic missed. Time: 8.9ms at the old bound, on a desktop, on the
+        /// thread rendering a conflict card. And GC: Gen2 984 per 1000 operations means a 4MB
+        /// table on the Large Object Heap forcing a FULL collection on essentially every diff.
+        /// 3.8MB transient is fine; 3.8MB on the LOH per invocation is not. Dropping the bound
+        /// took the 1000-line case from 8,880us to 77us — 115x — and its Gen2 count to zero.
+        /// </para>
+        /// <para>
+        /// The cliff runs backwards, which is what settles the value. At the old bound, 1000
+        /// lines cost 8,880us while 1001 cost 79us: the fallback was <b>112x faster</b> than the
+        /// diff it stood in for, so 1000 sat at the most expensive point on the curve. Falling
+        /// back stays correct either way — the user sees both versions whole, just not
+        /// line-by-line.
+        /// </para>
+        /// <para>
+        /// 300 is a trade, not a free win, and the cost is named here so nobody has to re-derive
+        /// it: 404KB is still over the 85KB Large Object Heap threshold, so Gen2 runs about once
+        /// every nine diffs. The table is n^2 * 4 bytes, so avoiding the LOH entirely would mean
+        /// a bound near 146 — which leaves no headroom above the two-deck-lists-plus-commentary
+        /// case and sends a full match log to the fallback. Conflict review happens once per
+        /// match during a restore, not on a hot path, so 757us and an occasional Gen2 is the
+        /// better side of that trade.
         /// </para>
         /// </remarks>
-        public const int MaxLines = 1000;
+        public const int MaxLines = 300;
 
         /// <summary>
         /// Diffs two notes by line.
