@@ -198,8 +198,15 @@ warning would hide in it, so check the annotations EXCLUDING this one rule and e
 everything else:
 
 ```bash
-gh api repos/{owner}/{repo}/check-runs/{job-id}/annotations   --jq '[.[] | select(.message | test("IDE0008") | not)] | length'
+gh api repos/{owner}/{repo}/check-runs/{job-id}/annotations   --jq '[.[] | select(.message | ascii_downcase | test("ide0008") | not)] | length'
 ```
+
+**Match on the message, lowercased.** A code-scanning annotation has no rule-id field — `title`
+and `raw_details` come back empty — and the human text reads "Use explicit type instead of
+'var'". The only place the id appears is the docs URL inside the message, in lower case. A
+filter keyed on `title`, or on an upper-case `IDE0008`, silently matches nothing and reports
+every annotation as a real one. Verified 2026-08-07: 140 annotations across four workflows,
+0 remaining after this filter.
 
 That number is the one that must stay at zero. When the sweep finishes, drop the filter.
 
