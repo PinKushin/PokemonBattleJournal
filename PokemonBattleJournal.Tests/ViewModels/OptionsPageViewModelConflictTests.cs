@@ -33,11 +33,11 @@ namespace PokemonBattleJournal.Tests.ViewModels
             factory.Tags.GetAllAsync().Returns([]);
 
             ITrainerSwitchService switchService = Substitute.For<ITrainerSwitchService>();
-            var mainPageVm = new MainPageViewModel(
+            MainPageViewModel mainPageVm = new(
                 Substitute.For<ILogger<MainPageViewModel>>(), factory,
                 Substitute.For<IMatchResultsCalculatorFactory>(), switchService,
                 Substitute.For<IErrorHandler>());
-            var shellVm = new AppShellViewModel(
+            AppShellViewModel shellVm = new(
                 switchService, mainPageVm, Substitute.For<ILogger<AppShellViewModel>>());
 
             _viewModel = new OptionsPageViewModel(

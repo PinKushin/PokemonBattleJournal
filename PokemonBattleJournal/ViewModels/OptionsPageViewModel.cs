@@ -415,7 +415,7 @@ namespace PokemonBattleJournal.ViewModels
                         result.Conflicts.Select(c => $"{c.TrainerName} @ {c.StartTime:o}: {c.Description}")));
                 }
 
-                if (result.TrainersCreated + result.MatchesInserted + result.MatchesMerged > 0)
+                if (result.TrainersCreated + result.MatchesInserted > 0)
                     await ReloadAfterRestoreAsync();
             }
             catch (Exception ex)
@@ -600,7 +600,7 @@ namespace PokemonBattleJournal.ViewModels
         internal static string DescribeRestore(RestoreResult result)
         {
             int touched = result.TrainersCreated + result.TrainersMerged + result.MatchesInserted
-                + result.MatchesSkippedIdentical + result.MatchesMerged + result.Conflicts.Count;
+                + result.MatchesSkippedIdentical + result.Conflicts.Count;
 
             if (touched == 0)
                 return result.Errors.Count > 0 ? result.Errors[0] : "Backup contained no matches";
@@ -612,9 +612,6 @@ namespace PokemonBattleJournal.ViewModels
 
             if (result.MatchesSkippedIdentical > 0)
                 parts.Add($"{result.MatchesSkippedIdentical} already present");
-
-            if (result.MatchesMerged > 0)
-                parts.Add($"{result.MatchesMerged} updated");
 
             // "not applied" is spelled out because the conflict resolution UI does not exist yet:
             // until it does, this count is the only sign that anything is still outstanding.

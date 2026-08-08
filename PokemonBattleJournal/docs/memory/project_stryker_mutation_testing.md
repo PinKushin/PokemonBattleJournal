@@ -90,6 +90,57 @@ quiet machine before treating any score as a baseline.
 `break` stays 0 for Core until the survivors are triaged; raising it before anyone has seen the
 number teaches people to pass `--break-at` rather than fix tests.
 
+## Operational rules learned the hard way (2026-08-07)
+
+- **Never run `dotnet test` on these projects while Stryker is running.** Stryker builds the
+  same projects into the same `obj/` and `bin/`, and the file locks fail the build outright —
+  producing NEITHER a pass line nor a fail line. That empty output looks like starvation and is
+  not; CPU was at 80%, which is not starvation. The fix is sequencing builds, not waiting for
+  headroom.
+- **Timeouts count as KILLED, so contention inflates the score.** 6 timeouts on a quiet machine,
+  9 with another agent active, 14 with a competing test run. Always report the timeout count
+  next to the score, and bound the number: if every timeout were really a survivor, subtract
+  them from the killed side. A run at 56.26% with 14 timeouts is 54.96%-56.26%.
+- **Re-measure before targeting.** A report goes stale the moment tests are added. Targeting an
+  old report means writing tests for code that is already reached — check the date before
+  reading the gaps.
+- **Read the mutant statuses around a line before believing "NoCoverage".** A guard whose
+  CONDITION is Killed while its BODY is NoCoverage is not untested code; it is a branch only
+  ever taken one way. Those need a test for the other leg, not a new test file.
+
+## Code inside RunInTransactionAsync is invisible to coverage — this caps DB-heavy files
+
+**The most important limit, found 2026-08-07 by measuring rather than assuming.** Adding six
+integration tests that fully exercise `TrainerOperations.DeleteAsync`, and five that exercise
+`MatchOperations.GetByTrainerIdAsync`, moved those files' numbers by EXACTLY ZERO — 85 and 78
+NoCoverage before and after, identical scores. Meanwhile `ArchetypeOperations` (55.0 -> 60.5)
+and `RestoreService` (23.8 -> 27.7) moved from the same kind of tests in the same run.
+
+The difference is where the code executes. Both stuck files do their work inside
+`await db.RunInTransactionAsync(tran => { ... })`, and SQLite-net dispatches that callback to a
+pooled thread. Stryker's per-test coverage context does not follow it, so the body runs and is
+never attributed. The files that moved do their work on the calling thread before any async
+hop.
+
+**The tests are good; the metric cannot see them.** Proof: deleting
+`.Where(m => m.TrainerId == trainer.Id)` — so DeleteAsync wipes every trainer's data — fails
+those tests. They catch a genuine data-loss bug in code Stryker calls uncovered.
+
+**So do not chase NoCoverage in transaction-heavy services.** More tests will not move it. Judge
+that code by sabotage instead, and treat its NoCoverage as an instrument limit rather than a
+gap. The two artifacts together — transaction lambdas and expression trees — mean a DB-heavy
+file cannot score much above the 30-50% it sits at now no matter how well tested it is.
+
+## SQLite-net expression trees are structurally unkillable
+
+`db.Table<T>().Where(x => x.Id == id)` takes an `Expression<Func<T,bool>>` that is translated to
+SQL and never invoked, so Stryker's coverage markers inside the lambda never fire and the
+mutants are reported NoCoverage and never tested.
+
+**Measured rather than assumed: 52 of 407, about 13%.** An earlier guess that this explained
+most of the NoCoverage was wrong — the other 355 are real gaps. It does put a ceiling near 96%
+on any achievable score, which is worth knowing and not worth chasing.
+
 ## It CANNOT mutate the MAUI app project — do not retry blindly
 
 `dotnet stryker --mutate "Utilities/**/*.cs"` against `PokemonBattleJournal.csproj` fails with:

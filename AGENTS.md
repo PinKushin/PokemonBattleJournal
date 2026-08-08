@@ -172,6 +172,42 @@ In this project:
 - New seed assertion → data-presence test written before the seed logic is added.
 - Bug fix → regression test that reproduces the bug, confirmed failing, before the fix.
 
+## One temporarily accepted warning: IDE0008
+
+The build is otherwise at **zero warnings** and that still holds. The single exception is
+IDE0008, "use explicit type instead of `var`" — **758 occurrences as of 2026-08-07**, and that
+is deliberate rather than the baseline slipping.
+
+Types go at the START of a declaration, never `var`. This is the user's own convention,
+predating any AI work here: *"types should always be apparent as early as possible."*
+Target-typed `new()` on the right is fine and preferred — the objection is to `var`, not to
+brevity. Anonymous types and tuple deconstructions have no nameable type and stay.
+
+- **Do not suppress it.** No `#pragma`, no severity downgrade, no `.editorconfig` edit to
+  quieten it. The warning IS the worklist.
+- **If you touch a file, you clean that file.** Not the project, not the solution — the file you
+  were editing anyway. The count only goes down.
+- **Test projects are not exempt.** Style is consistent across the repo or it is not a style.
+- **The exception ends at zero**, and this section goes with it. Tracked as task #21.
+
+Distribution, so a jump is visible: Tests 390, IntegrationTests 216, app 128, Core 24,
+Scraper 0.
+
+A NEW warning of any OTHER rule is a defect. This exception does not cover it.
+
+**This changes how CI annotations are read.** The standing rule is to hold annotations at zero,
+and that is what caught a CS8602 in a new test file on 2026-08-07 that the local build had not
+surfaced. With ~1000 IDE0008 warnings the raw count is permanently non-zero and a real new
+warning would hide in it, so check the annotations EXCLUDING this one rule and expect zero of
+everything else:
+
+```bash
+gh api repos/{owner}/{repo}/check-runs/{job-id}/annotations   --jq '[.[] | select(.message | test("IDE0008") | not)] | length'
+```
+
+That number is the one that must stay at zero. When the sweep finishes, drop the filter.
+
+
 ## Test conventions
 
 - **Unit tests:** `{Class}Tests`, methods `{Method}_{Scenario}_{Expected}`, NSubstitute mocks, Shouldly assertions
