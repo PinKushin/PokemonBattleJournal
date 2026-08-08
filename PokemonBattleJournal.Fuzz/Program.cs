@@ -230,9 +230,24 @@ internal static class Program
             throw new InvalidOperationException("Append disturbed the existing tags");
         }
 
-        if (merged.Distinct(StringComparer.Ordinal).Count() != merged.Count)
+        // The contract is that Append INTRODUCES no duplicate, not that the result is
+        // globally distinct. ResolveTags passes `existing` through verbatim, so a duplicate
+        // the caller already had survives — correctly. The first version of this check
+        // asserted global distinctness and the fuzzer falsified it in under a minute with
+        // ["d","e","d","g"], which is a defect in the assertion rather than in the merge.
+        List<string> appended = [.. merged.Skip(existing.Count)];
+
+        if (appended.Distinct(StringComparer.Ordinal).Count() != appended.Count)
         {
-            throw new InvalidOperationException("Append produced a duplicate tag");
+            throw new InvalidOperationException("Append introduced a duplicate among the new tags");
+        }
+
+        foreach (string tag in appended)
+        {
+            if (existing.Contains(tag, StringComparer.Ordinal))
+            {
+                throw new InvalidOperationException("Append re-added a tag that was already present");
+            }
         }
 
         foreach (string tag in incoming)
