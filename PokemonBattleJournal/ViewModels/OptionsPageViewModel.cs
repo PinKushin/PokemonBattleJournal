@@ -407,7 +407,8 @@ namespace PokemonBattleJournal.ViewModels
                     Conflicts.Add(new ConflictRowViewModel(conflict));
                 }
 
-                OnPropertyChanged(nameof(HasConflicts));
+                CurrentConflictIndex = 0;
+                RefreshConflictWalk();
 
                 if (result.Conflicts.Count > 0)
                 {
@@ -497,12 +498,106 @@ namespace PokemonBattleJournal.ViewModels
                 ],
             }));
 
-            OnPropertyChanged(nameof(HasConflicts));
+            CurrentConflictIndex = 0;
+            RefreshConflictWalk();
             _logger.LogInformation("Seeded {Count} sample conflicts for review", Conflicts.Count);
         }
 
 
         public bool HasConflicts => Conflicts.Count > 0;
+
+        /// <summary>
+        /// Which conflict the review is sitting on.
+        /// </summary>
+        /// <remarks>
+        /// The review shows ONE match at a time rather than listing them all. Two reasons, and
+        /// the second is not cosmetic. A restore can carry any number of conflicted matches, so a
+        /// list grows without bound inside a page that already scrolls. And a list means the
+        /// choice buttons live in a DataTemplate, where they are virtualised — realised, recycled
+        /// and re-realised as rows move — which is what produced the CI race where
+        /// ApplyConflictsButton sat in the UIA tree advertising no invokable pattern. One match
+        /// at a time means one set of controls, built once and re-bound, which is the structural
+        /// fix rather than a retry around the symptom.
+        ///
+        /// A match's own differing games still stack inside the single card. That is bounded at
+        /// three by BO3; the match count is not.
+        /// </remarks>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CurrentConflict))]
+        [NotifyPropertyChangedFor(nameof(ConflictPositionLabel))]
+        [NotifyPropertyChangedFor(nameof(HasNextConflict))]
+        [NotifyPropertyChangedFor(nameof(HasPreviousConflict))]
+        public partial int CurrentConflictIndex { get; set; }
+
+        /// <summary>The conflict being reviewed, or null when none are outstanding.</summary>
+        public ConflictRowViewModel? CurrentConflict =>
+            CurrentConflictIndex >= 0 && CurrentConflictIndex < Conflicts.Count
+                ? Conflicts[CurrentConflictIndex]
+                : null;
+
+        /// <summary>
+        /// Position in the walk, e.g. "Match 2 of 7".
+        /// </summary>
+        /// <remarks>
+        /// The affordance a rebase gives you: how much is left before you start answering. Empty
+        /// when there is nothing to review, so the label does not read "Match 1 of 0".
+        /// </remarks>
+        public string ConflictPositionLabel => Conflicts.Count == 0
+            ? string.Empty
+            : $"Match {CurrentConflictIndex + 1} of {Conflicts.Count}";
+
+        public bool HasNextConflict => CurrentConflictIndex < Conflicts.Count - 1;
+
+        public bool HasPreviousConflict => CurrentConflictIndex > 0;
+
+        /// <summary>Moves to the next conflict, stopping at the last.</summary>
+        /// <remarks>
+        /// Clamps rather than wraps. Wrapping would drop the user back on a match they have
+        /// already answered, which reads as the button having done nothing.
+        /// </remarks>
+        [RelayCommand]
+        public void NextConflict()
+        {
+            if (HasNextConflict)
+                CurrentConflictIndex++;
+        }
+
+        /// <summary>Moves back one conflict so a staged choice can be revised before Apply.</summary>
+        [RelayCommand]
+        public void PreviousConflict()
+        {
+            if (HasPreviousConflict)
+                CurrentConflictIndex--;
+        }
+
+        /// <summary>
+        /// Re-raises everything derived from the conflict collection after it changes.
+        /// </summary>
+        /// <remarks>
+        /// The collection is observable but the derived members are not computed from it by the
+        /// generator, and the index may now point past the end — applying removes rows, so a walk
+        /// sitting on the last one would leave CurrentConflict null while HasConflicts is still
+        /// true, rendering an empty panel with no way out.
+        /// </remarks>
+        private void RefreshConflictWalk()
+        {
+            int clamped = Conflicts.Count == 0 ? 0 : Math.Min(CurrentConflictIndex, Conflicts.Count - 1);
+
+            if (clamped != CurrentConflictIndex)
+            {
+                // Setting the property raises the four dependents on its own.
+                CurrentConflictIndex = clamped;
+            }
+            else
+            {
+                OnPropertyChanged(nameof(CurrentConflict));
+                OnPropertyChanged(nameof(ConflictPositionLabel));
+                OnPropertyChanged(nameof(HasNextConflict));
+                OnPropertyChanged(nameof(HasPreviousConflict));
+            }
+
+            OnPropertyChanged(nameof(HasConflicts));
+        }
 
         /// <summary>
         /// Writes every decision the user has actually made, and leaves the rest listed.
@@ -537,7 +632,7 @@ namespace PokemonBattleJournal.ViewModels
                     applied++;
                 }
 
-                OnPropertyChanged(nameof(HasConflicts));
+                RefreshConflictWalk();
 
                 List<string> parts = [$"{applied} applied"];
                 if (Conflicts.Count > 0)

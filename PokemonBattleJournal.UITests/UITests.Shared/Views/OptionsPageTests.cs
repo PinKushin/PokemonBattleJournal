@@ -525,7 +525,7 @@
         /// </remarks>
         private void ClearSeededConflicts()
         {
-            if (!IsElementPresent("ConflictList"))
+            if (!IsElementPresent("ConflictPositionLabel"))
             {
                 return;
             }
@@ -542,7 +542,7 @@
                 ClickElement("SeedConflictsButton");
 
                 FindUIElement("ConflictSectionHeading").ShouldNotBeNull();
-                FindUIElement("ConflictList").ShouldNotBeNull();
+                FindUIElement("ConflictPositionLabel").ShouldNotBeNull();
                 FindUIElement("ConflictTitleLabel").ShouldNotBeNull();
             }
             finally
@@ -565,6 +565,7 @@
                 {
                     "ConflictKeepButton", "ConflictAppendButton",
                     "ConflictReplaceButton", "ApplyConflictsButton",
+                    "PreviousConflictButton", "NextConflictButton",
                 })
                 {
                     FindUIElement(id).ShouldNotBeNull($"{id} must exist and be reachable");
@@ -597,6 +598,35 @@
         }
 
         [Test]
+        public void OptionsPage_ConflictWalk_NextShowsTheSecondMatch()
+        {
+            // The two seeded conflicts carry different titles, so the position label AND the
+            // title must both change on Next — the label alone could tick over while the card
+            // kept rendering the first match, which is exactly the stale-binding failure a
+            // re-bound single card risks.
+            try
+            {
+                ClickElement("SeedConflictsButton");
+
+                string firstTitle = FindUIElement("ConflictTitleLabel").Text;
+                FindUIElement("ConflictPositionLabel").Text.ShouldContain("1 of 2");
+
+                ClickElement("NextConflictButton");
+
+                FindUIElement("ConflictPositionLabel").Text.ShouldContain("2 of 2");
+                FindUIElement("ConflictTitleLabel").Text.ShouldNotBe(firstTitle,
+                    "the card must re-bind to the second match, not just relabel the position");
+
+                ClickElement("PreviousConflictButton");
+                FindUIElement("ConflictTitleLabel").Text.ShouldBe(firstTitle);
+            }
+            finally
+            {
+                ClearSeededConflicts();
+            }
+        }
+
+        [Test]
         public void OptionsPage_ApplyChoices_WritesAnsweredRowsAndLeavesTheRest()
         {
             // The seeded pair is the point of this test: one row arrives pre-answered and one
@@ -609,7 +639,7 @@
                 ClickElement("ApplyConflictsButton");
 
                 FindUIElement("RestoreStatusLabel").Text.ShouldContain("1 applied");
-                FindUIElement("ConflictList").ShouldNotBeNull("the unanswered row must still be listed");
+                FindUIElement("ConflictTitleLabel").ShouldNotBeNull("the unanswered match must still be under review");
             }
             finally
             {
