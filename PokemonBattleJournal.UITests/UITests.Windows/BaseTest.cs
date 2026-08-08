@@ -128,6 +128,65 @@ namespace UITests
             }
         }
 
+        /// <summary>
+        /// Presence check with WinAppDriver's semantics, hardened against WinAppDriver's bugs.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Semantics stay WinAppDriver's on purpose.</b> Two attempts to answer this question
+        /// from FlaUI instead both changed what the tests measure, because "present" is not one
+        /// question:
+        /// </para>
+        /// <list type="bullet">
+        ///   <item><b>Tree existence</b> (FindFirstDescendant) — MAUI keeps CollectionView items
+        ///   realised after a search filters them out, so ArchetypeItem_Other still EXISTS and
+        ///   MainPage_ArchetypePicker_Search_FiltersResults flipped to failing.</item>
+        ///   <item><b>Existence AND not IsOffscreen</b> — went the other way and broke five: the
+        ///   BO3 panels report IsOffscreen while WinAppDriver considers them present, so the BO3
+        ///   state helpers stopped believing a panel had appeared.</item>
+        /// </list>
+        /// <para>
+        /// All 106 Windows tests were written against WinAppDriver's answer, so changing the
+        /// backend silently rewrites the contract. Not worth it — and the CI failure being fixed
+        /// here was never a WRONG answer, it was an EXCEPTION:
+        /// </para>
+        /// <code>
+        /// System.InvalidOperationException : The specified element ID is either null or the empty string.
+        ///   at OpenQA.Selenium.WebElementFactory.GetElementId(...)
+        /// </code>
+        /// <para>
+        /// WinAppDriver returned an element carrying no id and Appium's parser threw while
+        /// building the collection. So the fix is to keep asking WinAppDriver and stop letting
+        /// its malformed response take the test down: retry once, then fall back to the UIA tree
+        /// only in the error path, where a slightly different notion of presence beats a crash.
+        /// WinAppDriver is unmaintained (last release 2023); this is containment, not a cure.
+        /// </para>
+        /// </remarks>
+        protected override bool IsElementPresentCore(string id)
+        {
+            try
+            {
+                return App.FindElements(MobileBy.AccessibilityId(id)).Count > 0;
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Malformed element in the driver's response. Retrying usually clears it — the
+                // bad entry is transient rather than a property of the element.
+                PerfLog($"IsElementPresentCore('{id}'): WinAppDriver returned a malformed element ({ex.Message}) — retrying");
+
+                try
+                {
+                    return App.FindElements(MobileBy.AccessibilityId(id)).Count > 0;
+                }
+                catch (InvalidOperationException)
+                {
+                    bool viaUia = IsVisibleViaUIA(id);
+                    PerfLog($"IsElementPresentCore('{id}'): still malformed — answering {viaUia} from the UIA tree");
+                    return viaUia;
+                }
+            }
+        }
+
         protected override string GetElementText(string automationId) =>
             App.FindElement(MobileBy.AccessibilityId(automationId)).Text;
 

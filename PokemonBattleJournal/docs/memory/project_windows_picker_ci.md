@@ -11,6 +11,15 @@ metadata:
 `df081b9` ("use Tab to confirm picker selection instead of Enter on Windows"), which found
 keyboard navigation faster and working on both Windows 11 and Windows Server CI.
 
+### This is the picker SELECTION path — not the Game3Tab lookup
+
+**Added 2026-08-08 after getting it wrong.** `df081b9` made *choosing an item in an open
+picker* fast (~330ms). It did not make the Game3Tab element lookup fast — that was `a475e33`,
+the FlaUI UIA3 direct-tree fallback, plus `bab8053` turning tappable visuals into real
+invokable controls. Two different problems, two different fixes, and crediting this one for
+both is a mistake a session already made from these notes. See
+[[project_game3tab_ci_flake_recurring]].
+
 **What the code actually does now** (`UITests.Windows/BaseTest.cs`):
 
 ```csharp

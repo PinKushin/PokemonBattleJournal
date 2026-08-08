@@ -252,7 +252,7 @@
                 var deadline = DateTime.UtcNow.AddMilliseconds(1500);
                 while (DateTime.UtcNow < deadline)
                 {
-                    if (App.FindElements(MobileBy.AccessibilityId("ArchetypeSearchBar")).Count == 0)
+                    if (!IsElementPresent("ArchetypeSearchBar"))
                     {
                         PerfLog($"DismissArchetypePopup: OK — searchBar gone via Cancel in {pollSw.ElapsedMilliseconds}ms");
                         return;
@@ -272,7 +272,7 @@
                 var deadline = DateTime.UtcNow.AddMilliseconds(1500);
                 while (DateTime.UtcNow < deadline)
                 {
-                    if (App.FindElements(MobileBy.AccessibilityId("ArchetypeSearchBar")).Count == 0)
+                    if (!IsElementPresent("ArchetypeSearchBar"))
                     {
                         PerfLog($"DismissArchetypePopup: OK — searchBar gone via BACK in {backPollSw.ElapsedMilliseconds}ms");
                         return;
@@ -708,15 +708,15 @@
             FindUIElement("PlayerArchetypeIcon2").ShouldNotBeNull();
 
             // Rival archetype still shows single-icon (Other/substitute) — second icon not visible
-            App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
             try
             {
-                App.FindElements(MobileBy.AccessibilityId("RivalArchetypeIcon2")).Count.ShouldBe(0,
+                // IsElementPresent manages ImplicitWait itself, so the zero/restore pair that
+                // used to wrap this is gone from the finally below.
+                IsElementPresent("RivalArchetypeIcon2").ShouldBeFalse(
                     "Rival second icon should be hidden when a single-icon archetype is selected");
             }
             finally
             {
-                App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait;
                 // Reset PlayerArchetype back to Other so match-save tests stay clean
                 ScrollPageToTop();
                 OpenArchetypePopup("PlayerArchetype");
@@ -808,13 +808,13 @@
                 // Clear and type a non-matching query — Other should disappear
                 searchBar.Clear();
                 searchBar.SendKeys("zzznomatch");
-                App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-                try
-                {
-                    bool found = App.FindElements(MobileBy.AccessibilityId("ArchetypeItem_Other")).Count > 0;
-                    found.ShouldBeFalse("ArchetypeItem_Other should be filtered out by 'zzznomatch' query");
-                }
-                finally { App.Manage().Timeouts().ImplicitWait = AmbientImplicitWait; }
+                // IsElementPresent, not App.FindElements. On Windows this resolves through
+                // FlaUI's live UIA tree; the WinAppDriver version threw on CI with "The
+                // specified element ID is either null or the empty string" — a malformed
+                // response from the driver rather than anything wrong with the app. It also
+                // manages ImplicitWait itself, so the zero/restore dance is gone.
+                IsElementPresent("ArchetypeItem_Other")
+                    .ShouldBeFalse("ArchetypeItem_Other should be filtered out by 'zzznomatch' query");
             }
             finally
             {

@@ -1,12 +1,35 @@
 ---
 name: project_game3tab_ci_flake_recurring
-description: Game3Tab slowness/flake RESOLVED 2026-08-05 — optional-element lookups inherited the 5s ambient ImplicitWait, so every absent element cost ~6.8s. Fixed with TimeSpan.Zero + a single ambient constant.
+description: "Game3Tab RESOLVED — TWO separate fixes, and the FlaUI one is the bigger half. (1) FlaUI UIA3 direct-tree lookup (a475e33) replaced the flaky WinAppDriver query. (2) Optional lookups inheriting the 5s ambient ImplicitWait cost ~6.8s each; fixed with TimeSpan.Zero."
 metadata:
   type: project
 ---
 
 **Status: RESOLVED 2026-08-05.** Root-caused by measurement, fixed, and verified green on
 both platforms.
+
+## Read this first: there were TWO fixes, not one
+
+**Corrected 2026-08-08.** This entry used to describe only the ImplicitWait half, which made it
+read as though timeouts were the whole story. They were not, and the omission actively misled a
+later session into crediting the picker's keyboard-nav rewrite for Game3Tab's speed.
+
+| Commit | Change | What it fixed |
+|---|---|---|
+| `a475e33` | FlaUI UIA3 **direct-tree** fallback | the flaky Windows Game3Tab *lookup* itself |
+| `bab8053` | real invokable controls, walk up for a pattern | zero-coordinate clicks |
+| (this entry) | `TimeSpan.Zero` on optional lookups | ~6.8s per ABSENT element |
+
+`df081b9` (keyboard nav: click, first letter, Tab) is the picker **selection** path and has
+nothing to do with the Game3Tab lookup — see [[project_windows_picker_ci]]. Do not conflate
+them.
+
+**The general lesson, which outlived the specific bug:** every Windows UI fix that has stuck
+went *toward* FlaUI/UIA and away from WinAppDriver. The reverse direction produced the
+2026-08-08 CI failure, where `App.FindElements` threw `The specified element ID is either null
+or the empty string` from inside Appium's response parser — a malformed driver response with
+nothing wrong in the app. WinAppDriver is unmaintained (last release 2023). Presence checks now
+route through FlaUI via `IsElementPresentCore`.
 
 ## Result after the fix
 
