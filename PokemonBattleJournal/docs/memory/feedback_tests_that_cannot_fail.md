@@ -40,6 +40,25 @@ manipulation.** There are three distinct ways to get there, and they need differ
 3. **No control** — one subject, so "affected everything" and "affected the target" are
    indistinguishable. The trainer deletion cascade with a single trainer. Fix by adding a
    bystander that must survive.
+4. **Effect size below resolution** — the condition is too small for the difference to show.
+   NoteDiff's ten survivors were this: every case was two or three lines, where a broken LCS
+   table and a correct one produce identical output. The manipulation was real and the assertion
+   was fine; the condition could not resolve it. Fix by ENLARGING the input — eight interleaved
+   lines, a block between a matching head and tail, repeated lines.
+
+**Predict exact values.** `ShouldBe("raging_bolt.png")` is a prediction; `ShouldNotBeNullOrEmpty()`
+reports that *an* effect occurred while staying blind to magnitude and direction. The one test
+in this repo still known not to discriminate — the ImagePath2 backfill case — uses exactly that
+weak form, and it may be concealing a real defect: when URL resolution fails,
+`TryResolveLocalSprite` falls back to the deck NAME, which would give a dual-icon deck the same
+sprite twice. Unverified as of writing; an exact assertion would settle it.
+
+**UI tests are the one place probability is legitimate, and only in measurement ACQUISITION.**
+The app is deterministic and so are the values; only WHEN a measurement can be taken varies.
+So synchronise on the condition, never the clock, and never retry a failure into a pass — see
+[[feedback_no_sleeps_in_tests]] and [[project_ci_retry_on_flake]], which reached the same
+conclusion from the other direction when six "flaky" Android failures turned out to be six real
+bugs.
 
 **The correction worth keeping: the instinct is to strengthen the assertion, and twice out of
 three that was the wrong move.** A stronger measurement cannot rescue a condition where both
