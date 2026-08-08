@@ -30,6 +30,59 @@ Recognise these; they are how a suite rots without anyone doing anything wrong.
    failure and return empty. The log is the only evidence the caller gets — see
    [[feedback_no_silent_guards]] — and no test looked at it.
 
+## Three more shapes, found by mutation-testing Core on 2026-08-07
+
+The first four came from the Scraper. These came from the app's own logic and are the ones that
+recur here.
+
+5. **A branch exercised in ONE DIRECTION only.** This was the single biggest source of
+   NoCoverage in Core, and every instance had a passing test on top of it.
+   - `RestoreBackupAsync`'s guards: the CONDITIONS were killed because every test evaluates
+     them, while the BODIES were untouched because every test passes a valid file. Covered as
+     false, never as true.
+   - `TrainerOperations.DeleteAsync`: `DeleteAsync_AfterSave_RemovesTrainer` deletes a trainer
+     with NO matches, archetypes or tags, so all three `foreach` bodies are skipped and
+     `if (match.Game1Id.HasValue)` is never evaluated. 85 uncovered mutants behind a green test.
+   - `GetByTrainerIdAsync`: only ever asked to INCLUDE, never to exclude.
+
+   **Ask of every branch: is there a test that takes the other leg?**
+
+6. **Single-subject blindness.** With one trainer in the database, "delete everything" and
+   "delete this trainer's data" produce identical results. Removing
+   `.Where(m => m.TrainerId == trainer.Id)` — so `DeleteAsync` wipes EVERY trainer's matches,
+   games and tag links — failed exactly one test and left five green, including the one named
+   "removes the trainer's matches". A data-loss bug no amount of care writing more
+   single-subject tests would find. **Any filter needs a second subject that must survive.**
+
+7. **A return value nobody reads.** `TagOperations.DeleteAsync` had
+   `affected += relationshipsDeleted` survive mutation to a subtraction — the number it returns
+   could have meant anything.
+
+## Your OWN new tests are not exempt
+
+Three tests written during that same session failed their sabotage check:
+
+- A leak test searched serialized JSON bytes for `Ash's Pikachu Deck`; `Utf8JsonWriter` escapes
+  an apostrophe to `'`, so the value was fully present in the payload and absent as a
+  literal substring. It passed on the exact leak it was written to catch.
+- `SuffixStrippingIgnoresCase` used inputs (`EX`, `tera`) that the regex alternation already
+  lists explicitly, so they strip with or without the flag. Deleting `RegexOptions.IgnoreCase`
+  left it green.
+- A backfill test still does not discriminate and is documented as such rather than counted.
+
+**Writing the test is not the verification step. Breaking the code is.**
+
+## Two things that are NOT holes — do not chase them
+
+- **Equivalent mutants from redundant code.** `TagOperations` deletes TagGame rows, then a
+  verification block detects leftovers and deletes them again. Neutering either is masked by the
+  other. A test that distinguished them would be testing the implementation.
+- **Change-detector tests.** Nine string mutants sit in a hardcoded offline deck list. Pinning
+  every name would kill them and make the suite fail on any edit to the list. The two properties
+  that matter — the catch-all exists, the dual-icon default survives — are asserted instead.
+
+Killing a mutant is not the goal. Noticing a real change is.
+
 ## How to act on it
 
 - **A green suite is not evidence that a change is safe.** It is evidence the tests ran.

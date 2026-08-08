@@ -42,3 +42,14 @@ style preferences and they outrank any repo-wide default.
 
 Also recorded in the global `~/.claude/CLAUDE.md` Best Practices — duplication is
 intentional per [[feedback_ai_docs_duplication_ok]].
+
+## The .editorconfig was fighting .gitattributes (fixed 2026-08-07)
+
+`.gitattributes` said `* text=auto eol=lf` — and its own comment claimed "git never prints a
+normalization warning" — while `.editorconfig` line 15 said `end_of_line = crlf`. So every
+editor wrote CRLF, git normalized to LF on commit, and EVERY commit printed
+"CRLF will be replaced by LF" for files nobody had touched. Months of noise from one line.
+
+`.editorconfig` now says `lf`. **If those warnings ever come back, check both files agree
+before doing anything else** — the warning names the file being committed, not the setting that
+caused it, which is why it went unexamined for so long.
