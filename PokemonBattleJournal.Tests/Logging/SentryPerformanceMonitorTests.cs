@@ -1,10 +1,6 @@
 using PokemonBattleJournal.Interfaces;
 using PokemonBattleJournal.Logging;
 
-// Sentry.ISpan is in scope via GlobalUsings and collides with ours. The collision is itself
-// worth knowing about: it is why the adapter exists.
-using CoreSpan = PokemonBattleJournal.Interfaces.ISpan;
-
 namespace PokemonBattleJournal.Tests.Logging
 {
     /// <summary>
@@ -35,7 +31,7 @@ namespace PokemonBattleJournal.Tests.Logging
             // outage. Sentry's own no-op span is what makes this safe; assert we surface it.
             SentryPerformanceMonitor monitor = new();
 
-            using CoreSpan span = monitor.StartSpan("test", "no sentry configured");
+            using ITimedSpan span = monitor.StartSpan("test", "no sentry configured");
 
             span.ShouldNotBeNull();
             Should.NotThrow(() => span.SetMeasurement("count", 3));
@@ -48,7 +44,7 @@ namespace PokemonBattleJournal.Tests.Logging
             // A span finished twice must not throw: instrumented code puts the using inside a
             // try, and an exception path can reach both the using and an explicit finish.
             SentryPerformanceMonitor monitor = new();
-            CoreSpan span = monitor.StartSpan("test", "double dispose");
+            ITimedSpan span = monitor.StartSpan("test", "double dispose");
 
             span.Dispose();
 
@@ -63,7 +59,7 @@ namespace PokemonBattleJournal.Tests.Logging
             // sink filters them, so the protection is that varying data cannot be a string at
             // all. If someone adds SetTag(string, string) or a description overload taking
             // interpolated text, this fails and they have to justify it deliberately.
-            System.Reflection.MethodInfo[] methods = typeof(CoreSpan).GetMethods();
+            System.Reflection.MethodInfo[] methods = typeof(ITimedSpan).GetMethods();
 
             foreach (System.Reflection.MethodInfo method in methods)
             {
@@ -73,7 +69,7 @@ namespace PokemonBattleJournal.Tests.Logging
                     {
                         // Only a constant NAME may be a string; the VALUE must be numeric.
                         parameter.Name.ShouldBe("name",
-                            $"ISpan.{method.Name} takes a string '{parameter.Name}' — span data "
+                            $"ITimedSpan.{method.Name} takes a string '{parameter.Name}' — span data "
                             + "reaches Sentry unfiltered, so only constant measurement names may "
                             + "be strings. Varying detail must be numeric.");
                     }

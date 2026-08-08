@@ -258,7 +258,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 factory,
                 switchService,
                 shellVm,
-                Substitute.For<ITrainerHillImportService>(), Substitute.For<IExportService>(), Substitute.For<IRestoreService>(), Substitute.For<IErrorHandler>());
+                Substitute.For<ITrainerHillImportService>(), Substitute.For<IExportService>(), Substitute.For<IRestoreService>(), Substitute.For<IErrorHandler>(),
+                new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
         }
 
         [Test]
@@ -323,7 +324,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
                 factory,
                 switchService,
                 shellVm,
-                Substitute.For<ITrainerHillImportService>(), Substitute.For<IExportService>(), Substitute.For<IRestoreService>(), Substitute.For<IErrorHandler>());
+                Substitute.For<ITrainerHillImportService>(), Substitute.For<IExportService>(), Substitute.For<IRestoreService>(), Substitute.For<IErrorHandler>(),
+                new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
 
             // AppearingAsync sets the private _trainer field from ActiveTrainer — required
             // before Save/Delete commands will run their body instead of early-returning.

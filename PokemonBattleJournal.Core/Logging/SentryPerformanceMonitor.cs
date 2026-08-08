@@ -1,9 +1,10 @@
 using PokemonBattleJournal.Interfaces;
 using Sentry;
 
-// Both namespaces define ISpan. Alias rather than fully qualifying every use: this file is the
-// ONLY place the two meet, which is the point of the adapter.
-using CoreSpan = PokemonBattleJournal.Interfaces.ISpan;
+// Sentry.ISpan is the SDK's own span. Ours is deliberately NOT called ISpan: Sentry is in
+// GlobalUsings across this repo, so the obvious name collided at every call site and had to be
+// aliased in three separate files before the third collision made the point. ITimedSpan is
+// unique, so nothing downstream needs an alias — this file is the only place the two types meet.
 using SentryApiSpan = Sentry.ISpan;
 
 namespace PokemonBattleJournal.Logging
@@ -28,7 +29,7 @@ namespace PokemonBattleJournal.Logging
     /// </remarks>
     public sealed class SentryPerformanceMonitor : IPerformanceMonitor
     {
-        public CoreSpan StartSpan(string operation, string description)
+        public ITimedSpan StartSpan(string operation, string description)
         {
             SentryApiSpan? parent = SentrySdk.GetSpan();
 
@@ -46,7 +47,7 @@ namespace PokemonBattleJournal.Logging
         /// discipline. Sentry's own span can carry arbitrary string tags; this deliberately
         /// exposes no way to reach them.
         /// </remarks>
-        private sealed class SentrySpan(SentryApiSpan span) : CoreSpan
+        private sealed class SentrySpan(SentryApiSpan span) : ITimedSpan
         {
             private readonly SentryApiSpan _span = span;
             private bool _finished;

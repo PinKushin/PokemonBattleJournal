@@ -67,7 +67,7 @@ namespace PokemonBattleJournal.Services.Import
         /// </remarks>
         public async Task<(int Imported, int SkippedDuplicates, List<string> Errors)> ImportAsync(Stream jsonStream, uint trainerId)
         {
-            using ISpan span = _monitor.StartSpan("import", "trainerhill import");
+            using ITimedSpan span = _monitor.StartSpan("import", "trainerhill import");
 
             try
             {

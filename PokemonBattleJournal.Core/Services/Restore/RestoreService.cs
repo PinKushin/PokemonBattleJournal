@@ -54,7 +54,7 @@ namespace PokemonBattleJournal.Services.Restore
         /// </remarks>
         public async Task<RestoreResult> RestoreBackupAsync(string json)
         {
-            using ISpan span = _monitor.StartSpan("restore", "restore backup");
+            using ITimedSpan span = _monitor.StartSpan("restore", "restore backup");
             span.SetMeasurement("bytes", json?.Length ?? 0);
 
             try

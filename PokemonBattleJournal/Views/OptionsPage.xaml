@@ -71,6 +71,21 @@
                     Text="Toggle loading indicator"
                     WidthRequest="220" />
 
+                <!--  DEBUG only: sends one trace and one error so the Sentry pipeline can be
+                      confirmed end to end. "Configured" and "arriving" are different claims —
+                      TracesSampleRate was set for months while nothing reached the dashboard,
+                      and no test could catch it because tests never initialise the SDK.  -->
+                <Button
+                    x:Name="SentryDiagnosticsButton"
+                    AutomationId="SentryDiagnosticsButton"
+                    SemanticProperties.Description="Send Sentry test event"
+                    SemanticProperties.Hint="Debug only. Sends one trace and one deliberate error to Sentry"
+                    Command="{Binding SendSentryDiagnosticsCommand}"
+                    HorizontalOptions="Center"
+                    IsVisible="{Binding IsDebugBuild, x:DataType=viewmodel:OptionsPageViewModel}"
+                    Text="Send Sentry test event"
+                    WidthRequest="220" />
+
                 <!--  Trainer section  -->
                 <Label AutomationId="TrainerSectionHeading" SemanticProperties.HeadingLevel="Level2" Style="{StaticResource Headline}" Text="Trainer" />
 

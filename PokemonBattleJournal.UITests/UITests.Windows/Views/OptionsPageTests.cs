@@ -16,6 +16,11 @@
         [TestCase("ArchetypeIconPicker")]
         [TestCase("TrainerNameInput")]
         [TestCase("ArchetypeNameInput")]
+        // DEBUG-only buttons are present in exactly the configuration these tests run, so there
+        // is no reason to exempt them. Note SimulateLoadingButton is NOT listed and predates
+        // this — an existing gap rather than a decision, left alone here to keep the change
+        // scoped.
+        [TestCase("SentryDiagnosticsButton")]
         public void OptionsPage_InteractiveElement_IsAnnouncedAndOperable(string automationId)
         {
             UiaContract contract = GetUiaContract(automationId);

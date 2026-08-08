@@ -21,7 +21,7 @@ namespace PokemonBattleJournal.Interfaces
     /// <para>
     /// Callers pass a constant operation and a constant description. There is deliberately no
     /// overload taking interpolated text, because the easiest thing to write should be the safe
-    /// thing. Attach varying detail with <see cref="ISpan.SetMeasurement"/> instead, which is
+    /// thing. Attach varying detail with <see cref="ITimedSpan.SetMeasurement"/> instead, which is
     /// numeric by construction.
     /// </para>
     /// </remarks>
@@ -37,7 +37,7 @@ namespace PokemonBattleJournal.Interfaces
         /// Constant description of the step, e.g. <c>"apply conflict resolution"</c>. Never user
         /// content.
         /// </param>
-        ISpan StartSpan(string operation, string description);
+        ITimedSpan StartSpan(string operation, string description);
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ namespace PokemonBattleJournal.Interfaces
     /// Numbers only. There is no method to attach a string, on purpose — see the privacy note on
     /// <see cref="IPerformanceMonitor"/>. If a span needs to carry "which one", carry the id.
     /// </remarks>
-    public interface ISpan : IDisposable
+    public interface ITimedSpan : IDisposable
     {
         /// <summary>
         /// Attaches a numeric measurement, e.g. how many matches a restore touched.

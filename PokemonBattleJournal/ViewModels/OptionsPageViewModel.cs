@@ -16,8 +16,9 @@ namespace PokemonBattleJournal.ViewModels
         private readonly ITrainerHillImportService _importService;
         private readonly IExportService _exportService;
         private readonly IRestoreService _restoreService;
+        private readonly IPerformanceMonitor _monitor;
 
-        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService, AppShellViewModel shellVm, ITrainerHillImportService importService, IExportService exportService, IRestoreService restoreService, IErrorHandler errorHandler)
+        public OptionsPageViewModel(ILogger<OptionsPageViewModel> logger, ISqliteConnectionFactory connection, ITrainerSwitchService switchService, AppShellViewModel shellVm, ITrainerHillImportService importService, IExportService exportService, IRestoreService restoreService, IErrorHandler errorHandler, IPerformanceMonitor monitor)
         {
             _connection = connection;
             _logger = logger;
@@ -27,6 +28,7 @@ namespace PokemonBattleJournal.ViewModels
             _importService = importService;
             _exportService = exportService;
             _restoreService = restoreService;
+            _monitor = monitor;
         }
 
         [ObservableProperty]
@@ -195,6 +197,69 @@ namespace PokemonBattleJournal.ViewModels
         {
             IsBusyMutating = !IsBusyMutating;
             _logger.LogInformation("Simulated loading toggled {State}", IsBusyMutating ? "on" : "off");
+        }
+
+        /// <summary>
+        /// Sends one trace and one error to Sentry so the pipeline can be confirmed end to end.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Exists because "tracing is configured" and "traces arrive" turned out to be different
+        /// claims. TracesSampleRate was set for months while the dashboard stayed empty: the rate
+        /// samples transactions that already EXIST, and MAUI creates none automatically, so it was
+        /// sampling an empty set. Nothing in the test suite could have caught that — tests never
+        /// initialise the SDK, so they exercise the no-op path by construction.
+        /// </para>
+        /// <para>
+        /// Covers BOTH channels deliberately, because they fail independently: a span (tracing)
+        /// and a logged exception (errors, via the RedactedSentry sink). A run that shows one and
+        /// not the other localises the problem immediately.
+        /// </para>
+        /// <para>
+        /// The work inside the span is a real <c>NoteDiff</c> at the bound rather than a delay.
+        /// <c>Task.Delay</c> is banned in production code here, and a zero-duration span is
+        /// indistinguishable from a timer artefact — 300 lines measures ~757us, which is a
+        /// duration worth looking at.
+        /// </para>
+        /// <para>
+        /// Debug-only in effect: the button that invokes it is bound to <see cref="IsDebugBuild"/>.
+        /// Nothing here carries user content; every string is a constant written in this file.
+        /// </para>
+        /// </remarks>
+        [RelayCommand]
+        public void SendSentryDiagnostics()
+        {
+            string left = string.Join("\n", Enumerable.Range(0, NoteDiff.MaxLines).Select(i => $"{i % 4 + 1} Card {i}"));
+            string right = string.Join("\n", Enumerable.Range(0, NoteDiff.MaxLines)
+                .Select(i => i % 10 == 0 ? $"{i % 4 + 1} Swapped {i}" : $"{i % 4 + 1} Card {i}"));
+
+            using (ITimedSpan span = _monitor.StartSpan("diagnostics", "sentry smoke test"))
+            {
+                IReadOnlyList<NoteDiffLine> diff = NoteDiff.Compute(left, right);
+                span.SetMeasurement("lines.in", NoteDiff.MaxLines);
+                span.SetMeasurement("lines.out", diff.Count);
+            }
+
+            // A second span marked failed, so the dashboard shows both statuses and a broken
+            // SetFailed cannot hide behind an all-green trace.
+            using (ITimedSpan failing = _monitor.StartSpan("diagnostics", "sentry smoke test - failed span"))
+            {
+                failing.SetFailed();
+            }
+
+            try
+            {
+                throw new InvalidOperationException(
+                    "Sentry diagnostics: deliberate test error, not a real failure.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Logged rather than handed to IErrorHandler on purpose: the handler shows a
+                // modal, and this is about confirming delivery, not exercising the dialog.
+                _logger.LogError(ex, "Sentry diagnostics event sent with {Spans} spans", 2);
+            }
+
+            ExportStatusMessage = "Sent a test trace and error to Sentry";
         }
 
         [ObservableProperty]
