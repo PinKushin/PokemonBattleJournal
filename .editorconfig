@@ -12,7 +12,10 @@ indent_style = space
 tab_width = 4
 
 # New line preferences
-end_of_line = crlf
+# LF, matching .gitattributes (* text=auto eol=lf). These disagreed until 2026-08-07:
+# .gitattributes stored LF while this file told every editor to write CRLF, so each
+# commit printed a normalization warning for files nobody had touched.
+end_of_line = lf
 insert_final_newline = false
 
 #### .NET Code Actions ####
@@ -88,9 +91,20 @@ dotnet_style_allow_statement_immediately_after_block_experimental = true
 #### C# Coding Conventions ####
 
 # var preferences
-csharp_style_var_elsewhere = false
-csharp_style_var_for_built_in_types = false
-csharp_style_var_when_type_is_apparent = false
+# Explicit types at the START of a declaration, never var — the user's own convention,
+# predating any AI work here: "types should always be apparent as early as possible".
+# Target-typed `new()` on the right is fine and preferred; the objection is to var, not
+# to brevity.
+#
+# WARNING, and TEMPORARILY ACCEPTABLE. This fires ~330 times today, almost entirely in
+# test projects, and the repo otherwise builds at zero warnings. Do NOT suppress it and
+# do NOT treat the count as the zero-warning baseline slipping. The rule instead is:
+# IF YOU TOUCH A FILE, YOU CLEAN THAT FILE. The number only goes down, and the exception
+# ends when it reaches zero. Tracked as task #21. Applies to test projects too — style is
+# consistent across the whole repo or it is not a style.
+csharp_style_var_elsewhere = false:warning
+csharp_style_var_for_built_in_types = false:warning
+csharp_style_var_when_type_is_apparent = false:warning
 
 # Expression-bodied members
 csharp_style_expression_bodied_accessors = false

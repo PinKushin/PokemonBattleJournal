@@ -16,6 +16,12 @@
          deliberate `new Random()` probe went unflagged by the analyzers while
          `SHA1.Create()` was caught. -->
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
+
+    <!-- IDE style rules (IDExxxx) are editor-only unless this is set, so an .editorconfig
+         severity has no effect on the build without it. Turned on for the explicit-type
+         rule; see the var block in .editorconfig for why that one is a temporarily
+         acceptable warning. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisModeSecurity>All</AnalysisModeSecurity>
 
     <!-- TreatWarningsAsErrors is deliberately NOT set, and this is a decision

@@ -38,11 +38,21 @@ var (played, opponents, cells) = _service.CalculateMatchupMatrix(matches);
 
 Those stay. Everything else gets a type.
 
-## Status
+## Status: enforced as a warning, cleaned opportunistically
 
-**Not clean yet.** ~330 `var` occurrences across the repo as of 2026-08-07, nearly all in test
-projects and predating this instruction. New and edited code follows the rule immediately; the
-sweep is its own task rather than something to bury inside an unrelated change.
+`.editorconfig` sets all three `csharp_style_var_*` rules to `false:warning`, and
+`Directory.Build.props` sets `EnforceCodeStyleInBuild` — without that, IDE rules are
+editor-only and an `.editorconfig` severity does nothing to the build.
+
+**758 warnings as of 2026-08-07** (Tests 390, IntegrationTests 216, app 128, Core 24,
+Scraper 0). The user accepted this explicitly as a temporary exception to Zero Warnings.
+
+**The rule is: if you touch a file, you clean that file.** Not the project, not the solution.
+Do not suppress it — the warning is the worklist, and the count only goes down. Test projects
+are not exempt: *"in test projects its more forgivable, but still we should keep style
+consistent across the project period."*
+
+A new warning of any OTHER rule is still a defect.
 
 ## Why it is worth honouring rather than arguing
 
