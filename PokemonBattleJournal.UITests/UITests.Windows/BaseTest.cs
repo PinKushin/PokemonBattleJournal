@@ -147,6 +147,36 @@ namespace UITests
             try
             {
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(timeoutMs);
+
+                // Probe for existence BEFORE entering ClickElement, which is built for elements
+                // that must be there and escalates accordingly.
+                //
+                // Without this, an absent optional element costs 30 SECONDS rather than the
+                // timeoutMs budget above. The route: ClickElement finds no UIA pattern, falls
+                // through to the off-window guard, and IsOutsideWindow opens with
+                // FindUIElement(automationId) — which ignores the caller's ImplicitWait, sets
+                // its own 500ms, and loops against its OWN 30-second deadline with re-anchors.
+                // The final `FindUIElement(automationId).Click()` does it a second time.
+                //
+                // Measured on the Windows suite 2026-08-08: ArchetypePopupCancel, absent because
+                // the popup was already closed, stalled 4 times at ~30s each — 121s of a 227s
+                // run, 53% of the whole suite, in one element that was never going to appear.
+                //
+                // FindUIElement's finally also resets ImplicitWait to AmbientImplicitWait, so
+                // once that path is entered the pin above is gone for every later iteration too.
+                // Probing first keeps ClickElement off the table entirely when the element is
+                // absent, which sidesteps both problems without changing behaviour for the
+                // mandatory callers that need the escalation.
+                try
+                {
+                    _ = App.FindElement(MobileBy.AccessibilityId(id));
+                }
+                catch (OpenQA.Selenium.NoSuchElementException)
+                {
+                    PerfLog($"TryClickIfPresent('{id}'): absent after {total.ElapsedMilliseconds}ms (budget {timeoutMs}ms)");
+                    return false;
+                }
+
                 while (DateTime.UtcNow < deadline)
                 {
                     try
