@@ -33,7 +33,7 @@ public class RestoreServiceIntegrationTests
 
         _factory = new TestSqliteConnectionFactory(meta);
         _export = new ExportService(_factory, NullLogger<ExportService>.Instance);
-        _sut = new RestoreService(_factory, NullLogger<RestoreService>.Instance);
+        _sut = new RestoreService(_factory, NullLogger<RestoreService>.Instance, new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
 
         SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
 

@@ -90,7 +90,7 @@ public class OptionsPageRestoreIntegrationTests
             shellVm,
             Substitute.For<ITrainerHillImportService>(),
             new ExportService(factory, NullLogger<ExportService>.Instance),
-            new RestoreService(factory, NullLogger<RestoreService>.Instance),
+            new RestoreService(factory, NullLogger<RestoreService>.Instance, new PokemonBattleJournal.Logging.SentryPerformanceMonitor()),
             Substitute.For<IErrorHandler>());
     }
 

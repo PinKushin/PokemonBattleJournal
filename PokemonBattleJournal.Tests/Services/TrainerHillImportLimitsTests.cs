@@ -40,7 +40,7 @@ namespace PokemonBattleJournal.Tests.Services
             meta.GetTopDecksAsync(Arg.Any<int>()).Returns(Task.FromResult(new List<MetaDeck>()));
 
             _sut = new TrainerHillImportService(
-                _factory, Substitute.For<ILogger<TrainerHillImportService>>(), meta);
+                _factory, Substitute.For<ILogger<TrainerHillImportService>>(), meta, new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
         }
 
         private static MemoryStream Json(string json) => new(Encoding.UTF8.GetBytes(json));

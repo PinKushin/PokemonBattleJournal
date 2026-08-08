@@ -300,7 +300,8 @@ public class ExportServiceIntegrationTests
             new("Other", ""),
         }));
         TrainerHillImportService importer = new(
-            _factory, NullLogger<TrainerHillImportService>.Instance, meta);
+            _factory, NullLogger<TrainerHillImportService>.Instance, meta,
+                new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
 
         (int imported, _, List<string> errors) = await importer.ImportAsync(
             new MemoryStream(Encoding.UTF8.GetBytes(json)), restored.Id);
