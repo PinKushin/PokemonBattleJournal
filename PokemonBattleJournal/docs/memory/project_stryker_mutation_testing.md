@@ -108,6 +108,29 @@ number teaches people to pass `--break-at` rather than fix tests.
   CONDITION is Killed while its BODY is NoCoverage is not untested code; it is a branch only
   ever taken one way. Those need a test for the other leg, not a new test file.
 
+## Code inside RunInTransactionAsync is invisible to coverage — this caps DB-heavy files
+
+**The most important limit, found 2026-08-07 by measuring rather than assuming.** Adding six
+integration tests that fully exercise `TrainerOperations.DeleteAsync`, and five that exercise
+`MatchOperations.GetByTrainerIdAsync`, moved those files' numbers by EXACTLY ZERO — 85 and 78
+NoCoverage before and after, identical scores. Meanwhile `ArchetypeOperations` (55.0 -> 60.5)
+and `RestoreService` (23.8 -> 27.7) moved from the same kind of tests in the same run.
+
+The difference is where the code executes. Both stuck files do their work inside
+`await db.RunInTransactionAsync(tran => { ... })`, and SQLite-net dispatches that callback to a
+pooled thread. Stryker's per-test coverage context does not follow it, so the body runs and is
+never attributed. The files that moved do their work on the calling thread before any async
+hop.
+
+**The tests are good; the metric cannot see them.** Proof: deleting
+`.Where(m => m.TrainerId == trainer.Id)` — so DeleteAsync wipes every trainer's data — fails
+those tests. They catch a genuine data-loss bug in code Stryker calls uncovered.
+
+**So do not chase NoCoverage in transaction-heavy services.** More tests will not move it. Judge
+that code by sabotage instead, and treat its NoCoverage as an instrument limit rather than a
+gap. The two artifacts together — transaction lambdas and expression trees — mean a DB-heavy
+file cannot score much above the 30-50% it sits at now no matter how well tested it is.
+
 ## SQLite-net expression trees are structurally unkillable
 
 `db.Table<T>().Where(x => x.Id == id)` takes an `Expression<Func<T,bool>>` that is translated to
