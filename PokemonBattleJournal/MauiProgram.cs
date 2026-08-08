@@ -52,6 +52,26 @@ namespace PokemonBattleJournal
                 {
                     options.Dsn = "https://03ff3f5afbfdbbd038a8903bc0e6d5e4@o4508805406851072.ingest.us.sentry.io/4508805409538048";
 
+                    // --- Privacy guards, set EXPLICITLY even though these are the SDK defaults.
+                    //
+                    // Both are what a generic "instrument Sentry properly" walkthrough tells you
+                    // to turn on, and both would defeat everything SentryRedactingSink does. A
+                    // screenshot of MainPage shows trainer names, deck names and match notes; a
+                    // view hierarchy carries the text of every label. For a SaaS app that advice
+                    // is sound because the vendor already holds the data — here the device is the
+                    // only copy, so an attachment is the FIRST copy to leave.
+                    //
+                    // Written down rather than left to the default so that turning one on is a
+                    // deliberate act against a stated reason, not a one-line default flip.
+                    options.AttachScreenshot = false;
+                    options.SendDefaultPii = false;
+
+                    // Release health: crash-free session rate, grouped per release. Free, and it
+                    // carries no user content — a session is a start time, a duration and an
+                    // outcome. Needs an explicit Release or every build looks like the same one.
+                    options.AutoSessionTracking = true;
+                    options.Release = $"PokemonBattleJournal@{AppInfo.Current.VersionString}+{AppInfo.Current.BuildString}";
+
 #if DEBUG
                     options.Debug = true;
                     options.TracesSampleRate = 1.0F;
@@ -62,7 +82,14 @@ namespace PokemonBattleJournal
                     options.Environment = "development";
 #else
                     options.Debug = false;
-                    options.TracesSampleRate = 0.1;
+                    // 1.0, not the usual 0.1. Sampling exists to keep a busy service inside its
+                    // quota, and this is a single-user journal: the instrumented paths are
+                    // restore and import, which a person runs a handful of times ever. Ten
+                    // percent of "a handful" rounds to nothing, and the first restore that goes
+                    // wrong is exactly the one worth having a trace for. Lower it if the free
+                    // tier is ever actually threatened — an easy change, and there is no
+                    // evidence for it today.
+                    options.TracesSampleRate = 1.0;
                     options.MaxBreadcrumbs = 300;
                     options.Environment = "production";
 #endif
@@ -94,6 +121,10 @@ namespace PokemonBattleJournal
             // and any future non-UI host can substitute it. Previously new()'d at 54 call
             // sites, which made every catch path untestable — see project_error_handler_di.
             builder.Services.AddSingleton<IErrorHandler, ModalErrorHandler>();
+            // Tracing. Registered as an interface for the same reason IErrorHandler is: a direct
+            // SentrySdk call inside a service makes that service untestable without initialising
+            // the SDK. See IPerformanceMonitor for why its surface is numbers-only.
+            builder.Services.AddSingleton<IPerformanceMonitor, SentryPerformanceMonitor>();
             builder.Services.AddSingleton<ISqliteConnectionFactory>(sp =>
             {
                 ILoggerFactory loggerFactory = sp.GetRequiredService<ILoggerFactory>();

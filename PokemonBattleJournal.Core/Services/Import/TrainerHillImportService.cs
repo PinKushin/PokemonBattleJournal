@@ -36,17 +36,63 @@ namespace PokemonBattleJournal.Services.Import
         private readonly ILogger<TrainerHillImportService> _logger;
         private readonly ILimitlessMetaService _limitlessService;
 
+        private readonly IPerformanceMonitor _monitor;
+
         public TrainerHillImportService(
             ISqliteConnectionFactory factory,
             ILogger<TrainerHillImportService> logger,
-            ILimitlessMetaService limitlessService)
+            ILimitlessMetaService limitlessService,
+            IPerformanceMonitor monitor)
         {
             _factory = factory;
             _logger = logger;
             _limitlessService = limitlessService;
+            _monitor = monitor;
         }
 
+        /// <summary>
+        /// Times the import and records its shape as numbers.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Wraps rather than threading spans through the body, which returns early in several
+        /// places (empty stream, over the size limit, too many entries).
+        /// </para>
+        /// <para>
+        /// Counts only. Span data is NOT covered by SentryRedactingSink, and this path parses a
+        /// file full of archetype names — exactly the content that must not leave. "how many
+        /// failed" is the useful signal; "which ones" belongs in the local log, where
+        /// ImportFromTrainerHillAsync already writes it verbatim on purpose.
+        /// </para>
+        /// </remarks>
         public async Task<(int Imported, int SkippedDuplicates, List<string> Errors)> ImportAsync(Stream jsonStream, uint trainerId)
+        {
+            using ITimedSpan span = _monitor.StartSpan("import", "trainerhill import");
+
+            try
+            {
+                (int Imported, int SkippedDuplicates, List<string> Errors) result =
+                    await ImportCoreAsync(jsonStream, trainerId);
+
+                span.SetMeasurement("imported", result.Imported);
+                span.SetMeasurement("skipped.duplicates", result.SkippedDuplicates);
+                span.SetMeasurement("errors", result.Errors.Count);
+
+                if (result.Errors.Count > 0)
+                {
+                    span.SetFailed();
+                }
+
+                return result;
+            }
+            catch (Exception)
+            {
+                span.SetFailed();
+                throw;
+            }
+        }
+
+        private async Task<(int Imported, int SkippedDuplicates, List<string> Errors)> ImportCoreAsync(Stream jsonStream, uint trainerId)
         {
             if (trainerId == 0) throw new ArgumentException("TrainerId required", nameof(trainerId));
 

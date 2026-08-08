@@ -90,8 +90,9 @@ public class OptionsPageRestoreIntegrationTests
             shellVm,
             Substitute.For<ITrainerHillImportService>(),
             new ExportService(factory, NullLogger<ExportService>.Instance),
-            new RestoreService(factory, NullLogger<RestoreService>.Instance),
-            Substitute.For<IErrorHandler>());
+            new RestoreService(factory, NullLogger<RestoreService>.Instance, new PokemonBattleJournal.Logging.SentryPerformanceMonitor()),
+            Substitute.For<IErrorHandler>(),
+            new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
     }
 
     private async Task SeedSourceMatchAsync(DateTime startTime, params Game[] games)

@@ -29,7 +29,7 @@ namespace PokemonBattleJournal.Tests.Services
         {
             _factory = Substitute.For<ISqliteConnectionFactory>();
             _logger = new RecordingLogger<RestoreService>();
-            _sut = new RestoreService(_factory, _logger);
+            _sut = new RestoreService(_factory, _logger, new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
         }
 
         private void ShouldNotHaveTouchedTheDatabase() =>

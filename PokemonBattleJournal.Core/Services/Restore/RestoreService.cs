@@ -26,15 +26,65 @@ namespace PokemonBattleJournal.Services.Restore
 
         private readonly ISqliteConnectionFactory _factory;
         private readonly ILogger<RestoreService> _logger;
+        private readonly IPerformanceMonitor _monitor;
 
-        public RestoreService(ISqliteConnectionFactory factory, ILogger<RestoreService> logger)
+        public RestoreService(ISqliteConnectionFactory factory, ILogger<RestoreService> logger, IPerformanceMonitor monitor)
         {
             _factory = factory;
             _logger = logger;
+            _monitor = monitor;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Times the restore and records its shape as numbers.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// A thin wrapper rather than spans threaded through the body: the body has several early
+        /// returns, and a <c>using</c> here covers all of them without the logic having to know
+        /// it is being measured.
+        /// </para>
+        /// <para>
+        /// <b>Every value here is a count or a length.</b> Span data is NOT filtered by
+        /// SentryRedactingSink — that governs Serilog property values only — so a description
+        /// carrying a trainer name would leave the device with nothing to stop it. Counts answer
+        /// the question that matters anyway ("was it slow because it was big, or slow because it
+        /// was broken") without carrying anything about who or what.
+        /// </para>
+        /// </remarks>
         public async Task<RestoreResult> RestoreBackupAsync(string json)
+        {
+            using ITimedSpan span = _monitor.StartSpan("restore", "restore backup");
+            span.SetMeasurement("bytes", json?.Length ?? 0);
+
+            try
+            {
+                RestoreResult result = await RestoreBackupCoreAsync(json);
+
+                span.SetMeasurement("trainers.created", result.TrainersCreated);
+                span.SetMeasurement("trainers.merged", result.TrainersMerged);
+                span.SetMeasurement("matches.inserted", result.MatchesInserted);
+                span.SetMeasurement("matches.skipped", result.MatchesSkippedIdentical);
+                span.SetMeasurement("conflicts", result.Conflicts.Count);
+                span.SetMeasurement("errors", result.Errors.Count);
+
+                // A restore that returns errors has not thrown, but it has not worked either.
+                // Marking it failed is what makes "restores that quietly did nothing" findable.
+                if (result.Errors.Count > 0)
+                {
+                    span.SetFailed();
+                }
+
+                return result;
+            }
+            catch (Exception)
+            {
+                span.SetFailed();
+                throw;
+            }
+        }
+
+        private async Task<RestoreResult> RestoreBackupCoreAsync(string json)
         {
             List<string> errors = [];
 

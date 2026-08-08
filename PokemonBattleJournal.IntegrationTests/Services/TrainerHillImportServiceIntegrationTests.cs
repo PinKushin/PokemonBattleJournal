@@ -20,7 +20,8 @@ namespace PokemonBattleJournal.IntegrationTests.Services
             _sut = new TrainerHillImportService(
                 _factory,
                 Substitute.For<ILogger<TrainerHillImportService>>(),
-                emptyLimitless);
+                emptyLimitless,
+                new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
             _ = await _factory.GetDatabaseAsync();
 
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
@@ -259,7 +260,8 @@ namespace PokemonBattleJournal.IntegrationTests.Services
             TrainerHillImportService sut = new(
                 _factory,
                 Substitute.For<ILogger<TrainerHillImportService>>(),
-                metaService);
+                metaService,
+                new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
 
             const string json = """
                 [{"playing":"n-zoroark","against":"other","time":"2026-07-18 19:08:53","result":"Win",
@@ -282,7 +284,8 @@ namespace PokemonBattleJournal.IntegrationTests.Services
             TrainerHillImportService sut = new(
                 _factory,
                 Substitute.For<ILogger<TrainerHillImportService>>(),
-                metaService);
+                metaService,
+                new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
 
             const string json = """
                 [{"playing":"ogerpon-box","against":"other","time":"2026-07-18 19:08:53","result":"Win",
@@ -308,7 +311,8 @@ namespace PokemonBattleJournal.IntegrationTests.Services
             TrainerHillImportService sut = new(
                 _factory,
                 Substitute.For<ILogger<TrainerHillImportService>>(),
-                metaService);
+                metaService,
+                new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
 
             const string json = """
                 [{"playing":"charizard-pidgeot","against":"other","time":"2026-07-18 19:08:53","result":"Win",

@@ -219,7 +219,8 @@ namespace PokemonBattleJournal.Tests.Services
                 new List<MetaDeck> { new("Dragapult ex / Dusknoir", ""), new("Other", "") }));
 
             TrainerHillImportService importer = new(
-                importFactory, Substitute.For<ILogger<TrainerHillImportService>>(), meta);
+                importFactory, Substitute.For<ILogger<TrainerHillImportService>>(), meta,
+                new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
 
             (int _, _, List<string> errors) = await importer.ImportAsync(
                 new MemoryStream(Encoding.UTF8.GetBytes(json)), trainerId: 7);

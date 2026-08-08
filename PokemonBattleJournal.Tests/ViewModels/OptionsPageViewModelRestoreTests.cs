@@ -58,7 +58,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel = new OptionsPageViewModel(
                 _logger, factory, switchService, shellVm,
                 Substitute.For<ITrainerHillImportService>(), Substitute.For<IExportService>(),
-                _restoreService, _errorHandler);
+                _restoreService, _errorHandler,
+                new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
         }
 
         [Test]

@@ -43,7 +43,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _viewModel = new OptionsPageViewModel(
                 _logger, factory, switchService, shellVm,
                 Substitute.For<ITrainerHillImportService>(), Substitute.For<IExportService>(),
-                _restoreService, Substitute.For<IErrorHandler>());
+                _restoreService, Substitute.For<IErrorHandler>(),
+                new PokemonBattleJournal.Logging.SentryPerformanceMonitor());
         }
 
         private static RestoreConflict Contradicting(uint id) => new()
