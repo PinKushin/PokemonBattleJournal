@@ -22,6 +22,9 @@
 	<ItemGroup>
 		<InternalsVisibleTo Include="PokemonBattleJournal.Tests" />
 		<InternalsVisibleTo Include="PokemonBattleJournal.IntegrationTests" />
+		<!-- The fuzz harness asserts the same internals the tests do; its privacy mode
+		     calls SentryRedactingSink.Redact directly. -->
+		<InternalsVisibleTo Include="PokemonBattleJournal.Fuzz" />
 	</ItemGroup>
 
 	<ItemGroup>

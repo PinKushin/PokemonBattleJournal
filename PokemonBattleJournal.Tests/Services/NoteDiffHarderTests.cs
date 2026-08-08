@@ -85,6 +85,41 @@ namespace PokemonBattleJournal.Tests.Services
             result.Count(l => l.Kind == NoteDiffKind.Added).ShouldBe(1);
         }
 
+        /// <summary>
+        /// Builds a note of exactly <paramref name="count"/> lines, the first of which is shared
+        /// with the short side so a real diff has something to anchor on.
+        /// </summary>
+        private static string Lines(int count) =>
+            string.Join("\n", Enumerable.Range(0, count).Select(i => $"line {i}"));
+
+        [Test]
+        public void Compute_LeftAtExactlyTheBound_StillDiffs()
+        {
+            // The bound is `> MaxLines`, and every other test here sits at MaxLines + 1 — an input
+            // for which `>` and `>=` predict the SAME observation, so both survived. Exactly
+            // MaxLines is the only condition that tells them apart: correct diffs, `>=` falls back.
+            //
+            // Deliberately asymmetric. A 1000x1000 table is a million cells and would add to the
+            // timeouts these tests already contribute; 1000x1 is a thousand and measures the same
+            // boundary.
+            IReadOnlyList<NoteDiffLine> result = NoteDiff.Compute(Lines(NoteDiff.MaxLines), "line 0");
+
+            result.Count(l => l.Kind == NoteDiffKind.Unchanged).ShouldBe(1,
+                "at exactly MaxLines the diff still runs, so the shared line is recognised; "
+                + "the fallback would report it removed AND added");
+        }
+
+        [Test]
+        public void Compute_RightAtExactlyTheBound_StillDiffs()
+        {
+            // The same boundary on the other operand. `left.Length` and `right.Length` are two
+            // separate comparisons and each needs its own case — a test that only ever puts the
+            // long side on the left leaves the right-hand one unmeasured.
+            IReadOnlyList<NoteDiffLine> result = NoteDiff.Compute("line 0", Lines(NoteDiff.MaxLines));
+
+            result.Count(l => l.Kind == NoteDiffKind.Unchanged).ShouldBe(1);
+        }
+
         [Test]
         public void Compute_ANoteOfNothingButBlankLines_IsTreatedAsEmpty()
         {

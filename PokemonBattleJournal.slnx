@@ -1,6 +1,9 @@
 <Solution>
   <Project Path="PokemonBattleJournal.Core/PokemonBattleJournal.Core.csproj" />
   <Project Path="PokemonBattleJournal.Scraper/PokemonBattleJournal.Scraper.csproj" />
+  <Project Path="PokemonBattleJournal.Fuzz/PokemonBattleJournal.Fuzz.csproj">
+    <Build Solution="Release|*" Project="false" />
+  </Project>
   <Project Path="PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj">
     <Build Solution="Release|*" Project="false" />
   </Project>
