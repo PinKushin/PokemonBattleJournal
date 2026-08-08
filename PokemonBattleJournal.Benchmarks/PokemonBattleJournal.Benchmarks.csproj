@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Measurement, the third instrument. Stryker grades the assertions, the fuzzer explores the
+       inputs, this one measures the cost. Same reason all three target Core rather than the MAUI
+       head: the head cannot be instrumented by any of them.
+
+       IsTestProject=false is the load-bearing line, and it is here because of a specific past
+       failure rather than tidiness. A benchmark project that IS discovered by the test runner
+       shows up in Test Explorer, and BenchmarkDotNet refuses to run under a Debug build, so every
+       "Run All" produced a failing entry — which, with success/error sounds wired to test runs,
+       meant the error sound fired on every single run. Noise where the sound should be signal.
+
+       Note that [Category] does NOT solve that. Category filtering is a CLI filter concept;
+       Test Explorer's Run All ignores it and runs everything it discovered. Not being discovered
+       is the only thing that works. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>PokemonBattleJournal.Benchmarks</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>false</IsTestProject>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- BenchmarkDotNet validates this and refuses to run otherwise. Set here so that `dotnet run`
+         without -c Release fails loudly at build rather than at the start of a long measurement. -->
+    <Optimize Condition="'$(Configuration)' == 'Release'">true</Optimize>
+
+    <!-- BDN generates a per-benchmark project at runtime and reads this to match the host. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PokemonBattleJournal.Core\PokemonBattleJournal.Core.csproj" />
+  </ItemGroup>
+
+</Project>
