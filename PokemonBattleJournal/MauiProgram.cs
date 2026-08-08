@@ -82,7 +82,14 @@ namespace PokemonBattleJournal
                     options.Environment = "development";
 #else
                     options.Debug = false;
-                    options.TracesSampleRate = 0.1;
+                    // 1.0, not the usual 0.1. Sampling exists to keep a busy service inside its
+                    // quota, and this is a single-user journal: the instrumented paths are
+                    // restore and import, which a person runs a handful of times ever. Ten
+                    // percent of "a handful" rounds to nothing, and the first restore that goes
+                    // wrong is exactly the one worth having a trace for. Lower it if the free
+                    // tier is ever actually threatened — an easy change, and there is no
+                    // evidence for it today.
+                    options.TracesSampleRate = 1.0;
                     options.MaxBreadcrumbs = 300;
                     options.Environment = "production";
 #endif
