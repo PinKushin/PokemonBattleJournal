@@ -1,12 +1,12 @@
 ---
 name: project_android_session_poisoning
-description: "MEASURED 2026-08-06: an Android Appium session created while the machine is loaded fails every test for its whole life, even after the load stops. AndroidDriver creation time is the leading indicator — ~20-30s healthy, ~69s doomed."
+description: "MEASURED: an Appium session created while the machine is loaded is poisoned for its whole life, even after the load stops. Goes BOTH ways — Windows and Android. Driver/server creation time is the leading indicator: ~15-30s healthy, ~69s doomed."
 metadata:
   type: project
 ---
 
-**Never start the Android UI suite while the Windows UI suite (or anything heavy) is running
-on this machine.** Not a style preference — measured, with a control.
+**Never run a UI suite while anything heavy is running on this machine — in EITHER
+direction.** Not a style preference; measured, with a control, in both directions.
 
 ## The measurement
 
@@ -47,13 +47,14 @@ else was running *at the moment of failure* will find nothing and conclude the a
 Emulator boot time is a much weaker signal (39.6s healthy vs 48.2s doomed). Driver creation is
 the one that separates cleanly, at more than double.
 
-**Worth building:** a threshold check in `AppiumSetup` that fails loudly when driver creation
-runs long, instead of proceeding into 79 tests that are all going to fail. A 10-minute run
+**Worth building:** a threshold check in `AppiumSetup` — on BOTH platforms — that fails loudly
+when server startup or driver creation runs long, instead of proceeding into a run that is
+already lost (79 red Android tests, or a six-minute Windows hang producing nothing). A 10-minute run
 producing 79 red tests with product-looking error messages is strictly worse than one
 immediate "the machine was too busy to create a usable session". Not built yet — see
 [[feedback_no_silent_guards]] for why the current behaviour is the bad kind of quiet.
 
-## Direction: Windows breaks Android, not the reverse
+## Direction: it goes BOTH ways (corrected 2026-08-08)
 
 Recorded because the intuition points the other way and was written down that way first. In
 the concurrent run **the Windows suite passed 80/80 and was not measurably slowed at all** —
@@ -62,6 +63,37 @@ the concurrent run **the Windows suite passed 80/80 and was not measurably slowe
 The recollection in [[project_self_hosted_runners]] was that Android broke Windows, since
 Windows needs its window frontmost and the emulator takes the foreground. Measurement says the
 opposite: the focus-sensitive suite was fine, and the emulator-based one collapsed.
+
+### But do NOT read that as "Windows is immune" — it is not
+
+**Corrected 2026-08-08, at the cost of a dead run.** The heading above used to read "Windows
+breaks Android, not the reverse", and that phrasing invites exactly the wrong inference: that
+loading the machine during a *Windows* run is safe. It is not. The 2026-08-06 measurement
+tested one direction; it is evidence about that direction, not a guarantee about the other.
+
+What happened: an emulator boot landed on Windows `AppiumSetup`, and an Android
+`-t:Install` deploy ran through session creation. Result — `AppiumServer started (69652ms)`,
+WinAppDriver then absent from the process list entirely, and the testhost hung for six minutes
+with zero tests run and an empty output file.
+
+Restarting on an idle machine, same commit, same code:
+
+| Condition | `AppiumServer started` | Outcome |
+|---|---|---|
+| Emulator boot + Android deploy concurrent | **69,652ms** | hung, 0 tests, WinAppDriver dead |
+| Idle machine *(control)* | **15,344ms** | ran normally |
+
+**4.5x**, and note the doomed number is ~69s on BOTH platforms — the same figure that marks a
+poisoned AndroidDriver. That is the number to watch whichever suite is running.
+
+The 2026-08-06 run had Windows survive concurrency; this one did not. The difference is which
+phase the load lands on. Windows tolerated load *during its test body*; it did not tolerate
+load *during Appium server startup and session creation*. **Setup is the fragile window, on
+both platforms.**
+
+Practical rule, replacing the directional one: start a UI suite only on an idle machine, and
+do not boot an emulator, deploy, build, or run Stryker until it has finished. Deploying and
+booting AHEAD of the run is fine — it is overlap with setup that kills it.
 
 ## Bonus negative result: load is not a CI simulator
 
