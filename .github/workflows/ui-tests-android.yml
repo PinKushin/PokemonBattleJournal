@@ -142,7 +142,7 @@ jobs:
         run: dotnet restore PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj
 
       - name: Download APK artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: android-test-apk
           path: PokemonBattleJournal/bin/Debug/net10.0-android/

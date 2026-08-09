@@ -37,9 +37,9 @@ jobs:
     name: Fuzz the restore and logging paths
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             8.0.x
@@ -81,7 +81,7 @@ jobs:
       # One job, so actions/cache is safe here. It is NOT safe in a matrix —
       # see docs/memory/feedback_no_actions_cache_in_matrix.md.
       - name: Restore the corpus
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: corpus
           key: fuzz-corpus-${{ github.run_id }}
@@ -162,7 +162,7 @@ jobs:
       # as success, since failure is when there is something to collect.
       - name: Upload findings
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-findings
           path: |
