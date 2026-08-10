@@ -4,8 +4,8 @@
     "test-projects": ["PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj"],
     "reporters": ["html", "progress"],
     "thresholds": {
-      "high": 85,
-      "low": 70,
+      "high": 100,
+      "low": 90,
       "break": 90
     }
   }
