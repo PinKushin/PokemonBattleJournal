@@ -23,14 +23,19 @@ projects run here, and the failure mode of getting it wrong is silent.
   short and current, and a thread of discussion inside it buries the live rules. When something
   in the log becomes settled, promote it here — the log has no git history, this file does.
 
-## Weekly review — Sunday 11:05 local
+## Weekly review — Monday 12:05 local
 
 ```powershell
 pwsh -NoProfile -File build/check-measurement-boxes.ps1 -Review
 ```
 
-Prints each box's full crontab, the last 8 runs with **wall-clock minutes**, and disk. Run by the
-`measurement-weekly-review` scheduled task, which reports and recommends but changes nothing.
+Prints each box's full crontab, the last 8 runs with **wall-clock minutes and commits behind**,
+and disk. Run by the `measurement-weekly-review` scheduled task, which reports and recommends
+but changes nothing.
+
+Monday noon so every daily job has just run — PBJ core ~5 h old, the scraper ~4 h, tf2 core ~3 h.
+**Moves to ~20:00 Monday when the owner returns to work**, which loses nothing: PBJ's 19:00 run
+ends 19:38, so an evening review reads a `stryker-core` under an hour old.
 
 **Compare wall minutes against the gap to the next slot, not Stryker's "Time Elapsed".** Elapsed
 excludes git, LFS and build work; a slot has to cover all of it. Flag anything using more than
