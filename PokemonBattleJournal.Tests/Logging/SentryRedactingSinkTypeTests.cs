@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using PokemonBattleJournal.Logging;
 using Serilog.Events;
 using Serilog.Parsing;
@@ -112,6 +113,35 @@ namespace PokemonBattleJournal.Tests.Logging
             LogEvent redacted = SentryRedactingSink.Redact(EventWith("TrainerName", "Ash"));
 
             redacted.MessageTemplate.Text.ShouldContain("value is");
+        }
+
+        // Trace and span ids must survive redaction, because they are what ties a log line to
+        // the transaction it belongs to. Losing them does not break anything visibly — it just
+        // produces crash reports that cannot be correlated with a trace.
+        //
+        // Both `?? default` expressions survived mutation to a bare `default`, and EventWith is
+        // why: it builds events with no ids at all, so `null ?? default` and `default` are the
+        // same value. Correct and broken agree on that input. The fix is an event that actually
+        // carries ids, not a stronger assertion.
+        [Test]
+        public void TheTraceAndSpanIdsAreForwarded()
+        {
+            ActivityTraceId traceId = ActivityTraceId.CreateRandom();
+            ActivitySpanId spanId = ActivitySpanId.CreateRandom();
+            MessageTemplate template = new MessageTemplateParser().Parse("value is {Diagnostic}");
+            LogEvent original = new(
+                DateTimeOffset.UtcNow,
+                LogEventLevel.Information,
+                exception: null,
+                template,
+                [new LogEventProperty("Diagnostic", new ScalarValue(1))],
+                traceId,
+                spanId);
+
+            LogEvent redacted = SentryRedactingSink.Redact(original);
+
+            redacted.TraceId.ShouldBe(traceId);
+            redacted.SpanId.ShouldBe(spanId);
         }
 
         [Test]

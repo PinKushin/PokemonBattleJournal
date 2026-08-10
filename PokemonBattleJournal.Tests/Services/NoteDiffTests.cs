@@ -58,6 +58,24 @@ namespace PokemonBattleJournal.Tests.Services
             // The removed line comes first so a reader sees "was X, now Y" in reading order.
             Rendered(NoteDiff.Compute("a\nold\nc", "a\nnew\nc")).ShouldBe([" a", "-old", "+new", " c"]);
 
+        // Divergence on the FIRST line. Every other case here diverges at index 1 or later, and
+        // that is why both LCS table loops could have their bounds cut from `>= 0` to `> 0` with
+        // the whole suite still green: those mutations leave row 0 and column 0 unfilled, and
+        // the walk only reads them when the very first lines differ. Anywhere else it matches on
+        // string equality and never consults the table.
+        //
+        // Insertion at the top: keeping "b" beats consuming it, which the table only knows if
+        // row 0 was filled.
+        [Test]
+        public void Compute_ALineInsertedAtTheTop_MarksOnlyThatLine() =>
+            Rendered(NoteDiff.Compute("b", "a\nb")).ShouldBe(["+a", " b"]);
+
+        // Change on the first line. Removed-before-added still holds, and the choice between
+        // them is decided by column 0.
+        [Test]
+        public void Compute_TheFirstLineChanged_ShowsRemovedThenAdded() =>
+            Rendered(NoteDiff.Compute("a\nb", "x\nb")).ShouldBe(["-a", "+x", " b"]);
+
         [Test]
         public void Compute_NormalisesLineEndings()
         {

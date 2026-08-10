@@ -163,6 +163,67 @@ namespace PokemonBattleJournal.IntegrationTests.Services
             archetypes.ShouldContain(a => a.Name == "Charizard");
         }
 
+        // Every offline default, name AND sprite. Written to kill 14 surviving string mutants
+        // found by Stryker on 2026-08-10: the existing offline tests assert "not empty",
+        // "contains Other" and "Count >= 8", so every literal in the seed list could be
+        // replaced with "" and all of them still passed.
+        //
+        // "Other" and "Dragapult ex / Dusknoir" are deliberately ABSENT from this list. Both
+        // rows are also written unconditionally further down GetAllAsync, so mutating their
+        // seed-list literals leaves the observable database identical — equivalent by
+        // construction, and no assertion here can distinguish them. Killing those would mean
+        // deleting the redundancy in the production code, which is a separate decision.
+        [TestCase("Regidrago", "regidrago.png")]
+        [TestCase("Charizard", "charizard.png")]
+        [TestCase("Klawf", "klawf.png")]
+        [TestCase("Snorlax Stall", "snorlax.png")]
+        [TestCase("Raging Bolt", "raging_bolt.png")]
+        [TestCase("Gardevoir", "gardevoir.png")]
+        [TestCase("Miraidon", "miraidon.png")]
+        public async Task GetAllAsync_OfflineEmptyDb_SeedsDefaultWithItsOwnSprite(string name, string sprite)
+        {
+            List<Archetype> archetypes = await _sut.GetAllAsync();
+
+            Archetype? seeded = archetypes.FirstOrDefault(a => a.Name == name);
+            seeded.ShouldNotBeNull($"offline seed is missing '{name}'");
+            seeded!.ImagePath.ShouldBe(sprite);
+        }
+
+        // The dual-icon BACKFILL, which is a different code path from the dual-icon INSERT and
+        // was completely untested. GetAllAsync_OgerponWellspring_... covers the insert: a NEW
+        // row gets ImagePath2 from the same INSERT statement that creates it. The backfill only
+        // runs when the row ALREADY EXISTS with ImagePath2 NULL — the case where a deck was
+        // first seen without a second icon, or arrived via TrainerHill import.
+        //
+        // That distinction is why Stryker could delete the backfill and flip its guard with
+        // both mutants surviving: with no pre-existing row, correct and broken code produce the
+        // same database. The fix is the INPUT, not a stronger assertion.
+        [Test]
+        public async Task GetAllAsync_ExistingRowWithNoSecondIcon_BackfillsImagePath2()
+        {
+            SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+            _ = await db.ExecuteAsync(
+                "INSERT INTO Archetype (Name, ImagePath, ImagePath2) VALUES (?, ?, NULL)",
+                "Ogerpon Meganium", "ogerpon_teal_mask.png");
+
+            ILimitlessMetaService metaService = Substitute.For<ILimitlessMetaService>();
+            metaService.GetTopDecksAsync(Arg.Any<int>())
+                .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
+                {
+                    new("Ogerpon Meganium", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png",
+                        "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon-wellspring.png"),
+                }));
+            ArchetypeOperations sut = new(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
+
+            List<Archetype> archetypes = await sut.GetAllAsync();
+
+            Archetype? backfilled = archetypes.FirstOrDefault(a => a.Name == "Ogerpon Meganium");
+            backfilled.ShouldNotBeNull();
+            backfilled!.ImagePath2.ShouldBe("ogerpon_wellspring_mask.png");
+            // The control: the backfill must not disturb the icon that was already there.
+            backfilled.ImagePath.ShouldBe("ogerpon_teal_mask.png");
+        }
+
         [Test]
         public async Task SaveAsync_StoresImagePath()
         {
