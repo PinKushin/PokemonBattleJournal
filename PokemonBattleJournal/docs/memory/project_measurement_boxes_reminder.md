@@ -10,24 +10,27 @@ lol make a note to remind me."** That is an instruction to surface this without 
 
 ## What exists
 
-**Quote local time to the user, not UTC.** The boxes run UTC and their crontabs must stay UTC,
-but the user is US Eastern and asked directly: "you put them in utc and documented them in utc so
-i have no idea what they are my time."
+**Both boxes are set to `America/New_York`, so their crontabs are already in the user's local
+time.** Quote them as-is; do not convert to UTC. The user asked for this directly: "you put them
+in utc and documented them in utc so i have no idea what they are my time."
 
-| Box | Job | UTC | Local (EDT) | Local (EST) |
-|---|---|---|---|---|
-| `mutation-box` | `stryker-core`, ~38 min | 03:30 daily | **11:30 PM, previous evening** | 10:30 PM |
-| `mutation-box` | `stryker-core`, ~38 min | 15:30 daily | **11:30 AM** | 10:30 AM |
-| `mutation-box` | `stryker-scraper`, ~4 min | 08:30 Sunday | **4:30 AM Sunday** | 3:30 AM Sunday |
-| `fuzz-box` | `fuzz 7200`, 2 hours | 04:00 daily | **12:00 AM - 2:00 AM** | 11:00 PM - 1:00 AM |
+| Box | Shape | Local time | Job |
+|---|---|---|---|
+| `mutation-box` | 3 OCPU / 18 GB | **7:00 AM and 7:00 PM daily** | `stryker-core`, ~38 min |
+| `mutation-box` | | **8:15 AM Sunday** | `stryker-scraper`, ~4 min |
+| `fuzz-box` | 1 OCPU / 6 GB | **7:00 AM daily, to ~9:00 AM** | `fuzz 7200`, 2 hours |
 
-`mutation-box` is 3 OCPU / 18 GB, `fuzz-box` is 1 OCPU / 6 GB.
+**7am is the user's choice, and the reason matters:** they are on workers' comp at the time of
+writing, so results waiting in the morning mean a day off is a day they can act on the numbers.
+The 8:07 PM notification then catches them on days they do work. Do not "tidy" these times.
 
-The 03:30 UTC row is the one that misleads: locally it lands the **previous evening**, so it is
-late Tuesday night rather than Wednesday morning. Say which side of midnight it falls on.
+The 8:07 PM check reports on the 7:00 PM `stryker-core`, which finishes around 7:38 PM — roughly
+30 minutes old, the freshest it has ever been.
 
-The 8:07 PM check therefore reports on the 11:30 AM run, roughly 8.5 hours old — well inside the
-36-hour stale threshold, in both halves of the year.
+Two constraints, if these ever move again. Both boxes can share 07:00 because the `flock` is per
+box. Same-box jobs cannot share a slot, because the lock REFUSES rather than queues — a collided
+job is silently skipped for that day, which is why the Sunday scraper sits at 08:15 rather than
+07:00.
 
 `ssh mutation-box` / `ssh fuzz-box`, key `~/.ssh/oci-measure`. Results land in
 `~/measurements/<stamp>-<sha>-<mode>/` (pruned to 30) and `~/cron-measure.log`.
