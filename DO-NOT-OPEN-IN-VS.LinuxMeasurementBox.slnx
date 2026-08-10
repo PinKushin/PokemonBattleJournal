@@ -3,7 +3,10 @@
 
   THE FILENAME IS THE WARNING. Open PokemonBattleJournal.slnx in Visual Studio; this one has no
   app head and no UI test projects, so a VS session on it silently cannot build, run or debug the
-  app. It exists for `dotnet stryker --solution` on a headless Linux box and nothing else.
+  app. It exists to be passed to Stryker's `solution` switch on a headless Linux box, nothing else.
+
+  An .slnx is XML, so a comment here cannot contain a doubled hyphen. Writing the switch with
+  its leading dashes is MSB4025, and the parse error names only a line and column.
 
   WHY A SECOND SOLUTION FILE
   Stryker builds the containing solution before mutating, and the main PokemonBattleJournal.slnx
