@@ -92,6 +92,15 @@ dotnet stryker --config-file stryker-core.json  # Core (slower; uses both test p
 
 **Solution file:** always use `PokemonBattleJournal.slnx`. Do not recreate `PokemonBattleJournal.sln`.
 
+There is a second one, `DO-NOT-OPEN-IN-VS.LinuxMeasurementBox.slnx`, and the filename is the
+whole warning. It exists because Stryker builds the containing solution before mutating and the
+real solution cannot build on Linux: `UITests.Windows` needs `Microsoft.WindowsDesktop.App`
+(NETSDK1073) and the app head's `net10.0-android` TFM needs the Android SDK (XA5300). It lists
+Core, Scraper, Tests, IntegrationTests and Fuzz — **the app head is deliberately absent**, so it
+builds as a ProjectReference at net10.0 alone rather than every TFM it declares. Add a new
+`net10.0` project to both files. Note an `.slnx` is XML, so its comments cannot contain a doubled
+hyphen; that is MSB4025 and the error names only a line and column.
+
 ## Architecture
 
 MVVM app: `Views (XAML) → ViewModels → Services → ISqliteConnectionFactory → SQLite`
