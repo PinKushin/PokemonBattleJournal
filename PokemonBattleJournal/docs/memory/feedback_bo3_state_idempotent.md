@@ -16,7 +16,11 @@ private void EnsureBO3On()
     if (label.Text == "Best of 3")
         return;
 
-    FindUIElement("BOSwitch").Click();
+    // ClickElement, NOT .Click(). Raw .Click() is synthesized mouse input at SCREEN
+    // coordinates and silently misses when the target sits outside the window — see
+    // [[feedback_flaui_scroll_into_view]] and [[project_windows_mainpage_click_flake]].
+    // The live helper uses TryClickIfPresent("BOSwitch") because this is cleanup.
+    ClickElement("BOSwitch");
 
     // Poll until label confirms BO3 is active. Game2Tab.IsVisible is bound to BO3Toggle;
     // BO3GamesLayout and Game1Tab are always visible and resolve instantly — before the

@@ -200,6 +200,19 @@ Two things worth knowing if a large sweep is ever needed again:
 - `SeedTestData()` runs in `AppiumSetup` constructor: handles first-boot trainer prompt, selects "Other" for both PlayerArchetype and RivalArchetype via `ArchetypeItem_Other` AutomationId, then saves 3 Win matches. `SaveMatchAsync` clears the form on success so no navigation needed between seed iterations.
 - Seed failures throw `InvalidOperationException` — never swallowed silently
 - Windows UI tests: `WipeAppData()` deletes the SQLite DB before each run so first-boot prompt always fires on a clean slate (all state lives in the `.db3` — the Preferences API is not used)
+- **Never call `.Click()` on an element. Always go through `ClickElement` / `TryClickIfPresent` /
+  `ScrollIntoViewAndClick`.** WinAppDriver's `.Click()` is **synthesized mouse input at the
+  element's centre in SCREEN coordinates** — it carries no UIA pattern. A target laid out below
+  the window is clicked at whatever screen position that resolves to: locally that has launched
+  Visual Studio and the Epic Games store off the taskbar, and on CI it lands on empty desktop,
+  returns in ~1s having done nothing, and leaves find-only tests passing. That was a six-test CI
+  failure open for two days. `ClickElement` walks a UIA pattern ladder (ScrollItem, Invoke,
+  Toggle, SelectionItem, ExpandCollapse, Focus, then up to three ancestors), none of which carry
+  coordinates, and its mouse fallback REFUSES a target measured outside the window. See
+  `docs/memory/feedback_flaui_scroll_into_view.md`.
+- **The two platforms fail differently and the fixes do not transfer.** Windows clicks land in
+  the wrong PLACE (screen coordinates); Android clicks land NOWHERE (dispatched, handler never
+  runs). Windows needs the pattern ladder; Android needs click-verify-retry.
 - Android taps can silently miss MAUI gesture handlers — any tap-driven interaction needs the click-verify-retry pattern (see `docs/memory/feedback_android_flaky_tap_retry.md`)
 - Diagnostic logs after UI test runs: `%TEMP%\UITests.PerfLog.txt` (per-element FIND stage timing, rotates `.1`/`.2`), `%TEMP%\UITests.NavLog.txt` (navigation), `%TEMP%\UITests.Android.setup.log` (AppiumSetup steps), `%TEMP%\UITests.PopupLog.txt` (in-app ComboBox popup lifecycle, pulled via adb at teardown)
 

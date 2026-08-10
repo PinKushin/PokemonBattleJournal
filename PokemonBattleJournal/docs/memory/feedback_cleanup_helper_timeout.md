@@ -14,7 +14,9 @@ Fix: use `FindUIElement("Game1Tab")` (3s minimum wait, resourceId 3-stage) so th
 ```csharp
 private void ResetGame1Tab()
 {
-    try { FindUIElement("Game1Tab").Click(); }
+    // ClickElement, NOT .Click() — the raw call is mouse input at screen coordinates
+    // with no off-window guard. See [[feedback_flaui_scroll_into_view]].
+    try { ClickElement("Game1Tab"); }
     catch (OpenQA.Selenium.NoSuchElementException) { }
     finally
     {
