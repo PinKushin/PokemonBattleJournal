@@ -41,6 +41,16 @@ running into:
    refuse to start, so the weekly gate would have failed silently forever. Found by running the
    job, not by reading the config.
 
+## A scheduled task already pushes this — do not create a second one
+
+`measurement-box-check`, created 2026-08-10, runs **daily at 8pm local** and sends one
+`PushNotification` with the result. 8pm because 10am is during the user's work hours; they said
+so explicitly. It observes only — it must never change the boxes, the repo or the schedules.
+
+Task file: `~/.claude/scheduled-tasks/measurement-box-check/SKILL.md`. `list_scheduled_tasks` to
+check it still exists. Scheduled tasks only run while the app is open; a missed run fires on next
+launch.
+
 ## When to bring it up
 
 A session that touches tests, Stryker, fuzzing, CI or coverage should run the check and mention
