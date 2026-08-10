@@ -25,6 +25,26 @@
         <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
         <PackageReference Include="Shouldly" Version="4.3.0" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.21" />
+
+        <!--
+            SkiaSharp's native library, for Linux only.
+
+            LiveChartsCore.SkiaSharpView.Maui carries natives for the MAUI platforms, so on
+            Windows this is already satisfied and the reference would be dead weight — hence
+            the condition. Linux was never a test environment until the measurement box, and
+            CI runs every test job on windows-latest, so nothing here had ever executed on
+            Linux before 2026-08-10.
+
+            Without it, AppearingAsync_WithMatchupData_SetsMatchupHeatSeries dies in
+            SKTypeface's static constructor with DllNotFoundException for libSkiaSharp. That
+            matters beyond one red test: Stryker does an initial full test run and a failing
+            suite makes every subsequent mutant result meaningless.
+
+            NativeAssets.Linux, not .NoDependencies — the failing path is SKTypeface, i.e.
+            fonts, so fontconfig is genuinely needed rather than avoidable.
+        -->
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.0"
+                          Condition="$([MSBuild]::IsOSPlatform('linux'))" />
         <PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.90" />
 
     </ItemGroup>
