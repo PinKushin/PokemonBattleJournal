@@ -81,6 +81,31 @@ namespace PokemonBattleJournal.Tests.Utilities
             ties.ShouldBe(1u);
         }
 
+        // The zero-games guard is `wins + losses + ties == 0`, and Stryker survived turning the
+        // last `+` into `-`. Every existing case is blind to it: 2W/1L/1T gives 2 either way,
+        // all-wins gives 3 either way — the mutated sum only reaches zero when losses and ties
+        // cancel, and no test had that shape.
+        //
+        // 1 loss + 1 tie is the discriminating input: correct code sees 2 games and returns
+        // (0 + 0.5) / 2 * 100 = 25, while the mutant computes 1 - 1 = 0, takes the empty branch
+        // and returns 0. The assertion was already exact; the condition was wrong.
+        [Test]
+        public void CalculateWinRate_OneLossOneTie_Returns25()
+        {
+            List<MatchEntry> matches =
+            [
+                new() { Result = MatchResult.Loss },
+                new() { Result = MatchResult.Tie }
+            ];
+
+            double result = Calculations.CalculateWinRate(matches, out uint wins, out uint losses, out uint ties);
+
+            result.ShouldBe(25);
+            wins.ShouldBe(0u);
+            losses.ShouldBe(1u);
+            ties.ShouldBe(1u);
+        }
+
         [Test]
         public void CalculateWinRate_AllLosses_ReturnsZero()
         {
