@@ -198,8 +198,20 @@ problem worth trading accuracy for.
 
 - **Scraper as the target**, because it is a plain library that compiles under Stryker and
   contains genuine parsing logic over untrusted HTML.
-- **`break: 0`** deliberately. A gate that fails before anyone has seen a baseline teaches
-  people to pass `--break-at`, not to fix tests. Raise it once the survivors are triaged.
+- **`break: 0`** for Core, deliberately. A gate that fails before anyone has seen a baseline
+  teaches people to pass `--break-at`, not to fix tests. Raise it once the survivors are triaged.
+- **Stryker requires `break <= low <= high`, and violating it is a SILENT non-gate.** The Scraper
+  config had `break` raised to 90 to defend its 100% score while `low`/`high` stayed at the
+  defaults 70/85, and Stryker refused to start at all:
+
+  ```
+  Threshold low must be more than or equal to threshold break. Current low: 70, break: 90.
+  ```
+
+  That is worse than no ratchet — it reads as a stricter gate and is not a gate at all. It went
+  unnoticed because nothing ran the Scraper config after the value was set. Now `high 100 / low
+  90 / break 90`, verified by running it: 100.00%, 65 killed, 0 survived, 3m36s, exit 0. **Run a
+  config after changing its thresholds; the failure mode is refusal to start, not a bad score.**
 - **Not in CI.** ~5 minutes for 78 mutants on one small library, and the value is in reading
   survivors rather than in a pass/fail. See [[feedback_dont_churn_stable_ci]].
 - **Comments cannot live in the config.** Stryker validates keys strictly and rejects `"//"`
