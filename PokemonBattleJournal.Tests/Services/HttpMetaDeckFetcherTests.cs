@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Logging.Abstractions;
+﻿using System.Net;
+using Microsoft.Extensions.Logging.Abstractions;
 using PokemonBattleJournal.Scraper.Services;
-using System.Net;
 using PokemonBattleJournal.Tests.Fixtures;
 
 namespace PokemonBattleJournal.Tests.Services;
@@ -14,7 +14,7 @@ public class HttpMetaDeckFetcherTests
     public async Task FetchAsync_ValidResponse_ReturnsHtml()
     {
         string expectedHtml = "<html><body>test</body></html>";
-        var handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
+        FakeHttpMessageHandler handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(expectedHtml)
         });
@@ -28,7 +28,7 @@ public class HttpMetaDeckFetcherTests
     [Test]
     public async Task FetchAsync_NetworkFailure_ReturnsEmptyString()
     {
-        var handler = new ThrowingHttpMessageHandler();
+        ThrowingHttpMessageHandler handler = new ThrowingHttpMessageHandler();
 
         HttpMetaDeckFetcher fetcher = BuildFetcher(handler);
         string result = await fetcher.FetchAsync("https://limitlesstcg.com/decks");
@@ -39,7 +39,7 @@ public class HttpMetaDeckFetcherTests
     [Test]
     public async Task FetchAsync_NonSuccessStatusCode_ReturnsEmptyString()
     {
-        var handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        FakeHttpMessageHandler handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
 
         HttpMetaDeckFetcher fetcher = BuildFetcher(handler);
         string result = await fetcher.FetchAsync("https://limitlesstcg.com/decks");
@@ -50,7 +50,7 @@ public class HttpMetaDeckFetcherTests
     [Test]
     public async Task FetchAsync_404_ReturnsEmptyString()
     {
-        var handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.NotFound));
+        FakeHttpMessageHandler handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.NotFound));
 
         HttpMetaDeckFetcher fetcher = BuildFetcher(handler);
         string result = await fetcher.FetchAsync("https://limitlesstcg.com/decks");
@@ -61,7 +61,7 @@ public class HttpMetaDeckFetcherTests
     [Test]
     public async Task FetchAsync_EmptyResponseBody_ReturnsEmptyString()
     {
-        var handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
+        FakeHttpMessageHandler handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(string.Empty)
         });
@@ -76,7 +76,7 @@ public class HttpMetaDeckFetcherTests
     public async Task FetchAsync_LargeHtmlPayload_ReturnsFullContent()
     {
         string bigHtml = string.Concat(Enumerable.Repeat("<tr><td>row</td></tr>", 500));
-        var handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
+        FakeHttpMessageHandler handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(bigHtml)
         });
@@ -99,9 +99,9 @@ public class HttpMetaDeckFetcherTests
     [Test]
     public async Task FetchAsync_NonSuccessStatus_LogsWarningWithTheStatus()
     {
-        var logger = new RecordingLogger<HttpMetaDeckFetcher>();
-        var handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.NotFound));
-        var fetcher = new HttpMetaDeckFetcher(new HttpClient(handler), logger);
+        RecordingLogger<HttpMetaDeckFetcher> logger = new RecordingLogger<HttpMetaDeckFetcher>();
+        FakeHttpMessageHandler handler = new FakeHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.NotFound));
+        HttpMetaDeckFetcher fetcher = new HttpMetaDeckFetcher(new HttpClient(handler), logger);
 
         string result = await fetcher.FetchAsync("https://example.test/decks");
 
@@ -115,8 +115,8 @@ public class HttpMetaDeckFetcherTests
     [Test]
     public async Task FetchAsync_NetworkFailure_LogsWarningWithTheUrl()
     {
-        var logger = new RecordingLogger<HttpMetaDeckFetcher>();
-        var fetcher = new HttpMetaDeckFetcher(new HttpClient(new ThrowingHttpMessageHandler()), logger);
+        RecordingLogger<HttpMetaDeckFetcher> logger = new RecordingLogger<HttpMetaDeckFetcher>();
+        HttpMetaDeckFetcher fetcher = new HttpMetaDeckFetcher(new HttpClient(new ThrowingHttpMessageHandler()), logger);
 
         string result = await fetcher.FetchAsync("https://example.test/decks");
 

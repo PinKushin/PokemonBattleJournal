@@ -161,7 +161,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public void OnTrainerChanged_EventRaised_UpdatesTrainerName()
         {
-            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            Trainer trainer = new Trainer { Id = 3, Name = "Misty" };
 
             _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
 
@@ -171,7 +171,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public void OnTrainerChanged_EventRaised_UpdatesWelcomeMsg()
         {
-            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            Trainer trainer = new Trainer { Id = 3, Name = "Misty" };
 
             _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
 
@@ -181,7 +181,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public void OnTrainerChanged_EventRaised_NullName_SetsEmptyTrainerName()
         {
-            var trainer = new Trainer { Id = 3, Name = null };
+            Trainer trainer = new Trainer { Id = 3, Name = null };
 
             _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
 
@@ -195,7 +195,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task AppearingAsync_WithMatchupData_SetsMatchupHeatSeries()
         {
-            var matches = new List<MatchEntry> { new() { Result = MatchResult.Win } };
+            List<MatchEntry> matches = new List<MatchEntry> { new() { Result = MatchResult.Win } };
             _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Ash" }));
             _mockConnectionFactory.Matches.GetByTrainerIdAsync(1, true)

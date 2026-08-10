@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Windows.Input;
 using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Maui.Extensions;
 using CommunityToolkit.Maui.Views;
 using Microsoft.Maui.Controls;
@@ -217,7 +218,7 @@ public IEnumerable? ItemsSource
         };
         _arrowLabel.SetBinding(Label.TextColorProperty, new Binding(nameof(ArrowColor), source: this));
 
-        var iconAndText = new HorizontalStackLayout
+        HorizontalStackLayout iconAndText = new HorizontalStackLayout
         {
             Spacing = 4,
             VerticalOptions = LayoutOptions.Center,
@@ -225,7 +226,7 @@ public IEnumerable? ItemsSource
             Children = { _selectedIcon, _icon2Wrapper, _selectedLabel, _placeholderLabel }
         };
 
-        var contentLayout = new Grid
+        Grid contentLayout = new Grid
         {
             Padding = new Thickness(12, 4, 20, 4),
             ColumnDefinitions =
@@ -256,7 +257,7 @@ public IEnumerable? ItemsSource
         // on top. See docs/memory/feedback_invokable_controls.md.
         _border.InputTransparent = true;
 
-        var activator = new Button
+        Button activator = new Button
         {
             BackgroundColor = Colors.Transparent,
             BorderColor = Colors.Transparent,
@@ -397,10 +398,10 @@ public IEnumerable? ItemsSource
         {
             _placeholderLabel.IsVisible = false;
             _selectedLabel.IsVisible = true;
-            var type = SelectedItem.GetType();
-            var name = type.GetProperty(DisplayMemberPath)?.GetValue(SelectedItem)?.ToString() ?? "";
-            var imagePath = type.GetProperty(ImageMemberPath)?.GetValue(SelectedItem)?.ToString();
-            var imagePath2 = type.GetProperty(ImageMemberPath2)?.GetValue(SelectedItem)?.ToString();
+            Type type = SelectedItem.GetType();
+            string name = type.GetProperty(DisplayMemberPath)?.GetValue(SelectedItem)?.ToString() ?? "";
+            string? imagePath = type.GetProperty(ImageMemberPath)?.GetValue(SelectedItem)?.ToString();
+            string? imagePath2 = type.GetProperty(ImageMemberPath2)?.GetValue(SelectedItem)?.ToString();
             _selectedLabel.Text = name;
             _selectedIcon.Source = imagePath;
             _selectedIcon2.Source = imagePath2;
@@ -444,7 +445,7 @@ public IEnumerable? ItemsSource
                 return;
             }
 
-            var popup = new ComboBoxPopup(
+            ComboBoxPopup popup = new ComboBoxPopup(
                 ItemsSource,
                 DisplayMemberPath,
                 ImageMemberPath,
@@ -463,7 +464,7 @@ public IEnumerable? ItemsSource
                 return;
             }
 
-            var popupResult = await currentPage.ShowPopupAsync<ComboBoxPopup.PickerResult?>(popup, new PopupOptions
+            IPopupResult<ComboBoxPopup.PickerResult?>? popupResult = await currentPage.ShowPopupAsync<ComboBoxPopup.PickerResult?>(popup, new PopupOptions
             {
                 Shape = null,
                 Shadow = null

@@ -1,5 +1,5 @@
-using PokemonBattleJournal.Scraper.Services;
 using System.Reflection;
+using PokemonBattleJournal.Scraper.Services;
 
 namespace PokemonBattleJournal.IntegrationTests.Services;
 

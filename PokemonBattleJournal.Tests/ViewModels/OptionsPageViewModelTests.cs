@@ -23,7 +23,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _mockConnectionFactory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
             _mockConnectionFactory.Matches.Returns(Substitute.For<IMatchOperations>());
 
-            var mainPageVm = new MainPageViewModel(
+            MainPageViewModel mainPageVm = new MainPageViewModel(
                 Substitute.For<ILogger<MainPageViewModel>>(),
                 _mockConnectionFactory,
                 Substitute.For<IMatchResultsCalculatorFactory>(),
@@ -146,7 +146,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SwitchTrainerAsync_DifferentTrainer_CallsSwitchService()
         {
-            var target = new Trainer { Id = 99, Name = "Brock" };
+            Trainer target = new Trainer { Id = 99, Name = "Brock" };
             _mockSwitchService.SwitchToAsync(target).Returns(Task.CompletedTask);
             _mockConnectionFactory.Trainers.GetAllAsync()
                 .Returns(Task.FromResult(new List<Trainer> { target }));
@@ -159,7 +159,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public void OnSelectedIconItemChanged_UpdatesSelectedIconAndNewDeckIcon()
         {
-            var item = new IconItem("Charizard", "charizard.png");
+            IconItem item = new IconItem("Charizard", "charizard.png");
             _viewModel.SelectedIconItem = item;
 
             _viewModel.SelectedIcon.ShouldBe("charizard.png");
@@ -217,7 +217,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SaveTagAsync_WithTrainerSet_CallsTagSave()
         {
-            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            Trainer trainer = new Trainer { Id = 3, Name = "Misty" };
             _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync()
@@ -236,7 +236,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SaveTagAsync_WithTrainer_ClearsTagInput()
         {
-            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            Trainer trainer = new Trainer { Id = 3, Name = "Misty" };
             _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync()
@@ -267,7 +267,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SaveArchetypeAsync_WithTrainer_CallsArchetypeSave()
         {
-            var trainer = new Trainer { Id = 7, Name = "Gary" };
+            Trainer trainer = new Trainer { Id = 7, Name = "Gary" };
             _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync()
@@ -287,7 +287,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SaveArchetypeAsync_WithTrainer_ClearsInputs()
         {
-            var trainer = new Trainer { Id = 7, Name = "Gary" };
+            Trainer trainer = new Trainer { Id = 7, Name = "Gary" };
             _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync()
@@ -308,7 +308,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task DeleteTrainerFileAsync_WithTrainer_CallsDeleteAsync()
         {
-            var trainer = new Trainer { Id = 9, Name = "Giovanni" };
+            Trainer trainer = new Trainer { Id = 9, Name = "Giovanni" };
             _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync()
@@ -325,7 +325,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SwitchTrainerAsync_SameTrainer_DoesNotCallSwitchService()
         {
-            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            Trainer trainer = new Trainer { Id = 3, Name = "Misty" };
             _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync()
@@ -342,8 +342,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SwitchTrainerAsync_DifferentTrainer_UpdatesTrainerName()
         {
-            var original = new Trainer { Id = 1, Name = "Ash" };
-            var newTrainer = new Trainer { Id = 2, Name = "Brock" };
+            Trainer original = new Trainer { Id = 1, Name = "Ash" };
+            Trainer newTrainer = new Trainer { Id = 2, Name = "Brock" };
             _mockConnectionFactory.Trainers.GetByNameAsync(Arg.Any<string>())
                 .Returns(Task.FromResult<Trainer?>(original));
             _mockConnectionFactory.Trainers.GetAllAsync()
@@ -361,7 +361,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SwitchTrainerAsync_DifferentTrainer_UpdatesTitle()
         {
-            var newTrainer = new Trainer { Id = 2, Name = "Brock" };
+            Trainer newTrainer = new Trainer { Id = 2, Name = "Brock" };
             _mockConnectionFactory.Trainers.GetAllAsync()
                 .Returns(Task.FromResult(new List<Trainer> { newTrainer }));
             _mockSwitchService.SwitchToAsync(newTrainer).Returns(Task.CompletedTask);
@@ -374,7 +374,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SwitchTrainerAsync_DifferentTrainer_UpdatesFileConfirmMessage()
         {
-            var newTrainer = new Trainer { Id = 2, Name = "Brock" };
+            Trainer newTrainer = new Trainer { Id = 2, Name = "Brock" };
             _mockConnectionFactory.Trainers.GetAllAsync()
                 .Returns(Task.FromResult(new List<Trainer> { newTrainer }));
             _mockSwitchService.SwitchToAsync(newTrainer).Returns(Task.CompletedTask);
@@ -414,7 +414,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task DeleteTrainerFileAsync_WithTrainer_ClearsTrainerName()
         {
-            var trainer = new Trainer { Id = 9, Name = "Giovanni" };
+            Trainer trainer = new Trainer { Id = 9, Name = "Giovanni" };
             _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync()
@@ -431,7 +431,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task AppearingAsync_SetsSelectedSwitchTrainerToActiveTrainer()
         {
-            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            Trainer trainer = new Trainer { Id = 3, Name = "Misty" };
             _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync()
@@ -447,7 +447,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task SaveTagAsync_SaveReturnsZero_StillClearsTagInput()
         {
             // TagInput always cleared in finally — even when DB save reports 0 affected
-            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            Trainer trainer = new Trainer { Id = 3, Name = "Misty" };
             _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync()
@@ -467,7 +467,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task SaveArchetypeAsync_SaveReturnsZero_StillClearsInputs()
         {
             // NewDeckName/Icon always cleared in finally — even when DB save reports 0 affected
-            var trainer = new Trainer { Id = 7, Name = "Gary" };
+            Trainer trainer = new Trainer { Id = 7, Name = "Gary" };
             _mockConnectionFactory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync()
@@ -489,9 +489,9 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task AppearingAsync_LoadsAllArchetypesAndTags()
         {
-            var trainer = new Trainer { Id = 1, Name = "Ash" };
-            var archetypes = new List<Archetype> { new() { Id = 1, Name = "Fire" }, new() { Id = 2, Name = "Water" } };
-            var tags = new List<Tags> { new() { Id = 1, Name = "Aggro" } };
+            Trainer trainer = new Trainer { Id = 1, Name = "Ash" };
+            List<Archetype> archetypes = new List<Archetype> { new() { Id = 1, Name = "Fire" }, new() { Id = 2, Name = "Water" } };
+            List<Tags> tags = new List<Tags> { new() { Id = 1, Name = "Aggro" } };
 
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
@@ -507,8 +507,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task DeleteArchetypeAsync_CallsDeleteAndRefreshesList()
         {
-            var trainer = new Trainer { Id = 1, Name = "Ash" };
-            var archetype = new Archetype { Id = 5, Name = "Fire" };
+            Trainer trainer = new Trainer { Id = 1, Name = "Ash" };
+            Archetype archetype = new Archetype { Id = 5, Name = "Fire" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
             _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype> { archetype }));
@@ -524,8 +524,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task DeleteArchetypeAsync_AfterDelete_RefreshesAllArchetypes()
         {
-            var trainer = new Trainer { Id = 1, Name = "Ash" };
-            var archetype = new Archetype { Id = 5, Name = "Fire" };
+            Trainer trainer = new Trainer { Id = 1, Name = "Ash" };
+            Archetype archetype = new Archetype { Id = 5, Name = "Fire" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
             _mockConnectionFactory.Archetypes.GetAllAsync()
@@ -543,8 +543,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task DeleteTagAsync_CallsDeleteAndRefreshesList()
         {
-            var trainer = new Trainer { Id = 1, Name = "Ash" };
-            var tag = new Tags { Id = 3, Name = "Lucky" };
+            Trainer trainer = new Trainer { Id = 1, Name = "Ash" };
+            Tags tag = new Tags { Id = 3, Name = "Lucky" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
             _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
@@ -560,8 +560,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task DeleteTagAsync_AfterDelete_RefreshesAllTags()
         {
-            var trainer = new Trainer { Id = 1, Name = "Ash" };
-            var tag = new Tags { Id = 3, Name = "Lucky" };
+            Trainer trainer = new Trainer { Id = 1, Name = "Ash" };
+            Tags tag = new Tags { Id = 3, Name = "Lucky" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
             _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
@@ -579,8 +579,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SaveArchetypeAsync_OnSuccess_RefreshesAllArchetypes()
         {
-            var trainer = new Trainer { Id = 7, Name = "Gary" };
-            var saved = new Archetype { Id = 10, Name = "Charizard" };
+            Trainer trainer = new Trainer { Id = 7, Name = "Gary" };
+            Archetype saved = new Archetype { Id = 10, Name = "Charizard" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
             _mockConnectionFactory.Archetypes.GetAllAsync()
@@ -602,8 +602,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SaveTagAsync_OnSuccess_RefreshesAllTags()
         {
-            var trainer = new Trainer { Id = 3, Name = "Misty" };
-            var saved = new Tags { Id = 5, Name = "Aggro" };
+            Trainer trainer = new Trainer { Id = 3, Name = "Misty" };
+            Tags saved = new Tags { Id = 5, Name = "Aggro" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
             _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
@@ -629,8 +629,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task OnSelectedSwitchTrainerChanged_DifferentTrainer_CallsSwitchService()
         {
             // Load an active trainer so _trainer is set
-            var current = new Trainer { Id = 1, Name = "Ash" };
-            var next = new Trainer { Id = 2, Name = "Misty" };
+            Trainer current = new Trainer { Id = 1, Name = "Ash" };
+            Trainer next = new Trainer { Id = 2, Name = "Misty" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(current));
             _mockConnectionFactory.Trainers.GetAllAsync()
                 .Returns(Task.FromResult(new List<Trainer> { current, next }));
@@ -648,7 +648,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task OnSelectedSwitchTrainerChanged_SameTrainer_DoesNotCallSwitchService()
         {
-            var trainer = new Trainer { Id = 3, Name = "Brock" };
+            Trainer trainer = new Trainer { Id = 3, Name = "Brock" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync()
                 .Returns(Task.FromResult(new List<Trainer> { trainer }));
@@ -663,7 +663,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task OnSelectedSwitchTrainerChanged_NullValue_DoesNotCallSwitchService()
         {
-            var trainer = new Trainer { Id = 3, Name = "Brock" };
+            Trainer trainer = new Trainer { Id = 3, Name = "Brock" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync()
                 .Returns(Task.FromResult(new List<Trainer> { trainer }));
@@ -682,7 +682,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task AppearingAsync_ActiveTrainerFromSwitchService_DoesNotCallGetActiveAsync()
         {
-            var trainer = new Trainer { Id = 10, Name = "Lance" };
+            Trainer trainer = new Trainer { Id = 10, Name = "Lance" };
             _mockSwitchService.ActiveTrainer.Returns(trainer);
             _mockConnectionFactory.Trainers.GetAllAsync()
                 .Returns(Task.FromResult(new List<Trainer> { trainer }));
@@ -702,7 +702,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task DeleteArchetypeAsync_ThrowsException_DoesNotRethrow()
         {
-            var archetype = new Archetype { Id = 5, Name = "Fire" };
+            Archetype archetype = new Archetype { Id = 5, Name = "Fire" };
             _mockConnectionFactory.Archetypes.DeleteAsync(archetype)
                 .Returns(Task.FromException<int>(new InvalidOperationException("DB error")));
 
@@ -712,7 +712,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task DeleteTagAsync_ThrowsException_DoesNotRethrow()
         {
-            var tag = new Tags { Id = 3, Name = "Lucky" };
+            Tags tag = new Tags { Id = 3, Name = "Lucky" };
             _mockConnectionFactory.Tags.DeleteAsync(tag)
                 .Returns(Task.FromException<int>(new InvalidOperationException("DB error")));
 
@@ -746,8 +746,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task DeleteArchetypeAsync_AffectedIsZero_DoesNotRefreshArchetypeList()
         {
-            var trainer = new Trainer { Id = 1, Name = "Ash" };
-            var archetype = new Archetype { Id = 5, Name = "Fire" };
+            Trainer trainer = new Trainer { Id = 1, Name = "Ash" };
+            Archetype archetype = new Archetype { Id = 5, Name = "Fire" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
             _mockConnectionFactory.Archetypes.GetAllAsync()
@@ -767,8 +767,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task DeleteTagAsync_AffectedIsZero_DoesNotRefreshTagList()
         {
-            var trainer = new Trainer { Id = 1, Name = "Ash" };
-            var tag = new Tags { Id = 3, Name = "Lucky" };
+            Trainer trainer = new Trainer { Id = 1, Name = "Ash" };
+            Tags tag = new Tags { Id = 3, Name = "Lucky" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
             _mockConnectionFactory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
@@ -786,7 +786,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SaveTagAsync_ThrowsException_DoesNotRethrow()
         {
-            var trainer = new Trainer { Id = 3, Name = "Misty" };
+            Trainer trainer = new Trainer { Id = 3, Name = "Misty" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
             _mockConnectionFactory.Tags.SaveAsync(Arg.Any<string>(), Arg.Any<uint>())
@@ -801,7 +801,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SaveArchetypeAsync_ThrowsException_DoesNotRethrow()
         {
-            var trainer = new Trainer { Id = 7, Name = "Gary" };
+            Trainer trainer = new Trainer { Id = 7, Name = "Gary" };
             _mockConnectionFactory.Trainers.GetActiveAsync().Returns(Task.FromResult<Trainer?>(trainer));
             _mockConnectionFactory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
             _mockConnectionFactory.Archetypes.SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>())

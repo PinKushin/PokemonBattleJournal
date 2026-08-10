@@ -1,5 +1,6 @@
 using System.Collections;
 using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Maui.Extensions;
 using CommunityToolkit.Maui.Views;
 
@@ -169,14 +170,14 @@ public class ImagePicker : ContentView
         _helperLabel.SetBinding(Label.TextProperty, new Binding(nameof(HelperText), source: this));
         _helperLabel.SetBinding(Label.TextColorProperty, new Binding(nameof(HelperTextColor), source: this));
 
-        var border = new Border
+        Border border = new Border
         {
             StrokeThickness = 1,
             Padding = 0
         };
         border.SetBinding(Border.StrokeProperty, new Binding(nameof(StrokeColor), source: this));
 
-        var layout = new VerticalStackLayout
+        VerticalStackLayout layout = new VerticalStackLayout
         {
             Children = { _hintLabel, _button, _helperLabel }
         };
@@ -204,11 +205,11 @@ public class ImagePicker : ContentView
             return;
         }
 
-        var displayProp = DisplayMemberPath;
-        var imageProp = ImageMemberPath;
+        string displayProp = DisplayMemberPath;
+        string imageProp = ImageMemberPath;
 
-        var name = SelectedItem.GetType().GetProperty(displayProp)?.GetValue(SelectedItem)?.ToString() ?? "";
-        var imagePath = SelectedItem.GetType().GetProperty(imageProp)?.GetValue(SelectedItem)?.ToString();
+        string name = SelectedItem.GetType().GetProperty(displayProp)?.GetValue(SelectedItem)?.ToString() ?? "";
+        string? imagePath = SelectedItem.GetType().GetProperty(imageProp)?.GetValue(SelectedItem)?.ToString();
 
         _button.Text = name;
         _button.ImageSource = imagePath;
@@ -218,7 +219,7 @@ public class ImagePicker : ContentView
     {
         if (ItemsSource == null) return;
 
-        var popup = new ImagePickerPopup(
+        ImagePickerPopup popup = new ImagePickerPopup(
             ItemsSource,
             DisplayMemberPath,
             ImageMemberPath,
@@ -229,7 +230,7 @@ public class ImagePicker : ContentView
             SelectedItem = SelectedItem
         };
 
-        var popupResult = await Shell.Current.CurrentPage.ShowPopupAsync<ImagePickerPopup.PickerResult?>(popup, new PopupOptions());
+        IPopupResult<ImagePickerPopup.PickerResult?> popupResult = await Shell.Current.CurrentPage.ShowPopupAsync<ImagePickerPopup.PickerResult?>(popup, new PopupOptions());
 
         if (popupResult?.Result is ImagePickerPopup.PickerResult pickerResult && pickerResult.SelectedItem != null)
         {

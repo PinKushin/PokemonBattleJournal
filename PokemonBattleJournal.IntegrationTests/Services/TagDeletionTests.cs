@@ -21,6 +21,19 @@ public class TagDeletionTests
     private uint _trainerId;
     private uint _archetypeId;
 
+    /// <summary>
+    /// Distinguishes the StartTime of each seeded match.
+    /// </summary>
+    /// <remarks>
+    /// A counter, not <c>Random.Shared</c>. Two reasons, and the analyser warning (CA5394) is the
+    /// less important one. Random makes the test's input vary run to run, so a failure is not
+    /// reproducible from the test alone; and it can COLLIDE, which matters specifically here
+    /// because <c>MatchDuplicateKey</c> keys on StartTime — two seeded matches landing on the same
+    /// second would be treated as duplicates and silently change what the test measures.
+    /// A counter is deterministic and collision-free by construction.
+    /// </remarks>
+    private int _seededMatchCount;
+
     [SetUp]
     public async Task SetUp()
     {
@@ -59,7 +72,7 @@ public class TagDeletionTests
             PlayingId = _archetypeId,
             AgainstId = _archetypeId,
             Result = MatchResult.Win,
-            StartTime = DateTime.UtcNow.AddSeconds(-Random.Shared.Next(1, 10_000)),
+            StartTime = DateTime.UtcNow.AddSeconds(-(++_seededMatchCount)),
             EndTime = DateTime.UtcNow,
             DatePlayed = DateTime.UtcNow.Date,
         };

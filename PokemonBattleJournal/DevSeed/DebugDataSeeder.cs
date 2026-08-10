@@ -7,8 +7,8 @@ namespace PokemonBattleJournal.DevSeed
         {
             try
             {
-                var trainers = await factory.Trainers.GetAllAsync();
-                var existing = trainers.FirstOrDefault(t => t.Name == "UITestTrainer");
+                List<Trainer> trainers = await factory.Trainers.GetAllAsync();
+                Trainer? existing = trainers.FirstOrDefault(t => t.Name == "UITestTrainer");
                 Trainer? trainer;
                 if (existing != null)
                 {
@@ -16,7 +16,7 @@ namespace PokemonBattleJournal.DevSeed
                         await factory.Trainers.SetActiveAsync(existing);
                     // Check if matches were seeded — previous run may have created the trainer
                     // but aborted before seeding matches (e.g. Limitless name mismatch).
-                    var existingMatches = await factory.Matches.GetByTrainerIdAsync(existing.Id, includeRelated: false);
+                    List<MatchEntry> existingMatches = await factory.Matches.GetByTrainerIdAsync(existing.Id, includeRelated: false);
                     if (existingMatches.Count > 0)
                         return; // already seeded (at least partially)
                     trainer = existing;
@@ -70,7 +70,7 @@ namespace PokemonBattleJournal.DevSeed
 
                 for (int i = 0; i < bo1.Length; i++)
                 {
-                    var (playing, against, result, turn, days, mins, tag) = bo1[i];
+                    (Archetype? playing, Archetype? against, MatchResult result, uint turn, int days, int mins, Tags? tag) = bo1[i];
                     // 4d, not 4: AddHours takes a double, so `i % 3 * 4` multiplies as int and
                     // converts afterwards. Harmless here — i is bounded by bo1.Length, so the
                     // product never exceeds 8 — but the pattern is only safe because of a bound

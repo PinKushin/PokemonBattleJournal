@@ -1,4 +1,5 @@
-﻿using FlaUI.Core.AutomationElements;
+﻿using System.Diagnostics;
+using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
 
 namespace UITests
@@ -44,7 +45,7 @@ namespace UITests
             {
                 while (true)
                 {
-                    var attempt = System.Diagnostics.Stopwatch.StartNew();
+                    Stopwatch attempt = System.Diagnostics.Stopwatch.StartNew();
                     try
                     {
                         App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(500);
@@ -61,7 +62,7 @@ namespace UITests
                         if (++iteration % 4 == 0)
                         {
                             // Standard re-anchor for elements that are just slow to appear.
-                            var anchor = System.Diagnostics.Stopwatch.StartNew();
+                            Stopwatch anchor = System.Diagnostics.Stopwatch.StartNew();
                             try { App.SwitchTo().Window(App.CurrentWindowHandle); }
                             catch (Exception ex) { NavLog($"re-anchor failed: {ex.Message}"); }
                             PerfLog($"FIND '{id}': re-anchor took {anchor.ElapsedMilliseconds}ms (iteration {iteration})");
@@ -89,7 +90,7 @@ namespace UITests
         // something more fundamental is wrong and the test should fail loudly.
         private AppiumElement SpinAnchorUntilWinAppDriverFindsIt(string id)
         {
-            var spinDeadline = DateTime.UtcNow.AddSeconds(5);
+            DateTime spinDeadline = DateTime.UtcNow.AddSeconds(5);
             while (DateTime.UtcNow < spinDeadline)
             {
                 try { App.SwitchTo().Window(App.CurrentWindowHandle); }
@@ -116,7 +117,7 @@ namespace UITests
                     handleStr.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? handleStr : "0x" + handleStr,
                     16));
                 AutomationElement window = UIA.FromHandle(hwnd);
-                var sw = System.Diagnostics.Stopwatch.StartNew();
+                Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
                 bool found = window.FindFirstDescendant(cf => cf.ByAutomationId(automationId)) != null;
                 NavLog($"UIA check '{automationId}': {(found ? "FOUND" : "not found")} in {sw.ElapsedMilliseconds}ms");
                 return found;
@@ -201,8 +202,8 @@ namespace UITests
         // always done it this way; this brings Windows in line.
         protected override bool TryClickIfPresent(string id, int timeoutMs = 2000)
         {
-            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-            var total = System.Diagnostics.Stopwatch.StartNew();
+            DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            Stopwatch total = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(timeoutMs);
@@ -625,7 +626,7 @@ namespace UITests
         // while the dropdown was open (e.g. Game3Tab becoming visible via ShowGame3).
         protected override void SelectWindowsPickerItem(AppiumElement pickerElement, string itemName)
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
             // Route through the UIA path when the element carries an AutomationId — this is the
             // last Windows click site that could otherwise fire a raw mouse event at an
             // off-window coordinate.

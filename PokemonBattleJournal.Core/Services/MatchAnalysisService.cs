@@ -77,7 +77,7 @@ namespace PokemonBattleJournal.Services
 
         public ObservableCollection<ChartDataPoint> CalculatePerformanceAgainstOpponents(List<MatchEntry> matches)
         {
-            var results = matches
+            IOrderedEnumerable<ChartDataPoint> results = matches
                 .Where(m => m.Against != null)
                 .GroupBy(m => m.Against!.Name)
                 .Select(g => new ChartDataPoint
@@ -105,8 +105,8 @@ namespace PokemonBattleJournal.Services
         }
         public ObservableCollection<ChartDataPoint> CalculateWinRateByMatchLength(List<MatchEntry> matches)
         {
-            var shortMatches = matches.Where(m => (m.EndTime - m.StartTime).TotalMinutes <= 10);
-            var longMatches = matches.Where(m => (m.EndTime - m.StartTime).TotalMinutes > 10);
+            IEnumerable<MatchEntry> shortMatches = matches.Where(m => (m.EndTime - m.StartTime).TotalMinutes <= 10);
+            IEnumerable<MatchEntry> longMatches = matches.Where(m => (m.EndTime - m.StartTime).TotalMinutes > 10);
 
             return new ObservableCollection<ChartDataPoint>
             {
@@ -118,10 +118,10 @@ namespace PokemonBattleJournal.Services
 
         public ObservableCollection<ChartDataPoint> CalculateFirstTurnAdvantage(List<MatchEntry> matches)
         {
-            var allGames = matches.SelectMany(m => new[] { m.Game1, m.Game2, m.Game3 }).OfType<Game>();
+            IEnumerable<Game> allGames = matches.SelectMany(m => new[] { m.Game1, m.Game2, m.Game3 }).OfType<Game>();
 
-            var firstTurnGames = allGames.Where(g => g.Turn == 1).ToList();
-            var secondTurnGames = allGames.Where(g => g.Turn == 2).ToList();
+            List<Game> firstTurnGames = allGames.Where(g => g.Turn == 1).ToList();
+            List<Game> secondTurnGames = allGames.Where(g => g.Turn == 2).ToList();
 
             static double FirstTurnRate(List<Game> games) => games.Count > 0
                 ? (games.Count(g => g.Result == MatchResult.Win) + 0.5 * games.Count(g => g.Result == MatchResult.Tie)) / games.Count * 100
@@ -135,15 +135,15 @@ namespace PokemonBattleJournal.Services
         }
         public (string[] PlayedArchetypes, string[] OpponentArchetypes, (int PlayedIdx, int OpponentIdx, double WinRate)[] Cells) CalculateMatchupMatrix(List<MatchEntry> matches)
         {
-            var relevant = matches.Where(m => m.Playing?.Name != null && m.Against?.Name != null).ToList();
+            List<MatchEntry> relevant = matches.Where(m => m.Playing?.Name != null && m.Against?.Name != null).ToList();
 
-            var played = relevant.Select(m => m.Playing?.Name).OfType<string>().Distinct().OrderBy(x => x).ToArray();
-            var opponents = relevant.Select(m => m.Against?.Name).OfType<string>().Distinct().OrderBy(x => x).ToArray();
+            string[] played = relevant.Select(m => m.Playing?.Name).OfType<string>().Distinct().OrderBy(x => x).ToArray();
+            string[] opponents = relevant.Select(m => m.Against?.Name).OfType<string>().Distinct().OrderBy(x => x).ToArray();
 
-            var playedIdx = played.Select((n, i) => (n, i)).ToDictionary(x => x.n, x => x.i);
-            var opponentIdx = opponents.Select((n, i) => (n, i)).ToDictionary(x => x.n, x => x.i);
+            Dictionary<string, int> playedIdx = played.Select((n, i) => (n, i)).ToDictionary(x => x.n, x => x.i);
+            Dictionary<string, int> opponentIdx = opponents.Select((n, i) => (n, i)).ToDictionary(x => x.n, x => x.i);
 
-            var cells = relevant
+            (int PlayedIdx, int OpponentIdx, double WinRate)[] cells = relevant
                 .GroupBy(m => (Playing: m.Playing?.Name ?? string.Empty, Against: m.Against?.Name ?? string.Empty))
                 .Select(g => (
                     PlayedIdx: playedIdx[g.Key.Playing],

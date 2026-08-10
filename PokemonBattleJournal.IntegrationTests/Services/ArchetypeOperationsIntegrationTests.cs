@@ -10,7 +10,7 @@ namespace PokemonBattleJournal.IntegrationTests.Services
         public async Task SetUp()
         {
             _factory = new TestSqliteConnectionFactory();
-            var metaService = Substitute.For<ILimitlessMetaService>();
+            ILimitlessMetaService metaService = Substitute.For<ILimitlessMetaService>();
             metaService.GetTopDecksAsync(Arg.Any<int>())
                 .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>()));
             _sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
@@ -99,13 +99,13 @@ namespace PokemonBattleJournal.IntegrationTests.Services
         [Test]
         public async Task GetAllAsync_OgerponBox_ResolvesToTealMaskSprite()
         {
-            var metaService = Substitute.For<ILimitlessMetaService>();
+            ILimitlessMetaService metaService = Substitute.For<ILimitlessMetaService>();
             metaService.GetTopDecksAsync(Arg.Any<int>())
                 .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
                 {
                     new("Ogerpon Box", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png"),
                 }));
-            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
+            ArchetypeOperations sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
 
             List<Archetype> archetypes = await sut.GetAllAsync();
 
@@ -117,14 +117,14 @@ namespace PokemonBattleJournal.IntegrationTests.Services
         [Test]
         public async Task GetAllAsync_OgerponWellspring_ResolvesToWellspringMaskSprite()
         {
-            var metaService = Substitute.For<ILimitlessMetaService>();
+            ILimitlessMetaService metaService = Substitute.For<ILimitlessMetaService>();
             metaService.GetTopDecksAsync(Arg.Any<int>())
                 .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
                 {
                     new("Ogerpon Meganium", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png",
                         "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon-wellspring.png"),
                 }));
-            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
+            ArchetypeOperations sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
 
             List<Archetype> archetypes = await sut.GetAllAsync();
 
@@ -137,14 +137,14 @@ namespace PokemonBattleJournal.IntegrationTests.Services
         public async Task GetAllAsync_WithMetaDecks_UpsertsMetaArchetypes()
         {
             // Re-create the SUT with a metaService that returns real decks
-            var metaService = Substitute.For<ILimitlessMetaService>();
+            ILimitlessMetaService metaService = Substitute.For<ILimitlessMetaService>();
             metaService.GetTopDecksAsync(Arg.Any<int>())
                 .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
                 {
                     new("Pikachu", "https://cdn.example.com/pikachu.png"),
                     new("Eevee", "https://cdn.example.com/eevee.png"),
                 }));
-            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
+            ArchetypeOperations sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
 
             List<Archetype> archetypes = await sut.GetAllAsync();
 
@@ -221,13 +221,13 @@ namespace PokemonBattleJournal.IntegrationTests.Services
         [Test]
         public async Task GetAllAsync_WithMetaDeckHavingSecondaryImage_PersistsImagePath2()
         {
-            var metaService = Substitute.For<ILimitlessMetaService>();
+            ILimitlessMetaService metaService = Substitute.For<ILimitlessMetaService>();
             metaService.GetTopDecksAsync(Arg.Any<int>())
                 .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
                 {
                     new("Charizard ex / Pidgeot ex", "https://cdn.example.com/charizard_ex.png", "https://cdn.example.com/pidgeot_ex.png"),
                 }));
-            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
+            ArchetypeOperations sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
 
             List<Archetype> archetypes = await sut.GetAllAsync();
 
@@ -245,13 +245,13 @@ namespace PokemonBattleJournal.IntegrationTests.Services
                 "INSERT OR IGNORE INTO Archetype (Name, ImagePath) VALUES (?, ?)",
                 "Ogerpon Box", "substitute.png");
 
-            var metaService = Substitute.For<ILimitlessMetaService>();
+            ILimitlessMetaService metaService = Substitute.For<ILimitlessMetaService>();
             metaService.GetTopDecksAsync(Arg.Any<int>())
                 .Returns(Task.FromResult(new List<PokemonBattleJournal.Scraper.Models.MetaDeck>
                 {
                     new("Ogerpon Box", "https://r2.limitlesstcg.net/pokemon/gen9/ogerpon.png"),
                 }));
-            var sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
+            ArchetypeOperations sut = new ArchetypeOperations(_factory, Substitute.For<ILogger>(), metaService, Substitute.For<IErrorHandler>());
 
             List<Archetype> archetypes = await sut.GetAllAsync();
 

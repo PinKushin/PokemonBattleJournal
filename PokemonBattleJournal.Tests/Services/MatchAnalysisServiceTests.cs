@@ -317,23 +317,23 @@ namespace PokemonBattleJournal.Tests.Services
                 new() { Playing = new Archetype { Name = "Gardevoir" }, Against = new Archetype { Name = "Charizard" }, Result = MatchResult.Win },
             ];
 
-            var (played, opponents, cells) = _service.CalculateMatchupMatrix(matches);
+            (string[]? played, string[]? opponents, (int PlayedIdx, int OpponentIdx, double WinRate)[]? cells) = _service.CalculateMatchupMatrix(matches);
 
             played.ShouldBe(["Charizard", "Gardevoir"], ignoreOrder: false);
             opponents.ShouldBe(["Charizard", "Gardevoir"], ignoreOrder: false);
             cells.Length.ShouldBe(2);
 
-            var chariVsGarde = cells.Single(c => c.PlayedIdx == Array.IndexOf(played, "Charizard") && c.OpponentIdx == Array.IndexOf(opponents, "Gardevoir"));
+            (int PlayedIdx, int OpponentIdx, double WinRate) chariVsGarde = cells.Single(c => c.PlayedIdx == Array.IndexOf(played, "Charizard") && c.OpponentIdx == Array.IndexOf(opponents, "Gardevoir"));
             chariVsGarde.WinRate.ShouldBe(50); // 1W 1L
 
-            var gardeVsChar = cells.Single(c => c.PlayedIdx == Array.IndexOf(played, "Gardevoir") && c.OpponentIdx == Array.IndexOf(opponents, "Charizard"));
+            (int PlayedIdx, int OpponentIdx, double WinRate) gardeVsChar = cells.Single(c => c.PlayedIdx == Array.IndexOf(played, "Gardevoir") && c.OpponentIdx == Array.IndexOf(opponents, "Charizard"));
             gardeVsChar.WinRate.ShouldBe(100);
         }
 
         [Test]
         public void CalculateMatchupMatrix_EmptyList_ReturnsEmptyArrays()
         {
-            var (played, opponents, cells) = _service.CalculateMatchupMatrix([]);
+            (string[]? played, string[]? opponents, (int PlayedIdx, int OpponentIdx, double WinRate)[]? cells) = _service.CalculateMatchupMatrix([]);
 
             played.ShouldBeEmpty();
             opponents.ShouldBeEmpty();
@@ -350,7 +350,7 @@ namespace PokemonBattleJournal.Tests.Services
                 new() { Playing = new Archetype { Name = "Charizard" }, Against = new Archetype { Name = "Gardevoir" }, Result = MatchResult.Win },
             ];
 
-            var (played, opponents, cells) = _service.CalculateMatchupMatrix(matches);
+            (string[]? played, string[]? opponents, (int PlayedIdx, int OpponentIdx, double WinRate)[]? cells) = _service.CalculateMatchupMatrix(matches);
 
             played.ShouldBe(["Charizard"]);
             opponents.ShouldBe(["Gardevoir"]);
@@ -492,7 +492,7 @@ namespace PokemonBattleJournal.Tests.Services
         [Test]
         public void CalculateAverageMatchDuration_WithMatches_ReturnsAverage()
         {
-            var baseDate = new DateTime(2026, 1, 1);
+            DateTime baseDate = new DateTime(2026, 1, 1);
             List<MatchEntry> matches =
             [
                 new() { StartTime = baseDate.AddHours(10), EndTime = baseDate.AddHours(10).AddMinutes(20) },
@@ -507,7 +507,7 @@ namespace PokemonBattleJournal.Tests.Services
         [Test]
         public void CalculateAverageMatchDuration_SingleMatch_ReturnsDuration()
         {
-            var baseDate = new DateTime(2026, 1, 1);
+            DateTime baseDate = new DateTime(2026, 1, 1);
             List<MatchEntry> matches =
             [
                 new() { StartTime = baseDate.AddHours(9), EndTime = baseDate.AddHours(9).AddMinutes(15) }

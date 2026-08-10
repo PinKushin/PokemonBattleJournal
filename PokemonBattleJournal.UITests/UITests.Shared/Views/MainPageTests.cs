@@ -1,4 +1,7 @@
-﻿namespace UITests
+﻿using System.Diagnostics;
+using OpenQA.Selenium.Support.UI;
+
+namespace UITests
 {
     public partial class MainPageTests : BaseTest
     {
@@ -88,7 +91,7 @@
             for (int i = 0; i < 3; i++)
             {
                 ClickElement("Game1Tab");
-                var deadline = DateTime.UtcNow.AddMilliseconds(2500);
+                DateTime deadline = DateTime.UtcNow.AddMilliseconds(2500);
                 while (DateTime.UtcNow < deadline)
                 {
                     if (!IsElementPresent("UserNoteInput2") && !IsElementPresent("UserNoteInput3"))
@@ -111,7 +114,7 @@
         // so both run at zero wait — waiting cannot make a missing scroll container appear.
         private void ScrollPageToTop()
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
             if (App is AndroidDriver)
             {
                 WithImplicitWait(TimeSpan.Zero, () =>
@@ -153,7 +156,7 @@
             {
                 foreach (string id in ids)
                 {
-                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
                     try
                     {
                         App.FindElement(MobileBy.AccessibilityId(id)).SendKeys(OpenQA.Selenium.Keys.Escape);
@@ -212,8 +215,8 @@
                     continue;
                 }
 
-                var tabSw = System.Diagnostics.Stopwatch.StartNew();
-                var tabDeadline = DateTime.UtcNow.AddMilliseconds(5000);
+                Stopwatch tabSw = System.Diagnostics.Stopwatch.StartNew();
+                DateTime tabDeadline = DateTime.UtcNow.AddMilliseconds(5000);
                 while (DateTime.UtcNow < tabDeadline)
                 {
                     if (IsElementPresent("Game2Tab"))
@@ -246,10 +249,10 @@
             PerfLog($"DismissArchetypePopup: cancelClicked={cancelClicked}");
 
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            var pollSw = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch pollSw = System.Diagnostics.Stopwatch.StartNew();
             try
             {
-                var deadline = DateTime.UtcNow.AddMilliseconds(1500);
+                DateTime deadline = DateTime.UtcNow.AddMilliseconds(1500);
                 while (DateTime.UtcNow < deadline)
                 {
                     if (!IsElementPresent("ArchetypeSearchBar"))
@@ -266,10 +269,10 @@
             SendAndroidBack();
 
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            var backPollSw = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch backPollSw = System.Diagnostics.Stopwatch.StartNew();
             try
             {
-                var deadline = DateTime.UtcNow.AddMilliseconds(1500);
+                DateTime deadline = DateTime.UtcNow.AddMilliseconds(1500);
                 while (DateTime.UtcNow < deadline)
                 {
                     if (!IsElementPresent("ArchetypeSearchBar"))
@@ -315,14 +318,14 @@
         private void SelectAndroidPickerItem(AppiumElement picker, string itemText, int attempts = 3)
         {
             PerfLog($"SelectAndroidPickerItem('{itemText}'): begin");
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
             for (int i = 0; i < attempts; i++)
             {
                 picker.Click();
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(2500);
                 try
                 {
-                    var el = App.FindElement(MobileBy.AndroidUIAutomator(
+                    AppiumElement el = App.FindElement(MobileBy.AndroidUIAutomator(
                         $"new UiSelector().text(\"{itemText}\")"));
                     PerfLog($"SelectAndroidPickerItem('{itemText}'): dialog open on attempt {i + 1} ({sw.ElapsedMilliseconds}ms) — clicking item");
                     el.Click();
@@ -645,7 +648,7 @@
 
                 // SavedFileDisplay binding updates to "Saved: Match at …" on success.
                 // SemanticProperties.Description is NOT set on the button so .Text reflects the bound value.
-                var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(5));
+                WebDriverWait wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(5));
                 string savedText = wait.Until(_ =>
                 {
                     string text = FindUIElement("SaveMatchButton").Text;
@@ -680,7 +683,7 @@
                 //
                 // SavedFileDisplay rebinds the button's text to "Saved: …" on success, which is
                 // the app's own confirmation and the same signal the sibling archetype test uses.
-                var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(5));
+                WebDriverWait wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(5));
                 string savedText = wait.Until(_ =>
                 {
                     string text = FindUIElement("SaveMatchButton").Text;
@@ -769,7 +772,7 @@
                 ClickElement(comboBoxId);
 
                 // Poll for popup content (search bar) with a short per-attempt deadline.
-                var deadline = DateTime.UtcNow.AddMilliseconds(2500);
+                DateTime deadline = DateTime.UtcNow.AddMilliseconds(2500);
                 while (DateTime.UtcNow < deadline)
                 {
                     if (IsElementPresent("ArchetypeSearchBar"))

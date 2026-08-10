@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using static PokemonBattleJournal.Models.MatchResult;
 
 namespace PokemonBattleJournal.IntegrationTests.Services;
@@ -74,7 +75,7 @@ public class MatchAnalysisTests
             Match(DateTime.Today.AddDays(4), Win),
         ];
 
-        var (longestWin, longestLoss, longestTie) = _analysis.CalculateStreaks(matches);
+        (int longestWin, int longestLoss, int longestTie) = _analysis.CalculateStreaks(matches);
         ((int)longestWin).ShouldBe(3);
         ((int)longestLoss).ShouldBe(1);
         ((int)longestTie).ShouldBe(0);
@@ -83,7 +84,7 @@ public class MatchAnalysisTests
     [Test]
     public void CalculateStreaks_EmptyList_ReturnsZeros()
     {
-        var (longestWin, longestLoss, longestTie) = _analysis.CalculateStreaks([]);
+        (int longestWin, int longestLoss, int longestTie) = _analysis.CalculateStreaks([]);
         ((int)longestWin).ShouldBe(0);
         ((int)longestLoss).ShouldBe(0);
         ((int)longestTie).ShouldBe(0);
@@ -97,7 +98,7 @@ public class MatchAnalysisTests
             Match(DateTime.Today.AddDays(1), Loss),
         ];
 
-        var (longestWin, longestLoss, longestTie) = _analysis.CalculateStreaks(matches);
+        (int longestWin, int longestLoss, int longestTie) = _analysis.CalculateStreaks(matches);
         longestLoss.ShouldBe(2);
     }
 
@@ -116,7 +117,7 @@ public class MatchAnalysisTests
             Match(DateTime.Today.AddDays(4), Win, charizard),
         ];
 
-        var result = _analysis.GetMostPlayedArchetypes(matches);
+        ObservableCollection<ChartDataPoint> result = _analysis.GetMostPlayedArchetypes(matches);
         result.ShouldNotBeEmpty();
         result[0].Label.ShouldBe("Charizard");
         result[0].Value.ShouldBe(3);
@@ -136,7 +137,7 @@ public class MatchAnalysisTests
             Match(DateTime.Today.AddDays(2), Win, blastoise, charizard),
         ];
 
-        var (played, opponents, cells) = _analysis.CalculateMatchupMatrix(matches);
+        (string[]? played, string[]? opponents, (int PlayedIdx, int OpponentIdx, double WinRate)[]? cells) = _analysis.CalculateMatchupMatrix(matches);
 
         played.ShouldContain("Blastoise");
         played.ShouldContain("Charizard");
@@ -145,7 +146,7 @@ public class MatchAnalysisTests
         cells.Length.ShouldBe(2);
 
         // Charizard vs Blastoise: 1 win, 1 loss → 50% win rate
-        var charizardVsBlastoise = cells.First(c => played[c.PlayedIdx] == "Charizard" && opponents[c.OpponentIdx] == "Blastoise");
+        (int PlayedIdx, int OpponentIdx, double WinRate) charizardVsBlastoise = cells.First(c => played[c.PlayedIdx] == "Charizard" && opponents[c.OpponentIdx] == "Blastoise");
         charizardVsBlastoise.WinRate.ShouldBe(50);
     }
 
@@ -178,7 +179,7 @@ public class MatchAnalysisTests
             new() { StartTime = DateTime.Today.AddDays(1), EndTime = DateTime.Today.AddDays(1).AddMinutes(20), Playing = arch },
         ];
 
-        var result = _analysis.CalculateWinRateByMatchLength(matches);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculateWinRateByMatchLength(matches);
         result.Count.ShouldBe(2);
         result.ShouldContain(c => c.Label == "Short Matches");
         result.ShouldContain(c => c.Label == "Long Matches");
@@ -202,7 +203,7 @@ public class MatchAnalysisTests
             },
         ];
 
-        var result = _analysis.CalculateFirstTurnAdvantage(matches);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculateFirstTurnAdvantage(matches);
         result.Count.ShouldBe(2);
         result.ShouldContain(c => c.Label == "First Turn" && c.Value == 100);
         result.ShouldContain(c => c.Label == "Second Turn" && c.Value == 0);
@@ -211,7 +212,7 @@ public class MatchAnalysisTests
     [Test]
     public void CalculateFirstTurnAdvantage_EmptyMatches_ReturnsZeros()
     {
-        var result = _analysis.CalculateFirstTurnAdvantage([]);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculateFirstTurnAdvantage([]);
         result.Count.ShouldBe(2);
         result.ShouldContain(c => c.Label == "First Turn" && c.Value == 0);
         result.ShouldContain(c => c.Label == "Second Turn" && c.Value == 0);
@@ -231,7 +232,7 @@ public class MatchAnalysisTests
             },
         ];
 
-        var result = _analysis.CalculateTagUsage(matches);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculateTagUsage(matches);
         result.ShouldNotBeEmpty();
         result.ShouldContain(c => c.Label == "Aggro" && c.Value == 2);
         result.ShouldContain(c => c.Label == "Control" && c.Value == 1);
@@ -240,7 +241,7 @@ public class MatchAnalysisTests
     [Test]
     public void CalculateTagUsage_EmptyMatches_ReturnsEmpty()
     {
-        var result = _analysis.CalculateTagUsage([]);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculateTagUsage([]);
         result.ShouldBeEmpty();
     }
 
@@ -257,7 +258,7 @@ public class MatchAnalysisTests
             new() { DatePlayed = DateTime.Today.AddDays(2), Playing = myDeck, Against = opp2, Result = Win },
         ];
 
-        var result = _analysis.CalculatePerformanceAgainstOpponents(matches);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculatePerformanceAgainstOpponents(matches);
         result.ShouldNotBeEmpty();
         // Opponent1: 1 win, 1 loss → 50% win rate
         result.ShouldContain(c => c.Label == "Opponent1" && c.Value == 50);
@@ -274,7 +275,7 @@ public class MatchAnalysisTests
             new() { DatePlayed = DateTime.Today.AddDays(1), Result = Win },
         ];
 
-        var result = _analysis.CalculateMatchFrequency(matches);
+        ObservableCollection<TimeDataPoint> result = _analysis.CalculateMatchFrequency(matches);
         result.Count.ShouldBe(2);
         result.ShouldContain(t => t.Date == DateTime.Today.Date && t.Value == 2);
         result.ShouldContain(t => t.Date == DateTime.Today.AddDays(1).Date && t.Value == 1);
@@ -290,7 +291,7 @@ public class MatchAnalysisTests
             new() { DatePlayed = DateTime.Today.AddDays(1), Result = Win },
         ];
 
-        var result = _analysis.CalculateWinRateOverTime(matches);
+        ObservableCollection<TimeDataPoint> result = _analysis.CalculateWinRateOverTime(matches);
         result.Count.ShouldBe(2);
         result.ShouldContain(t => t.Date == DateTime.Today.Date && t.Value == 50);
         result.ShouldContain(t => t.Date == DateTime.Today.AddDays(1).Date && t.Value == 100);
@@ -308,7 +309,7 @@ public class MatchAnalysisTests
             Match(DateTime.Today.AddDays(2), Loss, pikachu),
         ];
 
-        var result = _analysis.CalculateArchetypeWinRate(matches);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculateArchetypeWinRate(matches);
         result.ShouldNotBeEmpty();
         result.ShouldContain(c => c.Label == "Charizard" && c.Value == 100);
         result.ShouldContain(c => c.Label == "Pikachu" && c.Value == 0);
@@ -318,7 +319,7 @@ public class MatchAnalysisTests
     [Test]
     public void CalculateArchetypeWinRate_EmptyList_ReturnsEmpty()
     {
-        var result = _analysis.CalculateArchetypeWinRate([]);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculateArchetypeWinRate([]);
         result.ShouldBeEmpty();
     }
 
@@ -330,7 +331,7 @@ public class MatchAnalysisTests
             Match(DateTime.Today.AddDays(1), Win, Arch("Bulbasaur")),
         ];
 
-        var result = _analysis.CalculateArchetypeWinRate(matches);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculateArchetypeWinRate(matches);
         result.Count.ShouldBe(1);
         result[0].Label.ShouldBe("Bulbasaur");
     }
@@ -354,7 +355,7 @@ public class MatchAnalysisTests
     [Test]
     public void GetMostPlayedArchetypes_EmptyList_ReturnsEmpty()
     {
-        var result = _analysis.GetMostPlayedArchetypes([]);
+        ObservableCollection<ChartDataPoint> result = _analysis.GetMostPlayedArchetypes([]);
         result.ShouldBeEmpty();
     }
 
@@ -366,7 +367,7 @@ public class MatchAnalysisTests
             Match(DateTime.Today.AddDays(1), Loss),
         ];
 
-        var result = _analysis.GetMostPlayedArchetypes(matches);
+        ObservableCollection<ChartDataPoint> result = _analysis.GetMostPlayedArchetypes(matches);
         result.ShouldContain(c => c.Label == "Unknown" && c.Value == 2);
     }
 
@@ -379,7 +380,7 @@ public class MatchAnalysisTests
             Match(DateTime.Today.AddDays(2), Tie),
         ];
 
-        var (longestWin, longestLoss, longestTie) = _analysis.CalculateStreaks(matches);
+        (int longestWin, int longestLoss, int longestTie) = _analysis.CalculateStreaks(matches);
         ((int)longestTie).ShouldBe(3);
         ((int)longestWin).ShouldBe(0);
         ((int)longestLoss).ShouldBe(0);
@@ -388,7 +389,7 @@ public class MatchAnalysisTests
     [Test]
     public void CalculatePerformanceAgainstOpponents_EmptyList_ReturnsEmpty()
     {
-        var result = _analysis.CalculatePerformanceAgainstOpponents([]);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculatePerformanceAgainstOpponents([]);
         result.ShouldBeEmpty();
     }
 
@@ -399,28 +400,28 @@ public class MatchAnalysisTests
             new() { DatePlayed = DateTime.Today, Playing = Arch("Deck"), Against = null, Result = Win },
         ];
 
-        var result = _analysis.CalculatePerformanceAgainstOpponents(matches);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculatePerformanceAgainstOpponents(matches);
         result.ShouldBeEmpty();
     }
 
     [Test]
     public void CalculateMatchFrequency_EmptyList_ReturnsEmpty()
     {
-        var result = _analysis.CalculateMatchFrequency([]);
+        ObservableCollection<TimeDataPoint> result = _analysis.CalculateMatchFrequency([]);
         result.ShouldBeEmpty();
     }
 
     [Test]
     public void CalculateWinRateOverTime_EmptyList_ReturnsEmpty()
     {
-        var result = _analysis.CalculateWinRateOverTime([]);
+        ObservableCollection<TimeDataPoint> result = _analysis.CalculateWinRateOverTime([]);
         result.ShouldBeEmpty();
     }
 
     [Test]
     public void CalculateMatchupMatrix_EmptyList_ReturnsEmpty()
     {
-        var (played, opponents, cells) = _analysis.CalculateMatchupMatrix([]);
+        (string[]? played, string[]? opponents, (int PlayedIdx, int OpponentIdx, double WinRate)[]? cells) = _analysis.CalculateMatchupMatrix([]);
         played.ShouldBeEmpty();
         opponents.ShouldBeEmpty();
         cells.ShouldBeEmpty();
@@ -429,7 +430,7 @@ public class MatchAnalysisTests
     [Test]
     public void CalculateWinRateByMatchLength_EmptyList_ReturnsBothZero()
     {
-        var result = _analysis.CalculateWinRateByMatchLength([]);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculateWinRateByMatchLength([]);
         result.Count.ShouldBe(2);
         result.ShouldContain(c => c.Label == "Short Matches" && c.Value == 0);
         result.ShouldContain(c => c.Label == "Long Matches" && c.Value == 0);
@@ -442,7 +443,7 @@ public class MatchAnalysisTests
             new() { Game1 = new Game { Result = Win, Tags = [] } },
         ];
 
-        var result = _analysis.CalculateTagUsage(matches);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculateTagUsage(matches);
         result.ShouldBeEmpty();
     }
 
@@ -456,7 +457,7 @@ public class MatchAnalysisTests
             new() { DatePlayed = DateTime.Today, Game1 = game1 },
         ];
 
-        var result = _analysis.CalculateFirstTurnAdvantage(matches);
+        ObservableCollection<ChartDataPoint> result = _analysis.CalculateFirstTurnAdvantage(matches);
         result.ShouldContain(c => c.Label == "First Turn" && c.Value == 50);
         result.ShouldContain(c => c.Label == "Second Turn" && c.Value == 0);
     }

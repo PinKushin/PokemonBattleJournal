@@ -17,7 +17,7 @@ public class ImagePickerPopup : Popup<ImagePickerPopup.PickerResult?>
         Color textColor,
         Color accentColor)
     {
-        var collectionView = new CollectionView
+        CollectionView collectionView = new CollectionView
         {
             ItemsSource = items,
             SelectionMode = SelectionMode.Single,
@@ -27,7 +27,7 @@ public class ImagePickerPopup : Popup<ImagePickerPopup.PickerResult?>
 
         collectionView.ItemTemplate = new DataTemplate(() =>
         {
-            var image = new Image
+            Image image = new Image
             {
                 HeightRequest = 26,
                 WidthRequest = 26,
@@ -38,7 +38,7 @@ public class ImagePickerPopup : Popup<ImagePickerPopup.PickerResult?>
             };
             image.SetBinding(Image.SourceProperty, new Binding(imageMemberPath));
 
-            var label = new Label
+            Label label = new Label
             {
                 VerticalTextAlignment = TextAlignment.Center,
                 FontSize = 13,
@@ -68,7 +68,7 @@ public class ImagePickerPopup : Popup<ImagePickerPopup.PickerResult?>
             }
         };
 
-        var titleLabel = new Label
+        Label titleLabel = new Label
         {
             Text = "Select an option",
             FontSize = 16,
@@ -78,7 +78,7 @@ public class ImagePickerPopup : Popup<ImagePickerPopup.PickerResult?>
             Margin = new Thickness(0, 8, 0, 5)
         };
 
-        var closeButton = new Button
+        Button closeButton = new Button
         {
             Text = "Cancel",
             HorizontalOptions = LayoutOptions.Center,

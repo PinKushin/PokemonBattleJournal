@@ -1,3 +1,6 @@
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+
 namespace UITests
 {
     [SetUpFixture]
@@ -47,7 +50,7 @@ namespace UITests
         [OneTimeSetUp]
         public void RunBeforeAnyTests()
         {
-            var setupTimer = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch setupTimer = System.Diagnostics.Stopwatch.StartNew();
             Log("START AppiumSetup.RunBeforeAnyTests");
             
             File.WriteAllText(SetupLogPath, $"=== AppiumSetup start {DateTime.Now:O} ==={Environment.NewLine}");
@@ -55,7 +58,7 @@ namespace UITests
                 $"=== Nav log start {DateTime.Now:O} ==={Environment.NewLine}");
 
             Log("1. EnsureAndroidToolsInPath");
-            var step1Timer = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch step1Timer = System.Diagnostics.Stopwatch.StartNew();
             EnsureAndroidToolsInPath();
             step1Timer.Stop();
             Log($"1. EnsureAndroidToolsInPath done ({step1Timer.ElapsedMilliseconds}ms)");
@@ -75,14 +78,14 @@ namespace UITests
             else
             {
                 Log("2. EnsureEmulatorRunning");
-                var step2Timer = System.Diagnostics.Stopwatch.StartNew();
+                Stopwatch step2Timer = System.Diagnostics.Stopwatch.StartNew();
                 EnsureEmulatorRunning();
                 step2Timer.Stop();
                 Log($"2. EnsureEmulatorRunning done ({step2Timer.ElapsedMilliseconds}ms)");
             }
 
             Log("3. StartAppiumLocalServer");
-            var step3Timer = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch step3Timer = System.Diagnostics.Stopwatch.StartNew();
             AppiumServerHelper.StartAppiumLocalServer();
             step3Timer.Stop();
             Log($"3. StartAppiumLocalServer done ({step3Timer.ElapsedMilliseconds}ms)");
@@ -108,7 +111,7 @@ if (useInstalled)
                 else
                 {
                     Log("4. BuildAndroidApk");
-                    var step4Timer = System.Diagnostics.Stopwatch.StartNew();
+                Stopwatch step4Timer = System.Diagnostics.Stopwatch.StartNew();
                     string apkPath = BuildAndroidApk();
                     step4Timer.Stop();
                     Log($"4. BuildAndroidApk done: {apkPath} ({step4Timer.ElapsedMilliseconds}ms)");
@@ -118,7 +121,7 @@ if (useInstalled)
                     // When App is set, Appium takes ownership of the lifecycle and uninstalls on Quit().
                     // Without App, Appium launches the already-installed package by AppPackage/AppActivity.
                     Log("4b. Installing APK via adb");
-                    var step4bTimer = System.Diagnostics.Stopwatch.StartNew();
+                Stopwatch step4bTimer = System.Diagnostics.Stopwatch.StartNew();
                     RunAdb($"install -r \"{apkPath}\"", timeoutMs: 120_000);
                     step4bTimer.Stop();
                     Log($"4b. APK installed ({step4bTimer.ElapsedMilliseconds}ms)");
@@ -169,7 +172,7 @@ if (useInstalled)
             EnsureThreeButtonNavigation();
 
             Log("5. new AndroidDriver");
-            var step5Timer = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch step5Timer = System.Diagnostics.Stopwatch.StartNew();
             // Driver-creation retry: UIAutomator2's session init shells settings commands
             // via adb, and on a freshly-booted CI emulator adbd can be starved enough to
             // report "device offline" transiently — observed twice (runs 30984076303,
@@ -198,7 +201,7 @@ if (useInstalled)
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
 
             Log("6. WaitForActivity");
-            var step6Timer = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch step6Timer = System.Diagnostics.Stopwatch.StartNew();
             WaitForActivity($"{AppPackage}.MainActivity", timeoutSeconds: 60);
             step6Timer.Stop();
             Log($"6. WaitForActivity done ({step6Timer.ElapsedMilliseconds}ms)");
@@ -212,8 +215,8 @@ if (useInstalled)
             // one run, while the identical job passed in 1s on others). Give the cold
             // start its runway ONCE here, so per-nav retries can stay tight.
             Log("7. WaitForAppReady (flyout hamburger in UIA tree)");
-            var step7Timer = System.Diagnostics.Stopwatch.StartNew();
-            var readyDeadline = DateTime.UtcNow.AddSeconds(90);
+            Stopwatch step7Timer = System.Diagnostics.Stopwatch.StartNew();
+            DateTime readyDeadline = DateTime.UtcNow.AddSeconds(90);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
             try
             {
@@ -232,7 +235,7 @@ if (useInstalled)
                     // gone. hide_error_dialogs=1 (set in the workflow) only prevents FUTURE
                     // dialogs; one already showing must be dismissed here. AOSP's ANR
                     // dialog exposes its Wait button as android:id/aerr_wait.
-                    var anrWait = driver.FindElements(MobileBy.AndroidUIAutomator(
+                    ReadOnlyCollection<AppiumElement> anrWait = driver.FindElements(MobileBy.AndroidUIAutomator(
                         "new UiSelector().resourceId(\"android:id/aerr_wait\")"));
                     if (anrWait.Count > 0)
                     {
@@ -257,10 +260,10 @@ if (useInstalled)
                     // is diagnosable instead of guessable.
                     try
                     {
-                        var descs = driver.FindElements(MobileBy.AndroidUIAutomator(
+                        ReadOnlyCollection<AppiumElement> descs = driver.FindElements(MobileBy.AndroidUIAutomator(
                             "new UiSelector().descriptionMatches(\".+\")"));
                         Log($"7. GATE TIMEOUT: {descs.Count} elements with content-desc:");
-                        foreach (var el in descs.Take(25))
+                        foreach (AppiumElement? el in descs.Take(25))
                         {
                             try { Log($"     desc='{el.GetDomAttribute("content-desc")}' class='{el.GetDomAttribute("className")}'"); }
                             catch (OpenQA.Selenium.StaleElementReferenceException) { Log("     <stale>"); }
@@ -287,7 +290,7 @@ if (useInstalled)
         [OneTimeTearDown]
         public void RunAfterAllTests()
         {
-            var cleanupTimer = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch cleanupTimer = System.Diagnostics.Stopwatch.StartNew();
 
             // Pull the in-app ComboBoxControl popup lifecycle log before force-stopping.
             // App writes to FileSystem.CacheDirectory; use run-as to read from app-private
@@ -308,13 +311,13 @@ if (useInstalled)
             catch (Exception ex) { Log($"Tearing down: pull popup log failed: {ex.GetType().Name}: {ex.Message}"); }
 
             Log("Tearing down: Force-stop app");
-            var stopAppTimer = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch stopAppTimer = System.Diagnostics.Stopwatch.StartNew();
             RunAdb($"shell am force-stop {AppPackage}", timeoutMs: 5_000);
             stopAppTimer.Stop();
             Log($"Tearing down: Force-stop app done ({stopAppTimer.ElapsedMilliseconds}ms)");
             
             Log("Tearing down: Quit driver");
-            var quitDriverTimer = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch quitDriverTimer = System.Diagnostics.Stopwatch.StartNew();
             driver?.Quit();
             quitDriverTimer.Stop();
             Log($"Tearing down: Quit driver done ({quitDriverTimer.ElapsedMilliseconds}ms)");
@@ -334,7 +337,7 @@ if (useInstalled)
             else
             {
                 Log("Tearing down: Shutdown emulator");
-                var shutdownEmulatorTimer = System.Diagnostics.Stopwatch.StartNew();
+                Stopwatch shutdownEmulatorTimer = System.Diagnostics.Stopwatch.StartNew();
                 ShutdownEmulator();
                 shutdownEmulatorTimer.Stop();
                 Log($"Tearing down: Shutdown emulator done ({shutdownEmulatorTimer.ElapsedMilliseconds}ms)");
@@ -367,7 +370,7 @@ if (useInstalled)
             if (!correctAvdRunning)
             {
                 // Launch the correct AVD — fire-and-forget; emulator stays alive until killed.
-                var psi = new System.Diagnostics.ProcessStartInfo
+                ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = emulatorExe,
                     Arguments = $"-avd {AvdName} -no-snapshot-load",
@@ -390,7 +393,7 @@ if (useInstalled)
         {
             try
             {
-                var psi = new System.Diagnostics.ProcessStartInfo
+                ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "adb",
                     Arguments = "emu kill",
@@ -398,7 +401,7 @@ if (useInstalled)
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                 };
-                using var proc = System.Diagnostics.Process.Start(psi);
+                using Process? proc = System.Diagnostics.Process.Start(psi);
                 proc?.WaitForExit(10_000);
             }
             catch (Exception ex)
@@ -409,7 +412,7 @@ if (useInstalled)
 
         private static void WaitForEmulatorBoot(int timeoutSeconds)
         {
-            var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+            DateTime deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
             while (DateTime.UtcNow < deadline)
             {
                 string output = RunAdb("shell getprop sys.boot_completed", timeoutMs: 5_000);
@@ -421,7 +424,7 @@ if (useInstalled)
 
         private static void WaitForActivity(string activity, int timeoutSeconds)
         {
-            var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+            DateTime deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
             while (DateTime.UtcNow < deadline)
             {
                 string output = RunAdb("shell dumpsys activity activities", timeoutMs: 5_000);
@@ -526,7 +529,7 @@ if (useInstalled)
         {
             try
             {
-                var psi = new System.Diagnostics.ProcessStartInfo
+                ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "adb",
                     Arguments = arguments,
@@ -534,10 +537,10 @@ if (useInstalled)
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                 };
-                using var proc = System.Diagnostics.Process.Start(psi)!;
+                using Process proc = System.Diagnostics.Process.Start(psi)!;
                 // Read concurrently — WaitForExit deadlocks if output buffer fills (e.g. dumpsys output)
-                var stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
-                var stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
+                Task<string> stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
+                Task<string> stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
 
                 // The WaitForExit(int) return value and the exit code were both discarded here,
                 // and stderr was redirected but never read. That combination hid a permanent
@@ -626,7 +629,7 @@ if (useInstalled)
                 }
             }
 
-            var psi = new System.Diagnostics.ProcessStartInfo
+            ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "dotnet",
                 // EmbedAssembliesIntoApk required: Appium installs via adb but never pushes
@@ -639,10 +642,10 @@ if (useInstalled)
                 WorkingDirectory = repoRoot,
             };
 
-            using var proc = System.Diagnostics.Process.Start(psi)!;
+            using Process proc = System.Diagnostics.Process.Start(psi)!;
             // Read stdout/stderr concurrently — WaitForExit blocks if output buffer fills (deadlock)
-            var stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
-            var stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
+            Task<string> stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
+            Task<string> stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
             bool exited = proc.WaitForExit(600_000); // 10-minute cap
             string stdout = stdoutTask.Result;
             string stderr = stderrTask.Result;

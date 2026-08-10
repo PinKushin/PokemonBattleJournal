@@ -169,48 +169,29 @@ In this project:
 - New seed assertion → data-presence test written before the seed logic is added.
 - Bug fix → regression test that reproduces the bug, confirmed failing, before the fix.
 
-## One temporarily accepted warning: IDE0008
+## Explicit types, never `var`
 
-The build is otherwise at **zero warnings** and that still holds. The single exception is
-IDE0008, "use explicit type instead of `var`" — **758 occurrences as of 2026-08-07**, and that
-is deliberate rather than the baseline slipping.
+Types go at the START of a declaration. This is the user's own convention, predating any AI work
+here: *"types should always be apparent as early as possible."* Target-typed `new()` on the right
+is fine and preferred — the objection is to `var`, not to brevity. Anonymous types and tuple
+deconstructions have no nameable type and stay.
 
-Types go at the START of a declaration, never `var`. This is the user's own convention,
-predating any AI work here: *"types should always be apparent as early as possible."*
-Target-typed `new()` on the right is fine and preferred — the objection is to `var`, not to
-brevity. Anonymous types and tuple deconstructions have no nameable type and stay.
+Enforced as a build warning: `.editorconfig` sets the three `csharp_style_var_*` rules to
+`false:warning`, and `Directory.Build.props` sets `EnforceCodeStyleInBuild` — without that, an
+`.editorconfig` severity is editor-only and does nothing to the build.
 
-- **Do not suppress it.** No `#pragma`, no severity downgrade, no `.editorconfig` edit to
-  quieten it. The warning IS the worklist.
-- **If you touch a file, you clean that file.** Not the project, not the solution — the file you
-  were editing anyway. The count only goes down.
-- **Test projects are not exempt.** Style is consistent across the repo or it is not a style.
-- **The exception ends at zero**, and this section goes with it. Tracked as task #21.
+**The sweep is finished. IDE0008 is at zero and the build is at zero warnings again**, so there
+is no longer an accepted exception and no annotation filter to apply. Treat a new IDE0008 exactly
+like any other warning: a defect, fixed before the change lands.
 
-Distribution, so a jump is visible: Tests 390, IntegrationTests 216, app 128, Core 24,
-Scraper 0.
+Two things worth knowing if a large sweep is ever needed again:
 
-A NEW warning of any OTHER rule is a defect. This exception does not cover it.
-
-**This changes how CI annotations are read.** The standing rule is to hold annotations at zero,
-and that is what caught a CS8602 in a new test file on 2026-08-07 that the local build had not
-surfaced. With ~1000 IDE0008 warnings the raw count is permanently non-zero and a real new
-warning would hide in it, so check the annotations EXCLUDING this one rule and expect zero of
-everything else:
-
-```bash
-gh api repos/{owner}/{repo}/check-runs/{job-id}/annotations   --jq '[.[] | select(.message | ascii_downcase | test("ide0008") | not)] | length'
-```
-
-**Match on the message, lowercased.** A code-scanning annotation has no rule-id field — `title`
-and `raw_details` come back empty — and the human text reads "Use explicit type instead of
-'var'". The only place the id appears is the docs URL inside the message, in lower case. A
-filter keyed on `title`, or on an upper-case `IDE0008`, silently matches nothing and reports
-every annotation as a real one. Verified 2026-08-07: 140 annotations across four workflows,
-0 remaining after this filter.
-
-That number is the one that must stay at zero. When the sweep finishes, drop the filter.
-
+- `dotnet format style <project> --diagnostics IDE0008 --severity warn` applies the fix using
+  Roslyn's inferred types. Note **`style`**, not `analyzers` — the latter handles third-party
+  analyzers and silently does nothing for IDE-prefixed rules.
+- It also **reorders using directives** even when scoped to one diagnostic, which moves them
+  across the comments that explain the grouping. Check `git diff` for using-line changes and
+  restore those blocks, keeping any using it legitimately ADDED for a newly-named type.
 
 ## Test conventions
 

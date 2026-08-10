@@ -1,4 +1,7 @@
-﻿namespace UITests
+﻿using System.Diagnostics;
+using SQLite;
+
+namespace UITests
 {
     [SetUpFixture]
     public class AppiumSetup
@@ -43,7 +46,7 @@
         [OneTimeSetUp]
         public void RunBeforeAnyTests()
         {
-            var setupTimer = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch setupTimer = System.Diagnostics.Stopwatch.StartNew();
             string logPrefix = $"[{DateTime.Now:HH:mm:ss.fff}]";
             
             // Signal the app to suppress the first-boot prompt (avoids XamlRoot crash)
@@ -57,7 +60,7 @@
             AppiumServerHelper.StartAppiumLocalServer(port: 4724);
             PerfLog($"{logPrefix} AppiumServer started ({setupTimer.ElapsedMilliseconds}ms)");
 
-            var runningProc = System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal")
+            Process? runningProc = System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal")
                 .FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero);
 
             _attachedToExisting = runningProc != null;
@@ -81,14 +84,14 @@
             {
                 Log("2. Kill crash remnants");
                 // Kill any leftover crash remnants
-                foreach (var proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
+                foreach (Process proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
                     try { proc.Kill(true); proc.WaitForExit(5_000); } catch { }
 
                 Log("3. WipeAppDatabase");
                 WipeAppDatabase();
 
                 Log("4. BuildWindowsApp");
-                var buildTimer = System.Diagnostics.Stopwatch.StartNew();
+                Stopwatch buildTimer = System.Diagnostics.Stopwatch.StartNew();
                 string exePath = BuildWindowsApp();
                 buildTimer.Stop();
                 Log($"4. BuildWindowsApp done ({buildTimer.ElapsedMilliseconds}ms)");
@@ -109,7 +112,7 @@
             int[] retryDelaysMs = [5_000, 15_000, 30_000];
 
             Log("5. new WindowsDriver");
-            var driverTimer = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch driverTimer = System.Diagnostics.Stopwatch.StartNew();
             Exception? lastEx = null;
             for (int attempt = 0; attempt <= retryDelaysMs.Length; attempt++)
             {
@@ -148,7 +151,7 @@
             // The hamburger/OK menu is the first interactive UIA element — if it's visible
             // the Shell nav is wired up and NavigateTo will succeed immediately.
             Log("6. Wait for Shell");
-            var shellWaitTimer = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch shellWaitTimer = System.Diagnostics.Stopwatch.StartNew();
             driver.FindElement(MobileBy.AccessibilityId("OK"));
             shellWaitTimer.Stop();
             Log($"6. Shell ready ({shellWaitTimer.ElapsedMilliseconds}ms)");
@@ -255,7 +258,7 @@
             driver?.Quit();
             if (!_attachedToExisting)
             {
-                foreach (var proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
+                foreach (Process proc in System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal"))
                     try { proc.Kill(); } catch { }
             }
             AppiumServerHelper.DisposeAppiumLocalServer();
@@ -304,7 +307,7 @@
             try
             {
                 SQLitePCL.Batteries_V2.Init();
-                using var conn = new SQLite.SQLiteConnection(dbPath);
+                using SQLiteConnection conn = new SQLite.SQLiteConnection(dbPath);
                 int trainerId = conn.ExecuteScalar<int>(
                     "SELECT COALESCE(Id, 0) FROM Trainer WHERE Name = 'UITestTrainer'");
                 if (trainerId == 0) return;
@@ -350,7 +353,7 @@
             string framework = "net10.0-windows10.0.19041.0";
             string rid = "win-x64";
 
-            var psi = new System.Diagnostics.ProcessStartInfo
+            ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "dotnet",
                 Arguments = $"build \"{project}\" -f {framework} -c {config}",
@@ -360,10 +363,10 @@
                 WorkingDirectory = repoRoot,
             };
 
-            using var proc = System.Diagnostics.Process.Start(psi)!;
+            using Process proc = System.Diagnostics.Process.Start(psi)!;
             // Read stdout and stderr concurrently — reading after WaitForExit deadlocks when buffers fill
-            var stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
-            var stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
+            Task<string> stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
+            Task<string> stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
             bool exited = proc.WaitForExit(300_000); // 5-minute cap
             string stderr = stderrTask.Result;
             if (!exited)

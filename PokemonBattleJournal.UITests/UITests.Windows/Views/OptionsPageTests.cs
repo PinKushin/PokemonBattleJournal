@@ -45,7 +45,7 @@
             input.SendKeys("Ash");
 
             // Poll until binding update reflects the typed text.
-            var deadline = DateTime.UtcNow.AddSeconds(5);
+            DateTime deadline = DateTime.UtcNow.AddSeconds(5);
             string actual = input.GetAttribute("Value.Value");
             while (DateTime.UtcNow < deadline && actual != "Ash")
             {

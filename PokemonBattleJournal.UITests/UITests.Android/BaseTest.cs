@@ -1,3 +1,6 @@
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+
 namespace UITests
 {
     public abstract class BaseTest : TestBase
@@ -32,7 +35,7 @@ namespace UITests
                     continue;
                 }
 
-                var deadline = DateTime.UtcNow.AddMilliseconds(2500);
+                DateTime deadline = DateTime.UtcNow.AddMilliseconds(2500);
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(300);
                 bool menuOpen;
                 try
@@ -78,11 +81,11 @@ namespace UITests
         {
             string resourceId = $"{PackageName}:id/{id}";
             string directSelector = $"new UiSelector().resourceId(\"{resourceId}\")";
-            var overallSw = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch overallSw = System.Diagnostics.Stopwatch.StartNew();
 
             // Stage 1: direct resource-id (5s deadline, 500ms per poll)
-            var stage1Sw = System.Diagnostics.Stopwatch.StartNew();
-            var stage1Deadline = DateTime.UtcNow.AddSeconds(5);
+            Stopwatch stage1Sw = System.Diagnostics.Stopwatch.StartNew();
+            DateTime stage1Deadline = DateTime.UtcNow.AddSeconds(5);
             try
             {
                 while (true)
@@ -90,7 +93,7 @@ namespace UITests
                     try
                     {
                         App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(500);
-                        var el = App.FindElement(MobileBy.AndroidUIAutomator(directSelector));
+                        AppiumElement el = App.FindElement(MobileBy.AndroidUIAutomator(directSelector));
                         PerfLog($"FIND '{id}' STAGE1_OK resource-id in {stage1Sw.ElapsedMilliseconds}ms");
                         return el;
                     }
@@ -102,11 +105,11 @@ namespace UITests
             PerfLog($"FIND '{id}' STAGE1_MISS after {stage1Sw.ElapsedMilliseconds}ms → try content-desc");
 
             // Stage 2: AccessibilityId (content-desc) — cross-window, covers popup Dialog elements
-            var stage2Sw = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch stage2Sw = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(500);
-                var el = App.FindElement(MobileBy.AccessibilityId(id));
+                AppiumElement el = App.FindElement(MobileBy.AccessibilityId(id));
                 PerfLog($"FIND '{id}' STAGE2_OK content-desc in {stage2Sw.ElapsedMilliseconds}ms (total {overallSw.ElapsedMilliseconds}ms)");
                 return el;
             }
@@ -120,7 +123,7 @@ namespace UITests
             // (run 30985133240, OptionsPageTests): SaveTag left the page scrolled to the bottom
             // and every above-the-fold element in the rest of the fixture — including the
             // top-of-page TrainerSectionHeading — STAGE3_FAILed at a uniform ~16s.
-            var stage3Sw = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch stage3Sw = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
@@ -138,7 +141,7 @@ namespace UITests
                 // long page before the element enters the viewport, so it keeps its own 10s
                 // budget independent of AmbientImplicitWait.
                 App.Manage().Timeouts().ImplicitWait = Stage3ScrollWait;
-                var el = App.FindElement(MobileBy.AndroidUIAutomator(
+                AppiumElement el = App.FindElement(MobileBy.AndroidUIAutomator(
                     $"new UiScrollable(new UiSelector().scrollable(true).packageName(\"{PackageName}\").instance(0))" +
                     $".scrollIntoView({directSelector})"));
                 PerfLog($"FIND '{id}' STAGE3_OK scrollIntoView in {stage3Sw.ElapsedMilliseconds}ms (total {overallSw.ElapsedMilliseconds}ms)");
@@ -231,11 +234,11 @@ namespace UITests
             {
                 App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
                 // Get all elements with any resource-id
-                var withResIds = App.FindElements(MobileBy.AndroidUIAutomator(
+                ReadOnlyCollection<AppiumElement> withResIds = App.FindElements(MobileBy.AndroidUIAutomator(
                     $"new UiSelector().packageName(\"{PackageName}\").resourceIdMatches(\".+:id/.+\")"));
                 PerfLog($"DUMP [{context}] resource-ids ({withResIds.Count} found, first {maxItems}):");
                 int i = 0;
-                foreach (var el in withResIds)
+                foreach (AppiumElement? el in withResIds)
                 {
                     if (i++ >= maxItems) { PerfLog($"DUMP [{context}] ...(truncated)"); break; }
                     try
@@ -250,11 +253,11 @@ namespace UITests
                 }
 
                 // Also dump elements with content-desc (may not overlap with resource-id set)
-                var withCd = App.FindElements(MobileBy.AndroidUIAutomator(
+                ReadOnlyCollection<AppiumElement> withCd = App.FindElements(MobileBy.AndroidUIAutomator(
                     "new UiSelector().descriptionMatches(\".+\")"));
                 PerfLog($"DUMP [{context}] content-descs ({withCd.Count} found, first {maxItems}):");
                 i = 0;
-                foreach (var el in withCd)
+                foreach (AppiumElement? el in withCd)
                 {
                     if (i++ >= maxItems) { PerfLog($"DUMP [{context}] ...(truncated)"); break; }
                     try
@@ -280,14 +283,14 @@ namespace UITests
             PerfLog("SendAndroidBack: firing adb shell input keyevent KEYCODE_BACK");
             try
             {
-                var psi = new System.Diagnostics.ProcessStartInfo("adb", "shell input keyevent KEYCODE_BACK")
+                ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo("adb", "shell input keyevent KEYCODE_BACK")
                 {
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
-                using var proc = System.Diagnostics.Process.Start(psi);
+                using Process? proc = System.Diagnostics.Process.Start(psi);
                 bool exited = proc?.WaitForExit(2000) ?? false;
                 string stdout = proc?.StandardOutput.ReadToEnd() ?? "";
                 string stderr = proc?.StandardError.ReadToEnd() ?? "";

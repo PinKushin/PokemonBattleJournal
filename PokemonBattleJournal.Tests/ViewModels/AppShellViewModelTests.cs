@@ -55,7 +55,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task LoadAsync_PopulatesTrainers()
         {
             // Arrange
-            var trainers = new List<Trainer>
+            List<Trainer> trainers = new List<Trainer>
             {
                 new() { Id = 1, Name = "Ash" },
                 new() { Id = 2, Name = "Misty" }
@@ -73,7 +73,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task LoadAsync_SetsSelectedTrainerByActiveId()
         {
             // Arrange
-            var trainers = new List<Trainer>
+            List<Trainer> trainers = new List<Trainer>
             {
                 new() { Id = 1, Name = "Ash" },
                 new() { Id = 2, Name = "Misty" }
@@ -104,7 +104,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public void OnTrainerCreated_SkipsDuplicate()
         {
             // Arrange
-            var trainer = new Trainer { Id = 1, Name = "Ash" };
+            Trainer trainer = new Trainer { Id = 1, Name = "Ash" };
             _sut.Trainers.Add(trainer);
 
             // Act
@@ -118,8 +118,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public void TrainerChangedEvent_UpdatesSelectedTrainer()
         {
             // Arrange
-            var trainer1 = new Trainer { Id = 1, Name = "Ash" };
-            var trainer2 = new Trainer { Id = 2, Name = "Misty" };
+            Trainer trainer1 = new Trainer { Id = 1, Name = "Ash" };
+            Trainer trainer2 = new Trainer { Id = 2, Name = "Misty" };
             _sut.Trainers.Add(trainer1);
             _sut.Trainers.Add(trainer2);
             _sut.IsTrainerMenuOpen = true;
@@ -150,8 +150,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task SelectTrainerAsync_DifferentTrainer_CallsSwitchService()
         {
             // Arrange — load a trainer so SelectedTrainer is set
-            var trainer1 = new Trainer { Id = 1, Name = "Ash" };
-            var trainer2 = new Trainer { Id = 2, Name = "Misty" };
+            Trainer trainer1 = new Trainer { Id = 1, Name = "Ash" };
+            Trainer trainer2 = new Trainer { Id = 2, Name = "Misty" };
             _mockSwitchService.GetAllTrainersAsync()
                 .Returns(Task.FromResult(new List<Trainer> { trainer1, trainer2 }));
             _mockSwitchService.SwitchToAsync(Arg.Any<Trainer>()).Returns(Task.CompletedTask);
@@ -167,8 +167,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public void OnTrainerCreated_MultipleTrainers_AddsAll()
         {
-            var t1 = new Trainer { Id = 1, Name = "Ash" };
-            var t2 = new Trainer { Id = 2, Name = "Misty" };
+            Trainer t1 = new Trainer { Id = 1, Name = "Ash" };
+            Trainer t2 = new Trainer { Id = 2, Name = "Misty" };
 
             _sut.OnTrainerCreated(t1);
             _sut.OnTrainerCreated(t2);
@@ -191,7 +191,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task LoadAsync_NoActiveTrainer_WithFallbackTrainer_CallsSwitchToAsync()
         {
             // When ActiveTrainer is null but trainers exist, falls back to first and persists via SwitchToAsync
-            var trainer = new Trainer { Id = 1, Name = "Ash" };
+            Trainer trainer = new Trainer { Id = 1, Name = "Ash" };
             _mockSwitchService.GetAllTrainersAsync().Returns(Task.FromResult(new List<Trainer> { trainer }));
             _mockSwitchService.ActiveTrainer.Returns((Trainer?)null);
             _mockSwitchService.SwitchToAsync(Arg.Any<Trainer>()).Returns(Task.CompletedTask);
@@ -214,7 +214,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task SelectTrainerAsync_SameTrainer_ClosesMenu()
         {
             // Arrange
-            var trainer = new Trainer { Id = 5, Name = "Gary" };
+            Trainer trainer = new Trainer { Id = 5, Name = "Gary" };
             _sut.Trainers.Add(trainer);
             // Set SelectedTrainer without triggering switch (use suppress via LoadAsync pattern — but easier: set directly with same id in collection)
             // We need _suppressSelectionChanged = true, which LoadAsync does; populate via mock then load
