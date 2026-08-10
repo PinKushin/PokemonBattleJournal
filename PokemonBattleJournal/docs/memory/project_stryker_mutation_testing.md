@@ -162,6 +162,38 @@ Attempts that will not help: narrowing `--mutate`, setting `target-framework`, e
 the MAUI head references. That is worth doing for its own sake and would make the most
 test-worthy code mutable as a side effect. It is a real refactor, not a config change.
 
+## It runs on the Oracle `mutation-box` now (2026-08-10) — and ARM64 gives the same answer
+
+```bash
+ssh mutation-box
+cd ~/pbj && bash build/run-measurements.sh stryker-core
+```
+
+`--solution DO-NOT-OPEN-IN-VS.LinuxMeasurementBox.slnx` is **required**, not optional. Stryker
+builds the containing solution before mutating, and `PokemonBattleJournal.slnx` cannot build on
+Linux at all: `UITests.Windows` needs `Microsoft.WindowsDesktop.App` (NETSDK1073) and the app
+head's `net10.0-android` TFM needs the Android SDK (XA5300). The runner script passes it.
+
+**First box run, commit `b5562ba`, 3 OCPU Ampere:**
+
+```
+1351 real mutants:  943 tested + 408 NoCoverage
+Killed 784 | Survived 151 | Timeout 8
+final mutation score 58.62 %      04:44:09 -> 05:22:32, 38m23s
+```
+
+**58.03%-58.62%** once the 8 timeouts are bounded the usual way (assume every one was really a
+survivor: 784/1351). The local x64 figure was 57.96%, so the floor of the ARM range sits just
+above it — **architecture does not move the score**, which is what should happen for plain
+`net10.0` projects and is worth having confirmed rather than assumed.
+
+**Concurrency was left at the default on purpose.** Stryker defaults to half the cores, so a
+3-OCPU box runs effectively one test host — load average sat at 1.22 for the whole run. Raising
+it to 3 is tempting and is the wrong move for the same reason contention is dangerous locally:
+timeouts count as KILLED, so three test hosts competing for three cores would inflate the score
+rather than speed up an honest one. 38 minutes for a signal that arrives after the fact is not a
+problem worth trading accuracy for.
+
 ## Config choices
 
 - **Scraper as the target**, because it is a plain library that compiles under Stryker and
