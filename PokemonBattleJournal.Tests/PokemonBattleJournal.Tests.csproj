@@ -40,10 +40,15 @@
             matters beyond one red test: Stryker does an initial full test run and a failing
             suite makes every subsequent mutant result meaningless.
 
-            NativeAssets.Linux, not .NoDependencies — the failing path is SKTypeface, i.e.
-            fonts, so fontconfig is genuinely needed rather than avoidable.
+            .NoDependencies, NOT the plain NativeAssets.Linux. The name is misleading: it does
+            not mean "no font support", it means the native library BUNDLES its dependencies
+            instead of linking the system ones. The plain variant loaded and then died at
+            runtime with `undefined symbol: FT_Get_BDF_Property` against the distro's
+            FreeType — and it did so by killing the test host mid-run, so the runner reported
+            "Passed!" with 630 of 646 tests. A truncated count reported as success is worse
+            than a clean failure; always check the TOTAL, not the verdict.
         -->
-        <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.0"
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.0"
                           Condition="$([MSBuild]::IsOSPlatform('linux'))" />
         <PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.90" />
 
