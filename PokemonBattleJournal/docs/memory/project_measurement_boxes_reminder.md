@@ -60,9 +60,20 @@ running into:
 
 ## A scheduled task already pushes this — do not create a second one
 
-`measurement-box-check`, created 2026-08-10, runs **daily at 8pm local** and sends one
-`PushNotification` with the result. 8pm because 10am is during the user's work hours; they said
-so explicitly. It observes only — it must never change the boxes, the repo or the schedules.
+`measurement-box-check`, created 2026-08-10, fires **twice daily — 9:30 AM and 8:30 PM local** —
+and sends one `PushNotification` each time. Roughly half an hour after each batch of work
+finishes; the user asked for both ("a notification about 30 min after each run is fine with me").
+It observes only — it must never change the boxes, the repo or the schedules.
+
+**One task with `cronExpression: "30 9,20 * * *"`, not two tasks.** Two would mean two copies of
+the same prompt drifting apart. The UI renders only one time ("At 09:37 AM, every day"), which
+looks like the list was collapsed — it was not. Verified by setting `30 20,4` and reading
+`nextRunAt`: it returned 4:37 AM, the *second* element, so the scheduler evaluates the whole
+list and only the human-readable string is a poor renderer.
+
+The task's prompt has to say what "fresh" means at each firing, because it differs: in the
+evening the newest fuzz result is ~11 hours old and that is CORRECT, not stale. Without that, the
+evening report would flag a healthy box.
 
 Task file: `~/.claude/scheduled-tasks/measurement-box-check/SKILL.md`. `list_scheduled_tasks` to
 check it still exists. Scheduled tasks only run while the app is open; a missed run fires on next
