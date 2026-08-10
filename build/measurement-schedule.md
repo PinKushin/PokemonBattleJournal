@@ -13,6 +13,15 @@ projects run here, and the failure mode of getting it wrong is silent.
   cannot. If they disagree, the crontab is right and this file needs fixing.
 - **This document is the truth about POLICY** — who owns scheduling, what a runner must do, which
   slots are spoken for.
+- **Settled decisions only.** Anything still being worked out — a blocker, a slot request, a
+  measurement in flight, the reasoning behind a change — goes in the cross-agent log at
+  `C:\Users\pinku\source\repos\PinKushin\MEASUREMENT-BOX-LOG.md` on the owner's machine, newest
+  entry at the top. It is deliberately not in any repo and not on the boxes; every agent working
+  on these projects can reach it without SSH, and it survives a box being reclaimed.
+
+  Keeping them apart matters: this file is read by someone about to book a slot and has to stay
+  short and current, and a thread of discussion inside it buries the live rules. When something
+  in the log becomes settled, promote it here — the log has no git history, this file does.
 
 ## Weekly review — Sunday 11:05 local
 
