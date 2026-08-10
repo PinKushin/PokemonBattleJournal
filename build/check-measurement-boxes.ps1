@@ -23,7 +23,14 @@
 param(
     # A run older than this is reported stale. Default 36h: mutation-box runs twice daily and
     # fuzz-box nightly, so anything past this has missed at least one scheduled slot.
-    [int] $StaleHours = 36
+    [int] $StaleHours = 36,
+
+    # Weekly review mode. Dumps the material a scheduling decision needs and cannot be
+    # eyeballed from the daily check: the FULL crontab from each box (the only authority on
+    # what is really booked), the last runs per project with their scores and wall times, and
+    # disk. The point is drift — a runtime that has grown into its neighbour's slot does not
+    # announce itself, it just starts losing runs to a lock that refuses rather than queues.
+    [switch] $Review
 )
 
 $ErrorActionPreference = 'Stop'
@@ -100,6 +107,49 @@ fi
         if ($line -match 'NONE') { Write-Host "    $line" -ForegroundColor Red; continue }
         Write-Host "    $line"
     }
+}
+
+if ($Review) {
+    foreach ($box in $boxes) {
+        [string] $alias = $box.Alias
+        Write-Host ''
+        Write-Host "=== WEEKLY REVIEW: $alias ===" -ForegroundColor Yellow
+
+        # Wall time per run comes from the directory mtime minus its name stamp: the name is
+        # stamped at START (date -u) and the directory is last written at the END, so the
+        # difference is the real duration including build and git work. Stryker's own
+        # "Time Elapsed" excludes those, which is why it is not the number a SLOT needs.
+        [string] $remote = @'
+echo "--- crontab (the authority on what is booked) ---"
+crontab -l 2>/dev/null | grep -- '-measurements' || echo "(no measurement entries)"
+echo
+echo "--- last 8 runs: name, wall minutes, headline ---"
+for d in $(ls -1dt ~/measurements/*/ 2>/dev/null | head -8); do
+  n=$(basename "$d")
+  stamp=${n%%-*}
+  s=$(date -u -d "${stamp:0:4}-${stamp:4:2}-${stamp:6:2} ${stamp:9:2}:${stamp:11:2}:${stamp:13:2}" +%s 2>/dev/null)
+  e=$(stat -c %Y "$d")
+  if [ -n "$s" ]; then mins=$(( (e - s) / 60 )); else mins="?"; fi
+  head=$(grep -hoE "final mutation score is [0-9.]+ %|new_units_added: +[0-9]+" "$d"/*.log 2>/dev/null | tail -1)
+  printf "  %-46s %5s min   %s
+" "$n" "$mins" "${head:-no headline}"
+done
+echo
+echo "--- disk ---"
+df -h / | awk 'NR==2 {print "  "$4" free of "$2" ("$5" used)"}'
+'@
+        [string[]] $out = & ssh -o BatchMode=yes -o ConnectTimeout=15 $alias $remote 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "    UNREACHABLE" -ForegroundColor Red
+            continue
+        }
+        $out | ForEach-Object { Write-Host "  $_" }
+    }
+
+    Write-Host ''
+    Write-Host 'Compare the crontab above against ~/measurement-schedule.md.' -ForegroundColor Yellow
+    Write-Host 'Drift to look for: a run whose wall minutes now reach into the next slot;' -ForegroundColor Yellow
+    Write-Host 'an entry in the doc that is missing from the crontab, or the reverse.' -ForegroundColor Yellow
 }
 
 Write-Host ''

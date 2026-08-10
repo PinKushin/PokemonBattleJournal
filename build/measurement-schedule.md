@@ -14,6 +14,29 @@ projects run here, and the failure mode of getting it wrong is silent.
 - **This document is the truth about POLICY** — who owns scheduling, what a runner must do, which
   slots are spoken for.
 
+## Weekly review — Sunday 11:05 local
+
+```powershell
+pwsh -NoProfile -File build/check-measurement-boxes.ps1 -Review
+```
+
+Prints each box's full crontab, the last 8 runs with **wall-clock minutes**, and disk. Run by the
+`measurement-weekly-review` scheduled task, which reports and recommends but changes nothing.
+
+**Compare wall minutes against the gap to the next slot, not Stryker's "Time Elapsed".** Elapsed
+excludes git, LFS and build work; a slot has to cover all of it. Flag anything using more than
+about 70% of its gap.
+
+The review exists because slot overrun is silent. The lock refuses rather than queues, so a job
+that grows into its neighbour's start time does not error — the neighbour is just skipped, that
+day and every day after. It has already happened once: `tf2 core` was booked at 09:00 with `cli`
+at 09:20 on an 11-15 minute estimate and then measured at 33 minutes, which would have skipped
+`cli` daily.
+
+Also check for doc/crontab disagreement in **both** directions. An entry here but not in the
+crontab means a job quietly stopped being scheduled; the reverse means someone booked without
+going through the schedule owner.
+
 ## Ownership
 
 **One agent owns all crontab edits on both boxes: the PokemonBattleJournal agent.** Not
