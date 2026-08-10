@@ -48,9 +48,25 @@ about 70% of its gap.
 | Is the job still running at all? | **hours since last run** | A job that stopped firing is a cron/lock problem, and time is the only thing that reveals it. |
 | Is the result still valid? | **commits behind** | A score measured on a SHA that is still HEAD is current no matter how old. One measured two hours ago with five commits on top is already wrong. |
 
-The review prints `N behind` per run — commits from the measured SHA to that repo's upstream.
-Age in hours says only that the clock moved. As the owner put it: *"if im asleep no code is
-changing, if im away and messing with you guys the code is changing."*
+The review prints `N behind (M code)` per run — commits from the measured SHA to that repo's
+upstream, and how many of those touched anything that can move the score. Age in hours says only
+that the clock moved. As the owner put it: *"if im asleep no code is changing, if im away and
+messing with you guys the code is changing."*
+
+**Read the `code` number, not the raw one.** Docs, memory files, build scripts and workflows are
+neither mutated nor tested, so counting them makes a current score look stale — a single day of
+doc commits did exactly that here. Worked example from 2026-08-10:
+
+```
+stryker-scraper   18 behind (0 code)   100.00 %   <- current; none of the 18 touched Scraper
+tf2-core          18 behind (8 code)    76.59 %   <- genuinely out of date
+```
+
+Both numbers stay on screen deliberately. The filtered one is the signal; the raw one is the
+control, and a large gap between them means the exclusion list needs checking. That list is an
+EXCLUSION list (`*.md`, `docs/`, `build/`, `.github/`) rather than an inclusion list, so a new
+source directory still counts — an inclusion list would silently miss it, which fails in the
+dangerous direction.
 
 The review exists because slot overrun is silent. The lock refuses rather than queues, so a job
 that grows into its neighbour's start time does not error — the neighbour is just skipped, that

@@ -144,12 +144,20 @@ for d in $(ls -1dt ~/measurements/*/ 2>/dev/null | head -8); do
     if [ -d "$r/.git" ] && git -C "$r" cat-file -e "${sha}^{commit}" 2>/dev/null; then
       up=$(git -C "$r" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo origin/HEAD)
       behind=$(git -C "$r" rev-list --count "${sha}..${up}" 2>/dev/null || echo "?")
+      # Split out commits that CAN move a mutation score from ones that cannot. Docs, memory
+      # files, build scripts and workflows are not mutated and are not tested, so counting them
+      # makes a perfectly current score look stale — on 2026-08-10 a day of doc commits alone
+      # would have done exactly that. Exclusion list rather than an inclusion list on purpose:
+      # a new source directory still counts, where an inclusion list would silently miss it.
+      code=$(git -C "$r" rev-list --count "${sha}..${up}" -- .              ':(exclude)*.md' ':(exclude)docs/**' ':(exclude)**/docs/**'              ':(exclude)build/**' ':(exclude).github/**' 2>/dev/null || echo "?")
       break
     fi
   done
   head=$(grep -hoE "final mutation score is [0-9.]+ %|new_units_added: +[0-9]+" "$d"/*.log 2>/dev/null | tail -1)
-  printf "  %-46s %5s min  %4s behind   %s
-" "$n" "$mins" "$behind" "${head:-no headline}"
+  # Both numbers shown: the filtered one is the honest signal, the raw one guards against an
+  # exclusion list that is wrong or has gone stale.
+  printf "  %-46s %5s min  %4s behind (%s code)   %s
+" "$n" "$mins" "$behind" "$code" "${head:-no headline}"
 done
 echo
 echo "--- disk ---"
