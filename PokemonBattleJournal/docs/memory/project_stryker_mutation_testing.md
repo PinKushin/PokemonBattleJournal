@@ -194,6 +194,63 @@ timeouts count as KILLED, so three test hosts competing for three cores would in
 rather than speed up an honest one. 38 minutes for a signal that arrives after the fact is not a
 problem worth trading accuracy for.
 
+## The 151 Core survivors, fully triaged (2026-08-10)
+
+Every survivor from the `b5562ba` run was classified. **Most were not defects in the tests**, and
+that is the main result — a suite chasing all 151 would be worse than one chasing 36.
+
+| Count | Class | Disposition |
+|---|---|---|
+| 36 | real gaps | **fixed**, each verified by sabotage |
+| ~60 | message wording — log text, exception text | **won't fix**: only dies to a change-detector test |
+| 9 | deleted `LogDebug`/`LogInformation` | **won't fix**: breadcrumb, not contract |
+| 4 | deleted `LogError` where an error channel already fires | **won't fix**: `errors.Add` or `IErrorHandler` is asserted alongside; the standard is "logging OR a handler" |
+| ~8 | log-only guards (`if (count > 0) { Log... }`) | **won't fix**: flipping changes only what is logged |
+| 4 | equivalent by construction | **cannot fix** — see below |
+| ~30 | remaining ops-class message/branch noise | same classes as above |
+
+**The four equivalent mutants, worth knowing so nobody retries them:**
+
+- `ArchetypeOperations` seed literals for `"Other"` and `"Dragapult ex / Dusknoir"` — both rows are
+  also written unconditionally later in `GetAllAsync`, so mutating the seed leaves the database
+  identical.
+- `NoteDiff` empty-input early return — the fallthrough produces an empty list anyway.
+- `NoteDiff` `end == lines.Length ? lines : lines[..end]` — a full-length slice has identical
+  contents.
+- `MatchAnalysisService.CalculateStreaks` `OrderBy` → `OrderByDescending` — **reversing a sequence
+  preserves its run lengths**, so the longest win, loss and tie streaks are identical either way.
+
+## The pattern in the 36 that were fixed: the input was wrong, not the assertion
+
+Worth stating because the instinct is always to strengthen the assertion, and that was the right
+move in only a handful of cases.
+
+- **Backfill with nothing to backfill.** The dual-icon UPDATE only runs on a row that already
+  exists with `ImagePath2` NULL. No test seeded one, so correct and broken produced the same
+  database.
+- **The loss in the wrong game.** `OneWinOneLoss` put the loss in game two, so game one's
+  `losses++` never decided anything.
+- **Guards that only widen.** A `&&` becoming `||` throws MORE — no "it throws" test can see it.
+  The kill came from cases that must NOT throw.
+- **Stepping past every bound.** Every import limit test used limit+1, so `>` and `>=` agreed
+  everywhere. Landing exactly ON the bound killed three at once.
+- **Ids that were never set.** Both `?? default` for TraceId/SpanId survived because the test
+  helper built events carrying no ids at all.
+- **Divergence never at index 0.** Both LCS loop bounds could drop `>= 0` to `> 0` because the
+  walk only reads row/column 0 when the FIRST lines differ.
+- **Measuring the parent, claiming the children.** The match delete-cascade test asserted the
+  match row and never the games it is named for.
+
+## Two mistakes made while writing these tests, both caught by the process
+
+- **A test with the same defect as its mutant.** The first `CalculateTagUsage` test used a match
+  with a populated `Game1`, so the `?? []` guard was never engaged and deleting it changed
+  nothing. It passed and was worthless. The sabotage check is what exposed it.
+- **A bystander that poisoned a later test.** Adding a surviving match to the cascade test left it
+  in the shared database, failing `GetAllAsync_EmptyDb_ReturnsEmpty`, which runs alphabetically
+  later. Invisible in isolation, obvious in the full suite. After adding the cleanup the mutation
+  was re-applied to confirm the fix had not removed the sensitivity.
+
 ## Config choices
 
 - **Scraper as the target**, because it is a plain library that compiles under Stryker and

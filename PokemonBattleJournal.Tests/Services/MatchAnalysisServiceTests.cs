@@ -186,6 +186,69 @@ namespace PokemonBattleJournal.Tests.Services
             result.ShouldBe(TimeSpan.FromMinutes(20)); // (30 + 10) / 2 = 20
         }
 
+        // Ten minutes exactly. The split is `<= 10` short and `> 10` long, and the existing case
+        // uses 5, 3 and 15 — so both comparisons could be shifted by one (`< 10`, `>= 10`) with
+        // nothing noticing. A ten-minute match belongs to Short and to Short only.
+        //
+        // One input kills both mutants, in opposite directions: narrowing Short drops it out of
+        // the short bucket, widening Long puts it into both.
+        [Test]
+        public void CalculateWinRateByMatchLength_MatchOfExactlyTenMinutes_CountsAsShort()
+        {
+            List<MatchEntry> matches =
+            [
+                new()
+                {
+                    Result = MatchResult.Win,
+                    StartTime = new DateTime(2026, 1, 1, 10, 0, 0),
+                    EndTime = new DateTime(2026, 1, 1, 10, 10, 0)
+                }
+            ];
+
+            ObservableCollection<ChartDataPoint> result = _service.CalculateWinRateByMatchLength(matches);
+
+            result[0].Label.ShouldBe("Short Matches");
+            result[0].Value.ShouldBe(100, "a ten-minute match is short, so the only win is in this bucket");
+            result[1].Label.ShouldBe("Long Matches");
+            result[1].Value.ShouldBe(0, "a ten-minute match must not also count as long");
+        }
+
+        // A BO1 match has no game 2 or 3, and a game can carry no tags. Every `?? []` in
+        // CalculateTagUsage exists for that, and dropping one turns the SelectMany source null —
+        // which throws rather than returning nothing. No existing case passes a match with a
+        // missing game, so the guards were free to disappear.
+        [Test]
+        public void CalculateTagUsage_MatchWithOnlyGameOne_CountsTagsWithoutThrowing()
+        {
+            List<MatchEntry> matches =
+            [
+                new()
+                {
+                    Result = MatchResult.Win,
+                    Game1 = new Game { Tags = [new Tags { Name = "donk" }] },
+                    Game2 = null,
+                    Game3 = null
+                },
+                // The match that makes the test discriminating: EVERY game is missing, so each
+                // `?? []` in turn is the only thing standing between SelectMany and a null
+                // source. Without this entry the Game1 guard is never exercised, because the
+                // first match has a game 1 — which is exactly why that mutant survived.
+                new()
+                {
+                    Result = MatchResult.Loss,
+                    Game1 = null,
+                    Game2 = null,
+                    Game3 = null
+                }
+            ];
+
+            ObservableCollection<ChartDataPoint> result = _service.CalculateTagUsage(matches);
+
+            ChartDataPoint donk = result.ShouldHaveSingleItem();
+            donk.Label.ShouldBe("donk");
+            donk.Value.ShouldBe(1);
+        }
+
         [Test]
         public void CalculateWinRateByMatchLength_ShouldSplitShortAndLong()
         {

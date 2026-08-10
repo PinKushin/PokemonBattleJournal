@@ -136,6 +136,91 @@ namespace PokemonBattleJournal.Tests.Services
             await _matches.DidNotReceive().SaveAsync(Arg.Any<MatchEntry>(), Arg.Any<List<Game>>());
         }
 
+        // The limit tests all push PAST a bound, so every one of them is satisfied by a check
+        // that fires too eagerly. These land exactly ON the bounds, which is where `>` and `>=`
+        // stop agreeing — Stryker survived swapping both of them (2026-08-10).
+
+        [Test]
+        public async Task ImportAsync_NonSeekableStreamExactlyAtByteLimit_IsAccepted()
+        {
+            // MaxBytes itself is legal; only more than MaxBytes is not. Rejecting here would
+            // refuse a file the app claims to support, and no over-limit test can see it.
+            //
+            // This also covers the whole read loop's exit condition: with the accumulate check
+            // inverted the very first chunk is refused, and with it widened to >= this exact
+            // payload is refused.
+            byte[] payload = Encoding.UTF8.GetBytes(
+                "[" + new string(' ', (int)TrainerHillImportService.MaxBytes - 2) + "]");
+            payload.Length.ShouldBe((int)TrainerHillImportService.MaxBytes, "the payload must sit exactly on the bound");
+            using NonSeekableStream stream = new NonSeekableStream(payload);
+
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(stream, trainerId: 1);
+
+            imported.ShouldBe(0);
+            errors.ShouldBeEmpty($"a file of exactly MaxBytes must be accepted. Errors: {string.Join(" | ", errors)}");
+        }
+
+        // A non-seekable stream is buffered chunk by chunk, and nothing asserted that the buffer
+        // actually receives the bytes — deleting the write left every existing test green,
+        // because they all reject before reaching it.
+        //
+        // This is also the only test that runs the loop to EOF, which is what exposes its `> 0`
+        // exit condition: widened to `>= 0` it spins forever on the zero-length read at EOF.
+        // There is no [Timeout] here because NUnit's is unsupported on this TFM ("TargetFramework
+        // doesn't support timeout on tests") — Stryker's own per-mutant timeout catches that one,
+        // and a Timeout counts as killed.
+        [Test]
+        public async Task ImportAsync_NonSeekableStreamUnderLimit_BuffersTheWholeBody()
+        {
+            using NonSeekableStream stream = new NonSeekableStream(Encoding.UTF8.GetBytes("[]"));
+
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(stream, trainerId: 1);
+
+            imported.ShouldBe(0);
+            // If the buffered copy never received the bytes, the parse sees an empty document and
+            // reports invalid JSON instead of an empty array.
+            errors.ShouldBeEmpty($"the body was not buffered. Errors: {string.Join(" | ", errors)}");
+        }
+
+        [Test]
+        public async Task ImportAsync_NotesExactlyAtLengthLimit_IsAccepted()
+        {
+            // Same boundary argument one level down: MaxNotesLength characters is allowed, and
+            // the existing test only proves MaxNotesLength + 1 is not.
+            string notes = new string('n', TrainerHillImportService.MaxNotesLength);
+
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(
+                Json($"[{EntryJson(notes: notes)}]"), trainerId: 1);
+
+            errors.ShouldNotContain(
+                e => e.Contains("notes too long", StringComparison.OrdinalIgnoreCase),
+                "notes of exactly MaxNotesLength must be accepted");
+            // The import itself still fails at the database seam this fixture injects, which is
+            // fine — the claim under test is about validation, and it is made by the ABSENCE of
+            // the length error rather than by the import succeeding.
+            imported.ShouldBe(0);
+        }
+
+        [Test]
+        public async Task ImportAsync_OverlongDeckName_TruncatesItInTheError()
+        {
+            // The error text quotes the deck name so the user can find the entry in their own
+            // file, which means an absurd name would otherwise be echoed back in full. The
+            // truncation could be disabled entirely without any test noticing.
+            string absurd = new string('x', TrainerHillImportService.MaxNameLength + 50);
+
+            (_, _, List<string> errors) = await _sut.ImportAsync(
+                Json($"[{EntryJson(playing: absurd)}]"), trainerId: 1);
+
+            string reported = errors.ShouldHaveSingleItem();
+            // Explicit Contains rather than ShouldContain: on a string the latter binds to the
+            // IEnumerable<char> overload and compares characters, not substrings.
+            reported.Contains('…', StringComparison.Ordinal)
+                .ShouldBeTrue($"an overlong name must be shown truncated. Reported: {reported}");
+            reported.Contains(absurd, StringComparison.Ordinal)
+                .ShouldBeFalse("the untruncated name must never be echoed back");
+        }
+
         /// <summary>Reports a Length it does not have, and records whether anything read it.</summary>
         private sealed class OverstatedLengthStream : MemoryStream
         {
