@@ -22,7 +22,13 @@ export PATH="$HOME/.dotnet:$HOME/.dotnet/tools:$PATH"
 export MSBUILDDISABLENODEREUSE=1
 
 WORKDIR="${PBJ_DIR:-$HOME/pbj}"
-LOCK="/tmp/pbj-measurement.lock"
+# BOX-WIDE, and deliberately NOT named after this project. Several repos share these
+# boxes — tf2demosalvage is joining — and the thing being serialised is the BOX, not the
+# repo. A per-project lock name would let two projects run at once, which is the exact
+# corruption this guards: Stryker rebuilds mutated copies continuously, and a build
+# failure caused by a competing job is reported as a SURVIVING MUTANT rather than an
+# error. Any new project's runner must use this same path.
+LOCK="/tmp/measurement-box.lock"
 MODE="${1:-}"
 shift || true
 
