@@ -1,0 +1,34 @@
+<!--
+  Solution for the Linux measurement boxes (Stryker, fuzzing).
+
+  THE FILENAME IS THE WARNING. Open PokemonBattleJournal.slnx in Visual Studio; this one has no
+  app head and no UI test projects, so a VS session on it silently cannot build, run or debug the
+  app. It exists for `dotnet stryker --solution` on a headless Linux box and nothing else.
+
+  WHY A SECOND SOLUTION FILE
+  Stryker builds the containing solution before mutating, and the main PokemonBattleJournal.slnx
+  cannot build on Linux for two independent reasons:
+
+    * UITests.Windows needs FrameworkReference Microsoft.WindowsDesktop.App — NETSDK1073, and
+      there is no fixing that off Windows.
+    * The app head multi-targets net10.0-android, which needs the Android SDK — XA5300. The
+      workload supplies the bindings, not the SDK itself.
+
+  Neither project is mutated or tested here, so the answer is to leave them out rather than to
+  install an Android SDK on a box that will never run an emulator.
+
+  THE APP HEAD IS DELIBERATELY ABSENT, and this is the subtle part. Tests and IntegrationTests
+  both ProjectReference it, so it still gets built — but as a REFERENCE, which resolves to its
+  net10.0 TFM alone. A solution build would instead build every TFM it declares, including
+  android, which is exactly the failure above. Listing it here would reintroduce the problem it
+  is excluded to avoid.
+
+  Keep in sync with PokemonBattleJournal.slnx when a net10.0 project is added.
+-->
+<Solution>
+  <Project Path="PokemonBattleJournal.Core/PokemonBattleJournal.Core.csproj" />
+  <Project Path="PokemonBattleJournal.Scraper/PokemonBattleJournal.Scraper.csproj" />
+  <Project Path="PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj" />
+  <Project Path="PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj" />
+  <Project Path="PokemonBattleJournal.Fuzz/PokemonBattleJournal.Fuzz.csproj" />
+</Solution>

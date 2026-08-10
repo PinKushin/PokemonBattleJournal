@@ -36,10 +36,20 @@ echo "==> Architecture: $(uname -m)   (aarch64 = Ampere A1)"
 # ---------------------------------------------------------------------------
 echo "==> Installing system packages"
 sudo apt-get update -qq
+# TWO STEPS, and it has to be two. Naming the runtime package requires knowing clang's major
+# version, and the only way to ask is `clang --version` — which does not exist yet on the first
+# pass. A single apt-get line with that in a command substitution expands to the malformed
+# "libclang-rt--dev", the whole line fails, and an `|| fallback` then installs the runtime
+# WITHOUT clang. That failed silently on the fuzz box: exit 0, and the build died 80 lines later
+# with "clang: command not found".
+sudo apt-get install -y --no-install-recommends clang git curl ca-certificates
+
 # libclang-rt-*-dev supplies libclang_rt.fuzzer-<arch>.a. Ubuntu's clang package does NOT
 # include the sanitizer runtime archives, so without this the libfuzzer-dotnet link fails with
 # "cannot find .../libclang_rt.fuzzer-aarch64.a" and the script dies before the smoke test.
-sudo apt-get install -y --no-install-recommends clang git curl ca-certificates   "libclang-rt-$(clang --version | grep -oE 'version [0-9]+' | grep -oE '[0-9]+' | head -1)-dev"   || sudo apt-get install -y --no-install-recommends libclang-rt-18-dev
+CLANG_MAJOR="$(clang --version | grep -oE 'version [0-9]+' | grep -oE '[0-9]+' | head -1)"
+echo "==> clang major version: ${CLANG_MAJOR}"
+sudo apt-get install -y --no-install-recommends "libclang-rt-${CLANG_MAJOR}-dev"
 
 # ---------------------------------------------------------------------------
 # 2. .NET 10 SDK
