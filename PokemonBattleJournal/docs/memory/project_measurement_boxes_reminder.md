@@ -10,10 +10,24 @@ lol make a note to remind me."** That is an instruction to surface this without 
 
 ## What exists
 
-| Alias | Shape | Schedule (UTC) |
-|---|---|---|
-| `mutation-box` | 3 OCPU / 18 GB | `stryker-core` 03:30 and 15:30 daily; `stryker-scraper` 08:30 Sunday |
-| `fuzz-box` | 1 OCPU / 6 GB | `fuzz 7200` 04:00 daily |
+**Quote local time to the user, not UTC.** The boxes run UTC and their crontabs must stay UTC,
+but the user is US Eastern and asked directly: "you put them in utc and documented them in utc so
+i have no idea what they are my time."
+
+| Box | Job | UTC | Local (EDT) | Local (EST) |
+|---|---|---|---|---|
+| `mutation-box` | `stryker-core`, ~38 min | 03:30 daily | **11:30 PM, previous evening** | 10:30 PM |
+| `mutation-box` | `stryker-core`, ~38 min | 15:30 daily | **11:30 AM** | 10:30 AM |
+| `mutation-box` | `stryker-scraper`, ~4 min | 08:30 Sunday | **4:30 AM Sunday** | 3:30 AM Sunday |
+| `fuzz-box` | `fuzz 7200`, 2 hours | 04:00 daily | **12:00 AM - 2:00 AM** | 11:00 PM - 1:00 AM |
+
+`mutation-box` is 3 OCPU / 18 GB, `fuzz-box` is 1 OCPU / 6 GB.
+
+The 03:30 UTC row is the one that misleads: locally it lands the **previous evening**, so it is
+late Tuesday night rather than Wednesday morning. Say which side of midnight it falls on.
+
+The 8:07 PM check therefore reports on the 11:30 AM run, roughly 8.5 hours old — well inside the
+36-hour stale threshold, in both halves of the year.
 
 `ssh mutation-box` / `ssh fuzz-box`, key `~/.ssh/oci-measure`. Results land in
 `~/measurements/<stamp>-<sha>-<mode>/` (pruned to 30) and `~/cron-measure.log`.

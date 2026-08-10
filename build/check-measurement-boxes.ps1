@@ -30,16 +30,45 @@ $ErrorActionPreference = 'Stop'
 
 # Deliberately not a single ssh call per box with everything crammed in: when a box is gone,
 # the failure needs to be attributable to that box rather than to a parse error downstream.
+# Schedules are stated in LOCAL time with UTC in brackets, not the other way round. The
+# crontabs on the boxes are UTC and must stay UTC, but a UTC-only readout is unreadable to
+# whoever is running this — and 03:30 UTC is the PREVIOUS EVENING locally, which is exactly
+# the kind of thing a mental conversion gets wrong.
 [hashtable[]] $boxes = @(
-    @{ Alias = 'mutation-box'; Expect = 'stryker-core twice daily (03:30, 15:30 UTC), scraper Sunday' },
-    @{ Alias = 'fuzz-box';     Expect = 'fuzz 7200 nightly (04:00 UTC)' }
+    @{ Alias = 'mutation-box'; Cron = @{ 'stryker-core' = @(3, 30), @(15, 30); 'stryker-scraper (Sun)' = , @(8, 30) } },
+    @{ Alias = 'fuzz-box';     Cron = @{ 'fuzz 7200 (2h)' = , @(4, 0) } }
 )
+
+function Format-LocalSchedule {
+    <#
+        Converts a UTC hour/minute to the local equivalent for TODAY, so the printed time
+        follows daylight saving instead of being pinned to whatever offset was true when this
+        script was written. Flags the day shift explicitly rather than leaving a bare clock
+        time that silently belongs to yesterday.
+    #>
+    param([hashtable] $Cron)
+
+    [string[]] $parts = @()
+    foreach ($job in ($Cron.Keys | Sort-Object)) {
+        [string[]] $times = @()
+        foreach ($hm in $Cron[$job]) {
+            [datetime] $utc = [datetime]::SpecifyKind(
+                [datetime]::UtcNow.Date.AddHours($hm[0]).AddMinutes($hm[1]), 'Utc')
+            [datetime] $local = $utc.ToLocalTime()
+            [string] $stamp = $local.ToString('h:mm tt')
+            if ($local.Date -lt $utc.Date) { $stamp += ' prev evening' }
+            $times += "$stamp ($($utc.ToString('HH:mm')) UTC)"
+        }
+        $parts += "$job $($times -join ', ')"
+    }
+    return $parts -join '; '
+}
 
 foreach ($box in $boxes) {
     [string] $alias = $box.Alias
     Write-Host ''
     Write-Host "=== $alias ===" -ForegroundColor Cyan
-    Write-Host "    expected: $($box.Expect)" -ForegroundColor DarkGray
+    Write-Host "    expected: $(Format-LocalSchedule -Cron $box.Cron)" -ForegroundColor DarkGray
 
     # BatchMode so a missing or passphrase-locked key fails immediately instead of hanging on
     # an interactive prompt this script cannot answer.
