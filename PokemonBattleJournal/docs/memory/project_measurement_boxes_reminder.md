@@ -79,6 +79,21 @@ Task file: `~/.claude/scheduled-tasks/measurement-box-check/SKILL.md`. `list_sch
 check it still exists. Scheduled tasks only run while the app is open; a missed run fires on next
 launch.
 
+## Two scheduled tasks, and one pending move
+
+| Task | When | Does |
+|---|---|---|
+| `measurement-box-check` | 9:30 AM and 8:30 PM daily | health ping, one notification each |
+| `measurement-weekly-review` | **Monday 12:05** | crontab-vs-doc drift, slot overrun, promotes settled log entries |
+
+**The review moves to ~20:00 Monday when the user returns to work.** They are on workers' comp
+and available midday now; that ends. An evening slot is not a compromise — PBJ's 19:00 run
+finishes 19:38, so a 20:00 review reads a `stryker-core` under an hour old, fresher than noon's.
+`cronExpression` becomes `0 20 * * 1`.
+
+Monday rather than Sunday because freshness is the whole point: a Sunday 11:05 review read numbers
+up to 27 hours stale, where Monday noon reads everything within about five hours of its run.
+
 ## When to bring it up
 
 A session that touches tests, Stryker, fuzzing, CI or coverage should run the check and mention
