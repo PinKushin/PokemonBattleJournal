@@ -52,7 +52,10 @@ foreach ($box in $boxes) {
     # BatchMode so a missing or passphrase-locked key fails immediately instead of hanging on
     # an interactive prompt this script cannot answer.
     [string] $remote = @'
-echo "cron:  $(crontab -l 2>/dev/null | grep -c pbj-measurements) entries"
+# Count per project, not just PBJ. These boxes are shared — tf2demosalvage joined on
+# 2026-08-10 — and a check that only ever counts its own entries would report a healthy
+# box while another project's schedule had silently vanished.
+echo "cron:  $(crontab -l 2>/dev/null | grep -c -- '-measurements') entries total$(crontab -l 2>/dev/null | grep -oE '# [a-z0-9]+-measurements' | sort | uniq -c | awk '{printf " | %s x%s", $3, $1}')"
 echo "tz:    $(timedatectl show -p Timezone --value) - now $(date '+%a %H:%M %Z')"
 echo "up:    $(uptime -p)"
 echo "disk:  $(df -h / | awk 'NR==2 {print $4" free of "$2}')"

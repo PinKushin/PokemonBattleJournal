@@ -22,6 +22,13 @@ export PATH="$HOME/.dotnet:$HOME/.dotnet/tools:$PATH"
 export MSBUILDDISABLENODEREUSE=1
 
 WORKDIR="${PBJ_DIR:-$HOME/pbj}"
+# NEVER `rm` THIS FILE, not even as cleanup between runs. Deleting it does not free the
+# lock — flock is on the open file description — but it DOES unlink the inode, so the next
+# run's `exec 9>` creates a fresh file and takes a fresh lock while the old holder is still
+# working. That is not a stuck lock, it is NO lock: two workloads run at once and neither
+# reports anything. Done for real on 2026-08-10 while renaming this path, and it let a
+# tf2demosalvage Stryker run and a PokemonBattleJournal one overlap.
+#
 # BOX-WIDE, and deliberately NOT named after this project. Several repos share these
 # boxes — tf2demosalvage is joining — and the thing being serialised is the BOX, not the
 # repo. A per-project lock name would let two projects run at once, which is the exact
