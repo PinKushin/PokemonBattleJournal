@@ -141,4 +141,12 @@ case "$MODE" in
     ;;
 esac
 
+# Keep the last 30 runs. On a cron cadence this directory grows without bound, and a
+# Stryker HTML report is a few MB — the free tier's 50 GB boot volume is the whole disk.
+# Findings are NOT pruned with the run that produced them: they are copied to ~/findings
+# as well, which is the durable location.
+ls -1dt "${HOME}/measurements/"*/ 2>/dev/null | tail -n +31 | while read -r old; do
+  rm -rf "$old"
+done
+
 echo "==> done: ${OUT}"
