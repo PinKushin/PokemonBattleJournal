@@ -70,7 +70,7 @@ namespace PokemonBattleJournal.Tests.Services
         {
             // Reports an over-limit Length without allocating it — the seekable path must decide
             // from Length alone and never read the body.
-            using var huge = new OverstatedLengthStream(TrainerHillImportService.MaxBytes + 1);
+            using OverstatedLengthStream huge = new OverstatedLengthStream(TrainerHillImportService.MaxBytes + 1);
 
             await AssertRejectedAsync(huge, "too large");
             huge.ReadWasAttempted.ShouldBeFalse("an over-limit stream must be rejected before it is read");
@@ -82,7 +82,7 @@ namespace PokemonBattleJournal.Tests.Services
             // Android content-provider streams are not seekable, so Length is unavailable and the
             // cap has to be enforced while reading.
             byte[] payload = Encoding.UTF8.GetBytes("[" + new string(' ', (int)TrainerHillImportService.MaxBytes) + "]");
-            using var stream = new NonSeekableStream(payload);
+            using NonSeekableStream stream = new NonSeekableStream(payload);
 
             await AssertRejectedAsync(stream, "too large");
         }

@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using OpenQA.Selenium.Support.UI;
 
 namespace UITests
 {
@@ -84,7 +85,7 @@ namespace UITests
 
             // TrainerPageViewModel loads stats asynchronously — poll until WinsLabel shows non-zero.
             // Seeding puts 3 Win matches in; zero means no active trainer or async load not complete.
-            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(20));
+            WebDriverWait wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(20));
             string winsText = wait.Until(_ =>
             {
                 string text = FindUIElement("WinsLabel").Text;
@@ -112,7 +113,7 @@ namespace UITests
         public void TrainerPage_LossesLabel_ShowsNonZero()
         {
             // Seeding now includes 2 Loss matches; zero means seed or async load failed.
-            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(20));
+            WebDriverWait wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(20));
             string lossesText = wait.Until(_ =>
             {
                 string text = FindUIElement("LossesLabel").Text;
@@ -126,7 +127,7 @@ namespace UITests
         public void TrainerPage_TiesLabel_ShowsNonZero()
         {
             // Seeding includes 1 Tie match.
-            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(20));
+            WebDriverWait wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(20));
             string tiesText = wait.Until(_ =>
             {
                 string text = FindUIElement("TiesLabel").Text;
@@ -139,7 +140,7 @@ namespace UITests
         [Test]
         public void TrainerPage_WinRateLabel_ShowsValue()
         {
-            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(10));
+            WebDriverWait wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(10));
             string winRate = wait.Until(_ =>
             {
                 string text = FindUIElement("WinRateLabel").Text;
@@ -152,7 +153,7 @@ namespace UITests
         public void TrainerPage_AverageMatchDuration_ShowsValue()
         {
             // Seeded matches have distinct start/end times so duration is non-zero.
-            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(10));
+            WebDriverWait wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(10));
             string text = wait.Until(_ =>
             {
                 string t = FindUIElement("AverageMatchDurationLabel").Text;
@@ -164,7 +165,7 @@ namespace UITests
         [Test]
         public void TrainerPage_StreakInfo_ShowsValue()
         {
-            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(10));
+            WebDriverWait wait = new OpenQA.Selenium.Support.UI.WebDriverWait(App, TimeSpan.FromSeconds(10));
             string text = wait.Until(_ =>
             {
                 string t = FindUIElement("StreakInfoLabel").Text;

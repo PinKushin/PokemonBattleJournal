@@ -40,9 +40,9 @@ public class LimitlessMetaServiceTests
     [Test]
     public async Task GetTopDecksAsync_UiTestSentinelPresent_SaysWhyItSkippedTheFetch()
     {
-        var logger = new RecordingLogger<LimitlessMetaService>();
+        RecordingLogger<LimitlessMetaService> logger = new RecordingLogger<LimitlessMetaService>();
         IMetaDeckFetcher fetcher = Substitute.For<IMetaDeckFetcher>();
-        var service = new LimitlessMetaService(fetcher, Substitute.For<IMetaDeckParser>(), logger);
+        LimitlessMetaService service = new LimitlessMetaService(fetcher, Substitute.For<IMetaDeckParser>(), logger);
 
         File.WriteAllText(SentinelPath, string.Empty);
         try
@@ -63,10 +63,10 @@ public class LimitlessMetaServiceTests
     [Test]
     public async Task GetTopDecksAsync_EmptyResponse_SaysItMayBeOffline()
     {
-        var logger = new RecordingLogger<LimitlessMetaService>();
+        RecordingLogger<LimitlessMetaService> logger = new RecordingLogger<LimitlessMetaService>();
         IMetaDeckFetcher fetcher = Substitute.For<IMetaDeckFetcher>();
         fetcher.FetchAsync(Arg.Any<string>()).Returns(string.Empty);
-        var service = new LimitlessMetaService(fetcher, Substitute.For<IMetaDeckParser>(), logger);
+        LimitlessMetaService service = new LimitlessMetaService(fetcher, Substitute.For<IMetaDeckParser>(), logger);
 
         List<MetaDeck> result = await service.GetTopDecksAsync();
 

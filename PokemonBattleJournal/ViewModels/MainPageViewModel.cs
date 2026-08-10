@@ -51,9 +51,9 @@ namespace PokemonBattleJournal.ViewModels
             UserNoteInput = string.Empty;
             UserNoteInput2 = string.Empty;
             UserNoteInput3 = string.Empty;
-            foreach (var t in Game1TagCollection ?? []) t.IsSelected = false;
-            foreach (var t in Game2TagCollection ?? []) t.IsSelected = false;
-            foreach (var t in Game3TagCollection ?? []) t.IsSelected = false;
+            foreach (TagViewModel t in Game1TagCollection ?? []) t.IsSelected = false;
+            foreach (TagViewModel t in Game2TagCollection ?? []) t.IsSelected = false;
+            foreach (TagViewModel t in Game3TagCollection ?? []) t.IsSelected = false;
             Result = default;
             Result2 = default;
             Result3 = default;
@@ -302,7 +302,7 @@ namespace PokemonBattleJournal.ViewModels
                 TrainerName = _trainer?.Name ?? TrainerName;
                 WelcomeMsg = $"Welcome {TrainerName}";
                 Archetypes = await _connection.Archetypes.GetAllAsync();
-                var allTags = await _connection.Tags.GetAllAsync();
+                List<Tags> allTags = await _connection.Tags.GetAllAsync();
                 Game1TagCollection = new ObservableCollection<TagViewModel>(allTags.Select(t => new TagViewModel(t)));
                 Game2TagCollection = new ObservableCollection<TagViewModel>(allTags.Select(t => new TagViewModel(t)));
                 Game3TagCollection = new ObservableCollection<TagViewModel>(allTags.Select(t => new TagViewModel(t)));

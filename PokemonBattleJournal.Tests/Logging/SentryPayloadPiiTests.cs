@@ -1,8 +1,8 @@
+using System.Text;
+using System.Text.Json;
 using PokemonBattleJournal.Logging;
 using Sentry;
 using Serilog;
-using System.Text;
-using System.Text.Json;
 
 namespace PokemonBattleJournal.Tests.Logging
 {

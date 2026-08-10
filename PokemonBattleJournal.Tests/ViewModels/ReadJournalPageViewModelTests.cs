@@ -392,7 +392,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public void OnTrainerChanged_EventRaised_UpdatesTrainerName()
         {
-            var trainer = new Trainer { Id = 7, Name = "Brock" };
+            Trainer trainer = new Trainer { Id = 7, Name = "Brock" };
 
             _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
 
@@ -402,7 +402,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public void OnTrainerChanged_EventRaised_UpdatesWelcomeMsg()
         {
-            var trainer = new Trainer { Id = 7, Name = "Brock" };
+            Trainer trainer = new Trainer { Id = 7, Name = "Brock" };
 
             _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
 
@@ -412,7 +412,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public void OnTrainerChanged_EventRaised_NullName_SetsEmptyTrainerName()
         {
-            var trainer = new Trainer { Id = 7, Name = null };
+            Trainer trainer = new Trainer { Id = 7, Name = null };
 
             _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
 

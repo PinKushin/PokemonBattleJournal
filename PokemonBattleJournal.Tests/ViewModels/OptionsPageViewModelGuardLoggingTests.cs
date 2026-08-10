@@ -36,12 +36,12 @@ namespace PokemonBattleJournal.Tests.ViewModels
             _mockConnectionFactory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
             _mockConnectionFactory.Matches.Returns(Substitute.For<IMatchOperations>());
 
-            var mainPageVm = new MainPageViewModel(
+            MainPageViewModel mainPageVm = new MainPageViewModel(
                 Substitute.For<ILogger<MainPageViewModel>>(),
                 _mockConnectionFactory,
                 Substitute.For<IMatchResultsCalculatorFactory>(),
                 switchService, Substitute.For<IErrorHandler>());
-            var shellVm = new AppShellViewModel(
+            AppShellViewModel shellVm = new AppShellViewModel(
                 switchService,
                 mainPageVm,
                 Substitute.For<ILogger<AppShellViewModel>>());

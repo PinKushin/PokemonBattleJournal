@@ -59,7 +59,12 @@ namespace PokemonBattleJournal.Services.Restore
 
             try
             {
-                RestoreResult result = await RestoreBackupCoreAsync(json);
+                // `json ?? string.Empty` rather than passing json straight through: the
+                // `json?.Length` above puts the compiler's flow analysis into "may be null" for
+                // the rest of the method, and the core takes a non-nullable string — CS8604.
+                // Coalescing is behaviour-preserving because the core's first act is
+                // string.IsNullOrWhiteSpace, which treats null and "" identically.
+                RestoreResult result = await RestoreBackupCoreAsync(json ?? string.Empty);
 
                 span.SetMeasurement("trainers.created", result.TrainersCreated);
                 span.SetMeasurement("trainers.merged", result.TrainersMerged);

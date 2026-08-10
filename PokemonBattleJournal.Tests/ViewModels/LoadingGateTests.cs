@@ -30,7 +30,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task ReadJournal_AppearingAsync_IsBusyMatchHistory_TrueDuringLoad_FalseAfter()
         {
             ReadJournalPageViewModel vm = CreateReadJournalVm(out ISqliteConnectionFactory factory);
-            var gate = new TaskCompletionSource<List<MatchEntry>>();
+            TaskCompletionSource<List<MatchEntry>> gate = new TaskCompletionSource<List<MatchEntry>>();
             factory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
             factory.Matches.GetByTrainerIdAsync(1, Arg.Any<bool>())
@@ -81,7 +81,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task Trainer_AppearingAsync_IsBusyChartData_TrueDuringLoad_FalseAfter()
         {
             TrainerPageViewModel vm = CreateTrainerVm(out ISqliteConnectionFactory factory, out _);
-            var gate = new TaskCompletionSource<List<MatchEntry>>();
+            TaskCompletionSource<List<MatchEntry>> gate = new TaskCompletionSource<List<MatchEntry>>();
             factory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
             factory.Matches.GetByTrainerIdAsync(1, Arg.Any<bool>())
@@ -130,7 +130,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task Main_AppearingAsync_IsBusyArchetypeList_TrueDuringLoad_FalseAfter()
         {
             MainPageViewModel vm = CreateMainVm(out ISqliteConnectionFactory factory);
-            var gate = new TaskCompletionSource<List<Archetype>>();
+            TaskCompletionSource<List<Archetype>> gate = new TaskCompletionSource<List<Archetype>>();
             factory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
             factory.Archetypes.GetAllAsync().Returns(_ => gate.Task);
@@ -180,7 +180,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             factory.Trainers.GetActiveAsync()
                 .Returns(Task.FromResult<Trainer?>(new Trainer { Id = 1, Name = "Test" }));
 
-            var vm = new MainPageViewModel(
+            MainPageViewModel vm = new MainPageViewModel(
                 Substitute.For<ILogger<MainPageViewModel>>(),
                 factory,
                 calculatorFactory,
@@ -196,7 +196,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task Main_SaveMatchAsync_IsBusyMutating_TrueDuringSave_FalseAfter()
         {
             MainPageViewModel vm = CreateMainVmReadyToSave(out ISqliteConnectionFactory factory, out _);
-            var gate = new TaskCompletionSource<int>();
+            TaskCompletionSource<int> gate = new TaskCompletionSource<int>();
             factory.Matches.SaveAsync(Arg.Any<MatchEntry>(), Arg.Any<List<Game>>()).Returns(_ => gate.Task);
 
             Task saving = vm.SaveMatchAsync();
@@ -244,12 +244,12 @@ namespace PokemonBattleJournal.Tests.ViewModels
             factory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
             factory.Tags.Returns(Substitute.For<ITagOperations>());
             ITrainerSwitchService switchService = Substitute.For<ITrainerSwitchService>();
-            var mainVm = new MainPageViewModel(
+            MainPageViewModel mainVm = new MainPageViewModel(
                 Substitute.For<ILogger<MainPageViewModel>>(),
                 factory,
                 Substitute.For<IMatchResultsCalculatorFactory>(),
                 switchService, Substitute.For<IErrorHandler>());
-            var shellVm = new AppShellViewModel(
+            AppShellViewModel shellVm = new AppShellViewModel(
                 switchService,
                 mainVm,
                 Substitute.For<ILogger<AppShellViewModel>>());
@@ -266,7 +266,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task Options_AppearingAsync_IsBusyArchetypeList_TrueDuringLoad_FalseAfter()
         {
             OptionsPageViewModel vm = CreateOptionsVm(out ISqliteConnectionFactory factory);
-            var gate = new TaskCompletionSource<List<Trainer>>();
+            TaskCompletionSource<List<Trainer>> gate = new TaskCompletionSource<List<Trainer>>();
             factory.Trainers.GetAllAsync().Returns(_ => gate.Task);
             factory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
             factory.Tags.GetAllAsync().Returns(Task.FromResult(new List<Tags>()));
@@ -310,16 +310,16 @@ namespace PokemonBattleJournal.Tests.ViewModels
             factory.Archetypes.GetAllAsync().Returns(Task.FromResult(new List<Archetype>()));
             factory.Tags.GetAllAsync().Returns(Task.FromResult(new List<Tags>()));
 
-            var mainVm = new MainPageViewModel(
+            MainPageViewModel mainVm = new MainPageViewModel(
                 Substitute.For<ILogger<MainPageViewModel>>(),
                 factory,
                 Substitute.For<IMatchResultsCalculatorFactory>(),
                 switchService, Substitute.For<IErrorHandler>());
-            var shellVm = new AppShellViewModel(
+            AppShellViewModel shellVm = new AppShellViewModel(
                 switchService,
                 mainVm,
                 Substitute.For<ILogger<AppShellViewModel>>());
-            var vm = new OptionsPageViewModel(
+            OptionsPageViewModel vm = new OptionsPageViewModel(
                 Substitute.For<ILogger<OptionsPageViewModel>>(),
                 factory,
                 switchService,
@@ -339,7 +339,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             (OptionsPageViewModel vm, ISqliteConnectionFactory factory) = await CreateOptionsVmWithActiveTrainerAsync();
             vm.NewDeckName = "Test Deck";
             vm.NewDeckIcon = "ball_icon.png";
-            var gate = new TaskCompletionSource<int>();
+            TaskCompletionSource<int> gate = new TaskCompletionSource<int>();
             factory.Archetypes.SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<uint>())
                 .Returns(_ => gate.Task);
 
@@ -357,8 +357,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task Options_DeleteArchetypeAsync_IsBusyMutating_TrueDuringDelete_FalseAfter()
         {
             (OptionsPageViewModel vm, ISqliteConnectionFactory factory) = await CreateOptionsVmWithActiveTrainerAsync();
-            var archetype = new Archetype { Id = 1, Name = "Test Deck" };
-            var gate = new TaskCompletionSource<int>();
+            Archetype archetype = new Archetype { Id = 1, Name = "Test Deck" };
+            TaskCompletionSource<int> gate = new TaskCompletionSource<int>();
             factory.Archetypes.DeleteAsync(archetype).Returns(_ => gate.Task);
 
             Task deleting = vm.DeleteArchetypeAsync(archetype);
@@ -376,7 +376,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         {
             (OptionsPageViewModel vm, ISqliteConnectionFactory factory) = await CreateOptionsVmWithActiveTrainerAsync();
             vm.TagInput = "Test Tag";
-            var gate = new TaskCompletionSource<int>();
+            TaskCompletionSource<int> gate = new TaskCompletionSource<int>();
             factory.Tags.SaveAsync(Arg.Any<string>(), Arg.Any<uint>()).Returns(_ => gate.Task);
 
             Task saving = vm.SaveTagAsync();
@@ -393,8 +393,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task Options_DeleteTagAsync_IsBusyMutating_TrueDuringDelete_FalseAfter()
         {
             (OptionsPageViewModel vm, ISqliteConnectionFactory factory) = await CreateOptionsVmWithActiveTrainerAsync();
-            var tag = new Tags { Id = 1, Name = "Test Tag" };
-            var gate = new TaskCompletionSource<int>();
+            Tags tag = new Tags { Id = 1, Name = "Test Tag" };
+            TaskCompletionSource<int> gate = new TaskCompletionSource<int>();
             factory.Tags.DeleteAsync(tag).Returns(_ => gate.Task);
 
             Task deleting = vm.DeleteTagAsync(tag);
@@ -430,7 +430,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
             // cleanly on the ordinary path. The TrueDuring/FalseAfter shape is covered by
             // Save/Delete Archetype/Tag and DeleteTrainerFileAsync above.
             (OptionsPageViewModel vm, ISqliteConnectionFactory _) = await CreateOptionsVmWithActiveTrainerAsync();
-            var otherTrainer = new Trainer { Id = 2, Name = "Other" };
+            Trainer otherTrainer = new Trainer { Id = 2, Name = "Other" };
 
             await vm.SwitchTrainerAsync(otherTrainer);
 
@@ -441,7 +441,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task Options_DeleteTrainerFileAsync_IsBusyMutating_TrueDuringDelete_FalseAfter()
         {
             (OptionsPageViewModel vm, ISqliteConnectionFactory factory) = await CreateOptionsVmWithActiveTrainerAsync();
-            var gate = new TaskCompletionSource<int>();
+            TaskCompletionSource<int> gate = new TaskCompletionSource<int>();
             factory.Trainers.DeleteAsync(Arg.Any<Trainer>()).Returns(_ => gate.Task);
             factory.Trainers.GetAllAsync().Returns(Task.FromResult(new List<Trainer>()));
 

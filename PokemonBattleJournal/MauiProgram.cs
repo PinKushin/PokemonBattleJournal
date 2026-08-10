@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using CommunityToolkit.Maui;
 using LiveChartsCore.SkiaSharpView.Maui;
 using PokemonBattleJournal.Interfaces;
@@ -9,7 +10,6 @@ using PokemonBattleJournal.Services.Import;
 using PokemonBattleJournal.Services.Restore;
 using Serilog;
 using SkiaSharp.Views.Maui.Controls.Hosting;
-using System.Runtime.Versioning;
 
 namespace PokemonBattleJournal
 {

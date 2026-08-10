@@ -154,7 +154,7 @@ public class ArchetypeOperationsTests : IAsyncDisposable
         Archetype arch = (await sut.GetAllAsync()).First(a => a.Name == "UsedDeck");
 
         // Now save a match using this archetype
-        var now = DateTime.Now;
+        DateTime now = DateTime.Now;
         int saveResult = await _factory.Matches.SaveAsync(new MatchEntry
         {
             TrainerId = trainer.Id,
@@ -201,9 +201,9 @@ public class ArchetypeOperationsTests : IAsyncDisposable
     public async Task GetAllAsync_WithMetaService_ReturnsDecks()
     {
         Trainer trainer = await EnsureTrainerAsync();
-        var metaService = new FakeMetaService();
+        FakeMetaService metaService = new FakeMetaService();
         ArgumentNullException.ThrowIfNull(_factory);
-        var sut = new ArchetypeOperations(_factory, NullLogger<ArchetypeOperations>.Instance, metaService, Substitute.For<IErrorHandler>());
+        ArchetypeOperations sut = new ArchetypeOperations(_factory, NullLogger<ArchetypeOperations>.Instance, metaService, Substitute.For<IErrorHandler>());
 
         List<Archetype> archetypes = await sut.GetAllAsync();
 
@@ -216,8 +216,8 @@ public class ArchetypeOperationsTests : IAsyncDisposable
     public async Task GetAllAsync_MetaServiceReturnsCdnUrl_FixesImagePathToLocal()
     {
         ArgumentNullException.ThrowIfNull(_factory);
-        var cdnMetaService = new CdnMetaService();
-        var sut = new ArchetypeOperations(_factory, NullLogger<ArchetypeOperations>.Instance, cdnMetaService, Substitute.For<IErrorHandler>());
+        CdnMetaService cdnMetaService = new CdnMetaService();
+        ArchetypeOperations sut = new ArchetypeOperations(_factory, NullLogger<ArchetypeOperations>.Instance, cdnMetaService, Substitute.For<IErrorHandler>());
 
         // First call seeds meta deck with CDN URL
         await sut.GetAllAsync();

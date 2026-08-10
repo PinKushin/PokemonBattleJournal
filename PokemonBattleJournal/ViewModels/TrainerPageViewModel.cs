@@ -4,8 +4,8 @@ using LiveChartsCore.Defaults;
 using LiveChartsCore.Kernel.Sketches;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
-using SkiaSharp;
 using PokemonBattleJournal.Utilities;
+using SkiaSharp;
 
 namespace PokemonBattleJournal.ViewModels
 {
@@ -218,7 +218,7 @@ namespace PokemonBattleJournal.ViewModels
 
         private void BuildMatchupHeatmap(List<MatchEntry> matches)
         {
-            var (played, opponents, cells) = _analysisService.CalculateMatchupMatrix(matches);
+            (string[]? played, string[]? opponents, (int PlayedIdx, int OpponentIdx, double WinRate)[]? cells) = _analysisService.CalculateMatchupMatrix(matches);
             if (cells.Length == 0) { MatchupHeatSeries = []; return; }
 
             MatchupHeatSeries =
@@ -244,7 +244,7 @@ namespace PokemonBattleJournal.ViewModels
 
         private void BuildMostPlayedChart(List<MatchEntry> matches)
         {
-            var data = _analysisService.GetMostPlayedArchetypes(matches);
+            ObservableCollection<ChartDataPoint> data = _analysisService.GetMostPlayedArchetypes(matches);
             MostPlayedSeries =
             [
                 new RowSeries<ObservableValue>
@@ -260,7 +260,7 @@ namespace PokemonBattleJournal.ViewModels
 
         private void BuildArchetypeWinRateChart(List<MatchEntry> matches)
         {
-            var data = _analysisService.CalculateArchetypeWinRate(matches);
+            ObservableCollection<ChartDataPoint> data = _analysisService.CalculateArchetypeWinRate(matches);
             ArchetypeWinRateSeries =
             [
                 new RowSeries<ObservableValue>
@@ -276,7 +276,7 @@ namespace PokemonBattleJournal.ViewModels
 
         private void BuildTagUsageChart(List<MatchEntry> matches)
         {
-            var data = _analysisService.CalculateTagUsage(matches);
+            ObservableCollection<ChartDataPoint> data = _analysisService.CalculateTagUsage(matches);
             TagUsageSeries =
             [
                 new RowSeries<ObservableValue>
@@ -292,7 +292,7 @@ namespace PokemonBattleJournal.ViewModels
 
         private void BuildOpponentChart(List<MatchEntry> matches)
         {
-            var data = _analysisService.CalculatePerformanceAgainstOpponents(matches);
+            ObservableCollection<ChartDataPoint> data = _analysisService.CalculatePerformanceAgainstOpponents(matches);
             OpponentSeries =
             [
                 new RowSeries<ObservableValue>
@@ -308,7 +308,7 @@ namespace PokemonBattleJournal.ViewModels
 
         private void BuildWinRateOverTimeChart(List<MatchEntry> matches)
         {
-            var data = _analysisService.CalculateWinRateOverTime(matches);
+            ObservableCollection<TimeDataPoint> data = _analysisService.CalculateWinRateOverTime(matches);
             WinRateOverTimeSeries =
             [
                 new LineSeries<DateTimePoint>
@@ -336,7 +336,7 @@ namespace PokemonBattleJournal.ViewModels
 
         private void BuildMatchLengthChart(List<MatchEntry> matches)
         {
-            var data = _analysisService.CalculateWinRateByMatchLength(matches);
+            ObservableCollection<ChartDataPoint> data = _analysisService.CalculateWinRateByMatchLength(matches);
             MatchLengthSeries =
             [
                 new RowSeries<ObservableValue>
@@ -360,7 +360,7 @@ namespace PokemonBattleJournal.ViewModels
 
         private void BuildFirstTurnChart(List<MatchEntry> matches)
         {
-            var data = _analysisService.CalculateFirstTurnAdvantage(matches);
+            ObservableCollection<ChartDataPoint> data = _analysisService.CalculateFirstTurnAdvantage(matches);
             FirstTurnSeries =
             [
                 new RowSeries<ObservableValue>

@@ -48,7 +48,7 @@ namespace PokemonBattleJournal.ViewModels
             try
             {
                 await _switchService.InitializeAsync();
-                var all = await _switchService.GetAllTrainersAsync();
+                List<Trainer> all = await _switchService.GetAllTrainersAsync();
                 _suppressSelectionChanged = true;
                 Trainers = new ObservableCollection<Trainer>(all);
                 SelectedTrainer = Trainers.FirstOrDefault(t => t.Id == (_switchService.ActiveTrainer?.Id ?? 0))

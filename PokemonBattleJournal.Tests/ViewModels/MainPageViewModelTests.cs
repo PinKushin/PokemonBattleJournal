@@ -409,7 +409,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
 
         private void SetupSuccessfulSave()
         {
-            var mockCalculator = Substitute.For<IMatchResultCalculator>();
+            IMatchResultCalculator mockCalculator = Substitute.For<IMatchResultCalculator>();
             mockCalculator.CalculateResult(Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>())
                 .Returns(MatchResult.Win);
             _mockCalculatorFactory.GetCalculator(Arg.Any<bool>()).Returns(mockCalculator);
@@ -466,7 +466,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task AppearingAsync_LoadsArchetypes()
         {
-            var archetypes = new List<Archetype>
+            List<Archetype> archetypes = new List<Archetype>
             {
                 new() { Id = 1, Name = "Fire" },
                 new() { Id = 2, Name = "Water" }
@@ -498,7 +498,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task AppearingAsync_LoadsTags()
         {
-            var tags = new List<Tags>
+            List<Tags> tags = new List<Tags>
             {
                 new() { Id = 1, Name = "Aggro" },
                 new() { Id = 2, Name = "Lucky" }
@@ -553,7 +553,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public void HasUnsavedData_TagsSelected_ReturnsTrue()
         {
-            var tag = new TagViewModel(new Tags { Name = "Lucky" }) { IsSelected = true };
+            TagViewModel tag = new TagViewModel(new Tags { Name = "Lucky" }) { IsSelected = true };
             _viewModel.Game1TagCollection = new ObservableCollection<TagViewModel>([tag]);
 
             _viewModel.HasUnsavedData.ShouldBeTrue();
@@ -566,7 +566,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public void OnTrainerChanged_EventRaised_UpdatesTrainerName()
         {
-            var trainer = new Trainer { Id = 5, Name = "Gary" };
+            Trainer trainer = new Trainer { Id = 5, Name = "Gary" };
 
             _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
 
@@ -576,7 +576,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public void OnTrainerChanged_EventRaised_UpdatesWelcomeMsg()
         {
-            var trainer = new Trainer { Id = 5, Name = "Gary" };
+            Trainer trainer = new Trainer { Id = 5, Name = "Gary" };
 
             _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
 
@@ -587,7 +587,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public void OnTrainerChanged_EventRaised_ResetsPlayerSelected()
         {
             _viewModel.PlayerSelected = new Archetype { Id = 1, Name = "Fire" };
-            var trainer = new Trainer { Id = 5, Name = "Gary" };
+            Trainer trainer = new Trainer { Id = 5, Name = "Gary" };
 
             _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
 
@@ -598,7 +598,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public void OnTrainerChanged_EventRaised_ResetsBO3Toggle()
         {
             _viewModel.BO3Toggle = true;
-            var trainer = new Trainer { Id = 5, Name = "Gary" };
+            Trainer trainer = new Trainer { Id = 5, Name = "Gary" };
 
             _mockSwitchService.TrainerChanged += Raise.Event<EventHandler<Trainer>>(this, trainer);
 
@@ -629,7 +629,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public async Task SaveMatchAsync_SaveReturnsZero_SetsFailureMessage()
         {
             // All validation passes, DB reports 0 rows affected → failure path
-            var mockCalculator = Substitute.For<IMatchResultCalculator>();
+            IMatchResultCalculator mockCalculator = Substitute.For<IMatchResultCalculator>();
             mockCalculator.CalculateResult(Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>())
                 .Returns(MatchResult.Win);
             _mockCalculatorFactory.GetCalculator(Arg.Any<bool>()).Returns(mockCalculator);
@@ -651,7 +651,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SaveMatchAsync_ArgumentExceptionFromSave_SetsValidationMessage()
         {
-            var mockCalculator = Substitute.For<IMatchResultCalculator>();
+            IMatchResultCalculator mockCalculator = Substitute.For<IMatchResultCalculator>();
             mockCalculator.CalculateResult(Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>())
                 .Returns(MatchResult.Win);
             _mockCalculatorFactory.GetCalculator(Arg.Any<bool>()).Returns(mockCalculator);
@@ -674,7 +674,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SaveMatchAsync_SQLiteExceptionFromSave_SetsValidationMessage()
         {
-            var mockCalculator = Substitute.For<IMatchResultCalculator>();
+            IMatchResultCalculator mockCalculator = Substitute.For<IMatchResultCalculator>();
             mockCalculator.CalculateResult(Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>())
                 .Returns(MatchResult.Win);
             _mockCalculatorFactory.GetCalculator(Arg.Any<bool>()).Returns(mockCalculator);
@@ -697,7 +697,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task SaveMatchAsync_UnexpectedExceptionFromSave_SetsValidationMessage()
         {
-            var mockCalculator = Substitute.For<IMatchResultCalculator>();
+            IMatchResultCalculator mockCalculator = Substitute.For<IMatchResultCalculator>();
             mockCalculator.CalculateResult(Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>(), Arg.Any<MatchResult?>())
                 .Returns(MatchResult.Win);
             _mockCalculatorFactory.GetCalculator(Arg.Any<bool>()).Returns(mockCalculator);
@@ -731,7 +731,7 @@ namespace PokemonBattleJournal.Tests.ViewModels
         [Test]
         public async Task AppearingAsync_ActiveTrainerFromSwitchService_DoesNotCallGetActiveAsync()
         {
-            var trainer = new Trainer { Id = 5, Name = "Misty" };
+            Trainer trainer = new Trainer { Id = 5, Name = "Misty" };
             _mockSwitchService.ActiveTrainer.Returns(trainer);
             _mockConnectionFactory.Archetypes.Returns(Substitute.For<IArchetypeOperations>());
             _mockConnectionFactory.Tags.Returns(Substitute.For<ITagOperations>());
@@ -754,8 +754,8 @@ namespace PokemonBattleJournal.Tests.ViewModels
         public void OnBO3ToggleChanged_WhenDisabling_ClearsMatch2And3TagsSelected()
         {
             _viewModel.BO3Toggle = true;
-            var t2 = new TagViewModel(new Tags { Name = "Lucky" }) { IsSelected = true };
-            var t3 = new TagViewModel(new Tags { Name = "Aggro" }) { IsSelected = true };
+            TagViewModel t2 = new TagViewModel(new Tags { Name = "Lucky" }) { IsSelected = true };
+            TagViewModel t3 = new TagViewModel(new Tags { Name = "Aggro" }) { IsSelected = true };
             _viewModel.Game2TagCollection = new ObservableCollection<TagViewModel>([t2]);
             _viewModel.Game3TagCollection = new ObservableCollection<TagViewModel>([t3]);
 

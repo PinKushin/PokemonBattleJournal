@@ -21,13 +21,13 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
         string imageMemberPath2 = "")
     {
         BackgroundColor = Colors.Transparent;
-        var closing = false;
+        bool closing = false;
 
         // Snapshot all items so we can filter without mutating the source
-        var allItems = itemsSource.Cast<object>().ToList();
-        var filteredItems = new ObservableCollection<object>(allItems);
+        List<object> allItems = itemsSource.Cast<object>().ToList();
+        ObservableCollection<object> filteredItems = new ObservableCollection<object>(allItems);
 
-        var collectionView = new CollectionView
+        CollectionView collectionView = new CollectionView
         {
             ItemsSource = filteredItems,
             SelectionMode = SelectionMode.None,
@@ -38,7 +38,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
 
         collectionView.ItemTemplate = new DataTemplate(() =>
         {
-            var image = new Image
+            Image image = new Image
             {
                 HeightRequest = 26,
                 WidthRequest = 26,
@@ -50,7 +50,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             image.SetBinding(Image.SourceProperty, new Binding(imageMemberPath));
             image.SetBinding(SemanticProperties.DescriptionProperty, new Binding(displayMemberPath, stringFormat: "{0} icon"));
 
-            var image2 = new Image
+            Image image2 = new Image
             {
                 HeightRequest = 26,
                 WidthRequest = 26,
@@ -71,7 +71,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
                 image2.IsVisible = false;
             }
 
-            var label = new Label
+            Label label = new Label
             {
                 VerticalTextAlignment = TextAlignment.Center,
                 FontSize = 13,
@@ -80,7 +80,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             label.SetBinding(Label.TextProperty, new Binding(displayMemberPath));
 
 
-            var iconStack = new HorizontalStackLayout
+            HorizontalStackLayout iconStack = new HorizontalStackLayout
             {
                 Spacing = 0,
                 VerticalOptions = LayoutOptions.Center,
@@ -88,7 +88,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             };
 
             // Visuals only. InputTransparent so taps fall through to the Button layered over it.
-            var grid = new Grid
+            Grid grid = new Grid
             {
                 ColumnDefinitions =
                 [
@@ -119,7 +119,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             // because it is what UIA, Appium and screen readers now see. Minimums are zeroed
             // because the implicit Button style sets them to 44, and a minimum beats an
             // explicit HeightRequest.
-            var button = new Button
+            Button button = new Button
             {
                 BackgroundColor = Colors.Transparent,
                 BorderColor = Colors.Transparent,
@@ -149,7 +149,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             };
         });
 
-        var titleLabel = new Label
+        Label titleLabel = new Label
         {
             Text = "Select an option",
             FontSize = 16,
@@ -159,7 +159,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
             Margin = new Thickness(0, 8, 0, 5)
         };
 
-        var searchBar = new SearchBar
+        SearchBar searchBar = new SearchBar
         {
             Placeholder = "Search...",
             BackgroundColor = backgroundColor,
@@ -183,7 +183,7 @@ public class ComboBoxPopup : Popup<ComboBoxPopup.PickerResult?>
                 filteredItems.Add(item);
         };
 
-        var closeButton = new Button
+        Button closeButton = new Button
         {
             Text = "Cancel",
             AutomationId = "ArchetypePopupCancel",

@@ -1,4 +1,6 @@
-﻿namespace UITests
+﻿using System.Diagnostics;
+
+namespace UITests
 {
     /// <summary>
     /// Shared test infrastructure. Platform-specific BaseTest classes inherit this and
@@ -106,11 +108,11 @@
             {
                 // Re-find each attempt: a partial state change can re-render the tab and stale
                 // the previous handle.
-                var sw = System.Diagnostics.Stopwatch.StartNew();
+                Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
                 ClickElement(tabAutomationId);
                 long clickMs = sw.ElapsedMilliseconds;
 
-                var deadline = DateTime.UtcNow.AddMilliseconds(3000);
+                DateTime deadline = DateTime.UtcNow.AddMilliseconds(3000);
                 while (DateTime.UtcNow < deadline)
                 {
                     if (IsElementPresent(expectedPanelElementId))
@@ -146,7 +148,7 @@
             }
 
             NavLog($"NAV   [{caller}] '{_currentPage ?? "null"}' -> '{pageTitle}'");
-            var navTimer = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch navTimer = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 PerfLog($"NAV   [{caller}] start nav to '{pageTitle}'");
@@ -283,7 +285,7 @@
         /// </returns>
         protected bool WaitUntilText(string automationId, string expected, int timeoutMs = 5000)
         {
-            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             App.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(200);
             try
             {
@@ -338,7 +340,7 @@
         /// </summary>
         protected bool WaitUntilBusyGone(string sentinelId, int timeoutMs = 10000)
         {
-            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             while (DateTime.UtcNow < deadline)
             {
                 try
@@ -368,7 +370,7 @@
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
             try
             {
-                var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+                DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
                 while (DateTime.UtcNow < deadline)
                 {
                     try
@@ -398,7 +400,7 @@
             App.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
             try
             {
-                var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+                DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
                 while (DateTime.UtcNow < deadline)
                     if (!App.FindElements(MobileBy.AccessibilityId(automationId)).Any())
                         return;
