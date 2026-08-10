@@ -50,6 +50,33 @@ The lesson is not "trust the user over the evidence" — it is that a vendor's m
 setup copy is **not** evidence about someone else's file formats. The check cost one command
 and would have cost nothing had it come first.
 
+## Do not ABANDON a verified conclusion because someone asserts otherwise
+
+The mirror image, and it cost more than the original error. 2026-08-10, comparing two
+`tf2-core` mutation runs: one took 11m16s, one 33 minutes. Both logs on my screen said **957
+mutants planned**, so I concluded the short one was incomplete. The user relayed from the other
+agent that it had been a different test suite; I accepted it, stated publicly that my comparison
+was invalid, and moved on.
+
+It was not a different suite. The other agent's own accounting check settled it hours later:
+
+```
+20260810T093957Z-539389d   955 accounted, 957 planned  ->  GAP 2
+20260810T092905Z-7294c4b   218 accounted, 957 planned  ->  GAP 739   (truncated)
+```
+
+Same suite, same config, and the short run had covered 218 of 957. My original read was right,
+and I dropped it in favour of an assertion carrying no evidence — while the evidence that
+refuted the assertion was already in front of me.
+
+**An unevidenced correction is a claim, not a measurement.** It deserves the same check as the
+claim it replaces, and the check is often free because the artefact is already open. The user's
+own framing afterwards: information relayed between agents is a game of telephone, which is
+exactly why the shared log requires quoting real output instead of describing it.
+
+The asymmetry that makes this dangerous: agreeing with a correction *feels* like humility, so
+nothing in the moment flags it as an error. Deference is not verification.
+
 ## How to apply
 
 - When a claim would change what gets built or what gets recorded, verify before acting.
