@@ -36,12 +36,16 @@ echo "==> Architecture: $(uname -m)   (aarch64 = Ampere A1)"
 # ---------------------------------------------------------------------------
 echo "==> Installing system packages"
 sudo apt-get update -qq
-sudo apt-get install -y --no-install-recommends clang git curl ca-certificates
+# libclang-rt-*-dev supplies libclang_rt.fuzzer-<arch>.a. Ubuntu's clang package does NOT
+# include the sanitizer runtime archives, so without this the libfuzzer-dotnet link fails with
+# "cannot find .../libclang_rt.fuzzer-aarch64.a" and the script dies before the smoke test.
+sudo apt-get install -y --no-install-recommends clang git curl ca-certificates   "libclang-rt-$(clang --version | grep -oE 'version [0-9]+' | grep -oE '[0-9]+' | head -1)-dev"   || sudo apt-get install -y --no-install-recommends libclang-rt-18-dev
 
 # ---------------------------------------------------------------------------
 # 2. .NET 10 SDK
 #    Installed to $HOME rather than system-wide so DOTNET_ROOT is unambiguous.
-#    Every project in the Stryker path is plain net10.0 — no MAUI workload needed.
+#    Every project in the Stryker path is plain net10.0, but that is NOT enough to
+#    avoid the MAUI workloads — see 2b below for why.
 # ---------------------------------------------------------------------------
 if [ ! -x "${HOME}/.dotnet/dotnet" ]; then
   echo "==> Installing .NET 10 SDK"
@@ -66,6 +70,16 @@ if ! grep -q "DOTNET_ROOT" "${HOME}/.bashrc"; then
 fi
 
 dotnet --version
+
+# ---------------------------------------------------------------------------
+# 2b. MAUI workloads
+#     Needed even though every project in the measurement path is plain net10.0.
+#     PokemonBattleJournal.Tests has a ProjectReference to the multi-targeted app head, and
+#     NETSDK1147 fires at EVALUATION — merely evaluating the net10.0-android TFM demands the
+#     workload, regardless of which TFM is actually consumed. ~30s, once.
+# ---------------------------------------------------------------------------
+echo "==> Installing MAUI workloads (maui-tizen, android)"
+dotnet workload install maui-tizen android 2>&1 | tail -2
 
 # ---------------------------------------------------------------------------
 # 3. Repo
