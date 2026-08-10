@@ -106,6 +106,15 @@ fi
 # Replace rather than append, so re-running this is idempotent.
 { crontab -l 2>/dev/null | grep -vF "$MARK" || true; echo "$NEW"; } | crontab -
 
+# Deploy the shared schedule doc next to the crontabs it describes, so any agent with SSH
+# can read the house rules without needing this repo checked out. Copied, never edited in
+# place: the repo copy is canonical and this one is overwritten on every install.
+DOC_SRC="$(cd "$(dirname "$0")" && pwd)/measurement-schedule.md"
+if [ -f "$DOC_SRC" ]; then
+  cp "$DOC_SRC" "${HOME}/measurement-schedule.md"
+  echo "==> schedule doc -> ${HOME}/measurement-schedule.md"
+fi
+
 echo "==> installed (${ROLE}); times below are ${BOX_TZ} local, currently $(date '+%Z %H:%M')"
 crontab -l | grep -F "$MARK"
 echo "==> log: ${LOG}"
