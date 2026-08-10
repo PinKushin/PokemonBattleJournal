@@ -123,16 +123,33 @@ if ($Review) {
 echo "--- crontab (the authority on what is booked) ---"
 crontab -l 2>/dev/null | grep -- '-measurements' || echo "(no measurement entries)"
 echo
-echo "--- last 8 runs: name, wall minutes, headline ---"
+echo "--- last 8 runs: name, wall minutes, commits behind, headline ---"
+# STALENESS IS COMMITS, NOT HOURS. A result measured on a SHA that is still HEAD is current
+# no matter how old it is — nothing changed, so nothing can have changed the answer. A result
+# two hours old with five commits on top of it is already wrong. The run directory carries the
+# SHA it measured, so the honest number is free: count commits from that SHA to origin/HEAD.
+for r in ~/pbj ~/tf2demosalvage; do
+  [ -d "$r/.git" ] && git -C "$r" fetch --quiet origin 2>/dev/null
+done
 for d in $(ls -1dt ~/measurements/*/ 2>/dev/null | head -8); do
   n=$(basename "$d")
   stamp=${n%%-*}
   s=$(date -u -d "${stamp:0:4}-${stamp:4:2}-${stamp:6:2} ${stamp:9:2}:${stamp:11:2}:${stamp:13:2}" +%s 2>/dev/null)
   e=$(stat -c %Y "$d")
   if [ -n "$s" ]; then mins=$(( (e - s) / 60 )); else mins="?"; fi
+  # sha sits between the stamp and the mode: <stamp>-<sha>-<mode>
+  rest=${n#*-}; sha=${rest%%-*}
+  behind="?"
+  for r in ~/pbj ~/tf2demosalvage; do
+    if [ -d "$r/.git" ] && git -C "$r" cat-file -e "${sha}^{commit}" 2>/dev/null; then
+      up=$(git -C "$r" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo origin/HEAD)
+      behind=$(git -C "$r" rev-list --count "${sha}..${up}" 2>/dev/null || echo "?")
+      break
+    fi
+  done
   head=$(grep -hoE "final mutation score is [0-9.]+ %|new_units_added: +[0-9]+" "$d"/*.log 2>/dev/null | tail -1)
-  printf "  %-46s %5s min   %s
-" "$n" "$mins" "${head:-no headline}"
+  printf "  %-46s %5s min  %4s behind   %s
+" "$n" "$mins" "$behind" "${head:-no headline}"
 done
 echo
 echo "--- disk ---"

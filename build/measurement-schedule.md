@@ -36,6 +36,17 @@ Prints each box's full crontab, the last 8 runs with **wall-clock minutes**, and
 excludes git, LFS and build work; a slot has to cover all of it. Flag anything using more than
 about 70% of its gap.
 
+**Two different questions, two different metrics — do not use one for the other.**
+
+| Question | Metric | Why |
+|---|---|---|
+| Is the job still running at all? | **hours since last run** | A job that stopped firing is a cron/lock problem, and time is the only thing that reveals it. |
+| Is the result still valid? | **commits behind** | A score measured on a SHA that is still HEAD is current no matter how old. One measured two hours ago with five commits on top is already wrong. |
+
+The review prints `N behind` per run — commits from the measured SHA to that repo's upstream.
+Age in hours says only that the clock moved. As the owner put it: *"if im asleep no code is
+changing, if im away and messing with you guys the code is changing."*
+
 The review exists because slot overrun is silent. The lock refuses rather than queues, so a job
 that grows into its neighbour's start time does not error — the neighbour is just skipped, that
 day and every day after. It has already happened once: `tf2 core` was booked at 09:00 with `cli`
