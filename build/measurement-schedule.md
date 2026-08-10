@@ -89,6 +89,23 @@ the constraint is on start times only.
    `env -i HOME=/home/ubuntu SHELL=/bin/sh PATH=/usr/bin:/bin bash <runner> <mode>`.
 8. **Prune your own output.** `~/measurements/` grows without bound; keep the last 30. The boot
    volume is 45 GB and is the entire disk.
+9. **Never re-clone a repo that uses Git LFS. Update in place.** `git fetch` plus
+   `git reset --hard` is enough and costs nothing; a fresh clone re-downloads every LFS object
+   and that bandwidth is metered against the owner's GitHub account, not the box.
+
+   Tf2DemoSalvage's corpus is **305 MB in LFS**, against a **1 GB/month** free-tier bandwidth
+   allowance — so one careless re-clone is roughly **30% of the month**, and four would exhaust
+   it. There is no budget to raise the cap ([[user_no_signing_budget]] applies to paid dev
+   services generally).
+
+   What is safe, verified on 2026-08-10: LFS objects live in `.git/lfs/objects` and
+   `git reset --hard` does not touch them, so `git lfs pull` on an up-to-date clone downloads
+   **nothing**. All 8 objects on `mutation-box` carry the mtime of the original clone; a later
+   run's pull wrote none. Daily and weekly jobs are therefore free. New bandwidth is spent only
+   when new corpus files are actually added.
+
+   If a clone ever does need replacing, copy `.git/lfs/objects` aside first and put it back
+   before the first `git lfs pull`.
 
 ## Why there is a cadence at all
 
