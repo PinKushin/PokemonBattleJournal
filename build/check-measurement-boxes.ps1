@@ -30,50 +30,30 @@ $ErrorActionPreference = 'Stop'
 
 # Deliberately not a single ssh call per box with everything crammed in: when a box is gone,
 # the failure needs to be attributable to that box rather than to a parse error downstream.
-# Schedules are stated in LOCAL time with UTC in brackets, not the other way round. The
-# crontabs on the boxes are UTC and must stay UTC, but a UTC-only readout is unreadable to
-# whoever is running this — and 03:30 UTC is the PREVIOUS EVENING locally, which is exactly
-# the kind of thing a mental conversion gets wrong.
+# Schedules are stated in plain local time, with no conversion, because there is no longer
+# any conversion to do: the boxes are set to America/New_York so their crontabs ARE local.
+# That was the fix for a UTC crontab being unable to express "7am local" across daylight
+# saving — a fixed UTC entry silently becomes 6am when the offset changes.
+#
+# These strings must match build/install-measurement-cron.sh. They are documentation, not
+# the source of truth; the box's own `crontab -l` is, which is why the check reports the
+# ENTRY COUNT from the box rather than trusting this list.
 [hashtable[]] $boxes = @(
-    @{ Alias = 'mutation-box'; Cron = @{ 'stryker-core' = @(3, 30), @(15, 30); 'stryker-scraper (Sun)' = , @(8, 30) } },
-    @{ Alias = 'fuzz-box';     Cron = @{ 'fuzz 7200 (2h)' = , @(4, 0) } }
+    @{ Alias = 'mutation-box'; Expect = 'stryker-core 7:00 AM and 7:00 PM daily; stryker-scraper 8:15 AM Sunday' },
+    @{ Alias = 'fuzz-box';     Expect = 'fuzz 7200 at 7:00 AM daily (runs until ~9:00 AM)' }
 )
-
-function Format-LocalSchedule {
-    <#
-        Converts a UTC hour/minute to the local equivalent for TODAY, so the printed time
-        follows daylight saving instead of being pinned to whatever offset was true when this
-        script was written. Flags the day shift explicitly rather than leaving a bare clock
-        time that silently belongs to yesterday.
-    #>
-    param([hashtable] $Cron)
-
-    [string[]] $parts = @()
-    foreach ($job in ($Cron.Keys | Sort-Object)) {
-        [string[]] $times = @()
-        foreach ($hm in $Cron[$job]) {
-            [datetime] $utc = [datetime]::SpecifyKind(
-                [datetime]::UtcNow.Date.AddHours($hm[0]).AddMinutes($hm[1]), 'Utc')
-            [datetime] $local = $utc.ToLocalTime()
-            [string] $stamp = $local.ToString('h:mm tt')
-            if ($local.Date -lt $utc.Date) { $stamp += ' prev evening' }
-            $times += "$stamp ($($utc.ToString('HH:mm')) UTC)"
-        }
-        $parts += "$job $($times -join ', ')"
-    }
-    return $parts -join '; '
-}
 
 foreach ($box in $boxes) {
     [string] $alias = $box.Alias
     Write-Host ''
     Write-Host "=== $alias ===" -ForegroundColor Cyan
-    Write-Host "    expected: $(Format-LocalSchedule -Cron $box.Cron)" -ForegroundColor DarkGray
+    Write-Host "    expected: $($box.Expect) (box local time)" -ForegroundColor DarkGray
 
     # BatchMode so a missing or passphrase-locked key fails immediately instead of hanging on
     # an interactive prompt this script cannot answer.
     [string] $remote = @'
 echo "cron:  $(crontab -l 2>/dev/null | grep -c pbj-measurements) entries"
+echo "tz:    $(timedatectl show -p Timezone --value) - now $(date '+%a %H:%M %Z')"
 echo "up:    $(uptime -p)"
 echo "disk:  $(df -h / | awk 'NR==2 {print $4" free of "$2}')"
 last=$(ls -1dt ~/measurements/*/ 2>/dev/null | head -1)
