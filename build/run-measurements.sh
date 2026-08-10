@@ -62,7 +62,11 @@ case "$MODE" in
     # Core is where the app logic lives. The MAUI head cannot be mutated at all —
     # Stryker's internal recompile does not reproduce XAML codegen or the MVVM source
     # generators, and surfaces no CS error when it fails. That is why Core exists.
-    dotnet stryker --config-file stryker-core.json 2>&1 | tee "${OUT}/stryker.log"
+    # --solution is REQUIRED on Linux. Stryker builds the containing solution before
+    # mutating, and PokemonBattleJournal.slnx cannot build here: UITests.Windows needs
+    # Microsoft.WindowsDesktop.App (NETSDK1073) and the app head's net10.0-android TFM needs
+    # the Android SDK (XA5300). The Linux solution omits both.
+    dotnet stryker --config-file stryker-core.json --solution DO-NOT-OPEN-IN-VS.LinuxMeasurementBox.slnx 2>&1 | tee "${OUT}/stryker.log"
     cp -r StrykerOutput "${OUT}/" 2>/dev/null || true
     grep -E "final mutation score|Killed:|Survived:|Timeout:|NoCoverage" "${OUT}/stryker.log" | tail -8
     ;;
@@ -72,7 +76,7 @@ case "$MODE" in
     # break: 90 in stryker-config.json is a RATCHET protecting a real 100% score, not a
     # reckless threshold. If this fails, the Scraper score genuinely dropped — do not
     # lower the threshold to make it pass.
-    dotnet stryker 2>&1 | tee "${OUT}/stryker.log"
+    dotnet stryker --solution DO-NOT-OPEN-IN-VS.LinuxMeasurementBox.slnx 2>&1 | tee "${OUT}/stryker.log"
     cp -r StrykerOutput "${OUT}/" 2>/dev/null || true
     grep -E "final mutation score|Killed:|Survived:" "${OUT}/stryker.log" | tail -6
     ;;
