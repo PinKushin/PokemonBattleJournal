@@ -284,11 +284,47 @@ public class MatchOperationsTests : IAsyncDisposable
         Game game = new() { Result = Win, Tags = [tag] };
         await _factory.Matches.SaveAsync(match, [game]);
 
+        // A bystander that must survive. Without it, "deleted the right rows" and "deleted
+        // every row" look identical.
+        MatchEntry survivor = MakeMatch();
+        Game survivorGame = new() { Result = Win, Tags = [tag] };
+        await _factory.Matches.SaveAsync(survivor, [survivorGame]);
+
         uint matchId = match.Id;
+        uint gameId = match.Game1Id!.Value;
+        uint survivorGameId = survivor.Game1Id!.Value;
+
         await _factory.Matches.DeleteAsync(match);
 
         MatchEntry? deleted = await _factory.Matches.GetByIdAsync(matchId);
         deleted.ShouldBeNull();
+
+        // The name of this test has always promised the cascade; until now it only asserted the
+        // match row, so Stryker could stop the game ids being collected at all — orphaning every
+        // Game and TagGame row — with the test still green. Measuring the match was the wrong
+        // instrument for a claim about its children.
+        SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
+
+        int remainingGames = await db.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Game WHERE Id = ?", gameId);
+        remainingGames.ShouldBe(0, "the match's game row must be deleted with it");
+
+        int remainingTagLinks = await db.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM TagGame WHERE GameId = ?", gameId);
+        remainingTagLinks.ShouldBe(0, "the game's tag links must be deleted with it");
+
+        int survivingGames = await db.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Game WHERE Id = ?", survivorGameId);
+        survivingGames.ShouldBe(1, "another match's game must not be deleted");
+
+        int survivingTag = await db.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Tags WHERE Id = ?", tag.Id);
+        survivingTag.ShouldBe(1, "deleting a match must not delete the tag itself, only the link");
+
+        // This class shares ONE database across all its tests, so the bystander has to be
+        // removed again — left behind it fails GetAllAsync_EmptyDb_ReturnsEmpty, which runs
+        // later. Caught by the full suite and invisible when this test runs alone.
+        await _factory.Matches.DeleteAsync(survivor);
     }
 
     public ValueTask DisposeAsync() => _factory.DisposeAsync();
