@@ -39,14 +39,28 @@ in the owner's local time. Do not reintroduce UTC conversion — a fixed UTC ent
 
 ### `mutation-box`
 
-| Time | Job | Project | Measured |
-|---|---|---|---|
-| 07:00 daily | `stryker-core` | PokemonBattleJournal | ~38 min |
-| 09:00 daily | `core` | Tf2DemoSalvage | ~11-15 min |
-| 09:20 daily | `cli` | Tf2DemoSalvage | ~3 min |
-| 19:00 daily | `stryker-core` | PokemonBattleJournal | ~38 min |
-| 08:15 Sunday | `stryker-scraper` | PokemonBattleJournal | ~4 min |
-| 20:00 Sunday | `corpus` | Tf2DemoSalvage | est. 3-5 h |
+| Time | Job | Project | Measured | Installed? |
+|---|---|---|---|---|
+| 07:00 daily | `stryker-core` | PokemonBattleJournal | 38 min | yes |
+| 09:00 daily | `core` | Tf2DemoSalvage | **33 min** (2026-08-10) | not yet |
+| 09:45 daily | `cli` | Tf2DemoSalvage | unmeasured on box | not yet |
+| 19:00 daily | `stryker-core` | PokemonBattleJournal | 38 min | yes |
+| 08:15 Sunday | `stryker-scraper` | PokemonBattleJournal | 4 min | yes |
+| 20:00 Sunday | `corpus` | Tf2DemoSalvage | **being measured** | **blocked** |
+
+**Rows marked "not yet" are reservations, not reality — `crontab -l` will not show them.** They
+are listed so nobody books over them, and they get installed once their runtime is measured.
+
+**`core` is 33 minutes, not the 11-15 first assumed.** That estimate came from comparing against
+a run of a different suite. It matters: at 33 min a `cli` job at 09:20 would land inside `core`'s
+window and be refused by the lock — silently skipped, every single day. Hence 09:45.
+
+**`corpus` is blocked on a measurement, deliberately.** The local figure is 1h25m and the box has
+measured ~8x slower than local on `core`, which puts corpus near 12 hours — longer than the
+**11-hour** window between PBJ's 19:40 finish and its 07:00 start. If it does not fit, no start
+time fits, and booking it would silently skip a PBJ run every week. A bounded timing run
+(hard-stopped at 11 hours, since exceeding that answers the question by itself) settles it before
+anything is installed.
 
 ### `fuzz-box`
 
