@@ -10,6 +10,12 @@ is gone. Nothing here is speculative — each one cost debugging time and has a 
 when it passes. The deletions are the point: if a workaround survives the swap, nobody learns
 whether WDC fixed the thing it exists for.
 
+**Settled requirements only.** Findings, open questions and disagreements between the two agents
+go in the direct log beside the repos, `C:\Users\pinku\source\repos\PinKushin\DRIVER-SWAP-LOG.md`, newest
+first. That file is in no git repo, which is fine for discussion and wrong for requirements — so
+when something there settles it is promoted here, where it is versioned. `A6` arrived by exactly
+that route.
+
 ---
 
 ## A1 — Pattern activation is the default path; the mouse is a bounded fallback
