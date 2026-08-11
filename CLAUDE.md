@@ -81,6 +81,12 @@ UITEST_WINDOW_SIZE=754x512 UITEST_WINDOW_POS=85,78 dotnet test PokemonBattleJour
 Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 
 
+# ALL of the below take the machine-wide lock: several agents share this desktop and
+# these projects, and both UI suites and Stryker fail QUIETLY when they overlap.
+#   ..un-exclusive.ps1 -TimeoutMinutes 90 dotnet stryker --config-file stryker-core.json
+#   ..un-exclusive.ps1 dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
+# See the global CLAUDE.md section "Exclusive workloads take the machine-wide lock".
+
 # Mutation testing — grades the assertions, not the code. Stryker still cannot
 # touch the MAUI head (its internal recompile does not reproduce XAML codegen or
 # the MVVM source generators, and surfaces no CS error when it fails), which is
