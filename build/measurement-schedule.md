@@ -184,6 +184,14 @@ the constraint is on start times only.
 
    If a clone ever does need replacing, copy `.git/lfs/objects` aside first and put it back
    before the first `git lfs pull`.
+10. **Verify accounted mutants against planned before believing a score.** A truncated Stryker run
+    (killed process, SIGINT deadline, interrupted lock holder) still prints *"All mutants have been
+    tested"* and a percentage that is internally consistent with whatever subset it held — nothing
+    in the normal output flags the shortfall. Print `killed+timeout+survived+nocov` against the
+    planned total and treat a gap as a signal, not silence: a small gap can be RuntimeError mutants
+    (which count toward planned but appear in no status line the reporter writes), a large one is a
+    truncated run. Caught for real on 2026-08-10: a run reporting 37.74% had accounted 218 of 957
+    planned mutants — the replacement run at the same commit, uninterrupted, scored 76.59%.
 
 ## Why there is a cadence at all
 
