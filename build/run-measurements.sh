@@ -71,6 +71,14 @@ if ! flock -n 9; then
   exit 1
 fi
 
+# Rotate the shared cron log before appending to it. Nothing else writes here, so this is
+# the honest place to do it — a logrotate config would be a second mechanism to keep in sync.
+CRONLOG="${HOME}/cron-measure.log"
+if [ -f "$CRONLOG" ] && [ "$(stat -c %s "$CRONLOG")" -gt 1048576 ]; then
+  mv "$CRONLOG" "${CRONLOG}.1"
+  echo "(rotated at $(date '+%F %H:%M:%S'), previous log in $(basename "${CRONLOG}").1)" > "$CRONLOG"
+fi
+
 cd "$WORKDIR"
 
 if [ "$PULL" -eq 1 ]; then
@@ -83,7 +91,7 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="$HOME/measurements/${STAMP}-${SHA}-${MODE}"
 mkdir -p "$OUT"
 
-echo "==> ${MODE} on ${SHA}, output -> ${OUT}"
+echo "==> ${MODE} on ${SHA} at $(date '+%F %H:%M:%S %Z'), output -> ${OUT}"
 
 case "$MODE" in
   stryker-core)
