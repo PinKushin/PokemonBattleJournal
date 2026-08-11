@@ -153,7 +153,15 @@ namespace PokemonBattleJournal.IntegrationTests.Services
                 ]
                 """;
 
-            await _sut.ImportAsync(ToStream(json), _trainerId);
+            (int imported, _, List<string> errors) = await _sut.ImportAsync(ToStream(json), _trainerId);
+
+            // The controls, without which this test cannot fail. Asserting only the tag count
+            // treats "reused the existing tag" and "the second entry blew up on the unique
+            // constraint and was skipped" as the same observation — both leave exactly one row
+            // named Lucky. Removing INSERT OR IGNORE from ResolveTagAsync was invisible here
+            // until these two lines existed (2026-08-11).
+            imported.ShouldBe(2, "both entries must import; a tag collision must not lose one");
+            errors.ShouldBeEmpty($"a repeated tag name is normal input, not an error. Errors: {string.Join(" | ", errors)}");
 
             SQLiteAsyncConnection db = await _factory.GetDatabaseAsync();
             (await db.Table<Tags>().Where(t => t.Name == "Lucky").CountAsync()).ShouldBe(1);
