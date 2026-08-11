@@ -9,7 +9,7 @@ namespace PokemonBattleJournal.Services;
 /// that was never taken — <see cref="SemaphoreSlim"/> is capped at one permit, so that throws
 /// <see cref="SemaphoreFullException"/> and masks the original failure.
 /// </remarks>
-public sealed class DbSession : IDisposable
+internal sealed class DbSession : IDisposable
 {
     private readonly SemaphoreSlim _gate;
 
@@ -28,7 +28,7 @@ public sealed class DbSession : IDisposable
     }
 }
 
-public static class SqliteConnectionFactoryExtensions
+internal static class SqliteConnectionFactoryExtensions
 {
     /// <summary>
     /// Opens the database and takes the write lock, in that order.

@@ -1,6 +1,6 @@
 namespace PokemonBattleJournal.Services
 {
-    public class TrainerOperations : ITrainerOperations
+    internal class TrainerOperations : ITrainerOperations
     {
         private readonly ISqliteConnectionFactory _factory;
         private readonly ILogger _logger;

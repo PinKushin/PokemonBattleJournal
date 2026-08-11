@@ -29,7 +29,7 @@ namespace PokemonBattleJournal.Services.Restore
     /// <see cref="RestoreService"/> is what makes the combinations cheap to enumerate — proving
     /// each one through a real SQLite round trip is how the interesting ones end up untested.
     /// </remarks>
-    public static class ConflictResolver
+    internal static class ConflictResolver
     {
         /// <summary>
         /// Placed between two notes that are both non-empty and differ.

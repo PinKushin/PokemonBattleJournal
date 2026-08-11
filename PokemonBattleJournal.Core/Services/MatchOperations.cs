@@ -1,7 +1,7 @@
 using SQLiteNetExtensionsAsync.Extensions;
 namespace PokemonBattleJournal.Services
 {
-    public class MatchOperations : IMatchOperations
+    internal class MatchOperations : IMatchOperations
     {
         private readonly ISqliteConnectionFactory _factory;
         private readonly ILogger _logger;
