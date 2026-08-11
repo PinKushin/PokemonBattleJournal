@@ -71,6 +71,41 @@ action to activate, and clicking a text field *means* focusing it and placing th
 
 ---
 
+## Verified against WDC's source, 2026-08-11
+
+The owner noted they could not confirm the implementation matched their description. Read
+directly instead, at `WindowsDriverCore/src/WindowsDriverCore.Automation/Uia/UiaElementInteractor.cs`.
+
+| Claim | Status |
+|---|---|
+| Out-of-window mouse target is **refused, not clamped** | **CONFIRMED.** `if (!inside) return ElementAction.Failed(NotInteractable)` — *"Refused, loudly, rather than dispatched."* This was the one item where the wrong answer would have been worse than WinAppDriver. |
+| Pattern activation is the **default**, mouse is a fallback | **CONFIRMED.** `ClickElementOrAncestor` runs ScrollIntoView, foregrounds, tries the pattern ladder, then the ancestor walk, and only then *"Last rung: real mouse input, guarded."* |
+| Ancestor walk (A2) is implemented | **CONFIRMED.** Commented *"The rung that fixed the CollectionView."* |
+| `Focus()` for `Edit`/`Document` — the gap this spec predicted | **NOT A GAP.** Handled explicitly, and gated on control type: *"a blanket SetFocus() fallback is how the previous implementation reported success for doing nothing."* |
+
+**A difference that changes the deletion argument.** The two ladders disagree on ORDER:
+
+```
+PBJ ClickElement : Invoke -> Toggle -> SelectionItem -> ExpandCollapse
+WDC ClickOne     : Toggle -> SelectionItem -> Invoke  -> ExpandCollapse
+```
+
+WDC puts the state-bearing patterns first, and measured the reason rather than assuming it: charmap's
+Win32 checkbox advertises Toggle **and** Invoke, so an Invoke-first ladder makes the Toggle rung
+unreachable on every classic checkbox, and 9 of 22 Settings ListItems advertise Invoke alongside
+SelectionItem. Providers over-advertise Invoke.
+
+**PBJ's ladder is Invoke-first — the ordering WDC measured as wrong.** So keeping it after the swap
+does not merely duplicate work, it *overrides* the better ordering with the worse one. Delete it.
+
+**One thing to watch on the mouse rung.** It refuses a zero-size bounding rectangle, while PBJ's own
+`ClickElement` carries the comment *"Do NOT reach for the bounding rectangle here. These buttons
+report 0x0 to Appium."* Pattern-capable elements never reach that rung, so this only bites a
+pattern-less element — which PBJ has largely eliminated by converting tappable `Border`s to
+`Button`s for accessibility. Worth a check rather than an assumption.
+
+---
+
 ## A2 — Activation must work on an element whose pattern lives on an ancestor
 
 **The defect.** A `CollectionView` row carries its `AutomationId` on a `Border` **inside** the item
