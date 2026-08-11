@@ -97,6 +97,21 @@ namespace PokemonBattleJournal
             string logsDir = Path.Combine(FileHelper.GetAppDataPath(), "Logs");
             Directory.CreateDirectory(logsDir);
             Serilog.ILogger serilogLogger = new LoggerConfiguration()
+                // Without this the level is Serilog's default of Information, which silently
+                // discarded every LogDebug in the app — 25 of them across the ops services and
+                // MainPageViewModel, writing to no sink at all. They were not quiet, they were
+                // dead. Debug builds now emit them; Release still stops at Information, so the
+                // shipped log keeps its signal-to-noise.
+#if DEBUG
+                .MinimumLevel.Debug()
+#else
+                .MinimumLevel.Information()
+#endif
+                // HttpClient logs two lines per request at Information. That is noise in the
+                // file and, worse, it consumes Sentry breadcrumbs — the payload audit found
+                // "Start processing HTTP request" occupying slots that a real diagnostic could
+                // have used. Warning keeps the failures and drops the chatter.
+                .MinimumLevel.Override("System.Net.Http.HttpClient", Serilog.Events.LogEventLevel.Warning)
                 .WriteTo.Debug()
                 .WriteTo.File(Path.Combine(logsDir, "log.txt"),
                 rollingInterval: RollingInterval.Day)
@@ -106,6 +121,38 @@ namespace PokemonBattleJournal
                 // SentryRedactingSinkExtensions.RedactedSentry — the only place they are set.
                 .WriteTo.RedactedSentry()
             .CreateLogger();
+
+            // Crashes must reach the LOCAL file, not only Sentry.
+            //
+            // Sentry's MAUI integration already captures unhandled exceptions, but log.txt is the
+            // artefact a user can actually hand over, and until now it contained everything
+            // except the crash that made them send it. Sentry is also the channel that withholds
+            // strings by design (SentryRedactingSink), so the on-device copy is the one with the
+            // detail in it.
+            //
+            // Both handlers write through Serilog directly rather than through DI: an unhandled
+            // exception can arrive before or after the service provider exists, and a logger
+            // resolved from a disposed container would throw inside the crash path.
+            AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            {
+                // IsTerminating matters for triage: a crash and a survivable background failure
+                // read very differently a week later.
+                serilogLogger.Fatal(
+                    args.ExceptionObject as Exception,
+                    "Unhandled exception. Terminating: {IsTerminating}", args.IsTerminating);
+                Serilog.Log.CloseAndFlush();
+            };
+
+            // A faulted Task nobody awaited. Not fatal by default since .NET 4.5, so this is the
+            // only evidence it happened at all — exactly the silent-failure shape this project
+            // keeps finding elsewhere.
+            TaskScheduler.UnobservedTaskException += (_, args) =>
+            {
+                serilogLogger.Error(args.Exception, "Unobserved task exception");
+                // Left unobserved on purpose: marking it Observed() would suppress a signal that
+                // something is not awaiting its work, and the point here is to record it.
+            };
+
 #if DEBUG
             builder.Logging.AddDebug();
 

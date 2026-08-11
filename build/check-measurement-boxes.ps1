@@ -76,6 +76,20 @@ else
 fi
 if [ -f ~/cron-measure.log ]; then
   echo "log:   $(stat -c %y ~/cron-measure.log | cut -d. -f1) ($(wc -l < ~/cron-measure.log) lines)"
+  # A REFUSED job is the failure this check could not see. The lock writes its refusal here
+  # and exits, so nothing new lands in ~/measurements — which means a job refused every day
+  # shows up only as staleness, and only after 36 hours. Count them since the last completed
+  # run so a recurring collision is visible immediately instead of being inferred later.
+  # grep -c PRINTS 0 and EXITS 1 with no matches, so an `|| echo 0` fallback appends a second
+  # zero and the numeric test then sees two lines. Take the first line instead.
+  # No parentheses or backslashes in the strings below: this whole block is re-parsed by the
+  # remote shell after ssh joins its arguments, and both broke it.
+  refused=$(grep -c "another measurement run holds" ~/cron-measure.log 2>/dev/null | head -1)
+  refused=${refused:-0}
+  if [ "$refused" -gt 0 ]; then
+    echo "REFUSED: $refused lock refusals logged - a job is colliding with another"
+    grep -n "another measurement run holds" ~/cron-measure.log | tail -2 | sed "s/^/         /"
+  fi
 else
   echo "log:   NONE - cron has never produced output"
 fi
@@ -102,6 +116,12 @@ fi
             else {
                 Write-Host "    fresh: last run $ageHours h ago" -ForegroundColor Green
             }
+            continue
+        }
+        if ($line -match '^REFUSED:') {
+            # A collision means a scheduled run produced nothing, which the age check cannot
+            # distinguish from a job that simply has not come round yet.
+            Write-Host "    $line" -ForegroundColor Red
             continue
         }
         if ($line -match 'NONE') { Write-Host "    $line" -ForegroundColor Red; continue }
