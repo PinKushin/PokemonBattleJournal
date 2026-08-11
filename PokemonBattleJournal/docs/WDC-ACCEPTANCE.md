@@ -12,7 +12,7 @@ whether WDC fixed the thing it exists for.
 
 ---
 
-## A1 — An out-of-window target must FAIL LOUDLY, never be clamped into the window
+## A1 — Pattern activation is the default path; the mouse is a bounded fallback
 
 **The defect.** WinAppDriver's `.Click()` is synthesized mouse input at the element's centre in
 **screen** coordinates, carrying no UIA pattern. A target laid out below the window is clicked at
@@ -20,37 +20,54 @@ whatever screen position that resolves to. Locally that launched Visual Studio a
 store off the taskbar; on CI it landed on empty desktop, returned in ~1s having done nothing, and
 left find-only tests passing. **Six tests failing on CI for two days.**
 
-**Revised 2026-08-11 after WDC feedback.** A click has to be real mouse input — WinAppDriver's own
-suite tests for that specifically, and Appium compatibility requires it. So "do not use
-coordinates" was never the achievable requirement. WDC now bounds the click to the application
-window itself, which makes the real question **bounded how**, and the two answers are not close:
+**Revised twice on 2026-08-11, and the second revision is the important one.**
 
-| Behaviour for an out-of-window target | Verdict |
+First pass: a click has to be real mouse input — WinAppDriver's own suite tests for that and Appium
+compatibility requires it — so "do not use coordinates" was never achievable, and the question
+became how the mouse path is bounded.
+
+Second pass, from WDC: **"click should almost never be needed. We can select and click an element
+without the mouse, and that is the default path."** That changes the shape of this criterion
+entirely. WinAppDriver conflated *activate* with *move the mouse and press*; if WDC separates them
+and activates through UIA patterns by default, then PBJ's ladder is not compensating for anything —
+it is doing the driver's job a second time.
+
+**Two cases, wanting opposite outcomes. Test both.**
+
+| Case | Required behaviour |
 |---|---|
-| **Clamped** into the window | **WORSE than the original bug.** The old failure clicked empty desktop and did nothing; a clamped click activates a DIFFERENT element and the test continues against the wrong state. Silent-and-wrong beats silent-and-inert. |
-| **Refused, with an error naming the element and the bounds** | Correct. The containment guard becomes redundant. |
+| Element exposes a pattern (Invoke, Toggle, SelectionItem, ExpandCollapse) | Activates **regardless of position** — no scroll, no mouse, no error, even when laid out below the window. Patterns carry no coordinates, so window bounds are irrelevant. |
+| Element exposes no pattern, so the mouse fallback engages | Bounds apply. Must **refuse with an error naming the element and the bounds** — never clamp. |
 
-**Acceptance test.** With the window at CI geometry (`754x512` at position `85,78`), attempt to
-activate a control laid out below the window bottom **without scrolling it into view first**. It
-must throw, and the message must identify the element and the window bounds. Assert positively that
-no other element changed state — a clamped click is only distinguishable from a refusal by looking
-at the bystander.
+**Clamping is worse than the original bug and is the thing to check first.** The old failure clicked
+empty desktop and did nothing: inert and silent. A clamped coordinate activates a DIFFERENT element
+and the test proceeds against the wrong state: wrong and silent. Assert a bystander did not change
+state, because that is the only observation that separates a clamp from a refusal.
+
+**Acceptance test.** At CI geometry (`754x512` at `85,78`):
+
+1. Activate a `Button` laid out below the window bottom, **without scrolling it into view**. It must
+   succeed via its pattern, and the window must not scroll as a side effect.
+2. Activate a pattern-less element below the window bottom. It must throw, name the element and the
+   bounds, and leave every other element untouched.
 
 ```powershell
 UITEST_WINDOW_SIZE=754x512 UITEST_WINDOW_POS=85,78 dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
 ```
 
 Both env vars, not just the size. Size alone pins the window to `(0,0)`, where screen space and
-window-relative space coincide — which is exactly how this bug hid locally while failing on CI.
+window-relative space coincide — exactly how this bug hid locally while failing on CI.
 
-**Deleted on pass.** The mouse-path containment guard that refuses a target measured outside the
-window, since the driver now owns that check.
+**Deleted on pass — and this is now most of the file.** If case 1 holds, `TestBase.ClickElement`
+loses its whole reason to exist: the ScrollItem step (only ever there to get the target under the
+mouse), the Invoke/Toggle/SelectionItem/ExpandCollapse ladder (the driver's job now), the Edit/Document
+focus special case, and the containment guard. What remains is a thin call into the driver.
 
-**NOT deleted, correcting the first draft of this spec.** The pattern ladder in
-`TestBase.ClickElement` stays. Its `ScrollItem` step is doing real work — bringing the target
-*into* the window so a real click can land — and that is required precisely BECAUSE the click is
-coordinate-based. The Invoke/Toggle/SelectionItem steps also remain the only coordinate-free path
-for elements the mouse cannot reach reliably.
+**The one thing to confirm before deleting.** PBJ's ladder covers a specific set —
+ScrollItem, Invoke, Toggle, SelectionItem, ExpandCollapse, `Focus()` for `Edit`/`Document`, then
+three levels of ancestor. Whatever WDC's default path does NOT cover has to stay behind. The
+`Focus()` case is the likeliest gap: an `Edit` exposes no activation pattern because there is no
+action to activate, and clicking a text field *means* focusing it and placing the caret.
 
 ---
 
