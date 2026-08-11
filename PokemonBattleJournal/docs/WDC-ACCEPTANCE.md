@@ -98,11 +98,10 @@ SelectionItem. Providers over-advertise Invoke.
 **PBJ's ladder is Invoke-first — the ordering WDC measured as wrong.** So keeping it after the swap
 does not merely duplicate work, it *overrides* the better ordering with the worse one. Delete it.
 
-**One thing to watch on the mouse rung.** It refuses a zero-size bounding rectangle, while PBJ's own
-`ClickElement` carries the comment *"Do NOT reach for the bounding rectangle here. These buttons
-report 0x0 to Appium."* Pattern-capable elements never reach that rung, so this only bites a
-pattern-less element — which PBJ has largely eliminated by converting tappable `Border`s to
-`Button`s for accessibility. Worth a check rather than an assumption.
+**This check found a real bug.** The zero-rectangle question above was raised as "worth a check
+rather than an assumption", and WDC confirmed it as a genuine defect in the driver. Promoted to its
+own criterion — see **A6** below, where the requirement and the failing case are written down in
+PBJ-observable terms so it stays checkable after this conversation is forgotten.
 
 ---
 
@@ -196,6 +195,48 @@ wait is invisible until it slows a LATER test rather than failing this one.
 Windows suite from 227s to 115s. It must not be swept away as a driver workaround during the swap —
 it should be REPLACED by the explicit API above, which does the same job without the ambient-state
 juggling.
+
+---
+
+## A6 — A 0x0 bounding rectangle must not mean "not interactable"
+
+**Found on 2026-08-11 by reading WDC's source against this spec, and confirmed by WDC as a real
+bug.** Recorded here because it is checkable from PBJ's side, which is where it will resurface.
+
+**The evidence, from this repo's own scar tissue.** `TestBase.FindWithActionablePattern` carries:
+
+> *"Do NOT reach for the bounding rectangle here. These buttons report 0x0 to Appium for their
+> whole life and invoke perfectly through FlaUI, so waiting for a non-empty rectangle waits forever
+> and buys nothing — measured at six 5s stalls in one fixture."*
+
+Two things in that are load-bearing:
+
+- **"for their whole life"** — not a transient during element realisation. Permanent. A retry loop
+  does not help, which is why PBJ measured six full 5-second stalls rather than six brief ones.
+- **"invoke perfectly through FlaUI"** — the elements are genuinely interactable. Geometry and
+  interactability are simply decoupled for MAUI's WinUI backend, so one cannot stand in for the
+  other.
+
+**Requirement.** The bounding rectangle may be used to *aim* the mouse and to decide whether a mouse
+click would land inside the window. It must not be used to decide whether an element **can** be
+interacted with, is **displayed**, or is **present**. An element with a zero rectangle and a working
+pattern must activate through that pattern.
+
+**Acceptance test.** Take a MAUI `Button` that reports `0x0` — PBJ has several; `ApplyConflictsButton`
+is one — and:
+
+1. Activate it. It must succeed via its pattern, with no reference to geometry.
+2. Query whether it is displayed. It must report displayed.
+3. Assert the call returns promptly. The failure mode here is a wait that never resolves, so a
+   test that only checks the final verdict passes slowly and hides the defect.
+
+**Diagnostic trap worth avoiding.** A zero rectangle has its centre at the origin, so any code that
+computes a click point from it and then bounds-checks that point will report the element as being
+*outside the window*. PBJ hit exactly that: the off-window guard's message *"outside the app
+window"* described the geometry it had read, not the reason the click failed, and sent the
+investigation in the wrong direction. **An error derived from geometry is misleading precisely
+when the geometry is the thing that is wrong.** Say "reported a zero-size rectangle" rather than
+"outside the window" when the rectangle is empty.
 
 ---
 
