@@ -6,7 +6,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:loading="clr-namespace:PokemonBattleJournal.Controls.Loading"
     xmlns:controls="clr-namespace:PokemonBattleJournal.Controls"
-    xmlns:models="clr-namespace:PokemonBattleJournal.Models"
+    xmlns:models="clr-namespace:PokemonBattleJournal.Models;assembly=PokemonBattleJournal.Core"
     xmlns:sys="clr-namespace:System;assembly=netstandard"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     xmlns:viewmodel="clr-namespace:PokemonBattleJournal.ViewModels"
