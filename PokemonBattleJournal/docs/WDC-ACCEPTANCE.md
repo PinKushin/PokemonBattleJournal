@@ -12,7 +12,7 @@ whether WDC fixed the thing it exists for.
 
 ---
 
-## A1 — Activation must not be synthesized mouse input at screen coordinates
+## A1 — An out-of-window target must FAIL LOUDLY, never be clamped into the window
 
 **The defect.** WinAppDriver's `.Click()` is synthesized mouse input at the element's centre in
 **screen** coordinates, carrying no UIA pattern. A target laid out below the window is clicked at
@@ -20,9 +20,21 @@ whatever screen position that resolves to. Locally that launched Visual Studio a
 store off the taskbar; on CI it landed on empty desktop, returned in ~1s having done nothing, and
 left find-only tests passing. **Six tests failing on CI for two days.**
 
-**Acceptance test.** With the window at CI geometry (`754x512` at position `85,78`), activate a
-control whose layout position is below the window bottom. It must activate, and nothing outside
-the application window may receive input.
+**Revised 2026-08-11 after WDC feedback.** A click has to be real mouse input — WinAppDriver's own
+suite tests for that specifically, and Appium compatibility requires it. So "do not use
+coordinates" was never the achievable requirement. WDC now bounds the click to the application
+window itself, which makes the real question **bounded how**, and the two answers are not close:
+
+| Behaviour for an out-of-window target | Verdict |
+|---|---|
+| **Clamped** into the window | **WORSE than the original bug.** The old failure clicked empty desktop and did nothing; a clamped click activates a DIFFERENT element and the test continues against the wrong state. Silent-and-wrong beats silent-and-inert. |
+| **Refused, with an error naming the element and the bounds** | Correct. The containment guard becomes redundant. |
+
+**Acceptance test.** With the window at CI geometry (`754x512` at position `85,78`), attempt to
+activate a control laid out below the window bottom **without scrolling it into view first**. It
+must throw, and the message must identify the element and the window bounds. Assert positively that
+no other element changed state — a clamped click is only distinguishable from a refusal by looking
+at the bystander.
 
 ```powershell
 UITEST_WINDOW_SIZE=754x512 UITEST_WINDOW_POS=85,78 dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
@@ -31,9 +43,14 @@ UITEST_WINDOW_SIZE=754x512 UITEST_WINDOW_POS=85,78 dotnet test PokemonBattleJour
 Both env vars, not just the size. Size alone pins the window to `(0,0)`, where screen space and
 window-relative space coincide — which is exactly how this bug hid locally while failing on CI.
 
-**Deleted on pass.** The UIA pattern ladder in `TestBase.ClickElement` (ScrollItem, Invoke, Toggle,
-SelectionItem, ExpandCollapse, Focus, then up to three ancestors), and the mouse-path fallback that
-refuses a target measured outside the window.
+**Deleted on pass.** The mouse-path containment guard that refuses a target measured outside the
+window, since the driver now owns that check.
+
+**NOT deleted, correcting the first draft of this spec.** The pattern ladder in
+`TestBase.ClickElement` stays. Its `ScrollItem` step is doing real work — bringing the target
+*into* the window so a real click can land — and that is required precisely BECAUSE the click is
+coordinate-based. The Invoke/Toggle/SelectionItem steps also remain the only coordinate-free path
+for elements the mouse cannot reach reliably.
 
 ---
 
@@ -46,7 +63,9 @@ while its parent is perfectly selectable. PBJ walks up three levels to find it.
 **Acceptance test.** Activate a `CollectionView` item by the `AutomationId` on its inner `Border`
 (the archetype popup items, `ArchetypeItem_{Name}`). Selection must occur.
 
-**Deleted on pass.** The three-level ancestor walk in `ClickElement`.
+**Status: WDC reports this already fixed (2026-08-11).** So this is a regression test rather than
+an open requirement — keep it in the suite, and the three-level ancestor walk in `ClickElement` is
+the deletion candidate once a run confirms it.
 
 ---
 
@@ -58,13 +77,25 @@ element to sync on, so the only signal available is another connection attempt. 
 `31032240413` (ReadJournalPageTests) burned all three retries inside ~20s and failed the job before
 a single test ran.
 
-**Acceptance test.** 20 consecutive cold session creations, no retry logic in the harness, zero
-failures. An in-process driver should make this structurally impossible rather than merely
-unlikely — if WDC still needs a retry, say so explicitly, because that changes the claim.
+**Revised 2026-08-11 — the original criterion was wrong.** It asked for an in-process driver with
+no listener to race. WDC has to BE a server: that is what WinAppDriver and Appium compatibility
+means, so the race is structural rather than a defect it can design away. WDC also notes the fault
+may sit on the Appium client side, which is worth knowing but does not change what the harness
+needs.
 
-**Deleted on pass.** `retryDelaysMs = [5_000, 15_000, 30_000]` and the surrounding attempt loop in
-`AppiumSetup`, plus its wrapped failure message. This is also the suite's only sanctioned
-`Task.Delay`; removing it restores the no-sleeps rule without an exception.
+**Restated: readiness must be observable.** The harness must be able to synchronise on a condition
+instead of guessing with a delay. Either is sufficient:
+
+- the driver does not report started until its listener accepts connections, or
+- it exposes something pollable (a status endpoint, a named event, a ready file) that flips exactly
+  when sessions can be created.
+
+**Acceptance test.** 20 consecutive cold starts. The harness waits on the readiness signal, with no
+`Task.Delay` and no retry loop, and creates a session first time in every one.
+
+**Deleted on pass.** `retryDelaysMs = [5_000, 15_000, 30_000]` and the attempt loop in
+`AppiumSetup`. This is the suite's only sanctioned `Task.Delay` — removing it restores the
+no-sleeps rule with no exception left standing, which is the real prize here.
 
 ---
 
@@ -89,17 +120,30 @@ below.
 
 ---
 
-## A5 — Optional-element lookups must be genuinely zero-cost
+## A5 — Give the CALLER a way to say a lookup is optional
 
 **The defect.** An absent element cost ~6.8s at the 5s ambient implicit wait, against ~215ms when
 present. Across a suite full of "is this dialog showing?" checks that dominated the runtime; fixing
 it took the Windows suite from 227s to 115s.
 
-**Acceptance test.** A lookup with a zero timeout for an element that does not exist returns in
-well under 100ms, and does not inherit the ambient wait.
+**Revised 2026-08-11 — this was misfiled as a driver defect.** WDC's objection is correct: the
+driver cannot know whether a missing element is a failure or an expected absence. That is the
+caller's knowledge, and today PBJ expresses it by mutating the ambient implicit wait to zero around
+each optional call and restoring it afterwards — stateful, easy to get wrong, and it leaks if an
+assertion throws in between.
 
-**Nothing is deleted.** `TimeSpan.Zero` on optional lookups is a test-design decision that stays
-whatever the driver does. Listed so it is not mistaken for a workaround and removed.
+**Restated as an API request, which WDC has already offered.** An explicit per-call way to say "not
+finding this is a legal outcome" — a flag, an overload, or a `TryFind` returning null — using a
+zero or near-zero timeout without touching ambient state.
+
+**Acceptance test.** An optional lookup for an element that does not exist returns in well under
+100 ms, and the ambient implicit wait is unchanged afterwards. Assert the second part: a leaked
+wait is invisible until it slows a LATER test rather than failing this one.
+
+**Nothing is deleted, and that is why it is listed.** The `TimeSpan.Zero` discipline took the
+Windows suite from 227s to 115s. It must not be swept away as a driver workaround during the swap —
+it should be REPLACED by the explicit API above, which does the same job without the ambient-state
+juggling.
 
 ---
 
