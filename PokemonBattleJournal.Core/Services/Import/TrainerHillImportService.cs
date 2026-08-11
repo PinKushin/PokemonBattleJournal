@@ -389,21 +389,23 @@ namespace PokemonBattleJournal.Services.Import
         {
             using DbSession session = await _factory.BeginAsync();
             SQLiteAsyncConnection db = session.Connection;
-            try
-            {
-                Tags? existing = await db.Table<Tags>().Where(t => t.Name == name).FirstOrDefaultAsync();
-                if (existing is not null)
-                    return existing;
 
-                Tags tag = new() { Name = name, TrainerId = trainerId };
-                _ = await db.InsertAsync(tag);
-                return tag;
-            }
-            catch (SQLiteException ex) when (ex.Message.Contains("UNIQUE"))
-            {
-                // Concurrent insert race — fetch what's there
-                return await db.Table<Tags>().Where(t => t.Name == name).FirstOrDefaultAsync();
-            }
+            // INSERT OR IGNORE, then read back. Tags.Name is [Unique], so this is get-or-create in
+            // one atomic statement and the "already there" case is a no-op rather than an
+            // exception. Same pattern ArchetypeOperations already uses.
+            //
+            // Replaces a select-then-insert whose unique-constraint failure was caught and treated
+            // as a concurrent-insert race. That was wrong twice over. The handler was unreachable,
+            // because every write goes through DbSession and its semaphore holds a single permit,
+            // so nothing can interleave between the read and the write. And the code it protected
+            // was only correct BECAUSE of that app-wide lock — an invariant living nowhere near
+            // the code that depended on it. This version does not care whether the lock exists.
+            _ = await db.ExecuteAsync(
+                "INSERT OR IGNORE INTO Tags (Name, TrainerId) VALUES (?, ?)", name, trainerId);
+
+            // Read back rather than trusting the insert: on the ignore path no row was written, and
+            // the caller needs the EXISTING row's id, which may belong to another trainer.
+            return await db.Table<Tags>().Where(t => t.Name == name).FirstOrDefaultAsync();
         }
 
         internal static Dictionary<string, string> BuildSlugLookup(IEnumerable<MetaDeck> decks)
