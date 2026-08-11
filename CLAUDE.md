@@ -83,8 +83,10 @@ Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 
 # ALL of the below take the machine-wide lock: several agents share this desktop and
 # these projects, and both UI suites and Stryker fail QUIETLY when they overlap.
-#   ..un-exclusive.ps1 -TimeoutMinutes 90 dotnet stryker --config-file stryker-core.json
-#   ..un-exclusive.ps1 dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
+# The lock lives beside the repos, at PinKushin/run-exclusive.ps1, forward slashes so
+# the path survives being pasted through a shell:
+#   pwsh ../run-exclusive.ps1 -TimeoutMinutes 90 dotnet stryker --config-file stryker-core.json
+#   pwsh ../run-exclusive.ps1 dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj
 # See the global CLAUDE.md section "Exclusive workloads take the machine-wide lock".
 
 # Mutation testing — grades the assertions, not the code. Stryker still cannot
