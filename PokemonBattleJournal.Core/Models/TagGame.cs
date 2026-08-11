@@ -6,7 +6,7 @@ namespace PokemonBattleJournal.Models
     /// Junction table for many-to-many relationship between Game and Tags
     /// </summary>
     [Table("TagGame")]
-    public class TagGame
+    internal class TagGame
     {
         [ForeignKey(typeof(Game)), Indexed(Name = "TagGame_GameId_TagId", Order = 1)]
         public uint GameId { get; set; }

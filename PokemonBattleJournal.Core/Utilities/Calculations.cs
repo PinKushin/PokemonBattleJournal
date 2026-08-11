@@ -1,6 +1,6 @@
 ﻿namespace PokemonBattleJournal.Utilities
 {
-    public static class Calculations
+    internal static class Calculations
     {
         /// <summary>
         /// Calculate the average win rate of the trainer

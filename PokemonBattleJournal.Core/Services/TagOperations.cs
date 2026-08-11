@@ -1,6 +1,6 @@
 namespace PokemonBattleJournal.Services
 {
-    public class TagOperations : ITagOperations
+    internal class TagOperations : ITagOperations
     {
         private readonly ISqliteConnectionFactory _factory;
         private readonly ILogger _logger;
