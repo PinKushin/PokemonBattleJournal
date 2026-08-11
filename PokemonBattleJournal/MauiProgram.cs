@@ -157,6 +157,23 @@ namespace PokemonBattleJournal
             builder.Logging.AddDebug();
 
 #endif
+            // One line per launch, and the only place the local log records WHICH BUILD wrote it.
+            //
+            // Sentry already knows — options.Release above carries version and build — but that is
+            // the channel that withholds detail by design. log.txt is what a user can actually hand
+            // over, and until now it identified neither the build nor where one session ended and
+            // the next began, in a file that rolls daily and holds many launches.
+            //
+            // Version, build and platform only. No paths and no device identifiers: a path can
+            // carry a username, and the standing rule is ids, counts and lengths rather than names
+            // ([[project_sentry_privacy_audit]]). These three are safe on both channels.
+            serilogLogger.Information(
+                "PokemonBattleJournal starting. Version {Version} build {Build} on {Platform} {PlatformVersion}",
+                AppInfo.Current.VersionString,
+                AppInfo.Current.BuildString,
+                DeviceInfo.Current.Platform,
+                DeviceInfo.Current.VersionString);
+
             builder.Services.AddSerilog(serilogLogger);
             builder.Services.AddHttpClient<HttpMetaDeckFetcher>();
             builder.Services.AddSingleton<IMetaDeckFetcher, HttpMetaDeckFetcher>();
