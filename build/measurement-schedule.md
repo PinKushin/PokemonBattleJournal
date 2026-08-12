@@ -135,12 +135,25 @@ slot question reopens from scratch.
 
 ### `fuzz-box`
 
-| Time | Job | Project | Measured |
-|---|---|---|---|
-| 07:00 daily | `fuzz 7200` | PokemonBattleJournal | 2 h by budget |
+| Time | Job | Project | Measured | Installed? |
+|---|---|---|---|---|
+| 07:00 daily | `fuzz 7200` | PokemonBattleJournal | 2 h by budget | yes |
+| 19:00 daily | fuzz — `container` + `bitreader` | Tf2DemoSalvage | **budget not yet stated** | **reserved** |
 
-**Free and sensible:** `fuzz-box` 19:00-21:00. `mutation-box` has room mid-afternoon and
-overnight, but leave margin after a neighbour rather than butting against it.
+**Tf2DemoSalvage's daily fuzz slot is 19:00, approved by the owner 2026-08-11.** It is a
+reservation until the runner names its budget — `crontab -l` will not show it yet. A fuzz run is
+bounded by the budget it is given rather than by how long the work takes, so "measured runtime" is
+the wrong question here; what is needed is the total across both targets. At 2 h each that is 4 h
+and it runs to 23:00, which still clears PBJ's 07:00 by eight hours. Longer than that and the two
+targets should alternate by day instead of both running nightly.
+
+Ad-hoc runs outside a booked slot are fine on either box when nothing is scheduled — also the
+owner's call, same date. They still take `/tmp/measurement-box.lock`, which is what makes them
+safe; the lock is the rule, the schedule is only the plan.
+
+**Room remaining after that:** `fuzz-box` is clear 09:00-19:00 and 23:00-07:00. `mutation-box` has
+room mid-afternoon and overnight, but leave margin after a neighbour rather than butting against
+it.
 
 **Never schedule a trigger at 02:xx.** That minute does not exist on spring-forward and happens
 twice on fall-back, so the job is skipped or run twice. A job that *runs through* 02:00 is fine —
