@@ -161,6 +161,37 @@ case "$MODE" in
       done
     done
 
+    # PROVE THE INSTRUMENT BEFORE TRUSTING THE MEASUREMENT.
+    #
+    # `-artifact_prefix` writes NOTHING through libfuzzer-dotnet: a managed exception aborts the
+    # .NET child, the bridge dies with it, and libFuzzer's crash handler never runs. So a run
+    # reports the defect in its log and loses the input — and an empty findings directory looks
+    # identical to a clean run. PBJ carried that defect from the start and it stayed invisible
+    # for exactly one reason: nothing had ever crashed, so the path was never exercised.
+    #
+    # PBJFUZZ_SELFTEST makes every input throw, so the preservation path runs on the first
+    # execution. If no file appears, the whole night's fuzzing would have been unable to keep a
+    # finding, and that is worth failing the run over rather than discovering later.
+    export PBJFUZZ_CRASH_DIR="${HOME}/findings"
+    SELFTEST_DIR="${HOME}/findings-selftest"
+    rm -rf "$SELFTEST_DIR"
+    echo "==> self-test: proving a crashing input is preserved"
+    PBJFUZZ_SELFTEST=1 PBJFUZZ_CRASH_DIR="$SELFTEST_DIR" "${HOME}/libfuzzer-dotnet" \
+      --target_path="${HOME}/fuzz-out/PokemonBattleJournal.Fuzz" \
+      -runs=1 \
+      "${HOME}/corpus" 9>&- > "${OUT}/selftest.log" 2>&1 || true
+
+    if ! ls "$SELFTEST_DIR"/crash-*.bin >/dev/null 2>&1; then
+      echo "ERROR: self-test produced no crash file in ${SELFTEST_DIR}." >&2
+      echo "       Crash preservation is broken; a real finding would be lost silently." >&2
+      tail -20 "${OUT}/selftest.log" >&2
+      exit 1
+    fi
+    echo "    ok: $(ls -1 "$SELFTEST_DIR"/crash-*.bin | wc -l) crash file(s) written"
+    rm -rf "$SELFTEST_DIR"
+
+    # -artifact_prefix stays set even though it writes nothing here, so that if a future
+    # toolchain does start producing artifacts they land beside ours rather than in $PWD.
     "${HOME}/libfuzzer-dotnet" \
       --target_path="${HOME}/fuzz-out/PokemonBattleJournal.Fuzz" \
       -max_total_time="${SECONDS_BUDGET}" \

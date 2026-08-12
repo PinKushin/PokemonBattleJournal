@@ -2,7 +2,9 @@ namespace PokemonBattleJournal.Fuzz;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using PokemonBattleJournal.Logging;
 using PokemonBattleJournal.Services.Restore;
@@ -48,20 +50,121 @@ internal static class Program
     /// </remarks>
     private const byte SideSeparator = 0;
 
-    private static void Main() => Fuzzer.LibFuzzer.Run(Consume);
+    /// <summary>
+    /// Where to write a crashing input, or <c>null</c> to write none.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>libFuzzer's own <c>-artifact_prefix</c> writes nothing here, so without this a
+    /// finding is lost at the moment it is found.</b> On a managed exception SharpFuzz aborts
+    /// the .NET child and the <c>libfuzzer-dotnet</c> bridge dies with it, so libFuzzer's crash
+    /// handler never runs: no <c>crash-*</c> file and no "Test unit written to" line, while the
+    /// exception itself prints in full. That split is the worst possible one — the run REPORTS
+    /// the defect and silently loses the input needed to reproduce it. Measured by
+    /// Tf2DemoSalvage on 2026-08-11 against a real crash; PokemonBattleJournal shared the defect
+    /// and had simply never crashed, so ~148M executions a night were running with no way to
+    /// keep a reproducer.
+    /// </para>
+    /// <para>
+    /// <b>The corpus is not a fallback.</b> libFuzzer only adds inputs that increase coverage,
+    /// and a crashing input is never added — replaying the whole corpus afterwards isolates
+    /// nothing.
+    /// </para>
+    /// </remarks>
+    private static readonly string? CrashDir =
+        Environment.GetEnvironmentVariable("PBJFUZZ_CRASH_DIR");
 
-    private static void Consume(ReadOnlySpan<byte> bytes)
+    /// <summary>
+    /// When set, every input throws. Makes the preservation path provable on demand instead of
+    /// only when something genuinely breaks — which is what let this defect hide.
+    /// </summary>
+    private static readonly bool SelfTest =
+        Environment.GetEnvironmentVariable("PBJFUZZ_SELFTEST") == "1";
+
+    private static void Main() => Fuzzer.LibFuzzer.Run(Run);
+
+    /// <summary>
+    /// Copies the input, then runs the real target so a crash can be preserved.
+    /// </summary>
+    /// <remarks>
+    /// Two details carry the whole fix.
+    /// <list type="bullet">
+    ///   <item><b>Copy before the call.</b> libFuzzer reuses its buffer, so the span is not
+    ///   valid by the time anything downstream of the throw looks at it.</item>
+    ///   <item><b>Write from an exception FILTER, not a catch.</b> A filter runs while the
+    ///   exception is still propagating and its result decides nothing here — it always returns
+    ///   false — so the exception continues to SharpFuzz exactly as before. Catching and
+    ///   rethrowing would work too, but it would rewrite the stack trace, and the trace is the
+    ///   other half of the finding.</item>
+    /// </list>
+    /// </remarks>
+    private static void Run(ReadOnlySpan<byte> bytes)
     {
+        byte[] input = bytes.ToArray();
+
+        try
+        {
+            Consume(input);
+        }
+        catch (Exception) when (Preserve(input))
+        {
+            // Unreachable: Preserve always returns false, so this handler is never selected.
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Writes the crashing input beside the run's findings. Always returns <c>false</c>.
+    /// </summary>
+    private static bool Preserve(byte[] input)
+    {
+        if (CrashDir is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            _ = Directory.CreateDirectory(CrashDir);
+
+            // Content-addressed, so the same input twice is one file rather than two, and the
+            // name is enough to tell two findings apart in a log.
+            string digest = Convert.ToHexString(SHA256.HashData(input))[..16].ToLowerInvariant();
+            string path = Path.Combine(CrashDir, $"crash-{digest}.bin");
+
+            File.WriteAllBytes(path, input);
+            Console.Error.WriteLine(
+                $"crash input preserved: crash-{digest}.bin ({input.Length} bytes)");
+        }
+        catch (Exception ex)
+        {
+            // Never let preservation change the outcome of the run, but never swallow it
+            // either: a silent failure here recreates the exact defect being fixed.
+            Console.Error.WriteLine(
+                $"could not preserve crash input: {ex.GetType().Name}: {ex.Message}");
+        }
+
+        return false;
+    }
+
+    private static void Consume(byte[] bytes)
+    {
+        if (SelfTest)
+        {
+            throw new InvalidOperationException(
+                $"PBJFUZZ_SELFTEST: deliberate throw on {bytes.Length} bytes");
+        }
+
         // An empty input carries no mode and no payload. Returning rather than
         // picking a default keeps the corpus honest: a zero-length file should
         // not be credited with exercising anything.
-        if (bytes.IsEmpty)
+        if (bytes.Length == 0)
         {
             return;
         }
 
         int mode = bytes[0] % ModeCount;
-        byte[] payload = bytes[1..].ToArray();
+        byte[] payload = bytes[1..];
 
         switch (mode)
         {
