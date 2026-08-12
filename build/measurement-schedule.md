@@ -206,12 +206,24 @@ the constraint is on start times only.
    it. There is no budget to raise the cap ([[user_no_signing_budget]] applies to paid dev
    services generally).
 
-   **Status as of 2026-08-11: that allowance was hit once and is not drained.** The owner's
-   instruction after it is that **the fuzz corpus does not come from LFS at all** — demos live on
-   the owner's local machine and are uploaded to the box by hand. Tf2's `f910e8b`, "Seed the
-   container target from local demos, not box-side LFS pulls," is that change. So a fuzz slot
-   running nightly costs no LFS bandwidth whatever its budget, and the rule below governs the
-   repo clones only.
+   **The metered thing is the corpus, not the repo.** Tf2DemoSalvage's source is a few MB and
+   costs nothing to clone as many times as you like. The 305 MB is entirely LFS objects — the
+   demos. So re-cloning is the hazard *only because a plain `git clone` fetches them
+   automatically*: the LFS smudge filter runs during checkout and pulls every object without being
+   asked. That is the trap, and it is worth stating in that order, because "don't re-clone" filed
+   under the wrong reason invites someone to conclude a clone is safe once they have skipped
+   `git lfs pull`.
+
+   If a clone is genuinely needed, `GIT_LFS_SKIP_SMUDGE=1 git clone …` gets the repo for
+   approximately nothing and leaves the objects unfetched.
+
+   **Status as of 2026-08-11: the allowance was hit once and is not drained.** Treat it as a
+   one-time accident with a standing lesson, not an ongoing constraint — nothing is throttled and
+   nothing needs rationing. The owner's instruction after it is that **the fuzz corpus does not
+   come from LFS on the box at all**: demos live on the owner's local machine and are uploaded by
+   hand. Tf2's `f910e8b`, "Seed the container target from local demos, not box-side LFS pulls," is
+   that change. So a nightly fuzz slot costs no LFS bandwidth at any budget — because its corpus
+   never travels through LFS, not because clones are exempt.
 
    What is safe, verified on 2026-08-10: LFS objects live in `.git/lfs/objects` and
    `git reset --hard` does not touch them, so `git lfs pull` on an up-to-date clone downloads
