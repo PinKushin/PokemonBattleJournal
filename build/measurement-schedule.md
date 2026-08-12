@@ -106,16 +106,29 @@ in the owner's local time. Do not reintroduce UTC conversion — a fixed UTC ent
 | Time | Job | Project | Measured | Installed? |
 |---|---|---|---|---|
 | 07:00 daily | `stryker-core` | PokemonBattleJournal | 38 min | yes |
-| 09:00 daily | `core` | Tf2DemoSalvage | **33 min** (2026-08-10) | not yet |
+| 09:00 daily | `core` | Tf2DemoSalvage | **22m33s** (2026-08-12, concurrency 3) | requested |
 | 09:45 daily | `cli` | Tf2DemoSalvage | unmeasured on box | not yet |
 | 19:00 daily | `stryker-core` | PokemonBattleJournal | 38 min | yes |
 | 08:15 Sunday | `stryker-scraper` | PokemonBattleJournal | 4 min | yes |
-| ~~20:00 Sunday~~ | `corpus` | Tf2DemoSalvage | **18 h 07 m** (2026-08-11) | **withdrawn** |
+| ~~20:00 Sunday~~ | `corpus` | Tf2DemoSalvage | **18 h 07 m** (2026-08-11) | **withdrawn permanently** — the runner now refuses this mode; coverage capture cannot succeed, see the log |
 
 **Rows marked "not yet" are reservations, not reality — `crontab -l` will not show them.** They
 are listed so nobody books over them, and they get installed once their runtime is measured.
 
-**`core` is 33 minutes, not the 11-15 first assumed.** That estimate came from comparing against
+**Pass `--concurrency $(nproc)` in every runner on mutation-box.** Stryker defaults to cores/2,
+and 3 cores integer-divides to **1** - so every run on this box was single threaded, invisibly,
+until 2026-08-12. Measured on tf2 `core`: 1h35m40s -> **22m33s**, a 4.2x drop, from 3.01 s to
+0.68 s per mutant. PBJ's 38-minute `stryker-core` should see the same. Set it in the runner, not
+in stryker-config.json - that file is shared with local runs, where the conservative default is
+right because a developer's machine has to stay usable.
+
+Two things this ruled out on the way, both worth not re-investigating: **CompileError mutants cost
+almost nothing** (they resolve before testing starts - 88 s covered build, discovery, coverage
+capture and every compile-rollback cycle), and **`git reset --hard` runs the LFS smudge filter**,
+which downloads uncached objects - so a mode documented as needing no demos will still fetch a
+newly added one unless `GIT_LFS_SKIP_SMUDGE=1` is set on the reset.
+
+**`core` was 33 minutes at 2026-08-10, and that number is now historical.** That estimate came from comparing against
 a run of a different suite. It matters: at 33 min a `cli` job at 09:20 would land inside `core`'s
 window and be refused by the lock — silently skipped, every single day. Hence 09:45.
 
@@ -126,12 +139,44 @@ silently skipped a PBJ run every week, because the lock refuses rather than queu
 
 **The runtime is a symptom, not a size.** That run scored 100 % — from **1142 timeouts against
 183 real kills**. Stryker counts a timeout as a kill, so the score is 86 % manufactured, and at
-roughly 57 s per timeout the timeouts account for essentially the entire 18 hours. A mutant that
-hangs instead of failing is usually a loop bound or termination condition mutated in code that
-reads a stream until exhausted, which is exactly the shape of demo parsing. So the next step is
-not a longer window, it is finding what spins — and if a mutated bound can spin, a corrupt demo
-probably can too. Re-measure after that; the number will change by an order of magnitude and the
-slot question reopens from scratch.
+roughly 57 s per timeout the timeouts account for essentially the entire 18 hours.
+
+**The cause is a 180-second JSON-RPC limit in Stryker's MTP runner, not hanging loops.** Measured
+by Tf2DemoSalvage on 2026-08-12. Stryker talks to its test server over JSON-RPC with a hard
+180-second call limit; their instrumented corpus suite takes 6m18s, so the coverage-capture call
+is cancelled, the server is discarded as crashed, the single retry fails identically, and capture
+reports zero. **With no coverage data Stryker cannot tell which tests touch a mutant, so it runs
+the entire suite for every mutant** — which is what exceeds the per-mutant timeout 1142 times.
+
+This file previously said the cause was mutated loop bounds spinning in stream-reading code. That
+was wrong, and it was wrong in an avoidable way: the decisive line was in the run log all along.
+
+```
+[00:04:17 ERR] It looks like the test coverage capture failed.
+```
+
+Printed 18 hours before the run ended, in a file that had already been read — for scores and
+timings, never for what it said about coverage. A mechanism was then inferred from the timeout
+count alone. The unbounded-loop story does not survive the report either: 100 of the timeouts are
+in `DemoTextDumper.cs`, on `ArgumentNullException.ThrowIfNull` statements, and removing a null
+check cannot hang.
+
+Loops that genuinely can spin are still worth bounding — `Snappy`'s `read++` is real — but that is
+a robustness finding on its own merits, not the reason for the 18 hours.
+
+**Two consequences for every project on these boxes:**
+
+- **Check `Coverage capture complete: N mutations covered` after any Stryker run.** N of 0 means
+  every number in that run was produced the expensive way and none of it means anything. Note the
+  line does not appear at default verbosity — its absence is not evidence, so raise verbosity
+  before relying on the check.
+- **A test project whose instrumented suite runs over three minutes will hit this silently.**
+  Speed of the suite is a correctness property of the measurement, not just a convenience.
+
+Dead ends already burned; do not repeat them. `additional-timeout` is a *different* timeout applied
+per mutant, and raising it from 30 s to 900 s changed nothing. `test-case-filter` is not honoured by
+the MTP runner. Switching `mtp` to `vstest` does not fix capture, it inverts the symptom — mutants
+come back `Survived` with no verdict and a score of 0.00 %.
 
 ### `fuzz-box`
 
