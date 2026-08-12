@@ -143,9 +143,19 @@ slot question reopens from scratch.
 **Tf2DemoSalvage's daily fuzz slot is 19:00, approved by the owner 2026-08-11.** It is a
 reservation until the runner names its budget — `crontab -l` will not show it yet. A fuzz run is
 bounded by the budget it is given rather than by how long the work takes, so "measured runtime" is
-the wrong question here; what is needed is the total across both targets. At 2 h each that is 4 h
-and it runs to 23:00, which still clears PBJ's 07:00 by eight hours. Longer than that and the two
-targets should alternate by day instead of both running nightly.
+the wrong question here; what is needed is the total across both targets.
+
+**Run both targets every night. Do not alternate them by day.** An earlier version of this file
+suggested alternating past ~4 h, and that was mutation-run logic applied to fuzzing, where it does
+not hold. A mutation run is a fixed unit of work competing for a window, so squeezing it matters. A
+fuzz run is elastic and, more importantly, **cumulative**: libFuzzer grows a corpus across runs, so
+alternating does not cost half the schedule, it costs half the exploration rate on each target,
+permanently. There is nothing to gain it back with — the window from 19:00 to PBJ's 07:00 is **12
+hours**, and both targets at 4 h each would still finish by 03:00. The box is otherwise idle
+09:00-19:00 and 23:00-07:00.
+
+More runtime is also the direction the idle rule wants. Oracle reclaims on a 7-day 95th-percentile
+AND across CPU, network and memory, so time spent busy is margin, not cost.
 
 Ad-hoc runs outside a booked slot are fine on either box when nothing is scheduled — also the
 owner's call, same date. They still take `/tmp/measurement-box.lock`, which is what makes them
@@ -195,6 +205,13 @@ the constraint is on start times only.
    allowance — so one careless re-clone is roughly **30% of the month**, and four would exhaust
    it. There is no budget to raise the cap ([[user_no_signing_budget]] applies to paid dev
    services generally).
+
+   **Status as of 2026-08-11: that allowance was hit once and is not drained.** The owner's
+   instruction after it is that **the fuzz corpus does not come from LFS at all** — demos live on
+   the owner's local machine and are uploaded to the box by hand. Tf2's `f910e8b`, "Seed the
+   container target from local demos, not box-side LFS pulls," is that change. So a fuzz slot
+   running nightly costs no LFS bandwidth whatever its budget, and the rule below governs the
+   repo clones only.
 
    What is safe, verified on 2026-08-10: LFS objects live in `.git/lfs/objects` and
    `git reset --hard` does not touch them, so `git lfs pull` on an up-to-date clone downloads
