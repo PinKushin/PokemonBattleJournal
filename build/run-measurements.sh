@@ -90,6 +90,15 @@ if [ "$PULL" -eq 1 ]; then
   git reset --quiet --hard origin/master
 fi
 
+# Stryker defaults --concurrency to HALF the logical processors, and this box has 3, which
+# integer-divides to 1. Every mutation run here was single threaded and nothing said so: the
+# output is identical, only slower. Measured by Tf2DemoSalvage on their `core` suite 2026-08-12 —
+# 1h35m40s to 22m33s, 4.2x, 3.01 s to 0.68 s per mutant.
+#
+# Set here rather than in stryker-core.json because that file is shared with local runs, where
+# the conservative default is correct: a developer's machine has to stay usable while it runs.
+CONCURRENCY="$(nproc)"
+
 SHA="$(git rev-parse --short HEAD)"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="$HOME/measurements/${STAMP}-${SHA}-${MODE}"
@@ -112,7 +121,7 @@ case "$MODE" in
     # mutating, and PokemonBattleJournal.slnx cannot build here: UITests.Windows needs
     # Microsoft.WindowsDesktop.App (NETSDK1073) and the app head's net10.0-android TFM needs
     # the Android SDK (XA5300). The Linux solution omits both.
-    dotnet stryker --config-file stryker-core.json --solution DO-NOT-OPEN-IN-VS.LinuxMeasurementBox.slnx 2>&1 9>&- | tee "${OUT}/stryker.log"
+    dotnet stryker --config-file stryker-core.json --concurrency "$CONCURRENCY" --solution DO-NOT-OPEN-IN-VS.LinuxMeasurementBox.slnx 2>&1 9>&- | tee "${OUT}/stryker.log"
     cp -r StrykerOutput "${OUT}/" 2>/dev/null || true
     grep -E "final mutation score|Killed:|Survived:|Timeout:|NoCoverage" "${OUT}/stryker.log" | tail -8
     ;;
@@ -122,7 +131,7 @@ case "$MODE" in
     # break: 90 in stryker-config.json is a RATCHET protecting a real 100% score, not a
     # reckless threshold. If this fails, the Scraper score genuinely dropped — do not
     # lower the threshold to make it pass.
-    dotnet stryker --solution DO-NOT-OPEN-IN-VS.LinuxMeasurementBox.slnx 2>&1 9>&- | tee "${OUT}/stryker.log"
+    dotnet stryker --concurrency "$CONCURRENCY" --solution DO-NOT-OPEN-IN-VS.LinuxMeasurementBox.slnx 2>&1 9>&- | tee "${OUT}/stryker.log"
     cp -r StrykerOutput "${OUT}/" 2>/dev/null || true
     grep -E "final mutation score|Killed:|Survived:" "${OUT}/stryker.log" | tail -6
     ;;

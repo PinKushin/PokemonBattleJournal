@@ -106,7 +106,7 @@ in the owner's local time. Do not reintroduce UTC conversion — a fixed UTC ent
 | Time | Job | Project | Measured | Installed? |
 |---|---|---|---|---|
 | 07:00 daily | `stryker-core` | PokemonBattleJournal | 38 min | yes |
-| 09:00 daily | `core` | Tf2DemoSalvage | **22m33s** (2026-08-12, concurrency 3) | requested |
+| 09:00 daily | `core` | Tf2DemoSalvage | **22m33s** (2026-08-12, concurrency 3) | **yes** (installed 2026-08-12 15:40) |
 | 09:45 daily | `cli` | Tf2DemoSalvage | unmeasured on box | not yet |
 | 19:00 daily | `stryker-core` | PokemonBattleJournal | 38 min | yes |
 | 08:15 Sunday | `stryker-scraper` | PokemonBattleJournal | 4 min | yes |
@@ -183,7 +183,7 @@ come back `Survived` with no verdict and a score of 0.00 %.
 | Time | Job | Project | Measured | Installed? |
 |---|---|---|---|---|
 | 07:00 daily | `fuzz 7200` | PokemonBattleJournal | 2 h by budget | yes |
-| 19:00 daily | fuzz — `container` + `bitreader` | Tf2DemoSalvage | **budget not yet stated** | **reserved** |
+| 19:00 daily | fuzz — 4 targets | Tf2DemoSalvage | **8h20m** by budget, ends ~03:20 | **yes** (installed 2026-08-12 15:40) |
 
 **Tf2DemoSalvage's daily fuzz slot is 19:00, approved by the owner 2026-08-11.** It is a
 reservation until the runner names its budget — `crontab -l` will not show it yet. A fuzz run is
