@@ -21,6 +21,10 @@ export PATH="$HOME/.dotnet:$HOME/.dotnet/tools:$PATH"
 # the run that took it had exited.
 export MSBUILDDISABLENODEREUSE=1
 
+# Written into every run directory as `.owner`, and the only thing the prune at the bottom will
+# delete on. Shared box: ~/measurements holds other projects' results too.
+OWNER="pokemonbattlejournal"
+
 WORKDIR="${PBJ_DIR:-$HOME/pbj}"
 # NEVER `rm` THIS FILE, not even as cleanup between runs. Deleting it does not free the
 # lock — flock is on the open file description — but it DOES unlink the inode, so the next
@@ -90,6 +94,11 @@ SHA="$(git rev-parse --short HEAD)"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="$HOME/measurements/${STAMP}-${SHA}-${MODE}"
 mkdir -p "$OUT"
+
+# Stamp the run with its owner. The prune at the bottom deletes only directories carrying THIS
+# marker, so this script can never remove a neighbouring project's results. See the note there
+# for why the obvious alternative — matching on the directory name — does not work.
+printf '%s\n' "$OWNER" > "${OUT}/.owner"
 
 echo "==> ${MODE} on ${SHA} at $(date '+%F %H:%M:%S %Z'), output -> ${OUT}"
 
@@ -162,12 +171,43 @@ case "$MODE" in
     ;;
 esac
 
-# Keep the last 30 runs. On a cron cadence this directory grows without bound, and a
-# Stryker HTML report is a few MB — the free tier's 50 GB boot volume is the whole disk.
+# Keep the last 30 of THIS PROJECT'S runs. On a cron cadence this directory grows without bound,
+# and a Stryker HTML report is a few MB — the free tier's 50 GB boot volume is the whole disk.
 # Findings are NOT pruned with the run that produced them: they are copied to ~/findings
 # as well, which is the durable location.
-ls -1dt "${HOME}/measurements/"*/ 2>/dev/null | tail -n +31 | while read -r old; do
-  rm -rf "$old"
-done
+#
+# ~/measurements is shared by every project on the box. This used to glob `*/` and so pruned
+# whatever it found, which is a per-project script reaching across a shared machine — the same
+# failure family as naming a lock after the project instead of the box. PBJ alone makes about 15
+# runs a week here, so a 30-slot window is about two weeks: this line would have silently deleted
+# Tf2DemoSalvage's 18-hour corpus measurement, from a script with nothing to do with it. Caught
+# 2026-08-12 with 16 directories present, so nothing was lost.
+#
+# **Matching on the directory NAME is not a fix, and looks like one.** Runs are named
+# `<stamp>-<sha>-<mode>`, so the tempting glob for this project is `*-fuzz/`, `*-stryker-core/`
+# and so on. But Tf2DemoSalvage's fuzz runs are named `<stamp>-<sha>-tf2-fuzz`, which *ends in*
+# `-fuzz` and therefore matches `*-fuzz/` — the neighbour's directory is deleted by a glob written
+# specifically to avoid deleting it. Their older runs (`-fuzz-container`, `-fuzz-bitreader`) carry
+# no `-tf2-` infix at all, so the mirror-image exclusion fails too. Naming conventions drift
+# independently in two repos; an ownership marker does not.
+#
+# A directory with no `.owner` file is left alone rather than pruned. That is deliberate: the
+# conservative failure is an old directory surviving, and the disk has room (246 MB used of 45 GB
+# when this was written). Deleting on absence would re-create exactly the bug being fixed for any
+# project that has not adopted the marker yet.
+mine=()
+while IFS= read -r dir; do
+  [ -f "${dir}.owner" ] || continue
+  [ "$(cat "${dir}.owner")" = "$OWNER" ] || continue
+  mine+=("$dir")
+done < <(ls -1dt "${HOME}/measurements/"*/ 2>/dev/null)
+
+# Newest first, so everything from index 30 on is surplus.
+if [ "${#mine[@]}" -gt 30 ]; then
+  for old in "${mine[@]:30}"; do
+    echo "==> pruning own run: $(basename "$old")"
+    rm -rf "$old"
+  done
+fi
 
 echo "==> done: ${OUT}"
