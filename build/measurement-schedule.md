@@ -195,8 +195,46 @@ the constraint is on start times only.
 7. **cron's environment is nearly empty** and `~/.bashrc` returns early when non-interactive, so
    `DOTNET_ROOT` and `PATH` do not survive. Export them inside the runner. Test with
    `env -i HOME=/home/ubuntu SHELL=/bin/sh PATH=/usr/bin:/bin bash <runner> <mode>`.
-8. **Prune your own output.** `~/measurements/` grows without bound; keep the last 30. The boot
-   volume is 45 GB and is the entire disk.
+8. **Prune your own output — and ONLY your own.** `~/measurements/` grows without bound; keep the
+   last 30. The boot volume is 45 GB and is the entire disk.
+
+   **The glob must match this project's run directories, never `*/`.** `~/measurements/` is shared,
+   so an unscoped `ls -1dt "${HOME}/measurements/"*/ | tail -n +31 | xargs rm -rf` keeps the newest
+   30 runs *on the box* and deletes everyone else's. PBJ alone produces about 15 runs a week here,
+   which makes an unscoped 30-slot window roughly two weeks: its nightly cron would have deleted
+   Tf2DemoSalvage's 18-hour corpus measurement, silently, from a script that has nothing to do
+   with it. Caught 2026-08-11 with 14 directories present, so nothing was lost.
+
+   This is the same failure family as rule 1 and it arrived the same way — the convention was
+   copied between projects, bug included, under a comment about not accumulating two conventions.
+   **A per-project script must not use a path that describes the machine.**
+
+   **Scope it with an ownership MARKER, not with a glob on the directory name.** Write `.owner`
+   into each run directory and delete only directories whose marker matches yours; leave unmarked
+   ones alone, because the conservative failure is an old directory surviving and deleting on
+   absence re-creates this bug for any project that has not adopted a marker.
+
+   The earlier advice here was to stamp the project name into the directory and glob on it. That
+   was measured on 2026-08-12 and it does not work — it looks exactly like the fix, which is what
+   makes it dangerous:
+
+   - PBJ's obvious own-glob is `*-fuzz/`. Tf2DemoSalvage's fuzz runs are named
+     `<stamp>-<sha>-tf2-fuzz`, which **ends in `-fuzz`** and matches it. The neighbour's directory
+     is deleted by the very glob written to spare it.
+   - The mirror-image exclusion `*-tf2-*` misses tf2's older runs, `-fuzz-container` and
+     `-fuzz-bitreader`, which carry no `-tf2-` infix at all.
+
+   Two repos rename things independently and neither learns of the other's change; a marker file
+   does not drift. "Verify the scoped glob matches fewer directories than the unscoped one" also
+   does not catch either case — both globs *do* match fewer, just not the right fewer.
+
+   PBJ's implementation and its check are `build/run-measurements.sh` and `build/test-prune.sh`.
+   The test **extracts** the prune block from the runner rather than restating it, so it cannot
+   pass against a copy that has drifted, and its fixture makes the neighbour directories the
+   OLDEST present so an unscoped prune takes them first.
+
+   `~/keep/` is not the answer. It is a place to rescue an artifact after the fact, not a
+   substitute for a prune that respects its neighbours.
 9. **Never re-clone a repo that uses Git LFS. Update in place.** `git fetch` plus
    `git reset --hard` is enough and costs nothing; a fresh clone re-downloads every LFS object
    and that bandwidth is metered against the owner's GitHub account, not the box.
