@@ -87,3 +87,47 @@ byte.
 
 - [[project_stryker_mutation_testing]] — the other half; assertions vs inputs
 - [[feedback_tests_that_cannot_fail]] — why the splitter is duplicated
+
+## Crash preservation — libFuzzer's own artifact writing NEVER RAN here
+
+**Fixed 2026-08-12.** `-artifact_prefix` writes nothing through `libfuzzer-dotnet`. On a managed
+exception SharpFuzz aborts the .NET child, the bridge dies with it, and libFuzzer's crash handler
+never runs: **no `crash-*` file and no "Test unit written to" line, while the exception prints in
+full.** A run therefore REPORTS the defect and silently loses the input needed to reproduce it.
+
+Found by the Tf2DemoSalvage agent against a real crash; PBJ shared the defect and had simply never
+crashed, so `~/findings` sat empty since 10 Aug looking like good news. **~148M executions a night
+with no way to keep a reproducer.**
+
+Verified independently on PBJ's harness with a control, which is the part worth copying: run the
+self-test crash with `-artifact_prefix` set and `PBJFUZZ_CRASH_DIR` **unset**. libFuzzer wrote
+**0 files**. With the env var set, 1 file. So the file is ours, not libFuzzer's.
+
+**The corpus is not a fallback.** libFuzzer only adds coverage-increasing inputs, and a crashing
+input is never added — replaying the corpus afterwards isolates nothing.
+
+Two details carry the fix in `Program.cs`:
+
+- **Copy the input before calling the target.** libFuzzer reuses its buffer, so the span is not
+  valid once the exception is in flight.
+- **Write from an exception FILTER, not a catch.** The filter runs while the exception is still
+  propagating and always returns `false`, so the exception reaches SharpFuzz unchanged.
+  Catch-and-rethrow would rewrite the stack trace, and the trace is the other half of a finding.
+
+**`PBJFUZZ_SELFTEST=1` makes every input throw, and the runner uses it as a GATE** before the real
+run — one execution, assert a crash file appeared, `exit 1` with the log if not. That is the
+durable lesson: an empty findings directory is indistinguishable from a clean run, so the only way
+to tell them apart is to crash on purpose. Prove the instrument, then trust the measurement. See
+[[feedback_tests_that_cannot_fail]].
+
+## The runner pulls ITSELF, so a runner change takes effect one run late
+
+`run-measurements.sh` does `git reset --hard origin/master` near the top. Git replaces the file by
+rename, so the running bash keeps reading the **old inode** and finishes executing the old body —
+while the banner prints the NEW SHA, because that comes from `git rev-parse` after the pull.
+
+Seen for real on 2026-08-12: a run announced `c17ea33` and produced neither the `.owner` file nor
+the `selftest.log` that commit added. Nothing was wrong with the code; the next invocation was
+correct. **When verifying a runner change on the box, run it twice, or pass `--no-pull` on a clone
+that is already up to date.** Judging the change by the first run's output is judging the previous
+version.
