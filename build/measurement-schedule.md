@@ -110,7 +110,7 @@ in the owner's local time. Do not reintroduce UTC conversion — a fixed UTC ent
 | 09:45 daily | `cli` | Tf2DemoSalvage | unmeasured on box | not yet |
 | 19:00 daily | `stryker-core` | PokemonBattleJournal | 38 min | yes |
 | 08:15 Sunday | `stryker-scraper` | PokemonBattleJournal | 4 min | yes |
-| 20:00 Sunday | `corpus` | Tf2DemoSalvage | **being measured** | **blocked** |
+| ~~20:00 Sunday~~ | `corpus` | Tf2DemoSalvage | **18 h 07 m** (2026-08-11) | **withdrawn** |
 
 **Rows marked "not yet" are reservations, not reality — `crontab -l` will not show them.** They
 are listed so nobody books over them, and they get installed once their runtime is measured.
@@ -119,12 +119,19 @@ are listed so nobody books over them, and they get installed once their runtime 
 a run of a different suite. It matters: at 33 min a `cli` job at 09:20 would land inside `core`'s
 window and be refused by the lock — silently skipped, every single day. Hence 09:45.
 
-**`corpus` is blocked on a measurement, deliberately.** The local figure is 1h25m and the box has
-measured ~8x slower than local on `core`, which puts corpus near 12 hours — longer than the
-**11-hour** window between PBJ's 19:40 finish and its 07:00 start. If it does not fit, no start
-time fits, and booking it would silently skip a PBJ run every week. A bounded timing run
-(hard-stopped at 11 hours, since exceeding that answers the question by itself) settles it before
-anything is installed.
+**`corpus` was blocked on a measurement, and the measurement withdrew it.** The estimate was ~12
+hours against an 11-hour window; the run on 2026-08-11 took **18 h 07 m**. No start time fits, so
+nothing is booked. That was the whole point of measuring before installing: booking it would have
+silently skipped a PBJ run every week, because the lock refuses rather than queues.
+
+**The runtime is a symptom, not a size.** That run scored 100 % — from **1142 timeouts against
+183 real kills**. Stryker counts a timeout as a kill, so the score is 86 % manufactured, and at
+roughly 57 s per timeout the timeouts account for essentially the entire 18 hours. A mutant that
+hangs instead of failing is usually a loop bound or termination condition mutated in code that
+reads a stream until exhausted, which is exactly the shape of demo parsing. So the next step is
+not a longer window, it is finding what spins — and if a mutated bound can spin, a corrupt demo
+probably can too. Re-measure after that; the number will change by an order of magnitude and the
+slot question reopens from scratch.
 
 ### `fuzz-box`
 
