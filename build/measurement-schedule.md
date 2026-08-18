@@ -23,7 +23,7 @@ projects run here, and the failure mode of getting it wrong is silent.
   short and current, and a thread of discussion inside it buries the live rules. When something
   in the log becomes settled, promote it here — the log has no git history, this file does.
 
-## Weekly review — Monday 12:05 local
+## Weekly review — Monday 20:00 local
 
 ```powershell
 pwsh -NoProfile -File build/check-measurement-boxes.ps1 -Review
@@ -33,9 +33,9 @@ Prints each box's full crontab, the last 8 runs with **wall-clock minutes and co
 and disk. Run by the `measurement-weekly-review` scheduled task, which reports and recommends
 but changes nothing.
 
-Monday noon so every daily job has just run — PBJ core ~5 h old, the scraper ~4 h, tf2 core ~3 h.
-**Moves to ~20:00 Monday when the owner returns to work**, which loses nothing: PBJ's 19:00 run
-ends 19:38, so an evening review reads a `stryker-core` under an hour old.
+**Moved from Monday noon to 20:00** once the owner returned to work full-time — an evening review
+reads a `stryker-core` under an hour old (PBJ's 19:00 run ends 19:38), which the noon slot could
+not: it read numbers up to 27 hours stale on a Sunday-scheduled predecessor.
 
 **Compare wall minutes against the gap to the next slot, not Stryker's "Time Elapsed".** Elapsed
 excludes git, LFS and build work; a slot has to cover all of it. Flag anything using more than
@@ -88,6 +88,15 @@ instead of erroring. Send a request; it gets wired.
 A request needs: which box, which command, how long it takes **measured on the box** (not
 locally — the box is roughly 2.8x slower than a modern Windows desktop), and how often.
 
+**Relaxed once, by the owner, for TcgDex.CSharpSdk specifically (2026-08-16).** Verbatim: *"im
+letting you take over the cron job scheduling for this... just wanted it setup in a way it was
+backed up in a repo, and wouldnt have you ai stepping on each other."* TcgDex now edits both
+crontabs directly rather than requesting through PBJ, and has since booked its own Stryker and
+fuzz slots (see below) — but it still allocates with margin against the existing slots and still
+uses the shared lock, so the rule's purpose holds even though its enforcement path changed. This is
+a standing exception for that one project, not a general opening; a fourth project still requests
+through PBJ.
+
 ## The boxes
 
 | Alias | Shape | Purpose |
@@ -99,6 +108,12 @@ Both are Oracle Always Free ARM64, set to **`America/New_York`**, so crontab ent
 in the owner's local time. Do not reintroduce UTC conversion — a fixed UTC entry cannot express
 "7am local" and drifts an hour at every daylight saving change.
 
+**Both boxes auto-reboot for security updates at 04:00 daily** (`unattended-upgrades`, installed
+2026-08-16 after both boxes were found 6 days behind on an already-downloaded kernel — patching
+was working, the reboot to load it was not). 04:00 sits clear of every booked slot on both boxes;
+leave margin there too when booking something new. Deliberately not 02:00 — the same DST-transition
+hazard as any other trigger time.
+
 ## Slots (local time)
 
 ### `mutation-box`
@@ -108,9 +123,18 @@ in the owner's local time. Do not reintroduce UTC conversion — a fixed UTC ent
 | 07:00 daily | `stryker-core` | PokemonBattleJournal | 38 min | yes |
 | 09:00 daily | `core` | Tf2DemoSalvage | **22m33s** (2026-08-12, concurrency 3) | **yes** (installed 2026-08-12 15:40) |
 | 09:45 daily | `cli` | Tf2DemoSalvage | unmeasured on box | not yet |
+| 11:00 daily | `stryker` | TcgDex.CSharpSdk | **~14-24 min** (2026-08-16/17, concurrency 3) | **yes** (installed 2026-08-16 12:28) |
 | 19:00 daily | `stryker-core` | PokemonBattleJournal | 38 min | yes |
+| 23:00 daily | `stryker` | TcgDex.CSharpSdk | **~13-14 min** | **yes** (installed 2026-08-16 12:28) |
 | 08:15 Sunday | `stryker-scraper` | PokemonBattleJournal | 4 min | yes |
 | ~~20:00 Sunday~~ | `corpus` | Tf2DemoSalvage | **18 h 07 m** (2026-08-11) | **withdrawn permanently** — the runner now refuses this mode; coverage capture cannot succeed, see the log |
+
+**TcgDex booked directly** under the ownership relaxation above — 11:00 sits two hours after tf2's
+09:00, 23:00 sits four hours after PBJ's 19:00, both an order of magnitude over the ~14-24 min
+runtime. Installing TcgDex closed a real gap: the concurrency fix that took PBJ's `stryker-core`
+from 38 to 16-18 min also roughly halved the box's total occupancy, and mutation-box briefly fell
+*under* Oracle's 8.4 h/week idle-reclamation threshold as a side effect of a change that made
+everything faster. See "Why there is a cadence at all" below.
 
 **Rows marked "not yet" are reservations, not reality — `crontab -l` will not show them.** They
 are listed so nobody books over them, and they get installed once their runtime is measured.
@@ -183,7 +207,23 @@ come back `Survived` with no verdict and a score of 0.00 %.
 | Time | Job | Project | Measured | Installed? |
 |---|---|---|---|---|
 | 07:00 daily | `fuzz 7200` | PokemonBattleJournal | 2 h by budget | yes |
+| 13:00 daily | `fuzz 3600` | TcgDex.CSharpSdk | 1 h by budget | **yes** (installed 2026-08-16 11:45, raised 900s->3600s same day) |
 | 19:00 daily | fuzz — 4 targets | Tf2DemoSalvage | **8h20m** by budget, ends ~03:20 | **yes** (installed 2026-08-12 15:40) |
+
+**TcgDex's budget was raised from 900s to 3600s same day it was installed** — a 180s trial run had
+held `ft` flat and looked saturated, but 301s and 901s runs both kept finding new coverage
+(`ft` 4220 -> 4517), so the flat reading was an artifact of too short a window, not evidence of
+nothing left to find. 13:00 sits clear of PBJ's 07:00-09:00 and Tf2's 19:00 start.
+
+**Fuzz corpus sharing between CI and box, adopted by all three fuzzing projects (2026-08-16).**
+The GitHub runner is x64 and the box is ARM64, so a crash-triggering input found by one was never
+exercised by the other until this. Shape: a `fuzz-corpus` prerelease with one release asset per
+project (public repo, so the box reads it with plain `curl`, no credential); fold in before
+fuzzing, publish after minimising, publishing gated on a clean run, a fetch failure never fatal.
+Tf2DemoSalvage diverges deliberately — one asset per fuzz target rather than one combined archive,
+because its four targets run as parallel CI matrix jobs and a shared asset name is
+last-writer-wins. Reference implementation: `build/run-measurements.sh` and
+`.github/workflows/fuzz.yml` in TcgDex.CSharpSdk, PR #23.
 
 **Tf2DemoSalvage's daily fuzz slot is 19:00, approved by the owner 2026-08-11.** It is a
 reservation until the runner names its budget — `crontab -l` will not show it yet. A fuzz run is
@@ -332,9 +372,13 @@ metrics across 7 days — CPU, network and memory all under 20%. Clearing a 95th
 being busy more than 5% of the week, which is **8.4 hours**. A single 38-minute nightly job is 4.4
 hours a week and does not clear it.
 
-Current total on `mutation-box` is roughly 14.6 h/week across both projects, so there is margin.
-**Do not add "skip if nothing changed" logic** without redoing this arithmetic — an optimisation
-that reduces busy time can hand the box back to Oracle.
+Current total on `mutation-box` is roughly **9.5 h/week across three projects** (PBJ ~4 h,
+Tf2DemoSalvage ~1 h, TcgDex.CSharpSdk ~4.4 h), clearing the 8.4 h threshold with modest margin.
+That margin is recent and thinner than it looks: the `--concurrency $(nproc)` fix that cut PBJ's
+`stryker-core` from 38 to 16-18 min also roughly halved the box's total occupancy, and briefly took
+mutation-box *under* the threshold before TcgDex's two daily runs were booked (2026-08-16). **Do
+not add "skip if nothing changed" logic** without redoing this arithmetic — an optimisation that
+reduces busy time can hand the box back to Oracle, exactly as the concurrency fix nearly did.
 
 An instance that gets reclaimed does not break. It stops existing, and the first symptom is an SSH
 timeout.
