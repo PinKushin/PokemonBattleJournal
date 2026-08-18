@@ -120,14 +120,14 @@ hazard as any other trigger time.
 
 | Time | Job | Project | Measured | Installed? |
 |---|---|---|---|---|
-| 07:00 daily | `stryker-core` | PokemonBattleJournal | 38 min | yes |
+| 07:00 daily | `stryker-core` | PokemonBattleJournal | **~17 min** (concurrency 3) | yes |
 | 09:00 daily | `core` | Tf2DemoSalvage | **22m33s** (2026-08-12, concurrency 3) | **yes** (installed 2026-08-12 15:40) |
-| 09:45 daily | `cli` | Tf2DemoSalvage | unmeasured on box | not yet |
+| 13:00 daily | `cli` | Tf2DemoSalvage | **2m03s wall** (2026-08-18) | **yes** (installed 2026-08-18 15:40) |
 | 11:00 daily | `stryker` | TcgDex.CSharpSdk | **~14-24 min** (2026-08-16/17, concurrency 3) | **yes** (installed 2026-08-16 12:28) |
-| 19:00 daily | `stryker-core` | PokemonBattleJournal | 38 min | yes |
+| 19:00 daily | `stryker-core` | PokemonBattleJournal | **~17 min** (concurrency 3) | yes |
 | 23:00 daily | `stryker` | TcgDex.CSharpSdk | **~13-14 min** | **yes** (installed 2026-08-16 12:28) |
 | 08:15 Sunday | `stryker-scraper` | PokemonBattleJournal | 4 min | yes |
-| ~~20:00 Sunday~~ | `corpus` | Tf2DemoSalvage | **18 h 07 m** (2026-08-11) | **withdrawn permanently** — the runner now refuses this mode; coverage capture cannot succeed, see the log |
+| ~~20:00 Sunday~~ | `corpus` | Tf2DemoSalvage | **18 h 07 m** (2026-08-11) | **withdrawn permanently.** MTP wall confirmed gone 2026-08-18 (NUnit/VSTest), but coverage capture is still ~22 min/pass over real demos — a poor harness at any speed. No `content` slot coming either: tf2 rejected copying 8.2 GB of archive data to the box and is removing the data dependency via synthetic tests instead, growing `core` rather than adding a mode. See the log. |
 
 **TcgDex booked directly** under the ownership relaxation above — 11:00 sits two hours after tf2's
 09:00, 23:00 sits four hours after PBJ's 19:00, both an order of magnitude over the ~14-24 min
