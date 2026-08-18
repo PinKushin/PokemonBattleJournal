@@ -148,7 +148,7 @@ echo "--- last 8 runs: name, wall minutes, commits behind, headline ---"
 # no matter how old it is — nothing changed, so nothing can have changed the answer. A result
 # two hours old with five commits on top of it is already wrong. The run directory carries the
 # SHA it measured, so the honest number is free: count commits from that SHA to origin/HEAD.
-for r in ~/pbj ~/tf2demosalvage; do
+for r in ~/pbj ~/tf2demosalvage ~/tcgdex; do
   [ -d "$r/.git" ] && git -C "$r" fetch --quiet origin 2>/dev/null
 done
 for d in $(ls -1dt ~/measurements/*/ 2>/dev/null | head -8); do
@@ -160,7 +160,11 @@ for d in $(ls -1dt ~/measurements/*/ 2>/dev/null | head -8); do
   # sha sits between the stamp and the mode: <stamp>-<sha>-<mode>
   rest=${n#*-}; sha=${rest%%-*}
   behind="?"
-  for r in ~/pbj ~/tf2demosalvage; do
+  # Reset per run: without this, a run whose SHA matches no clone kept the PREVIOUS
+  # run's code count and printed it as its own. Every tcgdex run hit that, because
+  # ~/tcgdex was missing from the repo list above.
+  code="?"
+  for r in ~/pbj ~/tf2demosalvage ~/tcgdex; do
     if [ -d "$r/.git" ] && git -C "$r" cat-file -e "${sha}^{commit}" 2>/dev/null; then
       up=$(git -C "$r" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo origin/HEAD)
       behind=$(git -C "$r" rev-list --count "${sha}..${up}" 2>/dev/null || echo "?")
