@@ -122,8 +122,8 @@ hazard as any other trigger time.
 |---|---|---|---|---|
 | 07:00 daily | `stryker-core` | PokemonBattleJournal | **~17 min** (concurrency 3) | yes |
 | 09:00 daily | `core` | Tf2DemoSalvage | **22m33s** (2026-08-12, concurrency 3) | **yes** (installed 2026-08-12 15:40) |
-| 13:00 daily | `cli` | Tf2DemoSalvage | **2m03s wall** (2026-08-18) | **yes** (installed 2026-08-18 15:40) |
 | 11:00 daily | `stryker` | TcgDex.CSharpSdk | **~14-24 min** (2026-08-16/17, concurrency 3) | **yes** (installed 2026-08-16 12:28) |
+| 13:00 daily | `cli` | Tf2DemoSalvage | **2m03s wall** (2026-08-18) | **yes** (installed 2026-08-18 15:40) |
 | 19:00 daily | `stryker-core` | PokemonBattleJournal | **~17 min** (concurrency 3) | yes |
 | 23:00 daily | `stryker` | TcgDex.CSharpSdk | **~13-14 min** | **yes** (installed 2026-08-16 12:28) |
 | 08:15 Sunday | `stryker-scraper` | PokemonBattleJournal | 4 min | yes |
