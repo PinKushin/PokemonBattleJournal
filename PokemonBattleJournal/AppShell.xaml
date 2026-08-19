@@ -5,6 +5,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:models="clr-namespace:PokemonBattleJournal.Models;assembly=PokemonBattleJournal.Core"
+    xmlns:local="clr-namespace:PokemonBattleJournal"
     xmlns:views="clr-namespace:PokemonBattleJournal.Views"
     xmlns:vm="clr-namespace:PokemonBattleJournal.ViewModels"
     Title="Pokemon TCG Battle Journal"
@@ -17,7 +18,9 @@
         </ResourceDictionary>
     </Shell.Resources>
     <Shell.FlyoutContent>
-        <ScrollView BindingContext="{Binding Source={x:Reference TheShell}, Path=BindingContext}">
+        <ScrollView
+            x:DataType="vm:AppShellViewModel"
+            BindingContext="{Binding Source={x:Reference TheShell}, Path=BindingContext, x:DataType=local:AppShell}">
             <VerticalStackLayout Spacing="0">
 
                 <!--  Switch Trainer accordion — top of list  -->
@@ -69,7 +72,7 @@
                                     Padding="40,12,20,12" BackgroundColor="Transparent" StrokeThickness="0">
                                     <Border.GestureRecognizers>
                                         <TapGestureRecognizer
-                                            Command="{Binding Source={x:Reference TheShell}, Path=BindingContext.SelectTrainerCommand}"
+                                            Command="{Binding Source={x:Reference TheShell}, Path=ViewModel.SelectTrainerCommand, x:DataType=local:AppShell}"
                                             CommandParameter="{Binding .}" />
                                     </Border.GestureRecognizers>
                                     <Label
