@@ -60,8 +60,23 @@ namespace UITests
             AppiumServerHelper.StartAppiumLocalServer(port: 4724);
             PerfLog($"{logPrefix} AppiumServer started ({setupTimer.ElapsedMilliseconds}ms)");
 
-            Process? runningProc = System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal")
-                .FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero);
+            Process[] existing = System.Diagnostics.Process.GetProcessesByName("PokemonBattleJournal");
+
+            // More than one instance means an earlier run left something behind, or the driver
+            // launched a second copy because it could not get the first one to the foreground.
+            // Either way every subsequent lookup searches the wrong window and the whole fixture
+            // fails by finding nothing — a cascade that reads exactly like a code regression.
+            // Seen for real on 2026-08-19 when a desktop app held the foreground during a local
+            // run. Say so here rather than letting the tests report it as missing elements.
+            if (existing.Length > 1)
+            {
+                Log($"WARNING: {existing.Length} PokemonBattleJournal.exe instances are running "
+                    + $"(PIDs {string.Join(", ", existing.Select(p => p.Id))}). The driver attaches to one "
+                    + "window; the others will make element lookups fail for reasons unrelated to the code. "
+                    + "Stop them and rerun: Stop-Process -Name PokemonBattleJournal -Force");
+            }
+
+            Process? runningProc = existing.FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero);
 
             _attachedToExisting = runningProc != null;
 
@@ -368,12 +383,41 @@ namespace UITests
             Task<string> stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
             Task<string> stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
             bool exited = proc.WaitForExit(300_000); // 5-minute cap
+            string stdout = stdoutTask.Result;
             string stderr = stderrTask.Result;
             if (!exited)
                 throw new TimeoutException("Windows build timed out after 5 minutes.");
 
             if (proc.ExitCode != 0)
-                throw new InvalidOperationException($"Windows build failed (exit {proc.ExitCode}):\n{stderr}");
+            {
+                // MSBuild writes compiler and SDK errors to STDOUT, not stderr. This message used
+                // to interpolate stderr alone, so a failing build reported "Windows build failed
+                // (exit 1):" followed by nothing at all — stdoutTask was started and never read.
+                // That is not a cosmetic gap: it kept every Windows UI run red for a week from
+                // 2026-08-11 with no clue in the log, and the actual cause (NETSDK1147, the android
+                // workload missing after a runner-image change) was only found by reading CodeQL's
+                // log, which builds the same project and does print its output.
+                //
+                // Error lines are surfaced first so the cause is the first thing read, then the
+                // tail of the full output for context, because an SDK error often arrives with no
+                // "error" prefix on the line that explains it.
+                string combined = string.Join(
+                    Environment.NewLine,
+                    new[] { stdout, stderr }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+                string[] lines = combined.Split('\n').Select(l => l.TrimEnd('\r')).ToArray();
+                string[] errorLines = [.. lines.Where(l => l.Contains("error", StringComparison.OrdinalIgnoreCase)).Take(20)];
+                string[] tail = [.. lines.TakeLast(40)];
+
+                throw new InvalidOperationException(
+                    $"Windows build failed (exit {proc.ExitCode}).{Environment.NewLine}"
+                    + $"Command: dotnet {psi.Arguments}{Environment.NewLine}"
+                    + (errorLines.Length > 0
+                        ? $"--- error lines ---{Environment.NewLine}{string.Join(Environment.NewLine, errorLines)}{Environment.NewLine}"
+                        : $"(no line contained \"error\"){Environment.NewLine}")
+                    + $"--- last {tail.Length} lines of output ---{Environment.NewLine}"
+                    + string.Join(Environment.NewLine, tail));
+            }
 
             string exePath = Path.Combine(repoRoot, "PokemonBattleJournal", "bin", config, framework, rid, "PokemonBattleJournal.exe");
 

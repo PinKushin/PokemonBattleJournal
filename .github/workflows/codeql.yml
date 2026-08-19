@@ -48,6 +48,11 @@ jobs:
       security-events: write
       contents: read
 
+    # See the note in ui-tests-windows.yml. Trims the app to the Windows head so restore
+    # does not demand the android workload. Harmless for the `actions` matrix leg, which
+    # builds nothing.
+    env:
+      PbjWindowsHeadOnly: true
     strategy:
       fail-fast: false
       matrix:

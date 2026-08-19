@@ -9,7 +9,54 @@ Two separate coverage tools give different numbers — both are correct for diff
 
 **VS built-in coverage:** instruments the running process; captures code exercised by ALL test types including Appium UI tests driving the live app. Run via Test Explorer "Run All Tests with Code Coverage", **or entirely from the CLI with `--collect "Code Coverage"`** — no VS needed, see the section below. Exports as `.coverage` binary (VS format) or XML.
 
-**Coverlet / XPlat (57.7% line):** only instruments assemblies the test process loads directly. UI tests run the app as a separate process — coverlet cannot see inside it. Only unit + integration tests contribute to app coverage via coverlet.
+**Coverlet / XPlat:** only instruments assemblies the test process loads directly. UI tests run the app as a separate process — coverlet cannot see inside it. Only unit + integration tests contribute to app coverage via coverlet.
+
+## CORRECTION 2026-08-19: the tools AGREE; the old 57.7-vs-80 gap was not a tool difference
+
+Measured head to head on the same two suites with the same assembly filters:
+
+| | coverlet | dotnet-coverage |
+|---|---|---|
+| Overall | 66.1 % | 65.8 % |
+| App head | 44.7 % | 44.5 % |
+| **Core** | **92.6 %** | **92.7 %** |
+| Scraper | 100 % | 100 % |
+
+Within 0.3 points — noise. **Neither tool is more generous than the other for in-process code**, so
+do not reach for one over the other expecting a different number.
+
+**The 57.7 % figure was simply STALE.** It was recorded when the suite was 359 unit + 22
+integration tests; it is now 704 + 248, integration having grown roughly tenfold. More tests, more
+coverage, same tool. Attributing that gap to "UI test app instrumentation" was wrong, and it is
+worth naming because the wrong explanation is the kind that survives — it sounds mechanical and
+nobody re-measures it.
+
+**What app-process instrumentation actually buys, measured:** adding the Windows UI suite under
+`dotnet-coverage` moves the **MAUI head from 44.5 % to 54.6 %** and moves **Core not at all**
+(92.7 % either way). That is exactly where it should show up — the UI tests drive the head — and
+it is a real but bounded gain, not the source of a twenty-point swing.
+
+**Full merged run (unit + integration + Windows UI), 2026-08-19:** 67.6 % line, 78.6 % branch,
+62.9 % method; head 54.6 %, Core 92.7 %, Scraper 100 %. Core is the number that reflects test
+discipline; the head is mostly XAML-generated code and MAUI interceptors that cannot be covered.
+
+**One-shot command** (needs the machine lock — the UI leg drives the desktop):
+
+```bash
+dotnet-coverage collect --output unit.xml  --output-format cobertura dotnet test ...Tests
+dotnet-coverage collect --output integ.xml --output-format cobertura dotnet test ...IntegrationTests
+dotnet-coverage collect --output ui.xml    --output-format cobertura dotnet test ...UITests.Windows
+dotnet-coverage merge --output merged.xml --output-format cobertura unit.xml integ.xml ui.xml
+reportgenerator -reports:merged.xml -targetdir:report -reporttypes:"Html;TextSummary"   -assemblyfilters:'+PokemonBattleJournal;+PokemonBattleJournal.Core;+PokemonBattleJournal.Scraper'
+```
+
+Without the assembly filter the raw collection sweeps in SkiaSharp, CommunityToolkit and the MAUI
+framework, which drowns the number that matters.
+
+**And the standing caveat:** UI-test coverage counts lines the app EXECUTED during a click-through,
+not lines anything asserted on. It is reach, not quality — the same "sensitive but not valid"
+distinction that makes Stryker the instrument for grading assertions. See
+[[feedback_tests_that_cannot_fail]].
 
 **To generate coverlet report:**
 ```powershell

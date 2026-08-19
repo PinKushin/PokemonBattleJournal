@@ -18,6 +18,14 @@ jobs:
   ui-tests-windows:
     name: Windows UI Tests (${{ matrix.fixture }})
     runs-on: windows-latest
+    # Job-level so it reaches EVERY dotnet invocation below, including the one the test
+    # fixture shells out to itself (AppiumSetup.BuildWindowsApp). Trims the app's
+    # TargetFrameworks to the Windows head only. Without it, restore walks every declared
+    # TFM — android included — and fails with NETSDK1147 because the runner image stopped
+    # shipping the MAUI workloads preinstalled on 2026-08-11. -f does NOT prevent this:
+    # restore evaluates all frameworks regardless of -f.
+    env:
+      PbjWindowsHeadOnly: true
     strategy:
       fail-fast: false
       matrix:
