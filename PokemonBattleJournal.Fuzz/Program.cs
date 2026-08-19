@@ -81,6 +81,18 @@ internal static class Program
     private static readonly bool SelfTest =
         Environment.GetEnvironmentVariable("PBJFUZZ_SELFTEST") == "1";
 
+    /// <summary>
+    /// Which family of targets to drive. The fast suite (four pure string functions) and the slow
+    /// suite (the import and restore file parsers, each needing a SQLite connection per iteration)
+    /// run as SEPARATE processes with separate budgets — mixing them would let the slow parsers,
+    /// at hundreds of executions a second, starve the pure functions that manage tens of thousands.
+    /// `PBJFUZZ_SUITE=importrestore` selects the slow one; anything else is the fast default.
+    /// </summary>
+    private static readonly Action<byte[]> Target =
+        Environment.GetEnvironmentVariable("PBJFUZZ_SUITE") == "importrestore"
+            ? ImportRestoreFuzz.Consume
+            : Consume;
+
     private static void Main() => Fuzzer.LibFuzzer.Run(Run);
 
     /// <summary>
@@ -104,7 +116,16 @@ internal static class Program
 
         try
         {
-            Consume(input);
+            // Selftest is checked here, not inside a suite, so BOTH suites prove the
+            // crash-preservation path on demand — an empty findings directory is
+            // indistinguishable from a clean run, so the only proof is a deliberate throw.
+            if (SelfTest)
+            {
+                throw new InvalidOperationException(
+                    $"PBJFUZZ_SELFTEST: deliberate throw on {input.Length} bytes");
+            }
+
+            Target(input);
         }
         catch (Exception) when (Preserve(input))
         {
@@ -149,12 +170,6 @@ internal static class Program
 
     private static void Consume(byte[] bytes)
     {
-        if (SelfTest)
-        {
-            throw new InvalidOperationException(
-                $"PBJFUZZ_SELFTEST: deliberate throw on {bytes.Length} bytes");
-        }
-
         // An empty input carries no mode and no payload. Returning rather than
         // picking a default keeps the corpus honest: a zero-length file should
         // not be credited with exercising anything.
