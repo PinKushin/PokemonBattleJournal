@@ -5,6 +5,20 @@
 		<!-- iOS and macOS SDKs are macOS-only — exclude them on Linux CI so workload validation doesn't require unavailable packs -->
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('linux'))">net10.0-android;net10.0</TargetFrameworks>
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
+		<!--
+			CI jobs that only need the Windows head set PbjWindowsHeadOnly=true (as an environment
+			variable, so it reaches child dotnet processes too — the UI fixture shells out to
+			`dotnet build` itself).
+
+			Why this exists rather than installing more workloads: `-f net10.0-windows10.0.19041.0`
+			does NOT limit what gets evaluated. `dotnet build` runs an implicit restore, and restore
+			walks EVERY framework in TargetFrameworks regardless of -f, so it demands the android
+			workload even for a Windows-only build. That is what broke Windows UI and CodeQL on
+			2026-08-11: the windows-latest image had been shipping the MAUI workloads preinstalled,
+			stopped, and the workflows only ever asked for maui-windows. Trimming the list is what
+			actually removes the demand; adding workloads would only pay for packs nothing here builds.
+		-->
+		<TargetFrameworks Condition="'$(PbjWindowsHeadOnly)' == 'true'">net10.0-windows10.0.19041.0</TargetFrameworks>
 		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
 		<!-- <TargetFrameworks>$(TargetFrameworks);net9.0-tizen</TargetFrameworks> -->
 

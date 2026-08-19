@@ -51,6 +51,34 @@ jobs:
           path: TestResults/unit/report
 
   # ── Integration tests ─────────────────────────────────────────────────────
+  # The app head itself, which nothing else in this workflow compiles. Unit and integration tests
+  # build only net10.0 projects, so a break in the Windows head — XAML, WinUI-specific code, a
+  # missing workload — stayed invisible here and surfaced only in the Windows UI suite, a job that
+  # takes ~15 minutes and reports it as a test failure in OneTimeSetUp rather than as a build error.
+  # That is exactly how the 2026-08-11 NETSDK1147 breakage went a week unnoticed. This job answers
+  # the same question in about a minute.
+  #
+  # Release, not Debug: Debug does not fully compile XAML, so XamlC errors and warnings only appear
+  # in Release. PbjWindowsHeadOnly trims the app to the Windows TFM so restore does not demand the
+  # android workload — see the note in PokemonBattleJournal.csproj.
+  windows-head-build:
+    name: Windows Head Build
+    runs-on: windows-latest
+    env:
+      PbjWindowsHeadOnly: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      - name: Install MAUI Windows workload
+        run: dotnet workload install maui-windows
+
+      - name: Build app (Windows head, Release)
+        run: dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0 -c Release -warnaserror
+
   integration-tests:
     name: Integration Tests
     runs-on: windows-latest
