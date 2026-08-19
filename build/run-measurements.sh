@@ -53,7 +53,7 @@ for a in "$@"; do
 done
 
 if [ -z "$MODE" ]; then
-  echo "usage: $0 {stryker-core|stryker-scraper|fuzz [seconds]} [--no-pull]" >&2
+  echo "usage: $0 {stryker-core|stryker-scraper|fuzz [seconds]|fuzz-importrestore [seconds]} [--no-pull]" >&2
   exit 2
 fi
 
@@ -136,7 +136,7 @@ case "$MODE" in
     grep -E "final mutation score|Killed:|Survived:" "${OUT}/stryker.log" | tail -6
     ;;
 
-  fuzz)
+  fuzz|fuzz-importrestore)
     SECONDS_BUDGET="${ARG:-300}"
     rm -rf "${HOME}/fuzz-out" && mkdir -p "${HOME}/findings"
     dotnet publish PokemonBattleJournal.Fuzz -c Release -o "${HOME}/fuzz-out" --nologo -v q 9>&-
@@ -144,22 +144,39 @@ case "$MODE" in
     # under test or the fuzzer cannot make progress.
     sharpfuzz "${HOME}/fuzz-out/PokemonBattleJournal.Core.dll" 9>&-
 
-    # Seeds, once per mode byte. The harness multiplexes on the first input byte, so a
-    # seed's own first byte decides which of the four modes it reaches — prefixing each
-    # seed with each mode byte is what makes all four start from sensible input.
+    # The two suites share every step below EXCEPT their seeds and the suite selector, because
+    # the slow SQLite-backed import/restore parsers must not share a budget with the fast pure
+    # functions (~400 exec/s vs tens of thousands). One target binary, two suites, chosen here.
+    rm -rf "${HOME}/corpus" "${HOME}/seeds"
     mkdir -p "${HOME}/corpus" "${HOME}/seeds"
-    printf 'went first, drew Iono\000went second, drew Iono' > "${HOME}/seeds/note-edit"
-    printf '4 Charizard ex\n3 Pidgeot ex\n2 Iono\0004 Charizard ex\n3 Pidgeot ex\n2 Judge' > "${HOME}/seeds/deck-list"
-    printf 'a\nb\nc\nd\ne\nf\ng\nh\000a\nB\nc\nd\nX\ne\nf\nh' > "${HOME}/seeds/interleaved"
-    printf 'donk\nmulligan\000mulligan\nprized' > "${HOME}/seeds/tags"
-    printf 'TrainerName\000Ash Ketchum' > "${HOME}/seeds/redact-name"
-    printf 'ValidationMessage\000Select a deck' > "${HOME}/seeds/redact-allowlisted"
-    for seed in "${HOME}"/seeds/*; do
-      n="$(basename "$seed")"
-      for mode in 0 1 2 3; do
-        printf "$(printf '\\%03o' "$mode")" | cat - "$seed" > "${HOME}/corpus/${n}-m${mode}.bin"
+    if [ "$MODE" = fuzz-importrestore ]; then
+      export PBJFUZZ_SUITE=importrestore
+      # First byte: even = import (a TrainerHill JSON array), odd = restore (a backup envelope).
+      # The import result MUST be "win"/"loss"/"tie" — "W" does not parse, imports zero, and would
+      # leave the count invariant comparing 0==0 (vacuous). Verified in WSL.
+      printf '\000[{"result":"win","playing":"raging-bolt","against":"charizard-ex","game1":{"result":"win","turn":5}}]' > "${HOME}/corpus/import-bo1"
+      printf '\000[{"result":"loss","playing":"gardevoir-ex","against":"lugia-vstar","game1":{"result":"loss","turn":8,"tags":["donk"],"notes":"bricked"}}]' > "${HOME}/corpus/import-tags"
+      printf '\000not a json document at all' > "${HOME}/corpus/import-garbage"
+      printf '\001{"version":1,"exportedUtc":"2026-01-01T00:00:00Z","archetypes":[],"trainers":[{"name":"Ash","matches":[]}]}' > "${HOME}/corpus/restore-empty"
+      printf '\001{"version":999}' > "${HOME}/corpus/restore-newer"
+      printf '\001garbage' > "${HOME}/corpus/restore-garbage"
+    else
+      # Fast suite: seeds once per mode byte. The harness multiplexes on the first input byte, so a
+      # seed's own first byte decides which of the four modes it reaches — prefixing each seed with
+      # each mode byte is what makes all four start from sensible input.
+      printf 'went first, drew Iono\000went second, drew Iono' > "${HOME}/seeds/note-edit"
+      printf '4 Charizard ex\n3 Pidgeot ex\n2 Iono\0004 Charizard ex\n3 Pidgeot ex\n2 Judge' > "${HOME}/seeds/deck-list"
+      printf 'a\nb\nc\nd\ne\nf\ng\nh\000a\nB\nc\nd\nX\ne\nf\nh' > "${HOME}/seeds/interleaved"
+      printf 'donk\nmulligan\000mulligan\nprized' > "${HOME}/seeds/tags"
+      printf 'TrainerName\000Ash Ketchum' > "${HOME}/seeds/redact-name"
+      printf 'ValidationMessage\000Select a deck' > "${HOME}/seeds/redact-allowlisted"
+      for seed in "${HOME}"/seeds/*; do
+        n="$(basename "$seed")"
+        for mode in 0 1 2 3; do
+          printf "$(printf '\\%03o' "$mode")" | cat - "$seed" > "${HOME}/corpus/${n}-m${mode}.bin"
+        done
       done
-    done
+    fi
 
     # PROVE THE INSTRUMENT BEFORE TRUSTING THE MEASUREMENT.
     #
