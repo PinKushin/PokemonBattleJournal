@@ -124,6 +124,8 @@ hazard as any other trigger time.
 | 09:00 daily | `core` | Tf2DemoSalvage | **22m33s** (2026-08-12, concurrency 3) | **yes** (installed 2026-08-12 15:40) |
 | 11:00 daily | `stryker` | TcgDex.CSharpSdk | **~14-24 min** (2026-08-16/17, concurrency 3) | **yes** (installed 2026-08-16 12:28) |
 | 13:00 daily | `cli` | Tf2DemoSalvage | **2m03s wall** (2026-08-18) | **yes** (installed 2026-08-18 15:40) |
+| 15:00 daily | `content` | Tf2DemoSalvage | **7m02s** (2026-08-18) | **yes** (installed 2026-08-18 16:10) |
+| 15:20 daily | `audio` | Tf2DemoSalvage | **~1m** (2026-08-18) | **yes** (installed 2026-08-18 16:10) |
 | 19:00 daily | `stryker-core` | PokemonBattleJournal | **~17 min** (concurrency 3) | yes |
 | 23:00 daily | `stryker` | TcgDex.CSharpSdk | **~13-14 min** | **yes** (installed 2026-08-16 12:28) |
 | 08:15 Sunday | `stryker-scraper` | PokemonBattleJournal | 4 min | yes |
@@ -208,7 +210,9 @@ come back `Survived` with no verdict and a score of 0.00 %.
 |---|---|---|---|---|
 | 07:00 daily | `fuzz 7200` | PokemonBattleJournal | 2 h by budget | yes |
 | 13:00 daily | `fuzz 3600` | TcgDex.CSharpSdk | 1 h by budget | **yes** (installed 2026-08-16 11:45, raised 900s->3600s same day) |
-| 19:00 daily | fuzz — 4 targets | Tf2DemoSalvage | **8h20m** by budget, ends ~03:20 | **yes** (installed 2026-08-12 15:40) |
+| 16:00 daily | fuzz — 7 targets | Tf2DemoSalvage | **~10h50m** by budget, ends ~02:50 | **yes** (moved from 19:00 on 2026-08-18) |
+
+**Tf2's fuzz was moved 19:00 -> 16:00 on 2026-08-18, and 16:00 specifically is deliberate.** Its run grew from ~9h to ~10h50m (three voice targets added, `netmessage` budget raised 2h). At 19:00 it would finish ~05:50, which does two bad things: it leaves PBJ's 07:00 only ~1h10m of margin, and it runs straight through the **04:00 auto-reboot** — so on any night an update lands, the run is killed ~9h in. Tf2 offered 17:00; that fixes the PBJ margin but finishes 03:50, only 10 minutes before the reboot. 16:00 finishes ~02:50, clearing the reboot by 70 minutes AND giving PBJ 4h. The box is idle 14:00-19:00, so the earlier start costs nothing. The reboot is conditional (only fires when an update needs it), so this is insurance against the bad night, not a fix for a nightly failure.
 
 **TcgDex's budget was raised from 900s to 3600s same day it was installed** — a 180s trial run had
 held `ft` flat and looked saturated, but 301s and 901s runs both kept finding new coverage
