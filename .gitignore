@@ -384,3 +384,17 @@ FodyWeavers.xsd
 
 # Stryker mutation testing reports
 StrykerOutput/
+
+# libFuzzer artifacts. libFuzzer writes these to the CURRENT DIRECTORY, so any fuzz run
+# launched from the repo root drops them here — including the runs that verify the harness.
+# Named for the input's SHA1, so they are regenerable and worthless to keep, but they look
+# like source files sitting next to the .slnx and would be easy to commit by accident.
+#
+# Note this does NOT cover the findings the harness itself preserves: those go to
+# PBJFUZZ_CRASH_DIR (~/findings on the box), deliberately outside the repo, because a real
+# reproducer IS worth keeping and should not be silently ignored.
+crash-*
+leak-*
+timeout-*
+oom-*
+slow-unit-*
