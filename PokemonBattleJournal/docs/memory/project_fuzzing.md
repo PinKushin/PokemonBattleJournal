@@ -131,3 +131,34 @@ the `selftest.log` that commit added. Nothing was wrong with the code; the next 
 correct. **When verifying a runner change on the box, run it twice, or pass `--no-pull` on a clone
 that is already up to date.** Judging the change by the first run's output is judging the previous
 version.
+
+## Second suite: `fuzz-importrestore` — the file parsers (added 2026-08-18)
+
+The four original targets are pure string functions and are **saturated** (ft flat ~446). The real
+attack surface — `TrainerHillImportService` and `RestoreService`, which parse a stranger-supplied
+import or backup file — was deliberately left out because each needs a SQLite connection per
+iteration (~430 exec/s vs tens of thousands). It runs as a SEPARATE suite selected by
+`PBJFUZZ_SUITE=importrestore` so it never shares a budget with the fast targets, and is booked on
+fuzz-box at 09:30 daily, 3h. Unlike the pure targets it is NOT saturated — ft ~1150 and climbing.
+
+Harness is `ImportRestoreFuzz.cs`; `Program.cs` dispatches on the env var and the selftest gate
+lives in `Run` so both suites prove crash preservation. Key design points:
+
+- **Fresh temp SQLite per iteration, closed and deleted.** libFuzzer replays a crash in isolation,
+  so a crash depending on accumulated state would not reproduce — it would read as flaky. Verified
+  zero leaked temp DBs over 17k iterations.
+- **The invariant is `written == reported`, not "did not throw".** The services swallow parse
+  failures and report them, so an escaping exception is already a finding the fuzzer catches. The
+  added property is that the match count the parser SAYS it wrote equals the rows actually in the
+  DB — silent miscounting no round-trip test over app-produced files can catch.
+- **Import seeds MUST use result `win`/`loss`/`tie`, not `W`.** `W` does not parse, imports zero,
+  and leaves the count invariant comparing 0==0 — vacuous. This was caught during verification: the
+  first seed used `W` and the sabotage-invert did not fire until the seed was fixed. The runner's
+  seed comment says so.
+
+Manipulation-verified in WSL against the real libfuzzer-dotnet: sabotage-inverting the count check
+FIRED on a successful import and preserved the exact input bytes; the positive control (correct
+check + valid import) ran clean. See [[feedback_tests_that_cannot_fail]].
+
+**A single fuzz target is one libFuzzer worker**, so cores do not speed it — fuzz-box's 1 core is
+fine and mutation-box's 3 would not help. Do not move it there expecting a speedup.
