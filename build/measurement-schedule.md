@@ -41,6 +41,17 @@ not: it read numbers up to 27 hours stale on a Sunday-scheduled predecessor.
 excludes git, LFS and build work; a slot has to cover all of it. Flag anything using more than
 about 70% of its gap.
 
+**A run still IN FLIGHT reports a wall time frozen at its last file creation — it under-reports,
+and it under-reports in the direction the review is hunting.** Wall minutes come from the run
+directory's mtime minus its start stamp, and appending to a file inside a directory does not
+change that directory's mtime; only creating a new file does. So a long multi-target job reads as
+a short finished one. Measured 2026-08-24 at 20:05: tf2's fuzz run showed **21 min** while it was
+4h06m in and still going, because its third log file was created at 16:21 and has been appended to
+ever since. **Before treating a surprisingly short run as a failure or a surprisingly compliant one
+as safe, check whether it is still running** — `fuser -v /tmp/measurement-box.lock` names the
+holder. The evening review slot makes this routine rather than rare: tf2's 16:00 fuzz job is always
+mid-flight at 20:00.
+
 **Two different questions, two different metrics — do not use one for the other.**
 
 | Question | Metric | Why |
@@ -124,12 +135,12 @@ hazard as any other trigger time.
 | 09:00 daily | `core` | Tf2DemoSalvage | **22m33s** (2026-08-12, concurrency 3) | **yes** (installed 2026-08-12 15:40) |
 | 11:00 daily | `stryker` | TcgDex.CSharpSdk | **~14-24 min** (2026-08-16/17, concurrency 3) | **yes** (installed 2026-08-16 12:28) |
 | 13:00 daily | `cli` | Tf2DemoSalvage | **2m03s wall** (2026-08-18) | **yes** (installed 2026-08-18 15:40) |
-| 15:00 daily | `content` | Tf2DemoSalvage | **7m02s** (2026-08-18) | **yes** (installed 2026-08-18 16:10) |
+| 15:00 daily | `content` | Tf2DemoSalvage | **7m02s** (2026-08-18), **9 min** (2026-08-24) — growing; 20 min gap is the tightest on the box | **yes** (installed 2026-08-18 16:10) |
 | 15:20 daily | `audio` | Tf2DemoSalvage | **~1m** (2026-08-18) | **yes** (installed 2026-08-18 16:10) |
 | 19:00 daily | `stryker-core` | PokemonBattleJournal | **~17 min** (concurrency 3) | yes |
 | 23:00 daily | `stryker` | TcgDex.CSharpSdk | **~13-14 min** | **yes** (installed 2026-08-16 12:28) |
 | 08:15 Sunday | `stryker-scraper` | PokemonBattleJournal | 4 min | yes |
-| ~~20:00 Sunday~~ | `corpus` | Tf2DemoSalvage | **18 h 07 m** (2026-08-11) | **withdrawn permanently.** MTP wall confirmed gone 2026-08-18 (NUnit/VSTest), but coverage capture is still ~22 min/pass over real demos — a poor harness at any speed. No `content` slot coming either: tf2 rejected copying 8.2 GB of archive data to the box and is removing the data dependency via synthetic tests instead, growing `core` rather than adding a mode. See the log. |
+| ~~20:00 Sunday~~ | `corpus` | Tf2DemoSalvage | **18 h 07 m** (2026-08-11) | **withdrawn permanently.** MTP wall confirmed gone 2026-08-18 (NUnit/VSTest), but coverage capture is still ~22 min/pass over real demos — a poor harness at any speed. Tf2 rejected copying 8.2 GB of archive data to the box and is removing the data dependency via synthetic tests instead. (An earlier version of this row said "no `content` slot coming either" — that was overtaken on 2026-08-18, when `content` was booked at 15:00 as its own mode. The 8.2 GB refusal still stands; it is why `content` runs game-gated, see below.) See the log. |
 
 **TcgDex booked directly** under the ownership relaxation above — 11:00 sits two hours after tf2's
 09:00, 23:00 sits four hours after PBJ's 19:00, both an order of magnitude over the ~14-24 min
@@ -140,6 +151,22 @@ everything faster. See "Why there is a cadence at all" below.
 
 **Rows marked "not yet" are reservations, not reality — `crontab -l` will not show them.** They
 are listed so nobody books over them, and they get installed once their runtime is measured.
+
+**A low `content` score is expected and is not a statement about tf2's tests.** About 40 of
+Content.Tests' 87 files are gated on a TF2 install and skip on the box, so **3130 of its 5205
+mutants are never tested**. The score answers "how much of Content is testable without 8.2 GB of
+game archives", not "how good are Content's tests". **The number to watch is the tested-mutant
+COUNT rising** as synthetic tests replace game-dependent ones — the ratio moves slowly, because
+production code lands alongside the tests. Recorded here because the bare percentage (36.10 % on
+2026-08-24) invites exactly the wrong conclusion at a glance.
+
+**`audio` has a native prerequisite, and a rebuilt box loses it.** The mode checks for
+`tools/native-audio/libcelt.so` and `libspeex.so` and refuses with an explanatory message when
+they are absent — deliberately, because the audio tests construct decoders unconditionally and
+would FAIL rather than skip. Both are present on `mutation-box`. If the box is ever rebuilt or
+reclaimed, restore them with `bash tools/native-audio/build.sh` in the tf2 clone. This is the kind
+of box-local state that does not survive an Oracle reclamation, which is why it is written down
+somewhere other than the box.
 
 **Pass `--concurrency $(nproc)` in every runner on mutation-box.** Stryker defaults to cores/2,
 and 3 cores integer-divides to **1** - so every run on this box was single threaded, invisibly,
@@ -156,7 +183,9 @@ newly added one unless `GIT_LFS_SKIP_SMUDGE=1` is set on the reset.
 
 **`core` was 33 minutes at 2026-08-10, and that number is now historical.** That estimate came from comparing against
 a run of a different suite. It matters: at 33 min a `cli` job at 09:20 would land inside `core`'s
-window and be refused by the lock — silently skipped, every single day. Hence 09:45.
+window and be refused by the lock — silently skipped, every single day. (`cli` was ultimately
+booked at 13:00, not the 09:45 this paragraph originally landed on; the reasoning is kept because
+the hazard it describes is the point, not the time it happened to pick.)
 
 **`corpus` was blocked on a measurement, and the measurement withdrew it.** The estimate was ~12
 hours against an 11-hour window; the run on 2026-08-11 took **18 h 07 m**. No start time fits, so
