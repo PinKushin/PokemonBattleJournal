@@ -38,7 +38,7 @@ jobs:
           key: nuget-android-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
           restore-keys: nuget-android-
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -97,7 +97,7 @@ jobs:
       # JDK still needed for sdkmanager/avdmanager inside the emulator action;
       # the maui-android workload is NOT needed here — UITests.Android.csproj is
       # plain net10.0 with no MAUI project reference, and the APK comes prebuilt.
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
