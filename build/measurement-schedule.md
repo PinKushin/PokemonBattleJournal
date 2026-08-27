@@ -137,6 +137,10 @@ hazard as any other trigger time.
 | 13:00 daily | `cli` | Tf2DemoSalvage | **2m03s wall** (2026-08-18) | **yes** (installed 2026-08-18 15:40) |
 | 15:00 daily | `content` | Tf2DemoSalvage | **7m02s** (2026-08-18), **9 min** (2026-08-24) — growing; 20 min gap is the tightest on the box | **yes** (installed 2026-08-18 16:10) |
 | 15:20 daily | `audio` | Tf2DemoSalvage | **~1m** (2026-08-18) | **yes** (installed 2026-08-18 16:10) |
+| 17:00 daily | `scene` | Tf2DemoSalvage | unmeasured on box (small suite) | **yes** (installed 2026-08-27) |
+| 17:30 daily | `presentation` | Tf2DemoSalvage | 1m09s local, 69.92% | **yes** (installed 2026-08-27) |
+| 21:30 daily | `animation` | Tf2DemoSalvage | unmeasured on box (small suite) | **yes** (installed 2026-08-27) |
+| ~~21:00 daily~~ | `rendering` | Tf2DemoSalvage | **2m10s, scores 4.15%** (2026-08-27) | **deliberately NOT booked** — see below |
 | 19:00 daily | `stryker-core` | PokemonBattleJournal | **~17 min** (concurrency 3) | yes |
 | 23:00 daily | `stryker` | TcgDex.CSharpSdk | **~13-14 min** | **yes** (installed 2026-08-16 12:28) |
 | 08:15 Sunday | `stryker-scraper` | PokemonBattleJournal | 4 min | yes |
@@ -148,6 +152,23 @@ runtime. Installing TcgDex closed a real gap: the concurrency fix that took PBJ'
 from 38 to 16-18 min also roughly halved the box's total occupancy, and mutation-box briefly fell
 *under* Oracle's 8.4 h/week idle-reclamation threshold as a side effect of a change that made
 everything faster. See "Why there is a cadence at all" below.
+
+**`rendering` is measured and deliberately unbooked (2026-08-27).** It runs in 2m10s and scores
+**4.15 %** on the box — but of the 80 mutants it can actually reach, its tests kill 72, so the real
+figure is nearer 90 %. The gap is 1656 NoCoverage mutants: 78 of its test files resolve
+`Tf2Install`/`MapCache` and `Assert.Ignore` where there is no TF2 install, taking their mutants with
+them. Publishing 4.15 % nightly would be worse than not measuring — it is precisely the number
+someone quotes later without knowing why it is low.
+
+Note this is NOT the corpus failure mode. Coverage capture worked and there were zero timeouts; the
+run honestly measured what it could reach. Corpus produced a meaningless ~100 % from timeouts,
+rendering produces an honest number about the box rather than about the code. Different problems,
+different fixes: rendering needs the game-dependent tests to skip without removing their mutants, or
+a `Tf2Install` stub on the box. 21:00 is held free for it.
+
+Worth generalising: **test-method share and mutant share are not the same quantity.** The estimate
+was 15 % of test methods game-dependent; the effect on the mutant set was ~96 %. Estimate the one
+you are going to be judged on.
 
 **Rows marked "not yet" are reservations, not reality — `crontab -l` will not show them.** They
 are listed so nobody books over them, and they get installed once their runtime is measured.
