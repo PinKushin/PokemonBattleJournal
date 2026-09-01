@@ -133,16 +133,16 @@ hazard as any other trigger time.
 |---|---|---|---|---|
 | 07:00 daily | `stryker-core` | PokemonBattleJournal | **~17 min** (concurrency 3) | yes |
 | 09:00 daily | `core` | Tf2DemoSalvage | **22m33s** (2026-08-12, concurrency 3) | **yes** (installed 2026-08-12 15:40) |
-| 11:00 daily | `stryker` | TcgDex.CSharpSdk | **~14-24 min** (2026-08-16/17, concurrency 3) | **yes** (installed 2026-08-16 12:28) |
+| 11:00 daily | `stryker` | TcgDex.CSharpSdk | **~14-24 min** (2026-08-16/17, concurrency 3) — but **2h13m on 2026-08-29 and 2h38m on 2026-08-30**, which silently skipped tf2 `cli` at 13:00 both days; see below | **yes** (installed 2026-08-16 12:28) |
 | 13:00 daily | `cli` | Tf2DemoSalvage | **2m03s wall** (2026-08-18) | **yes** (installed 2026-08-18 15:40) |
 | 15:00 daily | `content` | Tf2DemoSalvage | **7m02s** (2026-08-18), **9 min** (2026-08-24) — growing; 20 min gap is the tightest on the box | **yes** (installed 2026-08-18 16:10) |
 | 15:20 daily | `audio` | Tf2DemoSalvage | **~1m** (2026-08-18) | **yes** (installed 2026-08-18 16:10) |
-| 17:00 daily | `scene` | Tf2DemoSalvage | unmeasured on box (small suite) | **yes** (installed 2026-08-27) |
-| 17:30 daily | `presentation` | Tf2DemoSalvage | 1m09s local, 69.92% | **yes** (installed 2026-08-27) |
-| 21:30 daily | `animation` | Tf2DemoSalvage | unmeasured on box (small suite) | **yes** (installed 2026-08-27) |
+| 17:00 daily | `scene` | Tf2DemoSalvage | **4m19s** (2026-08-30, measured on box) | **yes** (installed 2026-08-27) |
+| 17:30 daily | `presentation` | Tf2DemoSalvage | **3m23s** on box (2026-08-30); 1m09s local | **yes** (installed 2026-08-27) |
+| 21:30 daily | `animation` | Tf2DemoSalvage | **1m23s** (2026-08-30, measured on box) | **yes** (installed 2026-08-27) |
 | ~~21:00 daily~~ | `rendering` | Tf2DemoSalvage | **2m10s, scores 4.15%** (2026-08-27) | **deliberately NOT booked** — see below |
 | 19:00 daily | `stryker-core` | PokemonBattleJournal | **~17 min** (concurrency 3) | yes |
-| 23:00 daily | `stryker` | TcgDex.CSharpSdk | **~13-14 min** | **yes** (installed 2026-08-16 12:28) |
+| 23:00 daily | `stryker` | TcgDex.CSharpSdk | **~13-14 min** — but **2h39m on 2026-08-30**, same excursion as the 11:00 row | **yes** (installed 2026-08-16 12:28) |
 | 08:15 Sunday | `stryker-scraper` | PokemonBattleJournal | 4 min | yes |
 | ~~20:00 Sunday~~ | `corpus` | Tf2DemoSalvage | **18 h 07 m** (2026-08-11) | **withdrawn permanently.** MTP wall confirmed gone 2026-08-18 (NUnit/VSTest), but coverage capture is still ~22 min/pass over real demos — a poor harness at any speed. Tf2 rejected copying 8.2 GB of archive data to the box and is removing the data dependency via synthetic tests instead. (An earlier version of this row said "no `content` slot coming either" — that was overtaken on 2026-08-18, when `content` was booked at 15:00 as its own mode. The 8.2 GB refusal still stands; it is why `content` runs game-gated, see below.) See the log. |
 
@@ -152,6 +152,33 @@ runtime. Installing TcgDex closed a real gap: the concurrency fix that took PBJ'
 from 38 to 16-18 min also roughly halved the box's total occupancy, and mutation-box briefly fell
 *under* Oracle's 8.4 h/week idle-reclamation threshold as a side effect of a change that made
 everything faster. See "Why there is a cadence at all" below.
+
+**The first real slot overrun happened on 2026-08-29 and 2026-08-30, and it is the exact failure
+this whole document exists to catch.** TcgDex's 11:00 `stryker` ran **02:13:55** on the 29th
+(finished 13:13:58) and **02:38:43** on the 30th (finished 13:38:46) against a documented 14-24
+minutes. Both overran tf2's 13:00 `cli` slot, the lock refused it, and **`cli` did not run on either
+day.** Nothing errored anywhere. It was found by the weekly review on 2026-08-31, by noticing that
+`~/measurements/` held five `scene`, five `presentation`, five `content` and five `audio` runs but
+only **two** `cli` runs — a gap in the run directories, not a message in a log.
+
+Three things worth carrying forward from how it was found and what it was:
+
+- **A missing run leaves no trace except an absent directory.** `syslog` proves cron *fired* `cli`
+  at 13:00:01 on both days (`grep CRON /var/log/syslog*`), and `~/cron-measure.log` has no
+  `=== tf2demosalvage cli` banner for either — the runner started, was refused the lock, and exited
+  before printing anything. **Counting run directories per mode is the detector**; the cron log
+  cannot tell you about a run that never began.
+- **It was not the MTP coverage-capture wall.** Capture succeeded — 2 NoCoverage, 6 timeouts, a
+  normal 90.22 % score — so the ~8x slowdown (13 s/mutant against 1.6 s/mutant) is genuine
+  slowness, not the manufactured-score failure mode that killed `corpus`. Same symptom, different
+  cause; do not reach for the 180-second explanation before checking `NoCoverage` and `Timeout`.
+- **It appears to have self-resolved at a SHA boundary.** All four slow runs are `057afeb`; the
+  first run on `ff0cc43` (2026-08-31 11:00) took 20m09s. One fast data point is not a fix, so this
+  is an observation, not a closure — TcgDex owns the diagnosis.
+
+**The scheduling lesson is about margin, not about TcgDex.** A slot's gap must cover the job's worst
+observed runtime, not its typical one. 11:00 to 13:00 is a 2 h gap and looked like "an order of
+magnitude over" a 14-24 minute job right up until the job took 2h38m.
 
 **`rendering` is measured and deliberately unbooked (2026-08-27).** It runs in 2m10s and scores
 **4.15 %** on the box — but of the 80 mutants it can actually reach, its tests kill 72, so the real
