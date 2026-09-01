@@ -25,13 +25,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # PokemonBattleJournal.slnx fails with NETSDK1005 on every one of them.
 dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
 
+# Same build in CI's shape. PbjWindowsHeadOnly trims TargetFrameworks to the Windows
+# head; -f alone does NOT, because dotnet build runs an implicit restore and restore
+# walks EVERY declared TFM regardless of -f — so it demands the android workload even
+# for a Windows-only build. That is what broke Windows UI and CodeQL for a week from
+# 2026-08-11, when the windows-latest image stopped shipping MAUI workloads preinstalled.
+#
+# Release, not Debug: Debug does not fully compile XAML, so XamlC errors AND warnings
+# are invisible until Release. -warnaserror is what CI uses; keep it at zero.
+$env:PbjWindowsHeadOnly = 'true'
+dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0 -c Release -warnaserror
+
 # Build everything (all projects, all their own TFMs — no -f)
 dotnet build PokemonBattleJournal.slnx
 
 # Run (Windows)
 dotnet run --project PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0
 
-# Unit tests — genuinely unit tests now, and fast (~1s for ~460). The six
+# Unit tests — genuinely unit tests now, and fast (~3s for 704). The six
 # real-SQLite files that used to live here moved to the IntegrationTests
 # project on 2026-08-05; nothing in here touches a database or the network.
 dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
@@ -94,8 +105,28 @@ Stop-Process -Name PokemonBattleJournal -Force -ErrorAction SilentlyContinue
 # the MVVM source generators, and surfaces no CS error when it fails), which is
 # why the logic lives in PokemonBattleJournal.Core. Two configs, two targets.
 dotnet tool restore
-dotnet stryker                                  # Scraper (~5 min)
-dotnet stryker --config-file stryker-core.json  # Core (slower; uses both test projects)
+dotnet stryker                                  # PokemonBattleJournal.Scraper (~5 min, ratcheted at 100%)
+dotnet stryker --config-file stryker-core.json  # Core (~17 min on the box; uses both test projects)
+
+# Fuzzing — the other half of Stryker. Stryker mutates the CODE and asks whether the
+# tests notice; a fuzzer mutates the INPUT and asks whether the code survives.
+# PokemonBattleJournal.Fuzz has TWO suites, selected by env var, run as separate
+# processes so the slow one cannot starve the fast one:
+#
+#   (default)                  four pure string functions — ~15k exec/s, SATURATED (ft ~446)
+#   PBJFUZZ_SUITE=importrestore  the import and restore FILE PARSERS — ~430 exec/s,
+#                              nowhere near saturated (ft ~1150 and climbing). This is the
+#                              real attack surface: files a stranger can hand the app.
+#
+# PBJFUZZ_CRASH_DIR is what actually preserves a reproducer. libFuzzer's own
+# -artifact_prefix writes NOTHING through libfuzzer-dotnet — a managed exception kills
+# the bridge before its crash handler runs — so a finding is reported and the input lost.
+# PBJFUZZ_SELFTEST=1 makes every input throw, which is how the runner proves the
+# preservation path before trusting a clean run. Both box slots do this automatically.
+# These run the box's own runner, so they need bash (WSL or Git Bash), not PowerShell —
+# and the toolchain (libfuzzer-dotnet, sharpfuzz) exists in WSL and on fuzz-box, not on Windows.
+#   bash build/run-measurements.sh fuzz 300                 # fast suite
+#   bash build/run-measurements.sh fuzz-importrestore 300   # parsers (SQLite per iteration)
 ```
 
 **Solution file:** always use `PokemonBattleJournal.slnx`. Do not recreate `PokemonBattleJournal.sln`.
@@ -114,8 +145,8 @@ hyphen; that is MSB4025 and the error names only a line and column.
 MVVM app: `Views (XAML) → ViewModels → Services → ISqliteConnectionFactory → SQLite`
 
 **Two projects hold that.** `PokemonBattleJournal` is the MAUI head — Views, ViewModels,
-Controls, and exactly three files that need a platform: `ModalErrorHandler` (Shell),
-`FileHelper` (FileSystem/DeviceInfo) and `MainThreadHelper` (MainThread), plus
+Controls, and exactly four files that need a platform: `ModalErrorHandler` (Shell),
+`FileHelper` (FileSystem/DeviceInfo), `MainThreadHelper` (MainThread), and
 `MauiSqliteConnectionFactory`, which exists only to answer where the database file lives.
 `PokemonBattleJournal.Core` is a plain `net10.0` library holding Models, Services, Utilities,
 Interfaces and Logging. Namespaces are identical across both, so a `using` never tells you

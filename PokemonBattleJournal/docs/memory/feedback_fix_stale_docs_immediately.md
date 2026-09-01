@@ -20,7 +20,7 @@ removed code. It sat wrong because it was noticed and queued instead of fixed.
 
 - Correct it in the same turn you notice it, before continuing the task you were on.
 - Fix **every** copy: the repo `docs/memory/` file, the `MEMORY.md` index line, the
-  auto-memory directory, and any duplicate wording in `CLAUDE.md` / `AGENTS.md` /
+  auto-memory directory, and any duplicate wording in `CLAUDE.md` /
   `AI-CONTEXT.md`. A corrected file with a stale index line is still stale.
 - When something is superseded rather than simply wrong, say so at the top with the date and
   the commit that changed it, and keep the original below for context — the reasoning is
