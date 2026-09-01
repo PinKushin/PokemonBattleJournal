@@ -153,7 +153,7 @@ from 38 to 16-18 min also roughly halved the box's total occupancy, and mutation
 *under* Oracle's 8.4 h/week idle-reclamation threshold as a side effect of a change that made
 everything faster. See "Why there is a cadence at all" below.
 
-**The first real slot overrun happened on 2026-08-29 and 2026-08-30, and it is the exact failure
+**The first suspected slot overrun (later identified as a TcgDex API outage, not an overrun) happened on 2026-08-29 and 2026-08-30, and it is the exact failure
 this whole document exists to catch.** TcgDex's 11:00 `stryker` ran **02:13:55** on the 29th
 (finished 13:13:58) and **02:38:43** on the 30th (finished 13:38:46) against a documented 14-24
 minutes. Both overran tf2's 13:00 `cli` slot, the lock refused it, and **`cli` did not run on either
@@ -440,7 +440,34 @@ the constraint is on start times only.
 
    If a clone ever does need replacing, copy `.git/lfs/objects` aside first and put it back
    before the first `git lfs pull`.
-10. **Verify accounted mutants against planned before believing a score.** A truncated Stryker run
+11. **A runner that pulls itself takes effect ONE RUN LATE.** `git reset --hard` replaces the
+    script by rename, so the running bash keeps reading the old inode and finishes the OLD body —
+    while the banner prints the NEW sha, because that comes from `git rev-parse` *after* the pull.
+    Seen for real: a run announced its commit and produced none of that commit's output. Verify a
+    runner change on the **second** invocation, or with `--no-pull` on an already-current clone.
+    Judging it by the first run is judging the previous version.
+
+12. **libFuzzer's `-artifact_prefix` writes NOTHING through `libfuzzer-dotnet`.** On a managed
+    exception SharpFuzz aborts the .NET child, the bridge dies with it, and libFuzzer's crash
+    handler never runs: no `crash-*` file, no "Test unit written to" line — while the exception
+    prints in full. The run REPORTS the defect and loses the input, which is the worst possible
+    split. The corpus is not a fallback either: libFuzzer only adds coverage-increasing inputs, so
+    a crashing input is never in it.
+
+    Preserve the bytes in the harness. **Copy the input before calling the target** (libFuzzer
+    reuses its buffer) and **write from an exception FILTER, not a catch** — a filter runs while
+    the exception is still propagating and, returning false, leaves the stack trace intact, which
+    is the other half of a finding.
+
+13. **Gate a fuzz run on a deliberate crash before trusting it.** An empty findings directory is
+    indistinguishable from a clean run, which is exactly why #12 hid for two days across two
+    projects. A `SELFTEST` env var that makes every input throw, run for one execution with a hard
+    failure if no file appears, converts "we found nothing" from unfalsifiable into a checked
+    claim. **Prove the instrument, then trust the measurement** — and prove it with a control:
+    with the env var unset, the same crash must write **zero** usable files, or the file you are
+    seeing is not the one your code wrote.
+
+14. **Verify accounted mutants against planned before believing a score.** A truncated Stryker run
     (killed process, SIGINT deadline, interrupted lock holder) still prints *"All mutants have been
     tested"* and a percentage that is internally consistent with whatever subset it held — nothing
     in the normal output flags the shortfall. Print `killed+timeout+survived+nocov` against the
