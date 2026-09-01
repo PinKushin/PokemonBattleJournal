@@ -19,6 +19,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+Lookup table first; the annotated block below carries the reasoning, and the comments in
+it are the point — read them before changing a command.
+
+| I want to | Command |
+|---|---|
+| Build for Windows | `dotnet build PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0` |
+| Build as CI does | set `PbjWindowsHeadOnly=true`, then the above with `-c Release -warnaserror` |
+| Build everything | `dotnet build PokemonBattleJournal.slnx` |
+| Run the app | `dotnet run --project PokemonBattleJournal/PokemonBattleJournal.csproj -f net10.0-windows10.0.19041.0` |
+| Unit tests (~3s) | `dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj` |
+| One test | add `--filter "FullyQualifiedName~MethodName"` |
+| Integration tests | `dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj` |
+| Windows UI tests | `pwsh ../run-exclusive.ps1 dotnet test PokemonBattleJournal.UITests/UITests.Windows/UITests.Windows.csproj` |
+| Android UI tests | `pwsh ../run-exclusive.ps1 dotnet test PokemonBattleJournal.UITests/UITests.Android/UITests.Android.csproj` — **deploy first if app code changed** |
+| All CI suites locally | `./build/ci-local.ps1` (fast) or `-All` (everything) |
+| Mutation testing | `pwsh ../run-exclusive.ps1 -TimeoutMinutes 90 dotnet stryker --config-file stryker-core.json` |
+| Fuzzing | `bash build/run-measurements.sh fuzz 300` |
+
+**UI suites, Stryker and fuzzing take the machine-wide lock** — several agents share this
+desktop, and they fail QUIETLY when they overlap. Unit and integration tests do not.
+
+### The commands in full, with the reasons
+
 ```powershell
 # Build the app for Windows. -f must target the app project, NOT the solution —
 # the test and scraper projects do not target the Windows TFM, so passing -f to
