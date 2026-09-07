@@ -398,3 +398,10 @@ leak-*
 timeout-*
 oom-*
 slow-unit-*
+
+# dotnet-suggest shell-completion sentinels. System.CommandLine writes these when a tool
+# registers itself (git-credential-manager does, on invoke), into a directory named for the
+# PID of whatever process happened to trigger it — so the parent is a different number every
+# time and cannot be listed literally. Match the inner directory by name at any depth; git
+# stops reporting the PID parent once its only contents are ignored.
+**/system-commandline-sentinel-files/
