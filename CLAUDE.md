@@ -167,129 +167,38 @@ hyphen; that is MSB4025 and the error names only a line and column.
 
 MVVM app: `Views (XAML) → ViewModels → Services → ISqliteConnectionFactory → SQLite`
 
-**Two projects hold that.** `PokemonBattleJournal` is the MAUI head — Views, ViewModels,
-Controls, and exactly four files that need a platform: `ModalErrorHandler` (Shell),
-`FileHelper` (FileSystem/DeviceInfo), `MainThreadHelper` (MainThread), and
-`MauiSqliteConnectionFactory`, which exists only to answer where the database file lives.
-`PokemonBattleJournal.Core` is a plain `net10.0` library holding Models, Services, Utilities,
-Interfaces and Logging. Namespaces are identical across both, so a `using` never tells you
-which assembly a type is in.
+**See `docs/DECISIONS.md` entries 1–14 for the full architectural rules:** MVVM split (Core vs head), DI (singletons vs transient), DB session pairing, error handling, tracing, logging/Sentry redaction, services, import/export/restore, duplicate detection, win rate formula, custom controls, and explicit types.
 
-**Put new logic in Core unless it needs MAUI.** That is not a style preference: Stryker cannot
-mutation-test the app head at all, so anything added there is unmeasured by definition. If a
-new service needs a platform capability, take it as a constructor dependency or an abstract
-method and let the head answer it — `SqliteConnectionFactory.GetDbPath()` is the worked example.
-
-- **MVVM:** CommunityToolkit.Mvvm source generators (`[ObservableProperty]`, `[RelayCommand]`)
-- **DI:** `MauiProgram.cs` — the three data pages are **singletons** (`MainPage`, `ReadJournalPage`, `TrainerPage` and their VMs, plus `AppShellViewModel`); only `OptionsPage` and `AboutPage` are transient. Singleton VMs hold state across navigations, which is why MainPage UI tests need a `[TearDown]` to reset it
-- **DB access:** `using DbSession session = await _factory.BeginAsync();` **inside** the `try`. This opens the connection and takes the write lock together, and disposing releases it. Never write a bare `finally { GetLock().Release(); }` — if opening the connection failed, that releases a permit nothing took and throws `SemaphoreFullException` over the real error. See [[project_db_session_lock_pairing]]
-- **Error handling:** `try/catch` + injected `IErrorHandler` (registered in `MauiProgram`, `ModalErrorHandler` in production) — no silent `catch {}`. Never `new ModalErrorHandler()`
-- **Tracing:** `IPerformanceMonitor`/`ITimedSpan` (Core) wrap Sentry spans; `SentryPerformanceMonitor` is the adapter. Instrumented: restore and import. **Span names and descriptions are NOT covered by `SentryRedactingSink`** — that governs Serilog property values only — so the interface takes CONSTANTS and `ITimedSpan` exposes no way to attach a string. Varying detail must be numeric (`SetMeasurement`). A reflection contract test pins that shape; do not add a string setter. Note `TracesSampleRate` does not CREATE transactions, it samples ones that exist — MAUI makes none automatically, which is why tracing appeared configured for months while the dashboard stayed empty. Debug-only `SentryDiagnosticsButton` on OptionsPage sends one trace and one error to confirm delivery. See [[project_sentry_three_channels]]
-- **Logging and Sentry:** local sinks keep everything; the Sentry sink is wrapped by `Logging/SentryRedactingSink` and forwards property values by **type** — numbers, bools, enums, `DateTime`, `Guid`. Strings and `{@destructured}` objects are withheld. So **log ids, counts and lengths, not names or paths**: a name in a template still reaches the local log but arrives at Sentry as `[redacted]`, which is a worse crash report than the id would have been. Do not widen the allowlist in that file to get a string through; use an enum. See [[project_sentry_privacy_audit]]
-- **Test detection:** `DeviceInfo.Platform == DevicePlatform.Unknown` signals unit test environment (no MAUI runtime)
-
-### Services
-
-`SqliteConnectionFactory` owns table init and exposes typed operation services (`MatchOperations`, `TrainerOperations`, `ArchetypeOperations`, `TagOperations`). Those four depend on `ISqliteConnectionFactory`, not the concrete class — that abstraction is what makes connection failures injectable in tests. `MatchAnalysisService` computes all stats for `TrainerPageViewModel`. `MatchResultCalculatorFactory` selects `BO1ResultCalculator` or `BO3ResultCalculator` based on match format.
-
-`Services/Import/TrainerHillImportService` reads TrainerHill JSON, with limits on size, depth, entry count and name lengths enforced **before** any DB write. `Services/Export/ExportService` writes two formats: TrainerHill's (archetype slugs, for interop, lossy) and a backup envelope (names verbatim, plus match timings and archetype icons — lossless). `Services/Restore/RestoreService` reads that envelope back: it merges into an existing trainer of the same name, restores archetypes before matches so icons survive, and refuses a newer envelope version rather than half-applying it. **It is not wired to any UI yet** — registered in DI, nothing calls it.
-
-Both the import and the restore de-duplicate through `Services/MatchDuplicateKey`: `(StartTime, PlayingId, AgainstId, Result)` within one trainer. `StartTime`, never `DatePlayed` — a date picker leaves that at midnight. The key is **deliberately not authoritative**: `AgainstId` identifies a *deck*, not a person, and the model stores no opponent identity, so two opponents on the same deck in the same minute collide. A hit skips and reports; it must never delete or overwrite. See [[project_backup_restore]].
-
-**Win rate formula (canonical):** `(wins + 0.5 * ties) / total * 100` — defined in `Utilities/Calculations.cs`. All stats code must align with this.
-
-### Custom controls
-
-`Controls/ComboBoxControl/` — archetype picker used on MainPage and OptionsPage (icon + name popup). `Controls/ImagePicker.cs` — icon selector on OptionsPage. Both use a popup with a `CollectionView`; the `ItemsSource` must be passed via constructor (not set after init), and item templates must return `Grid` directly (not `ViewCell`).
-
-Popup item grids have `AutomationId` bound to `"ArchetypeItem_{Name}"` — used by Appium seed and screen readers.
+**Quick summary:** Logic goes in Core unless it needs MAUI (Stryker cannot test the head). Singleton VMs hold state across navigations (need `[TearDown]` in tests). DB sessions acquire and release together inside try. Errors surface through injected `IErrorHandler`. Spans are named by constants; measurements are numeric. Sentry sees only types (numbers, enums, dates, guids) not strings.
 
 ## Accessibility standards
 
-Every UI element must have:
-- `AutomationId` — stable, unique identifier (used by Appium and screen readers)
-- `SemanticProperties.Description` — plain-English label for screen readers
-- `SemanticProperties.Hint` on tappable non-button elements — "Double tap to …"
-- `SemanticProperties.HeadingLevel="Level2"` on section headers
-- Images: `SemanticProperties.Description` with meaningful text (e.g., `"{Name} deck icon"`); purely decorative images get `SemanticProperties.IsInAccessibleTree="False"`
-- **Tappable elements must be real controls.** A `Border`/`Grid`/`Image` with a
-  `TapGestureRecognizer` exposes no UIA pattern, so a screen reader cannot activate it —
-  `SemanticProperties` on such an element is announced correctly and still unusable. Use
-  `Button`/`ImageButton` (Invoke), `CheckBox`/`Switch` (Toggle), or overlay a transparent
-  `Button` in the same Grid cell when custom visuals are required, moving the `AutomationId`
-  and command onto it. Also what makes UI tests click reliably — see
-  `docs/memory/feedback_invokable_controls.md`.
+See `docs/DECISIONS.md` entry 15 for the full contract: automation IDs, screen reader labels, hint text, heading semantics, image descriptions, and the requirement that tappable elements are real controls (not Gestures on Borders/Grids). 
 
-- **The contract is enforced on Windows.** `MainPage_InteractiveElement_IsAnnouncedAndOperable`
-  and its OptionsPage twin read the live UIA tree and require both a Name and a control pattern.
-  Add new interactive elements to those `[TestCase]` lists. They do not cover Android.
+Windows enforces this via `MainPage_InteractiveElement_IsAnnouncedAndOperable` and its OptionsPage twin (live UIA tree checks). Android is not covered.
 
 
 ## TDD workflow
 
-For anything new: **write the failing test first, then write the code.**
+See `docs/DECISIONS.md` entry 16 for the full test conventions, including TDD order (failing test first), naming patterns, unit vs integration vs UI test scopes, and seed isolation. 
 
-1. Write the test. Run it. Confirm it fails for the right reason.
-2. Write the minimum code to pass it.
-3. Refactor. Tests stay green.
-
-In this project:
-- New service method → unit test in `PokemonBattleJournal.Tests` first.
-- New ViewModel command → unit test asserting the expected state change first.
-- New Shell page → Appium navigation + element-visible test written before the page exists.
-- New seed assertion → data-presence test written before the seed logic is added.
-- Bug fix → regression test that reproduces the bug, confirmed failing, before the fix.
+Quick rule: **write the failing test first, then write the code.** Unit tests live in `PokemonBattleJournal.Tests` (no database), integration tests in `IntegrationTests` (real SQLite), UI tests drive Appium on Windows and Android with element-visible and data-presence assertions.
 
 ## Explicit types, never `var`
 
-Types go at the START of a declaration. This is the user's own convention, predating any AI work
-here: *"types should always be apparent as early as possible."* Target-typed `new()` on the right
-is fine and preferred — the objection is to `var`, not to brevity. Anonymous types and tuple
-deconstructions have no nameable type and stay.
-
-Enforced as a build warning: `.editorconfig` sets the three `csharp_style_var_*` rules to
-`false:warning`, and `Directory.Build.props` sets `EnforceCodeStyleInBuild` — without that, an
-`.editorconfig` severity is editor-only and does nothing to the build.
-
-**The sweep is finished. IDE0008 is at zero and the build is at zero warnings again**, so there
-is no longer an accepted exception and no annotation filter to apply. Treat a new IDE0008 exactly
-like any other warning: a defect, fixed before the change lands.
-
-Two things worth knowing if a large sweep is ever needed again:
-
-- `dotnet format style <project> --diagnostics IDE0008 --severity warn` applies the fix using
-  Roslyn's inferred types. Note **`style`**, not `analyzers` — the latter handles third-party
-  analyzers and silently does nothing for IDE-prefixed rules.
-- It also **reorders using directives** even when scoped to one diagnostic, which moves them
-  across the comments that explain the grouping. Check `git diff` for using-line changes and
-  restore those blocks, keeping any using it legitimately ADDED for a newly-named type.
+See `docs/DECISIONS.md` entry 14. Types at the START of declarations. Target-typed `new()` on the right is fine. The objection is `var`, not brevity. Build warning enforced via `.editorconfig` and `EnforceCodeStyleInBuild`. IDE0008 is at zero; treat any new instance like any other warning.
 
 ## Test conventions
 
-- **Unit tests:** `{Class}Tests`, methods `{Method}_{Scenario}_{Expected}`, NSubstitute mocks, Shouldly assertions
-- **UI tests (Appium):** every Shell page needs navigation + element-visible test; every data page needs a data-presence assertion test (not just "element exists")
-- `SeedTestData()` runs in `AppiumSetup` constructor: handles first-boot trainer prompt, selects "Other" for both PlayerArchetype and RivalArchetype via `ArchetypeItem_Other` AutomationId, then saves 3 Win matches. `SaveMatchAsync` clears the form on success so no navigation needed between seed iterations.
-- Seed failures throw `InvalidOperationException` — never swallowed silently
-- Windows UI tests: `WipeAppData()` deletes the SQLite DB before each run so first-boot prompt always fires on a clean slate (all state lives in the `.db3` — the Preferences API is not used)
-- **Never call `.Click()` on an element. Always go through `ClickElement` / `TryClickIfPresent` /
-  `ScrollIntoViewAndClick`.** WinAppDriver's `.Click()` is **synthesized mouse input at the
-  element's centre in SCREEN coordinates** — it carries no UIA pattern. A target laid out below
-  the window is clicked at whatever screen position that resolves to: locally that has launched
-  Visual Studio and the Epic Games store off the taskbar, and on CI it lands on empty desktop,
-  returns in ~1s having done nothing, and leaves find-only tests passing. That was a six-test CI
-  failure open for two days. `ClickElement` walks a UIA pattern ladder (ScrollItem, Invoke,
-  Toggle, SelectionItem, ExpandCollapse, Focus, then up to three ancestors), none of which carry
-  coordinates, and its mouse fallback REFUSES a target measured outside the window. See
-  `docs/memory/feedback_flaui_scroll_into_view.md`.
-- **The two platforms fail differently and the fixes do not transfer.** Windows clicks land in
-  the wrong PLACE (screen coordinates); Android clicks land NOWHERE (dispatched, handler never
-  runs). Windows needs the pattern ladder; Android needs click-verify-retry.
-- Android taps can silently miss MAUI gesture handlers — any tap-driven interaction needs the click-verify-retry pattern (see `docs/memory/feedback_android_flaky_tap_retry.md`)
-- Diagnostic logs after UI test runs: `%TEMP%\UITests.PerfLog.txt` (per-element FIND stage timing, rotates `.1`/`.2`), `%TEMP%\UITests.NavLog.txt` (navigation), `%TEMP%\UITests.Android.setup.log` (AppiumSetup steps), `%TEMP%\UITests.PopupLog.txt` (in-app ComboBox popup lifecycle, pulled via adb at teardown)
+See `docs/DECISIONS.md` entry 16 for the full contract: TDD order, naming patterns, seed handling, retry patterns per platform, and diagnostic log locations. 
+
+Key rules: Never `.Click()` on an element — use `ClickElement`/`TryClickIfPresent`/`ScrollIntoViewAndClick` which walk a UIA pattern ladder. Windows clicks fail by landing in the wrong place; Android by not dispatching. Patterns differ; fixes do not transfer. Seed failures throw, never silent. Windows tests `WipeAppData()` for a cold start. Diagnostic logs go to `%TEMP%\UITests.*.txt`.
 
 ## Platform notes
 
-- Windows: unpackaged (`WindowsPackageType=None`); debug exe at `bin\Debug\net10.0-windows10.0.19041.0\win-x64\PokemonBattleJournal.exe`
-- Android UI tests: AVD `pixel_7_-_api_35`; `EnsureEmulatorRunning()` verifies correct AVD by name via `adb emu avd name` and boots it if absent
-- Android local workflow: deploy once from VS (Fast Deployment), then rerun tests freely — never `pm clear` a VS-deployed app (wipes `.__override__/`, crashes on launch)
-- Android Release: `RunAOTCompilation=False`, `PublishTrimmed=False`
+See `docs/DECISIONS.md` entry 17 for full details.
+
+- **Windows:** unpackaged; debug exe at `bin\Debug\net10.0-windows10.0.19041.0\win-x64\PokemonBattleJournal.exe`
+- **Android UI tests:** AVD `pixel_7_-_api_35`; `EnsureEmulatorRunning()` boots if absent
+- **Android local:** deploy once from VS, rerun tests freely. Never `pm clear` a VS deployment (crashes on next launch)
+- **Android Release:** `RunAOTCompilation=False`, `PublishTrimmed=False`
