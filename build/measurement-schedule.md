@@ -135,8 +135,8 @@ hazard as any other trigger time.
 | 09:00 daily | `core` | Tf2DemoSalvage | **22m33s** (2026-08-12, concurrency 3) | **yes** (installed 2026-08-12 15:40) |
 | 11:00 daily | `stryker` | TcgDex.CSharpSdk | **~14-24 min** (2026-08-16/17, concurrency 3) — but **2h13m on 2026-08-29 and 2h38m on 2026-08-30**, which silently skipped tf2 `cli` at 13:00 both days; see below | **yes** (installed 2026-08-16 12:28) |
 | 13:00 daily | `cli` | Tf2DemoSalvage | **2m03s wall** (2026-08-18) | **yes** (installed 2026-08-18 15:40) |
-| 15:00 daily | `content` | Tf2DemoSalvage | **7m02s** (2026-08-18), **9 min** (2026-08-24) — growing; 20 min gap is the tightest on the box | **yes** (installed 2026-08-18 16:10) |
-| 15:20 daily | `audio` | Tf2DemoSalvage | **~1m** (2026-08-18) | **yes** (installed 2026-08-18 16:10) |
+| 13:30 daily | `audio` | Tf2DemoSalvage | **~1m** (2026-08-18), **2m** (2026-09-03/04/05) | **yes** (moved off 15:20 on 2026-09-07 after `content` ate the gap — see below) |
+| 15:00 daily | `content` | Tf2DemoSalvage | **7m02s** (2026-08-18), **9 min** (2026-08-24), **17m→20m04s** (2026-09-03→06) — growing; now has a clear 2h to 17:00 | **yes** (installed 2026-08-18 16:10) |
 | 17:00 daily | `scene` | Tf2DemoSalvage | **4m19s** (2026-08-30, measured on box) | **yes** (installed 2026-08-27) |
 | 17:30 daily | `presentation` | Tf2DemoSalvage | **3m23s** on box (2026-08-30); 1m09s local | **yes** (installed 2026-08-27) |
 | 21:30 daily | `animation` | Tf2DemoSalvage | **1m23s** (2026-08-30, measured on box) | **yes** (installed 2026-08-27) |
@@ -179,6 +179,26 @@ Three things worth carrying forward from how it was found and what it was:
 **The scheduling lesson is about margin, not about TcgDex.** A slot's gap must cover the job's worst
 observed runtime, not its typical one. 11:00 to 13:00 is a 2 h gap and looked like "an order of
 magnitude over" a 14-24 minute job right up until the job took 2h38m.
+
+**It happened again on 2026-09-06, in the row this table had already flagged as tightest — and this
+time nothing went wrong.** `content` at 15:00 grew 17 → 20m04s over four days as tf2's suite passed
+a thousand tests. Its gap to `audio` at 15:20 is twenty minutes, so at 20m04s it filled the slot
+exactly, `flock` refused `audio`, and cron moved on in silence. `audio` did not run on the 6th.
+Verified before acting: `~/measurements` newest `*tf2-audio` was `20260905T192001Z`, `content`'s own
+run that day was `20260906T190001Z` with an mtime of `19:20:37`, and `~/cron-measure.log` holds
+exactly one `ERROR: another measurement run holds /tmp/measurement-box.lock` — no other job on
+either box is skipping.
+
+**Fixed 2026-09-07 by moving `audio` to 13:30**, not by nudging it later. A nudge fixes the victim
+and leaves the cause: `content` would grow into whatever gap it was given next. Moving `audio` out
+of that neighbourhood gives `content` a clear two hours to 17:00 (17% used at its current 20 min)
+and puts `audio` in the 30-minute gap after `cli`, where a 2-minute job uses 10%.
+
+**Two failures, one shape — and it is not "a job got slower".** Both times the *victim* was a small,
+healthy job next to a growing neighbour, and both times the growth was legitimate: more tests, not a
+regression. **A slot's margin decays on its own as the suite it measures grows**, so a gap that was
+generous when booked is not evidence it still is. That is what the weekly review's runtime column is
+for; treat any job past ~70% of its gap as due for a move before it starts refusing its neighbour.
 
 **`rendering` is measured and deliberately unbooked (2026-08-27).** It runs in 2m10s and scores
 **4.15 %** on the box — but of the 80 mutants it can actually reach, its tests kill 72, so the real
