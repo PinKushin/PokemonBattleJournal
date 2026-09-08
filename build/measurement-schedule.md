@@ -135,9 +135,9 @@ hazard as any other trigger time.
 | 09:00 daily | `core` | Tf2DemoSalvage | **22m33s** (2026-08-12, concurrency 3) | **yes** (installed 2026-08-12 15:40) |
 | 11:00 daily | `stryker` | TcgDex.CSharpSdk | **~14-24 min** (2026-08-16/17, concurrency 3) — but **2h13m on 2026-08-29 and 2h38m on 2026-08-30**, which silently skipped tf2 `cli` at 13:00 both days; see below | **yes** (installed 2026-08-16 12:28) |
 | 13:00 daily | `cli` | Tf2DemoSalvage | **2m03s wall** (2026-08-18) | **yes** (installed 2026-08-18 15:40) |
-| 13:30 daily | `audio` | Tf2DemoSalvage | **~1m** (2026-08-18), **2m** (2026-09-03/04/05) | **yes** (moved off 15:20 on 2026-09-07 after `content` ate the gap — see below) |
+| 13:30 daily | `audio` | Tf2DemoSalvage | **~1m** (2026-08-18), **2m** (2026-09-03/04/05, and 2026-09-07 in the new slot) | **yes** (moved off 15:20 on 2026-09-07 after `content` ate the gap — see below) |
 | 15:00 daily | `content` | Tf2DemoSalvage | **7m02s** (2026-08-18), **9 min** (2026-08-24), **17m→20m04s** (2026-09-03→06) — growing; now has a clear 2h to 17:00 | **yes** (installed 2026-08-18 16:10) |
-| 17:00 daily | `scene` | Tf2DemoSalvage | **4m19s** (2026-08-30, measured on box) | **yes** (installed 2026-08-27) |
+| 17:00 daily | `scene` | Tf2DemoSalvage | **4m19s** (2026-08-30), **6-9 min** (2026-09-03→07) — roughly doubled; worst 9 min is 30% of its 30-min gap to `presentation`, the tightest ratio on the box | **yes** (installed 2026-08-27) |
 | 17:30 daily | `presentation` | Tf2DemoSalvage | **3m23s** on box (2026-08-30); 1m09s local | **yes** (installed 2026-08-27) |
 | 21:30 daily | `animation` | Tf2DemoSalvage | **1m23s** (2026-08-30, measured on box) | **yes** (installed 2026-08-27) |
 | ~~21:00 daily~~ | `rendering` | Tf2DemoSalvage | **2m10s, scores 4.15%** (2026-08-27) | **deliberately NOT booked** — see below |
@@ -172,13 +172,30 @@ Three things worth carrying forward from how it was found and what it was:
   normal 90.22 % score — so the ~8x slowdown (13 s/mutant against 1.6 s/mutant) is genuine
   slowness, not the manufactured-score failure mode that killed `corpus`. Same symptom, different
   cause; do not reach for the 180-second explanation before checking `NoCoverage` and `Timeout`.
-- **It appears to have self-resolved at a SHA boundary.** All four slow runs are `057afeb`; the
-  first run on `ff0cc43` (2026-08-31 11:00) took 20m09s. One fast data point is not a fix, so this
-  is an observation, not a closure — TcgDex owns the diagnosis.
+- **The cause was a non-hermetic test, not the SHA.** This bullet previously read "it appears to
+  have self-resolved at a SHA boundary" — all four slow runs were `057afeb` and the first run on
+  `ff0cc43` took 20m09s. That reading was wrong, and wrong in an instructive way: `ff0cc43` is a
+  strict *superset* of `057afeb`, so a per-mutant cost present in one and absent in the other
+  cannot live in the diff. It self-resolved because **the TcgDex API came back up**. Diagnosed and
+  fixed by TcgDex 2026-08-31 (PR #37, `main` at `5a54646`); see the rule below.
 
 **The scheduling lesson is about margin, not about TcgDex.** A slot's gap must cover the job's worst
 observed runtime, not its typical one. 11:00 to 13:00 is a 2 h gap and looked like "an order of
 magnitude over" a 14-24 minute job right up until the job took 2h38m.
+
+**The testing lesson applies to every project on these boxes: a test that can fall back to a real
+network call is not hermetic, and mutation is where that surfaces.** TcgDex's
+`ClientLifetimeTests.Create_DisposesItsOwnHttpClient` asserted disposal by disposing a `Create()`-built
+client — which owns a real handler on `api.tcgdex.net` — then awaiting a request and expecting
+`ObjectDisposedException`. Hermetic only while the code is correct. **Stryker's whole job is to break
+the code**, so any mutant defeating the disposal stopped the request short-circuiting and dialled the
+live API for real: <1 s when the API was healthy, a 30 s timeout per such mutant when it was not.
+That is the entire 2h38m. Assert the observable state directly — the fix reaches the owned client by
+reflection and confirms `CancelPendingRequests()` throws when disposed, hitting the same check with
+no transport — never by a request that only stays offline while the code is correct. Verified by
+manipulation: defeating `Dispose` on purpose fails the test in **58 ms** instead of hanging 30 s.
+This is the "test that cannot fail" family one layer up — the test was sensitive to disposal and
+silently *also* sensitive to network weather.
 
 **It happened again on 2026-09-06, in the row this table had already flagged as tightest — and this
 time nothing went wrong.** `content` at 15:00 grew 17 → 20m04s over four days as tf2's suite passed
@@ -193,6 +210,10 @@ either box is skipping.
 and leaves the cause: `content` would grow into whatever gap it was given next. Moving `audio` out
 of that neighbourhood gives `content` a clear two hours to 17:00 (17% used at its current 20 min)
 and puts `audio` in the 30-minute gap after `cli`, where a 2-minute job uses 10%.
+
+**Confirmed landed at the 2026-09-07 weekly review.** `audio` ran in its new slot the same day —
+`20260907T173001Z-4326fc48-tf2-audio`, 2 min, 45.09 %, and `content` at 20m24s against its clear
+two hours. The move was the whole fix; there was no second cause.
 
 **Two failures, one shape — and it is not "a job got slower".** Both times the *victim* was a small,
 healthy job next to a growing neighbour, and both times the growth was legitimate: more tests, not a
