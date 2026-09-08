@@ -224,3 +224,30 @@ jobs:
             /tmp/UITests.NavLog.txt
             /tmp/UITests.Android.setup.log
             /tmp/UITests.Android.logcat.txt
+
+  # ── Proof that the matrix above covered every fixture ──────────────────────────
+  # Same check, same reasoning as the Windows workflow's proof job — see the comment there. Both
+  # platforms select the same fixtures by name from the same shared source, so both carry the same
+  # silent-gap hazard: a stale matrix entry writes a trx with total="0" and exits 0, and a fixture
+  # the matrix never lists produces no trx at all. Neither fails a status check on its own.
+  #
+  # Deliberately duplicated rather than shared: a reusable workflow for two steps costs more to
+  # follow than it saves, and the two lanes' artifact names differ. The logic that matters lives
+  # once, in build/assert-test-inventory.ps1.
+  ui-tests-android-coverage-proof:
+    name: Fixture Coverage Proof
+    needs: ui-tests-android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download all shard results
+        uses: actions/download-artifact@v8
+        with:
+          pattern: android-ui-test-results-*
+          path: shard-results
+          merge-multiple: true
+
+      - name: Assert every fixture in source produced results
+        run: pwsh -NoProfile -File build/assert-test-inventory.ps1 -RequireFixturesFrom PokemonBattleJournal.UITests/UITests.Shared -TrxPath 'shard-results/**/*.trx' -MinimumPerTrx 1
+        shell: pwsh

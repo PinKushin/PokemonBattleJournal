@@ -108,3 +108,37 @@ jobs:
             ${{ runner.temp }}/UITests.PerfLog.txt
             ${{ runner.temp }}/UITests.NavLog.txt
             ${{ runner.temp }}/UITests.Windows.setup.log
+
+  # ── Proof that the matrix above covered every fixture ──────────────────────────
+  # The matrix selects fixtures BY NAME. A fixture renamed in source without the matrix being
+  # updated fails in both directions at once, and neither direction fails the build on its own:
+  # the stale entry runs, matches nothing, exits 0 and writes a trx reporting total="0" (measured);
+  # the renamed fixture is simply never run and nothing anywhere mentions it. Five green ticks,
+  # one fixture untested.
+  #
+  # The expected set is read from the SOURCE rather than restated here, so there is no second list
+  # to drift. Adding a fixture without adding a matrix entry fails this job.
+  #
+  # Cheap on purpose: it downloads result files and greps source. Taking a real inventory here
+  # (`dotnet test --list-tests`) would mean a full MAUI build plus the Windows workload install,
+  # roughly the cost of the suite it is checking.
+  #
+  # Runs only when the matrix succeeded — a genuine test failure already fails the workflow, and
+  # a second red job about counts would just obscure it.
+  ui-tests-windows-coverage-proof:
+    name: Fixture Coverage Proof
+    needs: ui-tests-windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download all shard results
+        uses: actions/download-artifact@v8
+        with:
+          pattern: windows-ui-test-results-*
+          path: shard-results
+          merge-multiple: true
+
+      - name: Assert every fixture in source produced results
+        run: pwsh -NoProfile -File build/assert-test-inventory.ps1 -RequireFixturesFrom PokemonBattleJournal.UITests/UITests.Shared -TrxPath 'shard-results/**/*.trx' -MinimumPerTrx 1
+        shell: pwsh

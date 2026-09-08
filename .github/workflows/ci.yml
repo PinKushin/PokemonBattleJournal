@@ -30,7 +30,16 @@ jobs:
         run: dotnet restore PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj
 
       - name: Test with coverage
-        run: dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --no-restore --collect "XPlat Code Coverage" --results-directory TestResults/unit
+        run: dotnet test PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj --no-restore --collect "XPlat Code Coverage" --logger "trx;LogFileName=unit.trx" --results-directory TestResults/unit
+
+      # Proves the green tick above measured the whole suite. A crashed test host prints "Passed!"
+      # with a truncated total and still exits 0, so neither the status check nor the summary line
+      # can distinguish a full run from a partial one. This compares discovered against executed;
+      # the script header carries the rest. Verified by manipulation before it was wired in: a
+      # 37-of-704 run exits 1 here.
+      - name: Assert every discovered test ran
+        run: pwsh -NoProfile -File build/assert-test-inventory.ps1 -Project PokemonBattleJournal.Tests/PokemonBattleJournal.Tests.csproj -TrxPath "TestResults/unit/unit.trx"
+        shell: pwsh
 
       - name: Generate coverage report
         uses: danielpalme/ReportGenerator-GitHub-Action@d3ebf1f760f7d8ab92cc44d9bcfee7ad73722a31 # v5
@@ -93,7 +102,14 @@ jobs:
         run: dotnet restore PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj
 
       - name: Test with coverage
-        run: dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj --no-restore --filter "Category!=LiveWeb" --collect "XPlat Code Coverage" --results-directory TestResults/integration
+        run: dotnet test PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj --no-restore --filter "Category!=LiveWeb" --collect "XPlat Code Coverage" --logger "trx;LogFileName=integration.trx" --results-directory TestResults/integration
+
+      # Same proof as the unit lane. The filter MUST match the one above: discovery honours it
+      # (measured — 248 unfiltered, 241 under Category!=LiveWeb), so passing a different filter
+      # here would fail for a reason that is not a defect.
+      - name: Assert every discovered test ran
+        run: pwsh -NoProfile -File build/assert-test-inventory.ps1 -Project PokemonBattleJournal.IntegrationTests/PokemonBattleJournal.IntegrationTests.csproj -Filter "Category!=LiveWeb" -TrxPath "TestResults/integration/integration.trx"
+        shell: pwsh
 
       - name: Generate coverage report
         uses: danielpalme/ReportGenerator-GitHub-Action@d3ebf1f760f7d8ab92cc44d9bcfee7ad73722a31 # v5
